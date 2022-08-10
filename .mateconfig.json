@@ -1,0 +1,31 @@
+{
+  "builds": [
+    {
+      "name": "dev",
+      "css": {
+        "minify": true,
+        "sourceMap": true
+      },
+      "js": {
+        "minify": true,
+        "sourceMap": true,
+        "declaration": false,
+        "webClean": true
+      }
+    }
+  ],
+  "files": [
+    {
+      "output": "dist/login.html",
+      "input": [ "src/login.html" ]
+    },
+    {
+      "output": "dist/login.js",
+      "input": [ "src/login.ts" ]
+    },
+    {
+      "output": "dist/login.css",
+      "input": [ "src/login.less" ]
+    }
+  ]
+}

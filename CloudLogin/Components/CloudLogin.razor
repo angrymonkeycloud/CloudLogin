@@ -1,0 +1,19 @@
+﻿@namespace AngryMonkey.Cloud.Login
+@inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
+@inject NavigationManager NavigationManager
+
+<div draggable class="amc-cloudlogin">
+
+	<input type="text" @bind-value="Value" @bind-value:event="oninput" />
+
+	<button @onclick="OnNextClicked">Next</button>
+
+	<h2>Providers</h2>
+
+	@foreach (Provider provider in Providers)
+	{
+		@*<a href="@provider.LoginUrl">@provider.Name</a>*@
+
+		<button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
+	}
+</div>

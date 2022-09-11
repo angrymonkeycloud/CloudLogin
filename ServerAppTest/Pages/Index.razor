@@ -1,0 +1,19 @@
+﻿@page "/"
+@using System.Security.Claims
+
+<PageTitle>Server App Cloud Login Test</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        Name: @context.User.FindFirst(ClaimTypes.Name).Value
+        <br />
+        ID: @context.User.FindFirst(ClaimTypes.NameIdentifier).Value
+        <br />
+        Email: @context.User.FindFirst(ClaimTypes.Email).Value
+        <br />
+        <a href="cloudlogin/logout">Logout</a>
+    </Authorized>
+    <NotAuthorized>
+        <AngryMonkey.Cloud.Login.CloudLogin />
+    </NotAuthorized>
+</AuthorizeView>

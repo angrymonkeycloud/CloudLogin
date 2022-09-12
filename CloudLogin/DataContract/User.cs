@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AngryMonkey.Cloud.Login.DataContract
 {
-	internal record BaseRecord
+	public record BaseRecord
 	{
 		internal BaseRecord(string partitionKey, string discriminator)
 		{
@@ -14,54 +16,70 @@ namespace AngryMonkey.Cloud.Login.DataContract
 			Discriminator = discriminator;
 		}
 
+		[JsonProperty("id")]
+		internal string CosmosId => $"{Discriminator}|{ID}";
+
+		[JsonProperty("ID")]
 		public Guid ID { get; set; }
-		public string PartitionKey { get; set; }
-		public string Discriminator { get; set; }
+		internal string PartitionKey { get; set; }
+		internal string Discriminator { get; set; }
 	}
 
-	internal record User : BaseRecord
+	public record User : BaseRecord
 	{
-		internal User(string firstName, string lastName) : base("User", "User")
-		{
-			FirstName = firstName;
-			LastName = lastName;
-		}
-		public string id => ID.ToString();
+		public User() : base("User", "User") { }
+
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string? DisplayName { get; set; }
 		public string? Username { get; set; }
-		public DateOnly DateOfBirth { get; set; }
-		public UserEmailAddress? PrimaryEmailAddress => EmailAddresses.FirstOrDefault(key => key.IsPrimary);
-		public UserPhoneNumber? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault(key => key.IsPrimary);
-		public List<UserEmailAddress> EmailAddresses { get; set; } = new();
-		public List<UserPhoneNumber> PhoneNumbers { get; set; } = new();
+		public DateOnly? DateOfBirth { get; set; }
+		public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
 
+		// Lists
+
+		public List<UserEmailAddress>? EmailAddresses { get; set; }
+		public List<UserPhoneNumber>? PhoneNumbers { get; set; }
+
+		// Ignore
+
+		[JsonIgnore]
+		public UserEmailAddress? PrimaryEmailAddress => EmailAddresses?.FirstOrDefault(key => key.IsPrimary);
+
+		[JsonIgnore]
+		public UserPhoneNumber? PrimaryPhoneNumber => PhoneNumbers?.FirstOrDefault(key => key.IsPrimary);
+
+		[JsonIgnore]
 		public List<string> Providers
 		{
 			get
 			{
-				List<string> providers = EmailAddresses.Select(key => key.Provider).ToList();
+				List<string> providers = new();
 
-				providers.AddRange(PhoneNumbers.Select(key => key.Provider).ToList());
+				if (EmailAddresses != null)
+					providers.AddRange(EmailAddresses.Where(key => !string.IsNullOrEmpty(key.Provider)).Select(key => key.Provider).ToList());
+
+				if (PhoneNumbers != null)
+					providers.AddRange(PhoneNumbers.Where(key => !string.IsNullOrEmpty(key.Provider)).Select(key => key.Provider).ToList());
 
 				return providers;
 			}
 		}
 	}
 
-	internal record UserEmailAddress
+	public record UserEmailAddress
 	{
-		public string EmailAddress { get; set; }
+		public string EmailAddress { get; set; } = string.Empty;
 		public string? Provider { get; set; }
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
 	}
 
-	internal record UserPhoneNumber
+	public record UserPhoneNumber
 	{
-		public string PhoneNumber { get; set; }
+		public string PhoneNumber { get; set; } = string.Empty;
 		public string? Provider { get; set; }
-		public bool IsPrimary { get; set; }
+		public string? ProviderId { get; set; }
+		public bool IsPrimary { get; set; } = false;
 	}
 }

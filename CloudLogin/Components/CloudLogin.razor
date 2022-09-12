@@ -4,16 +4,26 @@
 
 <div draggable class="amc-cloudlogin">
 
-	<input type="text" @bind-value="Value" @bind-value:event="oninput" />
-
-	<button @onclick="OnNextClicked">Next</button>
-
-	<h2>Providers</h2>
-
-	@foreach (Provider provider in Providers)
+	@if (Step == ProcessStep.PendingEmail)
 	{
-		@*<a href="@provider.LoginUrl">@provider.Name</a>*@
+		<input type="text" @bind-value="Value" @bind-value:event="oninput" />
 
-		<button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
+		<button @onclick="OnNextClicked">Next</button>
+	}
+
+	else if (Step == ProcessStep.PendingProviders)
+	{
+		<p>retrieving...</p>
+	}
+	else if (Step == ProcessStep.PendingAuthorization)
+	{
+		<h2><button @onclick="">back</button> @Value</h2>
+
+		@foreach (Provider provider in Providers)
+		{
+			@*<a href="@provider.LoginUrl">@provider.Name</a>*@
+
+			<button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
+		}
 	}
 </div>

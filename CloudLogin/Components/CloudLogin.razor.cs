@@ -26,12 +26,27 @@ namespace AngryMonkey.Cloud.Login
 		internal CosmosMethods Cosmos { get; set; }
 		List<Provider> Providers { get; set; } = new();
 
+		protected bool EnableEmailAddressField
+		{
+			get
+			{
+				return Step != ProcessStep.PendingProviders;
+			}
+		}
+
+		protected ProcessStep Step { get; set; } = ProcessStep.PendingEmail;
+
+		protected enum ProcessStep
+		{
+			PendingEmail,
+			PendingProviders,
+			PendingAuthorization
+		}
+
 		protected override async Task OnAfterRenderAsync(bool firstRender)
 		{
 			if (firstRender)
-			{
 				Cosmos = new CosmosMethods(cloudLogin.Options.Cosmos.ConnectionString, cloudLogin.Options.Cosmos.DatabaseId, cloudLogin.Options.Cosmos.ContainerId);
-			}
 		}
 
 		private async Task OnNextClicked(MouseEventArgs e)
@@ -39,21 +54,17 @@ namespace AngryMonkey.Cloud.Login
 			if (string.IsNullOrEmpty(Value))
 				return;
 
+			Step = ProcessStep.PendingProviders;
+
 			Value = Value.ToLower();
 
-			IQueryable<User> usersQueryable = Cosmos.Queryable<User>("User", user => user.EmailAddresses.Where(key => key.EmailAddress.Equals(Value.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
-
-			var users = await Cosmos.ToListAsync(usersQueryable);
-
-			User? user = users.FirstOrDefault();
+			User? user = await Cosmos.GetUserByEmailAddress(Value);
 
 			if (user != null)
-			{
-				//loginProcess.EmailAddress = Value;
-
 				Providers = user.Providers.Select(key => new Provider(key)).ToList();
-			}
 			else Providers = cloudLogin.Options.Providers.Select(key => new Provider(key.Code)).ToList();
+
+			Step = ProcessStep.PendingAuthorization;
 		}
 
 		private void OnProviderClicked(Provider provider)

@@ -1,8 +1,6 @@
 ﻿@page "/"
 @using System.Security.Claims
 
-<PageTitle>Server App Cloud Login Test</PageTitle>
-
 <AuthorizeView>
     <Authorized>
         Name: @context.User.FindFirst(ClaimTypes.Name).Value

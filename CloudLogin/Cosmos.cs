@@ -2,14 +2,17 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
+using User = AngryMonkey.Cloud.Login.DataContract.User;
 
 namespace AngryMonkey.Cloud.Login
 {
-	internal class CosmosMethods
+	public class CosmosMethods
 	{
+		#region Internal
+
 		public Container Container { get; set; }
 
-		public CosmosMethods(string connectionString, string databaseId, string containerId)
+		internal CosmosMethods(string connectionString, string databaseId, string containerId)
 		{
 			CosmosClient client = new(connectionString, new CosmosClientOptions()
 			{
@@ -22,12 +25,12 @@ namespace AngryMonkey.Cloud.Login
 			Container = client.GetContainer(databaseId, containerId);
 		}
 
-		public IQueryable<T> Queryable<T>(string partitionKey) where T : BaseRecord
+		internal IQueryable<T> Queryable<T>(string partitionKey) where T : BaseRecord
 		{
 			return Queryable<T>(partitionKey, null);
 		}
 
-		private static PartitionKey GetPartitionKey<T>(string partitionKey)
+		internal static PartitionKey GetPartitionKey<T>(string partitionKey)
 		{
 			if (!string.IsNullOrEmpty(partitionKey))
 				return new PartitionKey(partitionKey);
@@ -35,7 +38,7 @@ namespace AngryMonkey.Cloud.Login
 			return new PartitionKey(typeof(T).Name);
 		}
 
-		public IQueryable<T> Queryable<T>(string partitionKey, Expression<Func<T, bool>>? predicate) where T : BaseRecord
+		internal IQueryable<T> Queryable<T>(string partitionKey, Expression<Func<T, bool>>? predicate) where T : BaseRecord
 		{
 			var container = Container.GetItemLinqQueryable<T>(requestOptions: new QueryRequestOptions())
 									 .Where(key => key.Discriminator == typeof(T).Name);
@@ -49,7 +52,7 @@ namespace AngryMonkey.Cloud.Login
 			return container;
 		}
 
-		public async Task<List<T>> ToListAsync<T>(IQueryable<T> query) where T : BaseRecord
+		internal async Task<List<T>> ToListAsync<T>(IQueryable<T> query) where T : BaseRecord
 		{
 			try
 			{
@@ -68,9 +71,15 @@ namespace AngryMonkey.Cloud.Login
 			}
 		}
 
-		//public async Task<T> Create(string partitionKey, T record) where T : BaseRecord
-		//{
-		//	return await Container.CreateItemAsync(record, GetPartitionKey<T>(partitionKey));
-		//}
+		#endregion
+
+		public async Task<User?> GetUserByEmailAddress(string emailAddress)
+		{
+			IQueryable<User> usersQueryable = Queryable<User>("User", user => user.EmailAddresses.Where(key => key.EmailAddress.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+
+			var users = await ToListAsync(usersQueryable);
+
+			return users.FirstOrDefault();
+		}
 	}
 }

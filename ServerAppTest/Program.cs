@@ -17,17 +17,22 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 {
 	Cosmos = new CloudLoginConfiguration.CosmosDatabase()
 	{
-		ConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-		DatabaseId = "CloudLogin",
-		ContainerId = "Accounts"
+		ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
+		DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
+		ContainerId = builder.Configuration["Cosmos:ContainerId"]
 	},
 
 	Providers = new List<CloudLoginConfiguration.Provider>()
 	{
 		new CloudLoginConfiguration.MicrosoftAccount()
 		{
-			ClientId = "642c7f39-ba37-453e-8834-420a550d2fc1",
-			ClientSecret= "cWs8Q~B7FgbbTCRGNmc4dvkLbKcF5CuRoDssaapT"
+			ClientId = builder.Configuration["Microsoft:ClientId"],
+			ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
+		},
+		new CloudLoginConfiguration.GoogleAccount()
+		{
+			ClientId = builder.Configuration["Google:ClientId"],
+			ClientSecret= builder.Configuration["Google:ClientSecret"]
 		}
 	}
 });

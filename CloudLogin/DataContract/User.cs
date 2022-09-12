@@ -26,7 +26,7 @@ namespace AngryMonkey.Cloud.Login.DataContract
 			FirstName = firstName;
 			LastName = lastName;
 		}
-
+		public string id => ID.ToString();
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string? DisplayName { get; set; }
@@ -54,6 +54,7 @@ namespace AngryMonkey.Cloud.Login.DataContract
 	{
 		public string EmailAddress { get; set; }
 		public string? Provider { get; set; }
+		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
 	}
 

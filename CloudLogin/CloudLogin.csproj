@@ -18,10 +18,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\CloudComponents\Components\Components.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
+		<PackageReference Include="AngryMonkey.Cloud.Components" Version="0.0.2" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="6.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="6.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.7" NoWarn="NU1605" />

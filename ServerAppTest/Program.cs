@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-builder.Services.CloudLoginService(new CloudLoginConfiguration()
+builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 {
 	Cosmos = new CloudLoginConfiguration.CosmosDatabase()
 	{

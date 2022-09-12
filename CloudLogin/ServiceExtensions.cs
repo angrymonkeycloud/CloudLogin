@@ -1,9 +1,11 @@
 ﻿//using Microsoft.Extensions.DependencyInjection;
 using AngryMonkey.Cloud.Components;
+using AngryMonkey.Cloud.Login;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Azure.Cosmos;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,7 +24,7 @@ public class CloudLoginService
 public static class MvcServiceCollectionExtensions
 {
 
-	public static CloudLoginService CloudLoginService(this IServiceCollection services, CloudLoginConfiguration options)
+	public static CloudLoginService AddCloudLogin(this IServiceCollection services, CloudLoginConfiguration options)
 	{
 		services.AddSingleton(new CloudLoginService() { Options = options });
 		//services.AddSingleton<CloudLoginProcess>();
@@ -35,8 +37,6 @@ public static class MvcServiceCollectionExtensions
 				OnSignedIn = async context =>
 				{
 					string? emaillAddress = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
-
-					
 				}
 			};
 		});
@@ -65,21 +65,6 @@ public static class MvcServiceCollectionExtensions
 		}
 
 		return null;
-	}
-
-	private static void TransferFileToProject(string source, string destination)
-	{
-		Assembly assembly = Assembly.GetExecutingAssembly();
-		string fullFileName = $"AngryMonkey.Cloud.Components.{source.Replace("/", ".")}";
-
-		using Stream stream = assembly.GetManifestResourceStream(fullFileName);
-
-		string destinationFilePath = Path.Combine(Directory.GetCurrentDirectory(), destination);
-
-		Directory.CreateDirectory(destinationFilePath[..^Path.GetFileName(destination).Length]);
-
-		using var fileStream = new FileStream(destinationFilePath, FileMode.Create);
-		stream.CopyTo(fileStream);
 	}
 }
 
@@ -123,5 +108,8 @@ public class CloudLoginConfiguration
 		public string ConnectionString { get; set; }
 		public string DatabaseId { get; set; }
 		public string ContainerId { get; set; }
+
+		private CosmosMethods? methods = null;
+		internal CosmosMethods Methods => methods ??= new CosmosMethods(ConnectionString, DatabaseId, ContainerId);
 	}
 }

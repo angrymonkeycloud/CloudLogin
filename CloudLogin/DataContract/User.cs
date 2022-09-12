@@ -8,6 +8,12 @@ namespace AngryMonkey.Cloud.Login.DataContract
 {
 	internal record BaseRecord
 	{
+		internal BaseRecord(string partitionKey, string discriminator)
+		{
+			PartitionKey = partitionKey;
+			Discriminator = discriminator;
+		}
+
 		public Guid ID { get; set; }
 		public string PartitionKey { get; set; }
 		public string Discriminator { get; set; }
@@ -15,6 +21,12 @@ namespace AngryMonkey.Cloud.Login.DataContract
 
 	internal record User : BaseRecord
 	{
+		internal User(string firstName, string lastName) : base("User", "User")
+		{
+			FirstName = firstName;
+			LastName = lastName;
+		}
+
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string? DisplayName { get; set; }
@@ -36,19 +48,19 @@ namespace AngryMonkey.Cloud.Login.DataContract
 				return providers;
 			}
 		}
+	}
 
-		internal record UserEmailAddress
-		{
-			public string EmailAddress { get; set; }
-			public string? Provider { get; set; }
-			public bool IsPrimary { get; set; } = false;
-		}
+	internal record UserEmailAddress
+	{
+		public string EmailAddress { get; set; }
+		public string? Provider { get; set; }
+		public bool IsPrimary { get; set; } = false;
+	}
 
-		internal record UserPhoneNumber
-		{
-			public string PhoneNumber { get; set; }
-			public string? Provider { get; set; }
-			public bool IsPrimary { get; set; }
-		}
+	internal record UserPhoneNumber
+	{
+		public string PhoneNumber { get; set; }
+		public string? Provider { get; set; }
+		public bool IsPrimary { get; set; }
 	}
 }

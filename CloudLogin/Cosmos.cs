@@ -13,7 +13,7 @@ namespace AngryMonkey.Cloud.Login
 		{
 			CosmosClient client = new(connectionString, new CosmosClientOptions()
 			{
-				SerializerOptions = new CosmosSerializationOptions()
+				SerializerOptions = new()
 				{
 					IgnoreNullValues = true
 				}

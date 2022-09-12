@@ -69,11 +69,12 @@ namespace AngryMonkey.Cloud.Login
 			}
 
 			public string Code { get; private set; }
-			public string LoginUrl => $"cloudlogin/login?redirectUri=/&identity={Code}";
+			//public string LoginUrl => $"cloudlogin/login?redirectUri=/&identity={Code}";
 			public string? Name => Code switch
 			{
 				"microsoft" => "Microsoft",
-				_ => null
+				"google" => "Google",
+				_ => Code
 			};
 		}
 	}

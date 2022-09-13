@@ -21,8 +21,8 @@ namespace AngryMonkey.Cloud.Login.DataContract
 
 		[JsonProperty("ID")]
 		public Guid ID { get; set; }
-		internal string PartitionKey { get; set; }
-		internal string Discriminator { get; set; }
+		public string PartitionKey { get; internal set; }
+		public string Discriminator { get; internal set; }
 	}
 
 	public record User : BaseRecord
@@ -73,6 +73,8 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string? Provider { get; set; }
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
+		public bool IsVerificated { get; set; } = false;
+		public string? VerificationCode { get; set; }
 	}
 
 	public record UserPhoneNumber

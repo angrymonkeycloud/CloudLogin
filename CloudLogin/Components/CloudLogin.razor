@@ -1,29 +1,70 @@
 ﻿@namespace AngryMonkey.Cloud.Login
+@using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
 @inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
 @inject NavigationManager NavigationManager
 
 <div draggable class="amc-cloudlogin">
 
-	@if (Step == ProcessStep.PendingEmail)
-	{
-		<input type="text" @bind-value="Value" @bind-value:event="oninput" />
+    @if (State == ProcessEvent.PendingEmail)
+    {
+        <input type="text" @bind-value="Value" @bind-value:event="oninput" />
 
-		<button @onclick="OnNextClicked">Next</button>
-	}
+        <button @onclick="OnNextClicked">Next</button>
+    }
 
-	else if (Step == ProcessStep.PendingProviders)
-	{
-		<p>retrieving...</p>
-	}
-	else if (Step == ProcessStep.PendingAuthorization)
-	{
-		<h2><button @onclick="">back</button> @Value</h2>
+    else if (State == ProcessEvent.PendingProviders)
+    {
+        <p>retrieving...</p>
+    }
 
-		@foreach (Provider provider in Providers)
-		{
-			@*<a href="@provider.LoginUrl">@provider.Name</a>*@
+    else if (State == ProcessEvent.PendingRegistration)
+    {
+        <div>This Email was not found: </div>
+        @Value
+        <div>Please register below.</div>
+        @foreach (Provider provider in Providers)
+        {
+            <button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
+        }
+        <button @onclick="() => CustomEmailLogin()">Custom</button>
 
-			<button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
-		}
-	}
+        <input type="checkbox" id="keepme" style="appearance: auto;" @bind-value="KeepMeSignedIn">
+        <label for="keepme"> Keep me signed in </label>
+        <button @onclick="OnBackClicked">Back</button>
+    }
+    else if (State == ProcessEvent.PendingVerification)
+    {
+        @VerificationCode
+        <input type="text" @bind-value="VerificationValue" @bind-value:event="oninput" />
+        <button @onclick="OnVerifyClicked">Verify</button>
+        if (WrongCode)
+        {
+            <div>
+                Wrong code
+                <button @onclick="OnBackClicked">Back</button>
+            </div>
+        }
+    }
+    else if (State == ProcessEvent.PendingVerified)
+    {
+        <div>@Value is verified => Create user</div>
+        
+        <div>First Name: <input type="text" @bind-value="FirstName" @bind-value:event="oninput" /></div>
+        <div>Last Name: <input type="text" @bind-value="LastName" @bind-value:event="oninput" /></div>
+        
+        <button @onclick="OnRegisterClicked">Register</button>
+    }
+    else if (State == ProcessEvent.PendingAuthorization)
+    {
+        <h2><button @onclick="OnBackClicked">Back</button> @Value</h2>
+
+        @foreach (Provider provider in Providers)
+        {
+            @*<a href="@provider.LoginUrl">@provider.Name</a>*@
+
+            <button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
+        }
+        <input type="checkbox" id="keepme" style="appearance: auto;" @bind-value="KeepMeSignedIn">
+        <label for="keepme"> Keep me signed in </label>
+    }
 </div>

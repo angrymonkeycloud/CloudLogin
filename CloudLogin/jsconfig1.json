@@ -1,0 +1,31 @@
+{
+  "FirstName": "Rami",
+  "LastName": "Gerges",
+  "DisplayName": "Rami Gerges",
+  "LastSignedIn": "2022-09-13T08:31:56.64013+00:00",
+  "EmailAddresses": [
+    {
+      "EmailAddress": "RamiGerges@angrymonkeyagency.com",
+      "Provider": "Microsoft",
+      "ProviderId": "cc0a3144-2e37-483d-aa80-54916f51c620",
+      "IsPrimary": true,
+      "IsVerificated": "true",
+      "VerificationCode": "123456"
+    }
+  ],
+  "Verification": [
+    {
+      "IsVerificated": "false",
+      "Code": "123456"
+    }
+  ]
+  "id": "User|971e6647-3fb0-4d36-8888-c856c8d91dba",
+  "ID": "971e6647-3fb0-4d36-8888-c856c8d91dba",
+  "PartitionKey": "User",
+  "Discriminator": "User",
+  "_rid": "AkFMAMh3MmAMAAAAAAAAAA==",
+  "_self": "dbs/AkFMAA==/colls/AkFMAMh3MmA=/docs/AkFMAMh3MmAMAAAAAAAAAA==/",
+  "_etag": "\"00005f1a-0000-0d00-0000-63203ffc0000\"",
+  "_attachments": "attachments/",
+  "_ts": 1663057916
+}

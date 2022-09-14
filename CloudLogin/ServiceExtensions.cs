@@ -41,7 +41,7 @@ public static class MvcServiceCollectionExtensions
 				{
 					string? emaillAddress = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
 
-					if (string.IsNullOrEmpty(emaillAddress))
+                    if (string.IsNullOrEmpty(emaillAddress))
 						return;
 
 
@@ -139,9 +139,17 @@ public class CloudLoginConfiguration
 		{
 			Code = "Google";
 		}
-	}
+    }
 
-	public class CosmosDatabase
+    public class EmailAccount : Provider
+    {
+        public EmailAccount()
+        {
+            Code = "Email";
+        }
+    }
+
+    public class CosmosDatabase
 	{
 		public string ConnectionString { get; set; }
 		public string DatabaseId { get; set; }

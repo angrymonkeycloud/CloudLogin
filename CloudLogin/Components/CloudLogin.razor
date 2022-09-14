@@ -8,8 +8,11 @@
     @if (State == ProcessEvent.PendingEmail)
     {
         <input type="text" @bind-value="Value" @bind-value:event="oninput" />
-
         <button @onclick="OnNextClicked">Next</button>
+
+
+        <input type="text" @bind-value="Valuetest" @bind-value:event="oninput" />
+        <button @onclick="test">Next</button>
     }
 
     else if (State == ProcessEvent.PendingProviders)
@@ -24,9 +27,8 @@
         <div>Please register below.</div>
         @foreach (Provider provider in Providers)
         {
-            <button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
+            <button @onclick="() => OnProviderClickedAsync(provider)">@provider.Name</button>
         }
-        <button @onclick="() => CustomEmailLoginAsync()">Custom</button>
 
         <input type="checkbox" id="keepme" style="appearance: auto;" @bind-value="KeepMeSignedIn">
         <label for="keepme"> Keep me signed in </label>
@@ -35,7 +37,7 @@
     else if (State == ProcessEvent.PendingVerification)
     {
 
-        //@VerificationCode
+        @VerificationCode
         <input type="text" @bind-value="VerificationValue" @bind-value:event="oninput" />
         <button @onclick="OnVerifyClicked">Verify</button>
 
@@ -47,14 +49,22 @@
                 <button @onclick="OnBackClicked">Back</button>
             </div>
         }
+        if (ExpiredCode)
+        {
+            <div>
+                Expired code
+                <button @onclick="OnNewCodeClicked">New Code</button>
+            </div>
+        }
+
     }
     else if (State == ProcessEvent.PendingVerified)
     {
         <div>@Value is verified => Create user</div>
-        
+
         <div>First Name: <input type="text" @bind-value="FirstName" @bind-value:event="oninput" /></div>
         <div>Last Name: <input type="text" @bind-value="LastName" @bind-value:event="oninput" /></div>
-        
+
         <button @onclick="OnRegisterClicked">Register</button>
     }
     else if (State == ProcessEvent.PendingAuthorization)
@@ -64,9 +74,9 @@
         @foreach (Provider provider in Providers)
         {
             @*<a href="@provider.LoginUrl">@provider.Name</a>*@
-
-            <button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
+            <button @onclick="() => OnProviderClickedAsync(provider)">@provider.Name</button>
         }
+
         <input type="checkbox" id="keepme" style="appearance: auto;" @bind-value="KeepMeSignedIn">
         <label for="keepme"> Keep me signed in </label>
     }

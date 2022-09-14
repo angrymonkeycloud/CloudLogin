@@ -4,8 +4,11 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Razor.Internal;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Configuration;
+using System.Net.Mail;
 using System.Security.Claims;
 
 namespace AngryMonkey.Cloud.Login.Controllers
@@ -39,19 +42,30 @@ namespace AngryMonkey.Cloud.Login.Controllers
             return Redirect("/");
         }
 
-        [HttpGet("Login/CustomLogin")]
-        public async Task<ActionResult<User>?> CustomLogin(User user)
+        [HttpGet("Custom/{CustomLogin}")]
+        public async Task<ActionResult<string>?> CustomLogin(string CustomLogin, string userID, bool KeepMeSignedIn)
         {
+
+            Console.WriteLine(userID);
+
+
+
+            AuthenticationProperties properties = new()
+            {
+                ExpiresUtc = KeepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
+                IsPersistent = KeepMeSignedIn
+            };
+
             //create a claim
-            var claim = new Claim(ClaimTypes.Name,user.PrimaryEmailAddress.ToString());
+            var claim1 = new Claim(ClaimTypes.NameIdentifier, userID);
             //create claimsIdentity
-            var claimsIdentity = new ClaimsIdentity(new[] { claim }, "serverAuth");
+            var claimsIdentity = new ClaimsIdentity(new[] { claim1 }, "CloudLogin");
             //create claimsPrincipal
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
             //Sign In User
-            await HttpContext.SignInAsync(claimsPrincipal);
+            await HttpContext.SignInAsync(claimsPrincipal, properties);
 
-            return await Task.FromResult(user);
+            return Redirect("/");
         }
 
 

@@ -74,6 +74,7 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
 		public string? VerificationCode { get; set; }
+		public DateTimeOffset? VerificationCodeTime { get; set; }
 	}
 
 	public record UserPhoneNumber

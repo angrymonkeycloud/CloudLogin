@@ -13,12 +13,6 @@
       "VerificationCode": "123456"
     }
   ],
-  "Verification": [
-    {
-      "IsVerificated": "false",
-      "Code": "123456"
-    }
-  ]
   "id": "User|971e6647-3fb0-4d36-8888-c856c8d91dba",
   "ID": "971e6647-3fb0-4d36-8888-c856c8d91dba",
   "PartitionKey": "User",

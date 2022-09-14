@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using static AngryMonkey.Cloud.Login.DataContract.User;
 using Azure.Core;
 using Azure;
+using Microsoft.Azure.Cosmos;
 
 namespace AngryMonkey.Cloud.Login
 {
@@ -67,7 +68,7 @@ namespace AngryMonkey.Cloud.Login
 
             Value = Value.ToLower();
 
-            User? user = await Cosmos.GetUserByEmailAddress(Value);
+            AngryMonkey.Cloud.Login.DataContract.User? user = await Cosmos.GetUserByEmailAddress(Value);
 
             if (user != null)
             {
@@ -95,6 +96,7 @@ namespace AngryMonkey.Cloud.Login
         }
         private async Task OnVerifyClicked(MouseEventArgs e)
         {
+
             if (VerificationValue == VerificationCode)
                 State = ProcessEvent.PendingVerified;
             else
@@ -102,8 +104,35 @@ namespace AngryMonkey.Cloud.Login
         }
         private async Task OnRegisterClicked(MouseEventArgs e)
         {
+
+
+            List<PatchOperation> patchOperations = new List<PatchOperation>()
+            {
+                PatchOperation.Add("/FirstName", FirstName),
+                PatchOperation.Add("/LastName", LastName),
+                PatchOperation.Add("/DisplayName", $"{FirstName} {LastName}"),
+                PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow)
+            };
+
+
+            AngryMonkey.Cloud.Login.DataContract.User? user = await Cosmos.GetUserByEmailAddress(Value);
+            string id = $"User|{user.ID}";
+            PartitionKey partitionKey = new PartitionKey(user.PartitionKey);
+            Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+            //login the user
+        }
+
+
+
+        private async Task CustomEmailLoginAsync()
+        {
+
+            VerificationCode = CreateRandomCode(6);
+
+            //save verification code to cosmos
             Guid CustomUserID = Guid.NewGuid();
-            User user= new ()
+            AngryMonkey.Cloud.Login.DataContract.User user = new()
             {
                 ID = CustomUserID,
 
@@ -114,22 +143,12 @@ namespace AngryMonkey.Cloud.Login
                                     EmailAddress = Value,
                                     IsPrimary = true,
                                     ProviderId = CustomUserID.ToString(),
-                                    Provider = "Custom"
+                                    Provider = "Custom",
+                                    VerificationCode = VerificationCode
                                 }
                             }
             };
-
-            user.LastSignedIn = DateTimeOffset.UtcNow;
-
-            user.FirstName = FirstName;
-            user.LastName = LastName;
-            user.DisplayName = FirstName+LastName;
-
             Cosmos.Container.CreateItemAsync(user);
-        }
-        private void CustomEmailLogin()
-        {
-            VerificationCode = CreateRandomCode(6);
 
             State = ProcessEvent.PendingVerification;
         }

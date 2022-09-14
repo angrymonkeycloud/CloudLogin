@@ -73,7 +73,6 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string? Provider { get; set; }
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
-		public bool IsVerificated { get; set; } = false;
 		public string? VerificationCode { get; set; }
 	}
 

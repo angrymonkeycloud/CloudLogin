@@ -26,7 +26,7 @@
         {
             <button @onclick="() => OnProviderClicked(provider)">@provider.Name</button>
         }
-        <button @onclick="() => CustomEmailLogin()">Custom</button>
+        <button @onclick="() => CustomEmailLoginAsync()">Custom</button>
 
         <input type="checkbox" id="keepme" style="appearance: auto;" @bind-value="KeepMeSignedIn">
         <label for="keepme"> Keep me signed in </label>
@@ -34,9 +34,12 @@
     }
     else if (State == ProcessEvent.PendingVerification)
     {
-        @VerificationCode
+
+        //@VerificationCode
         <input type="text" @bind-value="VerificationValue" @bind-value:event="oninput" />
         <button @onclick="OnVerifyClicked">Verify</button>
+
+
         if (WrongCode)
         {
             <div>

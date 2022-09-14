@@ -76,9 +76,11 @@ namespace AngryMonkey.Cloud.Login
 		public async Task<User?> GetUserByEmailAddress(string emailAddress)
 		{
 			IQueryable<User> usersQueryable = Queryable<User>("User", user => user.EmailAddresses.Where(key => key.EmailAddress.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+			Console.WriteLine(usersQueryable);
 
 			var users = await ToListAsync(usersQueryable);
-
+			Console.WriteLine("1");
+			Console.WriteLine(users.FirstOrDefault());
 			return users.FirstOrDefault();
 		}
 	}

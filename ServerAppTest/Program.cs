@@ -1,5 +1,6 @@
 using AngryMonkey.Cloud.Login.Controllers;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authorization;
@@ -41,6 +42,15 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 		}
 	}
 });
+builder.Services.AddAuthentication(opt =>
+{
+	opt.DefaultScheme  = CookieAuthenticationDefaults.AuthenticationScheme;
+});
+
+builder.Services.AddOptions();
+builder.Services.AddAuthenticationCore();
+
+builder.Services.AddScoped<ServerAppTest.Controllers.CustomAuthenticationStateProvider>();
 
 var app = builder.Build();
 

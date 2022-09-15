@@ -20,7 +20,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
 
         [HttpGet("Login/{identity}")]
-         public async Task<ActionResult?> Login(string identity, string emailAddress, string redirectUri, bool KeepMeSignedIn)
+        public async Task<ActionResult?> Login(string identity, string emailAddress, string redirectUri, bool KeepMeSignedIn)
         {
             AuthenticationProperties properties = new()
             {
@@ -46,8 +46,6 @@ namespace AngryMonkey.Cloud.Login.Controllers
         public async Task<ActionResult<string>?> CustomLogin(string CustomLogin, string userID, bool KeepMeSignedIn)
         {
 
-            Console.WriteLine(userID);
-
 
 
             AuthenticationProperties properties = new()
@@ -63,6 +61,9 @@ namespace AngryMonkey.Cloud.Login.Controllers
             //create claimsPrincipal
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
             //Sign In User
+
+            await HttpContext.SignInAsync(claimsPrincipal, properties);
+
             await HttpContext.SignInAsync(claimsPrincipal, properties);
 
             return Redirect("/");

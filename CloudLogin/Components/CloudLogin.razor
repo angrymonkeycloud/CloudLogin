@@ -4,23 +4,18 @@
 @inject NavigationManager NavigationManager
 
 <div draggable class="amc-cloudlogin">
-
     @if (State == ProcessEvent.PendingEmail)
     {
         <input type="text" @bind-value="Value" @bind-value:event="oninput" />
         <button @onclick="OnNextClicked">Next</button>
-
-
-        <input type="text" @bind-value="Valuetest" @bind-value:event="oninput" />
-        <button @onclick="test">Next</button>
     }
 
-    else if (State == ProcessEvent.PendingProviders)
+    else if (State == ProcessEvent.PengindLoading)
     {
         <p>retrieving...</p>
     }
 
-    else if (State == ProcessEvent.PendingRegistration)
+    else if (State == ProcessEvent.PendingProviders)
     {
         <div>This Email was not found: </div>
         @Value
@@ -36,8 +31,7 @@
     }
     else if (State == ProcessEvent.PendingVerification)
     {
-
-        @VerificationCode
+        @DebugCodeShow //DEBUG ONLY
         <input type="text" @bind-value="VerificationValue" @bind-value:event="oninput" />
         <button @onclick="OnVerifyClicked">Verify</button>
 
@@ -58,14 +52,18 @@
         }
 
     }
-    else if (State == ProcessEvent.PendingVerified)
+    else if (State == ProcessEvent.PendingRegisteration)
     {
         <div>@Value is verified => Create user</div>
 
         <div>First Name: <input type="text" @bind-value="FirstName" @bind-value:event="oninput" /></div>
         <div>Last Name: <input type="text" @bind-value="LastName" @bind-value:event="oninput" /></div>
+        <div>Display Name: <input type="text" @bind-value="DisplayName" @bind-value:event="oninput" /></div>
 
         <button @onclick="OnRegisterClicked">Register</button>
+        if(EmptyInput){
+            <div>You have an input empty!</div>
+        }
     }
     else if (State == ProcessEvent.PendingAuthorization)
     {

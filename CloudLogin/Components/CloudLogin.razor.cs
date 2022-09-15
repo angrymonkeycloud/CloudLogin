@@ -23,21 +23,25 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Policy;
 using System.Net.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Cosmos.Linq;
+using System.ComponentModel.DataAnnotations;
 
 namespace AngryMonkey.Cloud.Login
 {
     public partial class CloudLogin
     {
         [Parameter] public string Value { get; set; }
-        [Parameter] public string Valuetest { get; set; }
+        [Parameter] public string Valuetest { get; set; } = "a545590b-41d0-4ed0-afb4-35a7fd54bdf9";
         [Parameter] public string FirstName { get; set; }
         [Parameter] public string LastName { get; set; }
+        [Parameter] public string DisplayName { get; set; }
         [Parameter] public string VerificationValue { get; set; }
         [Parameter] public bool KeepMeSignedIn { get; set; }
         [Parameter] public bool WrongCode { get; set; } = false;
+        [Parameter] public bool EmptyInput { get; set; } = false;
         [Parameter] public bool ExpiredCode { get; set; } = false;
         [Parameter] public string VerificationCode { get; set; }
-        [Parameter] public DateTimeOffset VerificationCodeTime { get; set; }
+        [Parameter] public string DebugCodeShow { get; set; } //DEBUG ONLY
         internal CosmosMethods Cosmos { get; set; }
         List<Provider> Providers { get; set; } = new();
 
@@ -45,7 +49,7 @@ namespace AngryMonkey.Cloud.Login
         {
             get
             {
-                return State != ProcessEvent.PendingProviders;
+                return State != ProcessEvent.PengindLoading;
             }
         }
 
@@ -54,11 +58,11 @@ namespace AngryMonkey.Cloud.Login
         protected enum ProcessEvent
         {
             PendingEmail,
-            PendingProviders,
+            PengindLoading,
             PendingAuthorization,
-            PendingRegistration,
+            PendingProviders,
             PendingVerification,
-            PendingVerified
+            PendingRegisteration
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -67,45 +71,38 @@ namespace AngryMonkey.Cloud.Login
                 Cosmos = new CosmosMethods(cloudLogin.Options.Cosmos.ConnectionString, cloudLogin.Options.Cosmos.DatabaseId, cloudLogin.Options.Cosmos.ContainerId);
         }
 
-        private async Task test(MouseEventArgs e)
-        {
-
-            //create a claim
-            var claim1 = new Claim(ClaimTypes.NameIdentifier, Valuetest);
-            var claim2 = new Claim(ClaimTypes.Name, Valuetest);
-            var claim3 = new Claim(ClaimTypes.Surname, Valuetest);
-            var claim4 = new Claim(ClaimTypes.Email, Valuetest);
-            //create claimsIdentity
-            var claimsIdentity = new ClaimsIdentity(new[] { claim1, claim2, claim3, claim4 }, "CloudLogin");
-            //create claimsPrincipal
-            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-
-            NavigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={Valuetest}&KeepMeSignedIn=false", true);
-
-            //      NavigationManager.NavigateTo($"/cloudlogin/login/{provider.Code}?emiladdress={Value}&redirectUri=/&KeepMeSignedIn={KeepMeSignedIn}", true);
-
-        }
         private async Task OnNextClicked(MouseEventArgs e)
         {
+            //user as put the email = > check if exists
             if (string.IsNullOrEmpty(Value))
                 return;
 
-            State = ProcessEvent.PendingProviders;
+            State = ProcessEvent.PengindLoading;
 
             Value = Value.ToLower();
 
             AngryMonkey.Cloud.Login.DataContract.User? user = await Cosmos.GetUserByEmailAddress(Value);
 
-            if (user != null)
+            if (user != null)//user exists => check if user is locked =>go to authorization
             {
-                Providers = user.Providers.Select(key => new Provider(key)).ToList();
-                State = ProcessEvent.PendingAuthorization;
+
+                if (CheckStopUser(user))//User is locked
+                {
+                    //lock user etc . .
+                }
+                else
+                {
+
+                    Providers = user.Providers.Select(key => new Provider(key)).ToList();
+                    State = ProcessEvent.PendingAuthorization;
+                    StateHasChanged();
+                }
             }
-            else
+            else//user doesn't exist => go to registration
             {
                 Providers = cloudLogin.Options.Providers.Select(key => new Provider(key.Code)).ToList();
-                State = ProcessEvent.PendingRegistration;
-
+                State = ProcessEvent.PendingProviders;
+                StateHasChanged();
             }
         }
 
@@ -116,11 +113,12 @@ namespace AngryMonkey.Cloud.Login
         }
         private async Task OnNewCodeClicked(MouseEventArgs e)
         {
+            State = ProcessEvent.PengindLoading;
             ExpiredCode = false;
-            string NewVerificationCode = CreateRandomCode(6);
+            VerificationCode = CreateRandomCode(6);
             List<PatchOperation> patchOperations = new List<PatchOperation>()
             {
-                PatchOperation.Replace("/EmailAddresses/0/VerificationCode",NewVerificationCode),
+                PatchOperation.Replace("/EmailAddresses/0/Code",VerificationCode),
                 PatchOperation.Replace("/EmailAddresses/0/VerificationCodeTime",DateTimeOffset.UtcNow)
             };
 
@@ -130,25 +128,66 @@ namespace AngryMonkey.Cloud.Login
             await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
 
             State = ProcessEvent.PendingVerification;
+            StateHasChanged();
         }
         private async Task OnProviderClickedAsync(Provider provider)
         {
-            if (provider.Code.ToLower() == "email")
+            if (provider.Code.ToLower() == "email")// check if email code login 
             {
-
+                //Provider is clicked we need to check if the user exists
                 AngryMonkey.Cloud.Login.DataContract.User? CheckUser = await Cosmos.GetUserByEmailAddress(Value);
-                string CheckCode = CheckUser?.EmailAddresses?.FirstOrDefault()?.VerificationCode;
-                VerificationCode = CheckCode;// to show verification code
-                if (CheckCode == null)
-                {
-                    VerificationCode = CreateRandomCode(6);
 
-                    //save verification code to cosmos
-                    Guid CustomUserID = Guid.NewGuid();
+                if (CheckUser != null)//user exists => match email to prover
+                {
+                    CheckUser?.EmailAddresses?.ForEach(async email =>
+                    {
+                        //matching email with selected provider
+                        if (email?.Provider?.ToLower() == "email")
+                        {
+                            //email patch provider => check code
+                            //Check if code empty create code / if we code exist goto verification
+                            if (email.Code == "")//code is empty => create => push to db => goto verification
+                            {
+                                State = ProcessEvent.PengindLoading;
+                                VerificationCode = CreateRandomCode(6);//create code
+
+                                DebugCodeShow = VerificationCode; //DEBUG ONLY
+                                List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Replace("/EmailAddresses/0/Code", VerificationCode),//replace empty with code
+                                    PatchOperation.Replace("/EmailAddresses/0/VerificationCodeTime",DateTimeOffset.UtcNow)
+                                };
+
+                                string id = $"User|{CheckUser.ID}";
+                                PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+                                State = ProcessEvent.PendingVerification;//goto verification
+                                StateHasChanged();
+
+                            }
+                            else//code exists => goto verification
+                            {
+                                DebugCodeShow = email.Code; //DEBUG ONLY
+                                State = ProcessEvent.PendingVerification;//goto verification
+                                StateHasChanged();
+                            }
+                        }
+                        else
+                        {
+                            //Erorr
+                        }
+                    });
+                }
+                else //user doesn't exist => create instance in db => IsRegistered = false/IsVerified = false/IsLocked = false => Create code
+                {
+                    VerificationCode = CreateRandomCode(6);//create code
+                    DebugCodeShow = VerificationCode;
+                    Guid CustomUserID = Guid.NewGuid();//create id
                     AngryMonkey.Cloud.Login.DataContract.User user = new()
                     {
                         ID = CustomUserID,
-
+                        IsRegistered = false, //X
+                        IsLocked = false, //X
                         EmailAddresses = new()
                             {
                                 new UserEmailAddress()
@@ -157,71 +196,117 @@ namespace AngryMonkey.Cloud.Login
                                     IsPrimary = true,
                                     ProviderId = CustomUserID.ToString(),
                                     Provider = "Email",
-                                    VerificationCode = VerificationCode,
+                                    IsVerified = false, //x
+                                    Code = VerificationCode,
                                     VerificationCodeTime = DateTimeOffset.UtcNow
                                 }
                             }
                     };
-                    await Cosmos.Container.CreateItemAsync(user);
-                    VerificationCode = CheckCode;//to show verification code
-                    State = ProcessEvent.PendingVerification;
-
+                    State = ProcessEvent.PengindLoading;
+                    await Cosmos.Container.CreateItemAsync(user);//create instance in db ..
+                    State = ProcessEvent.PendingVerification; //go to verification
+                    StateHasChanged();
                 }
-                else
-                {
-                    State = ProcessEvent.PendingVerification;
-                }
-                //NavigationManager.NavigateTo($"/cloudlogin/login/CustomLogin?user={user}", true);
             }
-            else
+            else if (provider.Code.ToLower() == "phone")// check if phone code login 
+            {
+
+            }
+            else//Login from other providers
                 NavigationManager.NavigateTo($"/cloudlogin/login/{provider.Code}?emailaddress={Value}&redirectUri=/&KeepMeSignedIn={KeepMeSignedIn}", true);
         }
         private async Task OnVerifyClicked(MouseEventArgs e)
         {
+            //Verify button clicked => check if code is right => check if expired
+            //Check if IsRegistered => Login / else : Make code empty => Goto verified
             AngryMonkey.Cloud.Login.DataContract.User? CheckUser = await Cosmos.GetUserByEmailAddress(Value);
-
-            if (VerificationValue == CheckUser.EmailAddresses.FirstOrDefault().VerificationCode)
+            CheckUser?.EmailAddresses?.ForEach(async email =>
             {
-                DateTimeOffset CheckTime = CheckUser.EmailAddresses.FirstOrDefault().VerificationCodeTime.Value;
-
-
-
-                if (DateTimeOffset.UtcNow < CheckTime.AddSeconds(30))
+                if (email?.Provider?.ToLower() == "email")
                 {
-                    State = ProcessEvent.PendingVerified;
-                }
-                else
-                {
-                    VerificationValue = "";
-                    WrongCode = false;
-                    ExpiredCode = true;
+                    if (VerificationValue == email.Code)
+                    {//Code is right => check if expired
+                     //Checking if code is expired
+                        DateTimeOffset CheckTime = email.VerificationCodeTime.Value;
+                        if (DateTimeOffset.UtcNow < CheckTime.AddSeconds(30))//30 seconds expiration
+                        {
+                            //code is not expired
+                            if (CheckUser?.IsRegistered == false)
+                            {// user is not registered => Make code empty => Goto verified
 
+                                List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Replace("/EmailAddresses/0/Code", ""),//code empty
+                                };
+                                string id = $"User|{CheckUser.ID}";
+                                PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+                                //Code is now empty goto registration
+                                State = ProcessEvent.PendingRegisteration;
+                                StateHasChanged();
+                            }
+                            else//User is registered => make code empty =>update time => Login user
+                            {
+                                State = ProcessEvent.PengindLoading;
+                                List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow), //update time
+                                    PatchOperation.Replace("/EmailAddresses/0/Code", "")//code empty
+                                };
+
+                                string id = $"User|{CheckUser.ID}";
+                                PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+                                NavigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={CheckUser.ID}&KeepMeSignedIn=false", true);
+                            }
+                        }
+                        else//code is expired
+                        {
+                            WrongCode = false;
+                            ExpiredCode = true;
+                        }
+
+                    }
+                    else //Code is wrong
+                    {
+                        WrongCode = true;
+                    }
                 }
-            }
-            else
-            {
-                VerificationValue = "";
-                WrongCode = true;
-            }
+            });
         }
 
         private async Task OnRegisterClicked(MouseEventArgs e)
         {
-            List<PatchOperation> patchOperations = new List<PatchOperation>()
+            //Register button is clicked => IsRegistered = true / IsVerified = true => Update user info => push to database => Login user
+            if (FirstName == null || LastName == null || DisplayName == null)
+            {//check if any of the input is empty
+                EmptyInput = true;
+            }
+            else//all input has value
             {
-                PatchOperation.Add("/FirstName", FirstName),
-                PatchOperation.Add("/LastName", LastName),
-                PatchOperation.Add("/DisplayName", $"{FirstName} {LastName}"),
-                PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow)
-            };
+                EmptyInput = false;
+                State = ProcessEvent.PengindLoading;
+                AngryMonkey.Cloud.Login.DataContract.User? user = await Cosmos.GetUserByEmailAddress(Value);
 
+                List<PatchOperation> patchOperations = new List<PatchOperation>()
+                {
+                    PatchOperation.Add("/FirstName", FirstName), //update user
+                    PatchOperation.Add("/LastName", LastName), //update user
+                    PatchOperation.Add("/IsRegistered", true), //X
+                    PatchOperation.Add("/EmailAddresses/0/IsVerified", true), //X
+                    PatchOperation.Add("/DisplayName", $"{DisplayName}"), //update user
+                    PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow) //update user
+                };
 
-            AngryMonkey.Cloud.Login.DataContract.User? user = await Cosmos.GetUserByEmailAddress(Value);
-            string id = $"User|{user.ID}";
-            PartitionKey partitionKey = new PartitionKey(user.PartitionKey);
-            await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+                string id = $"User|{user.ID}";
+                PartitionKey partitionKey = new PartitionKey(user.PartitionKey);
+                await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
 
-            //login the userAuthenticationProperties properties = new()
+                //login user
+                NavigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={user.ID}&KeepMeSignedIn=false", true);
+            }
         }
 
 
@@ -251,6 +336,18 @@ namespace AngryMonkey.Cloud.Login
                 "email" => "Email Code",
                 _ => Code
             };
+        }
+
+        public bool CheckStopUser(AngryMonkey.Cloud.Login.DataContract.User user)
+        {
+            if (user.IsLocked == true)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

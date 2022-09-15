@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
+using ServerAppTest.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,11 +49,13 @@ builder.Services.AddAuthentication(opt =>
     opt.DefaultScheme  = CookieAuthenticationDefaults.AuthenticationScheme;
 });
 
+
 builder.Services.AddOptions();
 builder.Services.AddAuthenticationCore();
 
 builder.Services.AddScoped<ServerAppTest.Controllers.CustomAuthenticationStateProvider>();
 
+//builder.Services.AddScoped<IClaimsTransformation, UserInfoClaims>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

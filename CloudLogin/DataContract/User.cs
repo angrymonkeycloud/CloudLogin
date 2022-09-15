@@ -32,6 +32,8 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string? DisplayName { get; set; }
+		public bool? IsRegistered { get; set; }
+		public bool? IsLocked { get; set; }
 		public string? Username { get; set; }
 		public DateOnly? DateOfBirth { get; set; }
 		public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
@@ -73,7 +75,8 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string? Provider { get; set; }
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
-		public string? VerificationCode { get; set; }
+		public bool IsVerified { get; set; }
+		public string? Code { get; set; }
 		public DateTimeOffset? VerificationCodeTime { get; set; }
 	}
 

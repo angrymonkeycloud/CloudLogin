@@ -1,6 +1,6 @@
 ﻿@page "/"
 @using System.Security.Claims
-
+ 
 <AuthorizeView>
     <Authorized>
         Name: @context.User.FindFirst(ClaimTypes.Name).Value

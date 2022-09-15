@@ -2,6 +2,7 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
+using System.Net.Mail;
 using User = AngryMonkey.Cloud.Login.DataContract.User;
 
 namespace AngryMonkey.Cloud.Login
@@ -73,14 +74,20 @@ namespace AngryMonkey.Cloud.Login
 
 		#endregion
 
+		public async Task<User?> GetUserById(string Id)
+		{
+            IQueryable<User> usersQueryable = Queryable<User>("User", user => user.EmailAddresses.Where(key => key.ProviderId.Equals(Id.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+
+            var users = await ToListAsync(usersQueryable);
+
+            return users.FirstOrDefault();
+        }
 		public async Task<User?> GetUserByEmailAddress(string emailAddress)
 		{
 			IQueryable<User> usersQueryable = Queryable<User>("User", user => user.EmailAddresses.Where(key => key.EmailAddress.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
-			Console.WriteLine(usersQueryable);
 
 			var users = await ToListAsync(usersQueryable);
-			Console.WriteLine("1");
-			Console.WriteLine(users.FirstOrDefault());
+
 			return users.FirstOrDefault();
 		}
 	}

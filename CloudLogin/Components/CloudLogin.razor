@@ -6,26 +6,26 @@
 <div draggable class="amc-cloudlogin">
     @if (State == ProcessEvent.PendingSignIn)
     {
-        @if (InputType == InputFormat.Other || InputType == InputFormat.Email)
+        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.Email)
         {
             <span>Email</span>
         }
-        @if (InputType == InputFormat.Other)
+        @if (InputValueFormat == InputFormat.Other)
         {
             <span> or </span>
         }
-        @if (InputType == InputFormat.Other || InputType == InputFormat.PhoneNumber)
+        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.PhoneNumber)
         {
             <span>phone number</span>
         }
 
         <br />
 
-        <input type="text" @bind-value="Value" @bind-value:event="oninput" />
+        <input type="text" @bind-value="InputValue" @bind-value:event="oninput" />
 
         <br />
 
-        @if (InputType != InputFormat.Other)
+        @if (InputValueFormat != InputFormat.Other)
         {
             <button @onclick="OnNextClicked">Next</button>
         }
@@ -37,14 +37,14 @@
     }
     else if (State == ProcessEvent.PendingCheckNumber)
     {
-        @PhoneNumber
+        @InputValue
 
         <button @onclick="OnBackClicked">Back</button>
     }
     else if (State == ProcessEvent.PendingProviders)
     {
         <div>This Email was not found: </div>
-        @Value
+        @InputValue
         <div>Please register below.</div>
         @foreach (Provider provider in Providers)
         {
@@ -81,7 +81,7 @@
     }
     else if (State == ProcessEvent.PendingRegisteration)
     {
-        <div>@Value is verified => Create user</div>
+        <div>@InputValue is verified => Create user</div>
 
         <div>First Name: <input type="text" @bind-value="FirstName" @bind-value:event="oninput" /></div>
         <div>Last Name: <input type="text" @bind-value="LastName" @bind-value:event="oninput" /></div>
@@ -95,7 +95,7 @@
     }
     else if (State == ProcessEvent.PendingAuthorization)
     {
-        <h2><button @onclick="OnBackClicked">Back</button> @Value</h2>
+        <h2><button @onclick="OnBackClicked">Back</button> @InputValue</h2>
 
         @foreach (Provider provider in Providers)
         {

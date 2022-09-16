@@ -41,7 +41,7 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
             ClientId = builder.Configuration["Google:ClientId"],
             ClientSecret= builder.Configuration["Google:ClientSecret"]
         },
-        new CloudLoginConfiguration.EmailAccount() { }
+        new CloudLoginConfiguration.EmailAddress() { }
     }
 });
 builder.Services.AddAuthentication(opt =>

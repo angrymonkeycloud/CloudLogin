@@ -16,7 +16,7 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using static Azure.Core.HttpHeader;
-using User = AngryMonkey.Cloud.Login.DataContract.User;
+using CloudUser = AngryMonkey.Cloud.Login.DataContract.CloudUser;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -34,7 +34,7 @@ public static class MvcServiceCollectionExtensions
         services.AddSingleton(new CloudLoginService() { Options = options });
         //services.AddSingleton<CloudLoginProcess>();
 
-        var service = services.AddAuthentication("Cookies").AddCookie(option =>
+        var service = services.AddAuthentication("Cookies").AddCookie((Action<AspNetCore.Authentication.Cookies.CookieAuthenticationOptions>)(option =>
         {
             option.Cookie.Name = "CloudLogin";
             option.Events = new AspNetCore.Authentication.Cookies.CookieAuthenticationEvents()
@@ -46,17 +46,17 @@ public static class MvcServiceCollectionExtensions
 
                     if (string.IsNullOrEmpty(emaillAddress))
                     {
-                        User? user = await options.Cosmos.Methods.GetUserById(userID);
+                        CloudUser? user = await options.Cosmos.Methods.GetUserById(userID);
 
                         var NameIdentity = new ClaimsIdentity();
                         var GivenNameIdentity = new ClaimsIdentity();
                         var SurnameIdentity = new ClaimsIdentity();
                         var EmailIdentity = new ClaimsIdentity();
 
-                        NameIdentity.AddClaim(new Claim(ClaimTypes.Name, user.DisplayName));
-                        GivenNameIdentity.AddClaim(new Claim(ClaimTypes.GivenName, user.FirstName));
-                        SurnameIdentity.AddClaim(new Claim(ClaimTypes.Surname, user.FirstName));
-                        EmailIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.FirstOrDefault().EmailAddress));
+                        NameIdentity.AddClaim(new Claim(ClaimTypes.Name, (string?)user.DisplayName));
+                        GivenNameIdentity.AddClaim(new Claim(ClaimTypes.GivenName, (string)user.FirstName));
+                        SurnameIdentity.AddClaim(new Claim(ClaimTypes.Surname, (string)user.FirstName));
+                        EmailIdentity.AddClaim(new Claim(ClaimTypes.Email, Enumerable.FirstOrDefault<UserEmailAddress>(user.EmailAddresses).EmailAddress));
 
 
                         context.Principal.AddIdentity(NameIdentity);
@@ -66,11 +66,11 @@ public static class MvcServiceCollectionExtensions
                     }
                     else
                     {
-                        User? user = await options.Cosmos.Methods.GetUserByEmailAddress(emaillAddress);
+                        CloudUser? user = await options.Cosmos.Methods.GetUserByEmailAddress(emaillAddress);
 
                         bool doesUserExist = user != null;
 
-                        user ??= new User()
+                        user ??= new CloudUser()
                         {
                             ID = Guid.NewGuid(),
 
@@ -81,7 +81,7 @@ public static class MvcServiceCollectionExtensions
                                     EmailAddress = emaillAddress,
                                     IsPrimary = true,
                                     ProviderId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                                    Provider = user.EmailAddresses.FirstOrDefault().Provider,
+                                    Provider = Enumerable.FirstOrDefault<UserEmailAddress>(user.EmailAddresses).Provider,
                                 }
                             }
                         };
@@ -92,13 +92,13 @@ public static class MvcServiceCollectionExtensions
                         user.DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? user.DisplayName;
 
                         if (doesUserExist)
-                            await options.Cosmos.Methods.Container.UpsertItemAsync(user);
+                            await options.Cosmos.Methods.Container.UpsertItemAsync<CloudUser>((CloudUser)user);
                         else
-                            await options.Cosmos.Methods.Container.CreateItemAsync(user);
+                            await options.Cosmos.Methods.Container.CreateItemAsync<CloudUser>((CloudUser)user);
                     }
                 }
             };
-        });
+        }));
 
         foreach (CloudLoginConfiguration.Provider provider in options.Providers)
         {
@@ -160,17 +160,25 @@ public class CloudLoginConfiguration
         {
             Code = "Google";
         }
-    }
+	}
 
-    public class EmailAccount : Provider
-    {
-        public EmailAccount()
-        {
-            Code = "Email";
-        }
-    }
+	public class EmailAddress : Provider
+	{
+		public EmailAddress()
+		{
+			Code = "EmailAddress";
+		}
+	}
 
-    public class CosmosDatabase
+	public class PhoneNumber : Provider
+	{
+		public PhoneNumber()
+		{
+			Code = "PhoneNumber";
+		}
+	}
+
+	public class CosmosDatabase
     {
         public string ConnectionString { get; set; }
         public string DatabaseId { get; set; }

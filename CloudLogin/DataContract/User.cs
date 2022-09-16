@@ -25,15 +25,15 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string Discriminator { get; internal set; }
 	}
 
-	public record User : BaseRecord
+	public record CloudUser : BaseRecord
 	{
-		public User() : base("User", "User") { }
+		public CloudUser() : base("User", "User") { }
 
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string? DisplayName { get; set; }
-		public bool? IsRegistered { get; set; }
-		public bool? IsLocked { get; set; }
+		public bool IsRegistered { get; set; } = false;
+		public bool IsLocked { get; set; } = false;
 		public string? Username { get; set; }
 		public DateOnly? DateOfBirth { get; set; }
 		public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;

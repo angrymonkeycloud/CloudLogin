@@ -48,25 +48,21 @@ public static class MvcServiceCollectionExtensions
                     {
                         User? user = await options.Cosmos.Methods.GetUserById(userID);
 
-                        var NewClaimIdentity = new ClaimsIdentity();
-                        var NewClaimIdentity2 = new ClaimsIdentity();
+                        var NameIdentity = new ClaimsIdentity();
+                        var GivenNameIdentity = new ClaimsIdentity();
+                        var SurnameIdentity = new ClaimsIdentity();
+                        var EmailIdentity = new ClaimsIdentity();
 
-                        //NewClaimIdentity.AddClaim(new Claim("Name", user.DisplayName));
-                        NewClaimIdentity.AddClaim(new Claim(ClaimTypes.Name, user.DisplayName));
-                        //NewClaimIdentity2.AddClaim(new Claim("Email", user.EmailAddresses.FirstOrDefault().EmailAddress));
-                        NewClaimIdentity2.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.FirstOrDefault().EmailAddress));
+                        NameIdentity.AddClaim(new Claim(ClaimTypes.Name, user.DisplayName));
+                        GivenNameIdentity.AddClaim(new Claim(ClaimTypes.GivenName, user.FirstName));
+                        SurnameIdentity.AddClaim(new Claim(ClaimTypes.Surname, user.FirstName));
+                        EmailIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.FirstOrDefault().EmailAddress));
 
-                        var claimsPrincipal = new ClaimsPrincipal(NewClaimIdentity);
 
-                        context.Principal.AddIdentity(NewClaimIdentity);
-                        context.Principal.AddIdentity(NewClaimIdentity2);
-
-                        //context.HttpContext.User.Claims.Append(new Claim(ClaimTypes.Name, "Canada"));
-                        //context.HttpContext.User.AddIdentity(NewClaimIdentity);
-                        //context.HttpContext.User.AddIdentity(NewClaimIdentity2);
-                        //context.Principal.AddIdentity(NewClaimIdentity);
-                        //context.Principal.AddIdentity(NewClaimIdentity2);
-
+                        context.Principal.AddIdentity(NameIdentity);
+                        context.Principal.AddIdentity(GivenNameIdentity);
+                        context.Principal.AddIdentity(SurnameIdentity);
+                        context.Principal.AddIdentity(EmailIdentity);
                     }
                     else
                     {
@@ -85,7 +81,7 @@ public static class MvcServiceCollectionExtensions
                                     EmailAddress = emaillAddress,
                                     IsPrimary = true,
                                     ProviderId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                                    Provider = context.Principal?.Identity?.AuthenticationType
+                                    Provider = user.EmailAddresses.FirstOrDefault().Provider,
                                 }
                             }
                         };

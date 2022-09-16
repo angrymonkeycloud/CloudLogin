@@ -4,17 +4,43 @@
 @inject NavigationManager NavigationManager
 
 <div draggable class="amc-cloudlogin">
-    @if (State == ProcessEvent.PendingEmail)
+    @if (State == ProcessEvent.PendingSignIn)
     {
+        @if (InputType == InputFormat.Other || InputType == InputFormat.Email)
+        {
+            <span>Email</span>
+        }
+        @if (InputType == InputFormat.Other)
+        {
+            <span> or </span>
+        }
+        @if (InputType == InputFormat.Other || InputType == InputFormat.PhoneNumber)
+        {
+            <span>phone number</span>
+        }
+
+        <br />
+
         <input type="text" @bind-value="Value" @bind-value:event="oninput" />
-        <button @onclick="OnNextClicked">Next</button>
+
+        <br />
+
+        @if (InputType != InputFormat.Other)
+        {
+            <button @onclick="OnNextClicked">Next</button>
+        }
     }
 
-    else if (State == ProcessEvent.PengindLoading)
+    else if (State == ProcessEvent.PendingLoading)
     {
         <p>retrieving...</p>
     }
+    else if (State == ProcessEvent.PendingCheckNumber)
+    {
+        @PhoneNumber
 
+        <button @onclick="OnBackClicked">Back</button>
+    }
     else if (State == ProcessEvent.PendingProviders)
     {
         <div>This Email was not found: </div>
@@ -31,7 +57,8 @@
     }
     else if (State == ProcessEvent.PendingVerification)
     {
-        @DebugCodeShow //DEBUG ONLY
+        @DebugCodeShow
+        //DEBUG ONLY
         <input type="text" @bind-value="VerificationValue" @bind-value:event="oninput" />
         <button @onclick="OnVerifyClicked">Verify</button>
 
@@ -61,7 +88,8 @@
         <div>Display Name: <input type="text" @bind-value="DisplayName" @bind-value:event="oninput" /></div>
 
         <button @onclick="OnRegisterClicked">Register</button>
-        if(EmptyInput){
+        if (EmptyInput)
+        {
             <div>You have an input empty!</div>
         }
     }

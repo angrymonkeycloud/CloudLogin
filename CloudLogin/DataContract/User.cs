@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Infrastructure;
+﻿using AngryMonkey.Cloud.Geography;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -82,9 +83,21 @@ namespace AngryMonkey.Cloud.Login.DataContract
 
 	public record UserPhoneNumber
 	{
+		public string CountryCode { get; set; }//LB
+		public int CountryCallingCode { get; set; }//961
 		public string PhoneNumber { get; set; } = string.Empty;
-		public string? Provider { get; set; }
+        public string FullPhoneNumber
+        {
+            get
+            {
+                return $"{CountryCallingCode}{PhoneNumber}";
+            }
+        }
+        public string? Provider { get; set; }
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
-	}
+        public bool IsVerified { get; set; }
+        public string? Code { get; set; }
+        public DateTimeOffset? VerificationCodeTime { get; set; }
+    }
 }

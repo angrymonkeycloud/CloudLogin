@@ -1,4 +1,5 @@
 ﻿//using Microsoft.Extensions.DependencyInjection;
+using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Components;
 using AngryMonkey.Cloud.Login;
 using AngryMonkey.Cloud.Login.DataContract;
@@ -32,6 +33,7 @@ public static class MvcServiceCollectionExtensions
     public static CloudLoginService AddCloudLogin(this IServiceCollection services, CloudLoginConfiguration options)
     {
         services.AddSingleton(new CloudLoginService() { Options = options });
+        services.AddSingleton(new CloudGeographyClient());
         //services.AddSingleton<CloudLoginProcess>();
 
         var service = services.AddAuthentication("Cookies").AddCookie((Action<AspNetCore.Authentication.Cookies.CookieAuthenticationOptions>)(option =>

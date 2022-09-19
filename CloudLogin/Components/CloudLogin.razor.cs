@@ -9,417 +9,628 @@ using System.Net.Mail;
 using System.Text;
 using Microsoft.Azure.Cosmos;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using AngryMonkey.Cloud.Geography;
 
 namespace AngryMonkey.Cloud.Login
 {
-	public partial class CloudLogin
-	{
-		public Action OnInput { get; set; }
+    public partial class CloudLogin
+    {
 
-		private string _inputValue;
+        public int CodeExpirationDate = 30;
 
-		[Parameter]
-		public string InputValue
-		{
-			get => _inputValue;
-			set
-			{
-				if (value == _inputValue)
-					return;
+        public Action OnInput { get; set; }
 
-				_inputValue = value;
+        private string _inputValue;
+        Provider providerType { get; set; }
 
-				OnInput.Invoke();
-			}
-		}
+        public string PhoneNumber { get; set; }
+        public string Prefix { get; set; }
+        [Parameter]
+        public string InputValue
+        {
+            get => _inputValue;
+            set
+            {
+                if (value == _inputValue)
+                    return;
 
-		public string FirstName { get; set; }
-		public string LastName { get; set; }
-		public string DisplayName { get; set; }
-		public string VerificationValue { get; set; }
-		public bool KeepMeSignedIn { get; set; }
-		public bool WrongCode { get; set; } = false;
-		public bool EmptyInput { get; set; } = false;
-		public bool ExpiredCode { get; set; } = false;
-		public string VerificationCode { get; set; }
-		public string DebugCodeShow { get; set; } //DEBUG ONLY
-		internal CosmosMethods Cosmos { get; set; }
-		List<Provider> Providers { get; set; } = new();
+                _inputValue = value;
 
-		protected InputFormat InputValueFormat
-		{
-			get
-			{
-				if (string.IsNullOrEmpty(InputValue))
-					return InputFormat.Other;
+                OnInput.Invoke();
+            }
+        }
 
-				if (IsValidEmail)
-					return InputFormat.Email;
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string DisplayName { get; set; }
+        public string VerificationValue { get; set; }
+        public bool KeepMeSignedIn { get; set; }
+        public bool WrongCode { get; set; } = false;
+        public bool EmptyInput { get; set; } = false;
+        public bool ExpiredCode { get; set; } = false;
+        public string VerificationCode { get; set; }
+        public string DebugCodeShow { get; set; } //DEBUG ONLY
+        internal CosmosMethods Cosmos { get; set; }
+        List<Provider> Providers { get; set; } = new();
 
-				if (IsValidPhoneNumber)
-					return InputFormat.PhoneNumber;
+        protected InputFormat InputValueFormat
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(InputValue))
+                    return InputFormat.Other;
 
-				return InputFormat.Other;
-			}
-		}
+                if (IsValidEmail)
+                    return InputFormat.Email;
 
-		protected enum InputFormat
-		{
-			Email,
-			PhoneNumber,
-			Other
-		}
+                if (IsValidPhoneNumber)
+                    return InputFormat.PhoneNumber;
 
-		protected ProcessEvent State { get; set; } = ProcessEvent.PendingSignIn;
+                return InputFormat.Other;
+            }
+        }
 
-		protected enum ProcessEvent
-		{
-			PendingSignIn,
-			PendingLoading,
-			PendingCheckNumber,
-			PendingAuthorization,
-			PendingProviders,
-			PendingVerification,
-			PendingRegisteration
-		}
+        protected enum InputFormat
+        {
+            Email,
+            PhoneNumber,
+            Other
+        }
 
-		protected override async Task OnAfterRenderAsync(bool firstRender)
-		{
-			if (firstRender)
-			{
-				Cosmos = new CosmosMethods(cloudLogin.Options.Cosmos.ConnectionString, cloudLogin.Options.Cosmos.DatabaseId, cloudLogin.Options.Cosmos.ContainerId);
-				OnInput = () =>
-				{
-					//CheckFormat();
-					StateHasChanged();
-				};
-			}
-		}
+        protected ProcessEvent State { get; set; } = ProcessEvent.PendingSignIn;
 
-		private async Task OnNextClicked(MouseEventArgs e)
-		{
-			if (InputValueFormat == InputFormat.PhoneNumber)//Signin in with Phone Number
-			{
-				if (InputValue.StartsWith("00"))
-					InputValue = $"+{InputValue[2..]}";
+        protected enum ProcessEvent
+        {
+            PendingSignIn,
+            PendingLoading,
+            PendingCheckNumber,
+            PendingAuthorization,
+            PendingProviders,
+            PendingVerification,
+            PendingRegisteration
+        }
 
-				if (InputValue.StartsWith("0"))
-					InputValue = InputValue[1..];
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                Cosmos = new CosmosMethods(cloudLogin.Options.Cosmos.ConnectionString, cloudLogin.Options.Cosmos.DatabaseId, cloudLogin.Options.Cosmos.ContainerId);
+                OnInput = () =>
+                {
+                    //CheckFormat();
+                    StateHasChanged();
+                };
+            }
+        }
 
-				InputValue = Regex.Replace(InputValue, $"[{PhoneNumberValidCharacters}]", "");
+        private async Task OnNextClicked(MouseEventArgs e)
+        {
+            if (InputValueFormat == InputFormat.PhoneNumber)//Signin in with Phone Number
+            {
+                if (InputValue.StartsWith("00"))
+                    InputValue = $"+{InputValue[2..]}";
 
-				State = ProcessEvent.PendingCheckNumber;
-			}
-			else//Signin in with Email Address
-			{
-				//user as put the email = > check if exists
-				if (string.IsNullOrEmpty(InputValue))
-					return;
+                if (InputValue.StartsWith("0"))
+                    InputValue = InputValue[1..];
 
-				State = ProcessEvent.PendingLoading;
+                InputValue = Regex.Replace(InputValue, $"[{PhoneNumberValidCharacters}]", "");
 
-				InputValue = InputValue.ToLower();
+                //check for country if +
+                if (InputValue.StartsWith("+"))
+                {
+                    // + removed
 
-				CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
 
-				if (user != null)//user exists => check if user is locked =>go to authorization
-				{
-					Providers = user.Providers.Select(key => new Provider(key)).ToList();
-					State = ProcessEvent.PendingAuthorization;
-				}
-				else//user doesn't exist => go to registration
-				{
-					Providers = cloudLogin.Options.Providers.Select(key => new Provider(key.Code)).ToList();
-					State = ProcessEvent.PendingProviders;
-				}
-			}
+                    Geography.Country country = GetPhoneNumberCountryCode(InputValue);
+                    PhoneNumber = InputValue.Substring(1 + country.CallingCode.ToString().Length);
 
-			StateHasChanged();
-		}
 
-		private async Task OnBackClicked(MouseEventArgs e)
-		{
-			WrongCode = false;
-			State = ProcessEvent.PendingSignIn;
-		}
-		private async Task OnNewCodeClicked(MouseEventArgs e)
-		{
-			State = ProcessEvent.PendingLoading;
-			ExpiredCode = false;
-			VerificationCode = CreateRandomCode(6);
-			DebugCodeShow = VerificationCode; //DEBUG ONLY
-			SendMail(InputValue, VerificationCode);
-			List<PatchOperation> patchOperations = new List<PatchOperation>()
-			{
-				PatchOperation.Replace("/EmailAddresses/0/Code",VerificationCode),
-				PatchOperation.Replace("/EmailAddresses/0/VerificationCodeTime",DateTimeOffset.UtcNow)
-			};
+                }
 
-			CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
-			string id = $"User|{user.ID}";
-			PartitionKey partitionKey = new PartitionKey(user.PartitionKey);
-			await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+                State = ProcessEvent.PendingCheckNumber;
+            }
+            else//Signin in with Email Address
+            {
+                //user as put the email = > check if exists
+                if (string.IsNullOrEmpty(InputValue))
+                    return;
 
-			State = ProcessEvent.PendingVerification;
-			StateHasChanged();
-		}
-		private async Task OnProviderClickedAsync(Provider provider)
-		{
-			if (provider.Code.ToLower() == "emailaddress")// check if email code login 
-			{
-				//Provider is clicked we need to check if the user exists
-				CloudUser? CheckUser = await Cosmos.GetUserByEmailAddress(InputValue);
+                State = ProcessEvent.PendingLoading;
 
-				if (CheckUser != null)//user exists => match email to prover
-				{
-					CheckUser?.EmailAddresses?.ForEach(async email =>
-					{
-						//matching email with selected provider
-						if (email?.Provider?.ToLower() == "emailaddress")
-						{
-							//email patch provider => check code
-							//Check if code empty create code / if we code exist goto verification
-							if (email.Code == "")//code is empty => create => push to db => goto verification
-							{
-								State = ProcessEvent.PendingLoading;
-								VerificationCode = CreateRandomCode(6);//create code
+                InputValue = InputValue.ToLower();
 
-								SendMail(InputValue, VerificationCode);
-								DebugCodeShow = VerificationCode; //DEBUG ONLY
-								List<PatchOperation> patchOperations = new List<PatchOperation>()
-								{
-									PatchOperation.Replace("/EmailAddresses/0/Code", VerificationCode),//replace empty with code
+                CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
+
+                CheckUser(user);
+            }
+
+            StateHasChanged();
+
+        }
+
+        private async Task CheckUser(CloudUser user)
+        {
+            if (user != null)//user exists => check if user is locked =>go to authorization
+            {
+                Providers = user.Providers.Select(key => new Provider(key)).ToList();
+                State = ProcessEvent.PendingAuthorization;
+            }
+            else//user doesn't exist => go to registration
+            {
+                Providers = cloudLogin.Options.Providers.Select(key => new Provider(key.Code)).ToList();
+                State = ProcessEvent.PendingProviders;
+            }
+        }
+        private Geography.Country? GetPhoneNumberCountryCode(string phoneNumber)
+        {
+            // Remove +
+            phoneNumber = InputValue[1..];
+
+            Prefix = "";
+
+            for (int i = 0; i < 3; i++)
+            {
+                Prefix = $"{Prefix}{phoneNumber[i]}";
+
+                List<Geography.Country> countries = cloudGeography.Countries.GetByCallingCode(int.Parse(Prefix));
+
+                if (countries.Any())
+                    return countries.First();
+            }
+
+            return null;
+        }
+
+        private async Task OnContinueClicked(MouseEventArgs e)
+        {
+            CloudUser? user = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
+            CheckUser(user);
+        }
+        private async Task OnBackClicked(MouseEventArgs e)
+        {
+            WrongCode = false;
+            State = ProcessEvent.PendingSignIn;
+        }
+        private async Task OnNewCodeClicked(MouseEventArgs e)
+        {
+            State = ProcessEvent.PendingLoading;
+            ExpiredCode = false;
+            VerificationCode = CreateRandomCode(6);
+            DebugCodeShow = VerificationCode; //DEBUG ONLY
+            SendMail(InputValue, VerificationCode);
+            List<PatchOperation> patchOperations = new List<PatchOperation>()
+            {
+                PatchOperation.Replace("/EmailAddresses/0/Code",VerificationCode),
+                PatchOperation.Replace("/EmailAddresses/0/VerificationCodeTime",DateTimeOffset.UtcNow)
+            };
+
+            CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
+            string id = $"User|{user.ID}";
+            PartitionKey partitionKey = new PartitionKey(user.PartitionKey);
+            await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+            State = ProcessEvent.PendingVerification;
+            StateHasChanged();
+        }
+        private async Task OnProviderClickedAsync(Provider provider)
+        {
+            providerType = provider;//for checking verification if email or phone
+            if (provider.Code.ToLower() == "emailaddress")// check if email code login 
+            {
+                //Provider is clicked we need to check if the user exists
+                CloudUser? CheckUser = await Cosmos.GetUserByEmailAddress(InputValue);
+
+                if (CheckUser != null)//user exists => match email to prover
+                    CheckUser?.EmailAddresses?.ForEach(async email =>
+                    {
+                        //matching email with selected provider
+                        if (email?.Provider?.ToLower() == "emailaddress")
+                        {
+                            //email patch provider => check code
+                            //Check if code empty create code / if we code exist goto verification
+                            if (email.Code == "")//code is empty => create => push to db => goto verification
+                            {
+                                State = ProcessEvent.PendingLoading;
+                                VerificationCode = CreateRandomCode(6);//create code
+
+                                SendMail(InputValue, VerificationCode);
+                                DebugCodeShow = VerificationCode; //DEBUG ONLY
+                                List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Replace("/EmailAddresses/0/Code", VerificationCode),//replace empty with code
                                     PatchOperation.Replace("/EmailAddresses/0/VerificationCodeTime",DateTimeOffset.UtcNow)
-								};
-
-								string id = $"User|{CheckUser.ID}";
-								PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
-								await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
-								State = ProcessEvent.PendingVerification;//goto verification
-								StateHasChanged();
-
-							}
-							else//code exists => goto verification
-							{
-								DebugCodeShow = email.Code; //DEBUG ONLY
-								State = ProcessEvent.PendingVerification;//goto verification
-								StateHasChanged();
-							}
-						}
-						else
-						{
-							//Erorr
-						}
-					});
-				}
-				else //user doesn't exist => Create code => create instance in db => IsRegistered = false/IsVerified = false/IsLocked = false
-				{
-					State = ProcessEvent.PendingLoading;
-					VerificationCode = CreateRandomCode(6);//create code
-					DebugCodeShow = VerificationCode;
-					SendMail(InputValue, VerificationCode);
-					Guid CustomUserID = Guid.NewGuid();//create id
-					CloudUser user = new()
-					{
-						ID = CustomUserID,
-						IsRegistered = false, //X
-						IsLocked = false, //X
-						EmailAddresses = new()
-							{
-								new UserEmailAddress()
-								{
-									EmailAddress = InputValue,
-									IsPrimary = true,
-									ProviderId = CustomUserID.ToString(),
-									Provider = "EmailAddress",
-									IsVerified = false, //x
-                                    Code = VerificationCode,
-									VerificationCodeTime = DateTimeOffset.UtcNow
-								}
-							}
-					};
-					await Cosmos.Container.CreateItemAsync(user);//create instance in db ..
-					State = ProcessEvent.PendingVerification; //go to verification
-					StateHasChanged();
-				}
-			}
-			else if (provider.Code.ToLower() == "phone")// check if phone code login 
-			{
-
-			}
-			else//Login from other providers
-				NavigationManager.NavigateTo($"/cloudlogin/login/{provider.Code}?emailaddress={InputValue}&redirectUri=/&KeepMeSignedIn={KeepMeSignedIn}", true);
-		}
-		private async Task OnVerifyClicked(MouseEventArgs e)
-		{
-			//Verify button clicked => check if code is right => check if expired
-			//Check if IsRegistered => Login / else : Make code empty => Goto verified
-			CloudUser? CheckUser = await Cosmos.GetUserByEmailAddress(InputValue);
-			CheckUser?.EmailAddresses?.ForEach(async email =>
-			{
-				if (email?.Provider?.ToLower() == "emailaddress")
-					if (VerificationValue == email.Code)
-					{//Code is right => check if expired
-					 //Checking if code is expired
-						DateTimeOffset CheckTime = email.VerificationCodeTime.Value;
-						if (DateTimeOffset.UtcNow < CheckTime.AddSeconds(30))//30 seconds expiration
-						{
-							//code is not expired
-							if (CheckUser?.IsRegistered == false)
-							{// user is not registered => Make code empty => Goto verified
-
-								State = ProcessEvent.PendingLoading;
-								List<PatchOperation> patchOperations = new List<PatchOperation>()
-								{
-									PatchOperation.Replace("/EmailAddresses/0/Code", ""),//code empty
                                 };
-								string id = $"User|{CheckUser.ID}";
-								PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
-								await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
 
-								//Code is now empty goto registration
-								State = ProcessEvent.PendingRegisteration;
-								StateHasChanged();
-							}
-							else//User is registered => make code empty =>update time => Login user
-							{
-								State = ProcessEvent.PendingLoading;
-								List<PatchOperation> patchOperations = new List<PatchOperation>()
-								{
-									PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow), //update time
+                                string id = $"User|{CheckUser.ID}";
+                                PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+                                State = ProcessEvent.PendingVerification;//goto verification
+                                StateHasChanged();
+
+                            }
+                            else//code exists => goto verification
+                            {
+                                DebugCodeShow = email.Code; //DEBUG ONLY
+                                State = ProcessEvent.PendingVerification;//goto verification
+                                StateHasChanged();
+                            }
+                        }
+                        else
+                        {
+                            //Erorr
+                        }
+                    });
+                else //user doesn't exist => Create code => create instance in db => IsRegistered = false/IsVerified = false/IsLocked = false
+                {
+                    State = ProcessEvent.PendingLoading;
+                    VerificationCode = CreateRandomCode(6);//create code
+                    DebugCodeShow = VerificationCode;
+                    SendMail(InputValue, VerificationCode);
+                    Guid CustomUserID = Guid.NewGuid();//create id
+                    CloudUser user = new()
+                    {
+                        ID = CustomUserID,
+                        IsRegistered = false, //X
+                        IsLocked = false, //X
+                        EmailAddresses = new()
+                            {
+                                new UserEmailAddress()
+                                {
+                                    EmailAddress = InputValue,
+                                    IsPrimary = true,
+                                    ProviderId = CustomUserID.ToString(),
+                                    Provider = "EmailAddress",
+                                    IsVerified = false, //x
+                                    Code = VerificationCode,
+                                    VerificationCodeTime = DateTimeOffset.UtcNow
+                                }
+                            }
+                    };
+                    await Cosmos.Container.CreateItemAsync(user);//create instance in db ..
+                    State = ProcessEvent.PendingVerification; //go to verification
+                    StateHasChanged();
+                }
+            }
+            else if (provider.Code.ToLower() == "PhoneNumber")// check if phone code login 
+            {
+                //Provider is clicked we need to check if the user exists
+                CloudUser? CheckUser = await Cosmos.GetUserByEmailAddress(InputValue);
+
+                if (CheckUser != null)//user exists => match number to prover
+                    CheckUser?.PhoneNumbers?.ForEach(async phonenumber =>
+                    {
+                        //matching phone number with selected provider
+                        if (phonenumber?.Provider?.ToLower() == "phonenumber")
+                        {
+                            if (phonenumber.Code == "")
+                            {
+                                State = ProcessEvent.PendingLoading;
+                                VerificationCode = CreateRandomCode(6);//create code
+
+                                //SEND SMS CODE
+
+                                DebugCodeShow = VerificationCode; //DEBUG ONLY
+                                List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Replace("/PhoneNumbers/0/Code", VerificationCode),//replace empty with code
+                                    PatchOperation.Replace("/PhoneNumbers/0/VerificationCodeTime",DateTimeOffset.UtcNow)
+                                };
+
+                                string id = $"User|{CheckUser.ID}";
+                                PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+                                State = ProcessEvent.PendingVerification;//goto verification
+                                StateHasChanged();
+                            }
+                            else
+                            {
+                                DebugCodeShow = phonenumber.Code; //DEBUG ONLY
+                                State = ProcessEvent.PendingVerification;//goto verification
+                                StateHasChanged();
+                            }
+                        }
+                        else
+                        {
+                            //error
+                        }
+                    });
+                else//user doesn't exist => Create code => create instance in db => IsRegistered = false/IsVerified = false/IsLocked = false
+                {
+                    State = ProcessEvent.PendingLoading;
+                    VerificationCode = CreateRandomCode(6);//create code
+                    DebugCodeShow = VerificationCode;
+
+                    //SEND PHONE NUMBER
+
+                    Geography.Country country = GetPhoneNumberCountryCode(InputValue);
+                    Guid CustomUserID = Guid.NewGuid();//create id
+                    CloudUser user = new()
+                    {
+                        ID = CustomUserID,
+                        IsRegistered = false, //X
+                        IsLocked = false, //X
+                        PhoneNumbers = new()
+                            {
+                                new UserPhoneNumber()
+                                {
+                                    CountryCode = country.Code,
+                                    CountryCallingCode = country.CallingCode,
+                                    PhoneNumber = PhoneNumber,
+                                    Provider = "EmailAddress",
+                                    ProviderId = CustomUserID.ToString(),
+                                    IsPrimary = true,
+                                    IsVerified = false, //x
+                                    Code = VerificationCode,
+                                    VerificationCodeTime = DateTimeOffset.UtcNow
+                                }
+                            }
+                    };
+                    await Cosmos.Container.CreateItemAsync(user);//create instance in db ..
+                    State = ProcessEvent.PendingVerification; //go to verification
+                    StateHasChanged();
+                }
+            }
+            else//Login from other providers
+                navigationManager.NavigateTo($"/cloudlogin/login/{provider.Code}?emailaddress={InputValue}&redirectUri=/&KeepMeSignedIn={KeepMeSignedIn}", true);
+        }
+        private async Task OnVerifyClicked(MouseEventArgs e)
+        {
+            if (providerType.Code.ToLower() == "emailaddress")//verifying as email adress
+            {//Verify button clicked => check if code is right => check if expired
+                //Check if IsRegistered => Login / else : Make code empty => Goto verified
+                CloudUser? CheckUser = await Cosmos.GetUserByEmailAddress(InputValue);
+                CheckUser?.EmailAddresses?.ForEach(async email =>
+                {
+                    if (email?.Provider?.ToLower() == "emailaddress")
+                        if (VerificationValue == email.Code)
+                        {//Code is right => check if expired
+                         //Checking if code is expired
+                            DateTimeOffset CheckTime = email.VerificationCodeTime.Value;
+                            if (DateTimeOffset.UtcNow < CheckTime.AddSeconds(CodeExpirationDate))//30 seconds expiration
+                            {
+                                //code is not expired
+                                if (CheckUser?.IsRegistered == false)
+                                {// user is not registered => Make code empty => Goto verified
+
+                                    State = ProcessEvent.PendingLoading;
+                                    List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Replace("/EmailAddresses/0/Code", ""),//code empty
+                                };
+                                    string id = $"User|{CheckUser.ID}";
+                                    PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                    await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+                                    //Code is now empty goto registration
+                                    State = ProcessEvent.PendingRegisteration;
+                                    StateHasChanged();
+                                }
+                                else//User is registered => make code empty =>update time => Login user
+                                {
+                                    State = ProcessEvent.PendingLoading;
+                                    List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow), //update time
                                     PatchOperation.Replace("/EmailAddresses/0/Code", "")//code empty
                                 };
 
-								string id = $"User|{CheckUser.ID}";
-								PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
-								await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+                                    string id = $"User|{CheckUser.ID}";
+                                    PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                    await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
 
-								NavigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={CheckUser.ID}&KeepMeSignedIn=false", true);
-							}
-						}
-						else//code is expired
-						{
-							WrongCode = false;
-							ExpiredCode = true;
-						}
-					}
-					else //Code is wrong
-						WrongCode = true;
-			});
-		}
+                                    navigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={CheckUser.ID}&KeepMeSignedIn=false", true);
+                                }
+                            }
+                            else//code is expired
+                            {
+                                WrongCode = false;
+                                ExpiredCode = true;
+                            }
+                        }
+                        else //Code is wrong
+                            WrongCode = true;
+                });
+            }
+            else if (providerType.Code.ToLower() == "PhoneNumber")//verifying as phone number
+            {//Verify button clicked => check if code is right => check if expired
+                //Check if IsRegistered => Login / else : Make code empty => Goto verified
+                CloudUser? CheckUser = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
+                CheckUser?.EmailAddresses?.ForEach(async phonenumber =>
+                {
+                    if (phonenumber?.Provider?.ToLower() == "phonenumber")
+                        if (VerificationValue == phonenumber.Code)
+                        {//Code is right => check if expired
+                         //Checking if code is expired
+                            DateTimeOffset CheckTime = phonenumber.VerificationCodeTime.Value;
+                            if (DateTimeOffset.UtcNow < CheckTime.AddSeconds(CodeExpirationDate))//30 seconds expiration
+                            {
+                                //code is not expired
+                                if (CheckUser?.IsRegistered == false)
+                                {// user is not registered => Make code empty => Goto verified
 
-		private async Task OnRegisterClicked(MouseEventArgs e)
-		{
-			//Register button is clicked => IsRegistered = true / IsVerified = true => Update user info => push to database => Login user
-			if (FirstName == null || LastName == null || DisplayName == null)//check if any of the input is empty
-				EmptyInput = true;
-			else//all input has value
-			{
-				EmptyInput = false;
-				State = ProcessEvent.PendingLoading;
-				CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
+                                    State = ProcessEvent.PendingLoading;
+                                    List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                    {
+                                        PatchOperation.Replace("/PhoneNumbers/0/Code", ""),//code empty
+                                    };
+                                    string id = $"User|{CheckUser.ID}";
+                                    PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                    await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
 
-				List<PatchOperation> patchOperations = new List<PatchOperation>()
-				{
-					PatchOperation.Add("/FirstName", FirstName), //update user
-                    PatchOperation.Add("/LastName", LastName), //update user
-                    PatchOperation.Add("/IsRegistered", true), //X
-                    PatchOperation.Add("/EmailAddresses/0/IsVerified", true), //X
-                    PatchOperation.Add("/DisplayName", $"{DisplayName}"), //update user
-                    PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow) //update user
+                                    //Code is now empty goto registration
+                                    State = ProcessEvent.PendingRegisteration;
+                                    StateHasChanged();
+                                }
+                                else//User is registered => make code empty =>update time => Login user
+                                {
+                                    State = ProcessEvent.PendingLoading;
+                                    List<PatchOperation> patchOperations = new List<PatchOperation>()
+                                {
+                                    PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow), //update time
+                                    PatchOperation.Replace("/PhoneNumbers/0/Code", "")//code empty
+                                };
+
+                                    string id = $"User|{CheckUser.ID}";
+                                    PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
+                                    await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+                                    navigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={CheckUser.ID}&KeepMeSignedIn=false", true);
+                                }
+                            }
+                            else//code is expired
+                            {
+                                WrongCode = false;
+                                ExpiredCode = true;
+                            }
+                        }
+                        else //Code is wrong
+                            WrongCode = true;
+                });
+            }
+
+        }
+
+        private async Task OnRegisterClicked(MouseEventArgs e)
+        {
+            //Register button is clicked => IsRegistered = true / IsVerified = true => Update user info => push to database => Login user
+            if (FirstName == null || LastName == null || DisplayName == null)//check if any of the input is empty
+                EmptyInput = true;
+            else//all input has value
+            {
+                if (providerType.Code.ToLower() == "emailaddress")
+                {
+                    EmptyInput = false;
+                    State = ProcessEvent.PendingLoading;
+                    CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
+
+                    List<PatchOperation> patchOperations = new List<PatchOperation>()
+                    {
+                        PatchOperation.Add("/FirstName", FirstName), //update user
+                        PatchOperation.Add("/LastName", LastName), //update user
+                        PatchOperation.Add("/IsRegistered", true), //X
+                        PatchOperation.Add("/EmailAddresses/0/IsVerified", true), //X
+                        PatchOperation.Add("/DisplayName", $"{DisplayName}"), //update user
+                        PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow) //update user
+                    };
+
+                    string id = $"User|{user?.ID}";
+                    PartitionKey partitionKey = new PartitionKey(user?.PartitionKey);
+                    await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+
+                    //login user
+                    navigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={user?.ID}&KeepMeSignedIn=false", true);
+
+                }
+                else if (providerType.Code.ToLower() == "PhoneNumber")
+                {
+                    EmptyInput = false;
+                    State = ProcessEvent.PendingLoading;
+                    CloudUser? user = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
+
+                    List<PatchOperation> patchOperations = new List<PatchOperation>()
+                    {
+                        PatchOperation.Add("/FirstName", FirstName), //update user
+                        PatchOperation.Add("/LastName", LastName), //update user
+                        PatchOperation.Add("/IsRegistered", true), //X
+                        PatchOperation.Add("/PhoneNumbers/0/IsVerified", true), //X
+                        PatchOperation.Add("/DisplayName", $"{DisplayName}"), //update user
+                        PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow) //update user
+                    };
+
+                    string id = $"User|{user?.ID}";
+                    PartitionKey partitionKey = new PartitionKey(user?.PartitionKey);
+                    await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+
+                    //login user
+                    navigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={user?.ID}&KeepMeSignedIn=false", true);
+
+                }
+            }
+        }
+
+        private string CreateRandomCode(int length)
+        {
+            StringBuilder builder = new();
+
+            for (int i = 0; i <= length; i++)
+                builder.Append(new Random().Next(0, 9));
+
+            return builder.ToString();
+        }
+
+        public class Provider
+        {
+            public Provider(string code)
+            {
+                Code = code.ToLower();
+            }
+
+            public string Code { get; private set; }
+            //public string LoginUrl => $"cloudlogin/login?redirectUri=/&identity={Code}";
+            public string? Name => Code switch
+            {
+                "microsoft" => "Microsoft",
+                "google" => "Google",
+                "emailaddress" => "Email Code",
+                "phonenumber" => "SMS Code",
+                _ => Code
+            };
+        }
+
+        //protected void CheckFormat()
+        //{
+        //    var checkEmail = IsValidEmail(Value);
+        //    var checkPhoneNumber = IsValidPhoneNumber(Value);
+        //    var CheckCharacters = HasCharacters(Value);
+
+        //    if (checkEmail)
+        //        InputType = InputFormat.Email;
+        //    else if (checkPhoneNumber)
+        //        if(!CheckCharacters)
+        //            InputType = InputFormat.PhoneNumber;
+        //    else if(CheckCharacters)
+        //        InputType = InputFormat.Other;
+
+        //    StateHasChanged();
+        //}
+
+        bool IsValidEmail => Regex.IsMatch(InputValue, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
+        // ^\+?[0-9(\ \.\-\(\)\\\/)]{8,20}$
+        bool IsValidPhoneNumber => Regex.IsMatch(InputValue, @$"^\+?[0-9({PhoneNumberValidCharacters})]{{8,20}}$");
+        private static string PhoneNumberValidCharacters => string.Join(@"\", new[] { ' ', '.', '-', '/', '\\', '(', ')' });
+
+        public static async void SendMail(string receiver, string Code)
+        {
+            string smtpEmail = "AngryMonkeyDev@gmail.com";
+            string smtpPassword = "nllvbaqoxvfqsssh";
+
+            try
+            {
+                SmtpClient client = new("smtp.gmail.com", 587)
+                {
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    UseDefaultCredentials = false,
+                    Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword)
                 };
 
-				string id = $"User|{user?.ID}";
-				PartitionKey partitionKey = new PartitionKey(user?.PartitionKey);
-				await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+                MailMessage mailMessage = new()
+                {
+                    From = new MailAddress(smtpEmail, "Cloud Login"),
+                    Subject = "Login Code",
+                    IsBodyHtml = true,
+                };
 
-				//login user
-				NavigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={user?.ID}&KeepMeSignedIn=false", true);
-			}
-		}
+                StringBuilder builder = new();
+                builder.AppendLine($"code: <b>{Code}</b> <br />");
 
-		private string CreateRandomCode(int length)
-		{
-			StringBuilder builder = new();
+                mailMessage.To.Add(receiver);
+                mailMessage.Body = builder.ToString();
 
-			for (int i = 0; i <= length; i++)
-				builder.Append(new Random().Next(0, 9));
-
-			return builder.ToString();
-		}
-
-		public class Provider
-		{
-			public Provider(string code)
-			{
-				Code = code.ToLower();
-			}
-
-			public string Code { get; private set; }
-			//public string LoginUrl => $"cloudlogin/login?redirectUri=/&identity={Code}";
-			public string? Name => Code switch
-			{
-				"microsoft" => "Microsoft",
-				"google" => "Google",
-				"emailaddress" => "Email Code",
-				"phonenumber" => "SMS Code",
-				_ => Code
-			};
-		}
-
-		//protected void CheckFormat()
-		//{
-		//    var checkEmail = IsValidEmail(Value);
-		//    var checkPhoneNumber = IsValidPhoneNumber(Value);
-		//    var CheckCharacters = HasCharacters(Value);
-
-		//    if (checkEmail)
-		//        InputType = InputFormat.Email;
-		//    else if (checkPhoneNumber)
-		//        if(!CheckCharacters)
-		//            InputType = InputFormat.PhoneNumber;
-		//    else if(CheckCharacters)
-		//        InputType = InputFormat.Other;
-
-		//    StateHasChanged();
-		//}
-
-		bool IsValidEmail => Regex.IsMatch(InputValue, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
-		// ^\+?[0-9(\ \.\-\(\)\\\/)]{8,20}$
-		bool IsValidPhoneNumber => Regex.IsMatch(InputValue, @$"^\+?[0-9({PhoneNumberValidCharacters})]{{8,20}}$");
-		private static string PhoneNumberValidCharacters => string.Join(@"\", new[] { ' ', '.', '-', '/', '\\', '(', ')' });
-
-		public static async void SendMail(string receiver, string Code)
-		{
-			string smtpEmail = "AngryMonkeyDev@gmail.com";
-			string smtpPassword = "nllvbaqoxvfqsssh";
-
-			try
-			{
-				SmtpClient client = new("smtp.gmail.com", 587)
-				{
-					EnableSsl = true,
-					DeliveryMethod = SmtpDeliveryMethod.Network,
-					UseDefaultCredentials = false,
-					Credentials = new System.Net.NetworkCredential(smtpEmail, smtpPassword)
-				};
-
-				MailMessage mailMessage = new()
-				{
-					From = new MailAddress(smtpEmail, "Cloud Login"),
-					Subject = "Login Code",
-					IsBodyHtml = true,
-				};
-
-				StringBuilder builder = new();
-				builder.AppendLine($"code: <b>{Code}</b> <br />");
-
-				mailMessage.To.Add(receiver);
-				mailMessage.Body = builder.ToString();
-
-				await client.SendMailAsync(mailMessage);
-			}
-			catch { }
-		}
-	}
+                await client.SendMailAsync(mailMessage);
+            }
+            catch { }
+        }
+    }
 }

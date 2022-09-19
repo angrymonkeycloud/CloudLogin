@@ -23,11 +23,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngryMonkey.Cloud.Components" Version="0.0.2" />
+		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.0.1" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.0.1" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="6.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="6.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.7" NoWarn="NU1605" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="6.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="6.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.9" NoWarn="NU1605" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.30.1" />
 	</ItemGroup>
 

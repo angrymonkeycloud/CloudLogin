@@ -259,7 +259,10 @@ section .login .error .login-form-error span {
   padding: 10px 5px;
   border: 1px solid #4569D4;
   border-radius: 3px;
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
+  -webkit-transition-delay: 9999s;
+  transition: color 9999s ease-out, background-color 9999s ease-out;
+  transition-delay: 9999s;
 }
 .--input input:focus {
   outline: none;
@@ -279,6 +282,9 @@ section .login .error .login-form-error span {
   background-color: #fff;
   transition: all 0.3s;
   padding-inline: 5px;
+  user-select: none;
+  cursor: text;
+  pointer-events: none;
 }
 .--input .active ~ label {
   top: -10px;

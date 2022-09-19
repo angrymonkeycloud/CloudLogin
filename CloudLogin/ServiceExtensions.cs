@@ -70,11 +70,14 @@ public static class MvcServiceCollectionExtensions
                     {
                         CloudUser? user = await options.Cosmos.Methods.GetUserByEmailAddress(emaillAddress);
 
-                        bool doesUserExist = user != null;
+                        string provider = context.Principal.Identity.AuthenticationType;
+
+						bool doesUserExist = user != null;
 
                         user ??= new CloudUser()
                         {
                             ID = Guid.NewGuid(),
+                            IsRegistered = true,
 
                             EmailAddresses = new()
                             {
@@ -83,7 +86,8 @@ public static class MvcServiceCollectionExtensions
                                     EmailAddress = emaillAddress,
                                     IsPrimary = true,
                                     ProviderId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                                    Provider = Enumerable.FirstOrDefault<UserEmailAddress>(user.EmailAddresses).Provider,
+                                    Provider = provider,
+                                    IsVerified = true
                                 }
                             }
                         };
@@ -94,9 +98,9 @@ public static class MvcServiceCollectionExtensions
                         user.DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? user.DisplayName;
 
                         if (doesUserExist)
-                            await options.Cosmos.Methods.Container.UpsertItemAsync<CloudUser>((CloudUser)user);
+                            await options.Cosmos.Methods.Container.UpsertItemAsync(user);
                         else
-                            await options.Cosmos.Methods.Container.CreateItemAsync<CloudUser>((CloudUser)user);
+                            await options.Cosmos.Methods.Container.CreateItemAsync(user);
                     }
                 }
             };

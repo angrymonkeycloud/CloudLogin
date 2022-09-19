@@ -10,11 +10,11 @@
             <div class="login-loading @(loading?  "" : "--hide" )">
                 <div></div>
             </div>
-            @if (!string.IsNullOrEmpty(@Imagelogo))
+            @if (!string.IsNullOrEmpty(Logo))
             {
                 <div class="login-logo">
 
-                    <img src="@Imagelogo" alt="logo" />
+                    <img src="@Logo" alt="logo" />
 
                 </div>
             }
@@ -28,24 +28,24 @@
                         <span>*email not found</span>
                     </div>
                     <div class="login-form-email --input">
-                        <input type="text" id="email" class=" @(Value!=""? "active": "")" @bind-value="Value" @bind-value:event="oninput" spellcheck="false" />
+                        <input type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                         <label for="email">
-                            @if (InputType == InputFormat.Other || InputType == InputFormat.Email)
+                            @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.Email)
                             {
                                 <span>Email</span>
                             }
-                            @if (InputType == InputFormat.Other)
+                            @if (InputValueFormat == InputFormat.Other)
                             {
                                 <span> or </span>
                             }
-                            @if (InputType == InputFormat.Other || InputType == InputFormat.PhoneNumber)
+                            @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.PhoneNumber)
                             {
-                                <span>phone number</span>
+                                <span>Phone number</span>
                             }
                         </label>
                     </div>
                     <div class="login-form-next ">
-                        <button class="--button _primary @(loading? "_loading --disable" : "") @((InputType == InputFormat.PhoneNumber || (InputType == InputFormat.Email))? "" : "--disable" )" @onclick="OnNextClicked">
+                        <button class="--button _primary @(loading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.Email))? "" : "--disable" )" @onclick="OnNextClicked">
                             <span>Next</span>
                             <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(loading ? true : false)" />
                         </button>
@@ -60,7 +60,7 @@
                             <AngryMonkey.Cloud.Components.Icons.Back />
                         </button>
                         <span>
-                            @Value
+                            @InputValue
                         </span>
                     </div>
                     <div class="login-form-provider">
@@ -74,6 +74,7 @@
                         </div>
                     </div>
                 </div>
+
             }
             else if (State == ProcessEvent.PendingProviders)
             {
@@ -83,7 +84,7 @@
                             <AngryMonkey.Cloud.Components.Icons.Back />
                         </button>
                         <span>
-                            @Value
+                            @InputValue
                         </span>
                     </div>
                     <div class="login-form-notFound">
@@ -116,7 +117,7 @@
                             <AngryMonkey.Cloud.Components.Icons.Back />
                         </button>
                         <span>
-                            @Value
+                            @InputValue
                         </span>
                     </div>
                     <div class="login-form-Verification">
@@ -159,7 +160,7 @@
                             <AngryMonkey.Cloud.Components.Icons.Back />
                         </button>
                         <span>
-                            @Value
+                            @InputValue
                         </span>
                     </div>
                     <div class="login-form-Verification">
@@ -196,6 +197,19 @@
                 </div>
 
             }
+            else if (State == ProcessEvent.PendingCheckNumber)
+            {
+                @Prefix
+                @PhoneNumber
+
+
+
+                <button @onclick="OnContinueClicked">Continue</button>
+
+
+
+                <button @onclick="OnBackClicked">Back</button>
+            }
             <div class="login-icon">
                 <AngryMonkey.Cloud.Login.Components.ProviderIcons />
             </div>
@@ -203,20 +217,8 @@
     </div>
 </section>
 
-    }
-    else if (State == ProcessEvent.PendingRegisteration)
-    {
-        <div>@InputValue is verified => Create user</div>
 
-        <button @onclick="OnRegisterClicked">Register</button>
-        if (EmptyInput)
-        {
-            <div>You have an input empty!</div>
-        }
-    }
-    else if (State == ProcessEvent.PendingAuthorization)
-    {
-        <h2><button @onclick="OnBackClicked">Back</button> @InputValue</h2>
+
 
 @*
 

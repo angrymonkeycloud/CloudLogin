@@ -27,20 +27,220 @@
   font-display: swap;
   src: url(https://fonts.gstatic.com/s/tajawal/v9/Iurf6YBj_oCad4k1l4qkLrY.ttf) format('truetype');
 }
-section {
-  width: 100vw;
-  min-height: 100vh;
+.amc-cloudlogin {
   font-family: 'Tajawal', sans-serif;
-}
-section .amc-cloudlogin {
-  width: 100%;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
-section .login {
+.amc-cloudlogin-header {
+  text-align: center;
+  min-height: 12rem;
+}
+.amc-cloudlogin-title {
+  color: #202124;
+  font-size: 2rem;
+  transition: all 0.8s;
+  padding-bottom: 0;
+  position: relative;
+}
+.amc-cloudlogin-title button {
+  position: absolute;
+  left: 0;
+  height: 0;
+  transform: translate(-100%, 50%);
+}
+.amc-cloudlogin-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+.amc-cloudlogin-body {
+  width: 100%;
+  max-width: 20rem;
+}
+.amc-cloudlogin-panel {
+  padding: 10px;
+  margin-bottom: 10px;
+  text-align: center;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #4569D4;
+}
+.amc-cloudlogin-inputdisplay {
+  font-weight: 700;
+}
+.amc-cloudlogin-keppsignedin {
+  display: flex;
+  display: inline-block;
+  font-size: 0;
+}
+.amc-cloudlogin-keppsignedin label,
+.amc-cloudlogin-keppsignedin input {
+  cursor: pointer;
+  user-select: none;
+}
+.amc-cloudlogin-keppsignedin label {
+  padding-left: 6px;
+  font-size: 1rem;
+}
+.amc-cloudlogin-keppsignedin input {
+  appearance: checkbox;
+  margin: 0;
+}
+.amc-cloudlogin-footer {
+  text-align: center;
+}
+.amc-cloudlogin-loading {
+  position: fixed;
+  min-height: 10px;
+}
+.amc-cloudlogin-loading > div {
+  position: relative;
+  top: 0px;
+  width: 100px;
+  height: 5px;
+  background-color: #4569D4;
+  border-radius: 20px;
+  margin: 0 auto;
+  animation: move 4s cubic-bezier(0.31, 0.33, 1, 1) infinite;
+}
+.amc-cloudlogin-loading > div:after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 5px;
+  border-radius: 20px;
+  background-color: #4569D4;
+}
+.amc-cloudlogin-logo {
+  width: 100px;
+  margin: 30px auto 5px auto;
+}
+.amc-cloudlogin-form {
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  margin: 0 auto;
+  min-height: 20rem;
+}
+.amc-cloudlogin-form-title {
+  width: fit-content;
+  margin: 0 auto 0 auto;
+  transition: all 0.8s;
+  line-height: 0;
+}
+.amc-cloudlogin-form-back {
+  min-height: 1rem;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.amc-cloudlogin-form-back span {
+  font-size: 0.9rem;
+}
+.amc-cloudlogin-form-notFound {
+  flex-direction: column;
+}
+.amc-cloudlogin-form-notFound h4 {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+.amc-cloudlogin-form-notFound h5 {
+  font-size: 0.8rem;
+  font-weight: normal;
+  margin-top: 0;
+}
+.amc-cloudlogin-form-Verification {
+  margin-top: 10px;
+}
+.amc-cloudlogin-form-Verification span {
+  font-size: 1rem;
+}
+.amc-cloudlogin-form-resend button {
+  border: none;
+  background-color: transparent;
+  color: #4569D4;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.amc-cloudlogin-form-resend button:hover {
+  text-decoration: underline;
+}
+.amc-cloudlogin-form-provider {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 50px;
+}
+.amc-cloudlogin-form-provider button {
+  max-width: 250px;
+}
+.amc-cloudlogin-form-register {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.amc-cloudlogin-form-error,
+.amc-cloudlogin-form-expire {
+  padding-left: 6px;
+  margin-bottom: 10px;
+  transition: all 0.5s;
+  min-height: 20px;
+}
+.amc-cloudlogin-form-error span,
+.amc-cloudlogin-form-expire span {
+  display: none;
+  font-size: 0.9rem;
+  color: #f53030;
+  text-align: center;
+}
+.amc-cloudlogin-form-error._wrong,
+.amc-cloudlogin-form-expire._wrong {
+  margin-top: 10px;
+}
+.amc-cloudlogin-form-error._wrong span,
+.amc-cloudlogin-form-expire._wrong span {
+  display: block;
+  text-align: left;
+}
+.amc-cloudlogin-form-expire {
+  min-height: 40px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.amc-cloudlogin-form-next {
+  margin-block: 2rem;
+  text-align: right;
+}
+.amc-cloudlogin-form-verify,
+.amc-cloudlogin-form-finish {
+  text-align: right;
+  margin-bottom: 50px;
+}
+.amc-cloudlogin-form ._center {
+  justify-content: center;
+}
+.amc-cloudlogin-footer {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+  height: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 10px;
+}
+.amc-cloudlogin-footer ::deep svg .amc-svg-fill {
+  fill: #4569D4;
+}
+.login {
   position: relative;
   width: min(400px, 90%);
   min-height: min(500px, 90%);
@@ -52,193 +252,8 @@ section .login {
   flex-direction: column;
   gap: 15px;
 }
-section .login-loading {
-  min-height: 10px;
-}
-section .login-loading > div {
-  position: relative;
-  top: 0px;
-  width: 100px;
-  height: 5px;
-  background-color: #4569D4;
-  border-radius: 20px;
-  margin: 0 auto;
-  animation: move 4s cubic-bezier(0.31, 0.33, 1, 1) infinite;
-  /*  &:after, &:before {
-                            content: "";
-                            position: absolute;
-                            width: 100px;
-                            height: @--height;
-                            border-radius: 20px;
-                            background-color: @--colorActice;
-                            animation: right 1.9s ease-in-out infinite ; 
-                        }
-
-                        &:before {
-                            animation-name: left;
-                        }*/
-}
-section .login-loading > div:after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 5px;
-  border-radius: 20px;
-  background-color: #4569D4;
-}
-section .login-logo {
-  width: 100px;
-  margin: 15px auto 0 auto;
-}
-section .login-form {
-  display: flex;
-  flex-direction: column;
-  width: 80%;
-  margin: 0 auto;
-  min-height: 20rem;
-}
-section .login-form-title {
-  width: fit-content;
-  margin: 0 auto 0 auto;
-  transition: all 0.8s;
-  line-height: 0;
-}
-section .login-form-title h1 {
-  color: #202124;
-  font-size: 2rem;
-  transition: all 0.8s;
-}
-section .login-form-back {
-  min-height: 1rem;
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-section .login-form-back span {
-  font-size: 0.9rem;
-}
-section .login-form-notFound {
-  flex-direction: column;
-}
-section .login-form-notFound h4 {
-  font-size: 1rem;
-  margin-bottom: 0;
-}
-section .login-form-notFound h5 {
-  font-size: 0.8rem;
-  font-weight: normal;
-  margin-top: 0;
-}
-section .login-form-Verification {
-  margin-top: 10px;
-}
-section .login-form-Verification span {
-  font-size: 1rem;
-}
-section .login-form-resend button {
-  border: none;
-  background-color: transparent;
-  color: #4569D4;
-  font-size: 0.8rem;
-  transition: all 0.3s;
-  cursor: pointer;
-}
-section .login-form-resend button:hover {
-  text-decoration: underline;
-}
-section .login-form-provider {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px;
-  margin-bottom: 50px;
-}
-section .login-form-provider button {
-  max-width: 250px;
-}
-section .login-form-provider-keepMe {
-  display: flex;
-  gap: 0;
-}
-section .login-form-provider-keepMe label,
-section .login-form-provider-keepMe input {
-  cursor: pointer;
-  user-select: none;
-}
-section .login-form-provider-keepMe label {
-  padding-left: 5px;
-}
-section .login-form-register {
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-section .login-form-error,
-section .login-form-expire {
-  padding-left: 6px;
-  margin-bottom: 10px;
-  transition: all 0.5s;
-  min-height: 20px;
-}
-section .login-form-error span,
-section .login-form-expire span {
-  display: none;
-  font-size: 0.9rem;
-  color: #f53030;
-  text-align: center;
-}
-section .login-form-error._wrong,
-section .login-form-expire._wrong {
-  margin-top: 10px;
-}
-section .login-form-error._wrong span,
-section .login-form-expire._wrong span {
-  display: block;
-  text-align: left;
-}
-section .login-form-expire {
-  min-height: 40px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-section .login-form-next {
-  margin-block: 2rem;
-  text-align: right;
-}
-section .login-form-verify,
-section .login-form-finish {
-  text-align: right;
-  margin-bottom: 50px;
-}
-section .login-form ._center {
-  justify-content: center;
-}
-section .login-icon {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  width: 100%;
-  height: 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  gap: 10px;
-}
-section .login-icon ::deep svg .amc-svg-fill {
-  fill: #4569D4;
-}
-section .login .error .login-form-title h1 {
+.login .error .login-form-title h1 {
   font-size: 1.5rem;
-}
-section .login .error .login-form-error span {
-  display: block;
-}
-.--hide {
-  visibility: hidden;
 }
 .--disable {
   cursor: none;
@@ -402,32 +417,3 @@ section .login .error .login-form-error span {
     left: 0;
   }
 }
-/*@keyframes right {
-    0% {
-        right: 0;
-    }
-
-    50% {
-        right: -30px;
-    }
-
-    100% {
-        right: 0;
-    }
-}
-
-
-@keyframes left {
-    0% {
-        left: 0;
-    }
-
-    50% {
-        left: -30px;
-    }
-
-    100% {
-        left: 0;
-    }
-}
-*/

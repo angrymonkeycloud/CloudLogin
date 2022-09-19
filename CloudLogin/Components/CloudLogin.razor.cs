@@ -17,9 +17,13 @@ namespace AngryMonkey.Cloud.Login
 	public partial class CloudLogin
 	{
 		public bool checkError { get; set; } = false;
-		public bool loading { get; set; } = false;
+		public bool IsLoading { get; set; } = false;
 
 		public int CodeExpirationDate = 30;
+
+		protected string Title { get; set; } = string.Empty;
+		protected string Subtitle { get; set; } = string.Empty;
+		protected List<string> Errors { get; set; } = new List<string>();
 
 		public Action OnInput { get; set; }
 
@@ -55,6 +59,7 @@ namespace AngryMonkey.Cloud.Login
 		public string DebugCodeShow { get; set; } //DEBUG ONLY
 		internal CosmosMethods Cosmos { get; set; }
 		List<Provider> Providers { get; set; } = new();
+		public bool DisplayInputValue { get; set; } = false;
 
 		protected InputFormat InputValueFormat
 		{
@@ -80,12 +85,48 @@ namespace AngryMonkey.Cloud.Login
 			Other
 		}
 
-		protected ProcessEvent State { get; set; } = ProcessEvent.PendingSignIn;
 
-		protected enum ProcessEvent
+		protected ProcessState State { get; set; }
+		private void SwitchState(ProcessState state)
+		{
+			State = state;
+
+			switch (State)
+			{
+				case ProcessState.PendingSignIn:
+					Title = "Sign in";
+					Subtitle = string.Empty;
+					DisplayInputValue = false;
+
+					break;
+
+				case ProcessState.PendingProviders:
+					Title = "Register";
+					Subtitle = "Choose a provider to register.";
+					DisplayInputValue = true;
+
+					break;
+
+				case ProcessState.PendingAuthorization:
+					Title = "Continue signing in";
+					Subtitle = "Choose a provider to sign in.";
+					DisplayInputValue = true;
+					break;
+
+				default:
+					Title = "Untitled!!!";
+					Subtitle = string.Empty;
+					DisplayInputValue = false;
+					break;
+			}
+
+			IsLoading = false;
+			StateHasChanged();
+		}
+
+		protected enum ProcessState
 		{
 			PendingSignIn,
-			PendingCheckNumber,
 			PendingAuthorization,
 			PendingProviders,
 			PendingVerification,
@@ -102,86 +143,70 @@ namespace AngryMonkey.Cloud.Login
 					//CheckFormat();
 					StateHasChanged();
 				};
+
+				SwitchState(ProcessState.PendingSignIn);
 			}
 		}
 
 		private async Task OnNextClicked(MouseEventArgs e)
 		{
-			if (InputValueFormat == InputFormat.PhoneNumber) //Signin in with Phone Number
+			if (string.IsNullOrEmpty(InputValue))
+				return;
+
+			IsLoading = true;
+
+			InputValue = InputValue.ToLower();
+			CloudUser? user;
+
+			if (InputValueFormat == InputFormat.PhoneNumber)
 			{
 				InputValue = cloudGeography.PhoneNumbers.Get(InputValue).GetFullPhoneNumber();
 
-				State = ProcessEvent.PendingCheckNumber;
+				user = await Cosmos.GetUserByPhoneNumber(InputValue);
 			}
-			else//Signin in with Email Address
-			{
-				//user as put the email = > check if exists
-				if (string.IsNullOrEmpty(InputValue))
-					return;
+			else
+				user = await Cosmos.GetUserByEmailAddress(InputValue);
 
-				loading = true;
-
-				InputValue = InputValue.ToLower();
-
-				CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
-
-				CheckUser(user);
-			}
-
-			StateHasChanged();
+			CheckUser(user);
 		}
 
 		private void CheckUser(CloudUser? user)
 		{
-			if (user != null)//user exists => check if user is locked =>go to authorization
+			if (user != null) // Existing user
 			{
 				Providers = user.Providers.Select(key => new Provider(key)).ToList();
-				State = ProcessEvent.PendingAuthorization;
+				SwitchState(ProcessState.PendingAuthorization);
 			}
-			else//user doesn't exist => go to registration
+			else // New user
 			{
-				Providers = cloudLogin.Options.Providers.Select(key => new Provider(key.Code)).ToList();
-				State = ProcessEvent.PendingProviders;
+				Providers = cloudLogin.Options.Providers
+					.Select(key => new Provider(key.Code))
+					.Where(key => (key.ProcessEmailAddresses && InputValueFormat == InputFormat.Email)
+								|| (key.ProcessPhoneNumbers && InputValueFormat == InputFormat.PhoneNumber))
+					.ToList();
+				SwitchState(ProcessState.PendingProviders);
 			}
-
-			loading = false;
-			StateHasChanged();
 		}
-
-		//private Geography.Country? GetPhoneNumberCountryCode(string phoneNumber)
-		//{
-		//	// Remove +
-		//	phoneNumber = InputValue[1..];
-
-		//	Prefix = "";
-
-		//	for (int i = 0; i < 3; i++)
-		//	{
-		//		Prefix = $"{Prefix}{phoneNumber[i]}";
-
-		//		List<Country> countries = cloudGeography.Countries.GetByCallingCode(int.Parse(Prefix));
-
-		//		if (countries.Any())
-		//			return countries.First();
-		//	}
-
-		//	return null;
-		//}
 
 		private async Task OnContinueClicked(MouseEventArgs e)
 		{
-			loading = true;
+			IsLoading = true;
 			CloudUser? user = await Cosmos.GetUserByPhoneNumber(InputValue);
 			CheckUser(user);
 		}
+
 		private async Task OnBackClicked(MouseEventArgs e)
 		{
+			if (State == ProcessState.PendingSignIn)
+				return;
+
 			WrongCode = false;
-			State = ProcessEvent.PendingSignIn;
+			SwitchState(ProcessState.PendingSignIn);
 		}
+
 		private async Task OnNewCodeClicked(MouseEventArgs e)
 		{
-			loading = true;
+			IsLoading = true;
 			ExpiredCode = false;
 			VerificationCode = CreateRandomCode(6);
 			DebugCodeShow = VerificationCode; //DEBUG ONLY
@@ -195,8 +220,8 @@ namespace AngryMonkey.Cloud.Login
 			CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
 			await Cosmos.Container.PatchItemAsync<dynamic>(user.CosmosId, new(user.PartitionKey), patchOperations);
 
-			State = ProcessEvent.PendingVerification;
-			loading = false;
+			SwitchState(ProcessState.PendingVerification);
+			IsLoading = false;
 			StateHasChanged();
 		}
 		private async Task OnProviderClickedAsync(Provider provider)
@@ -217,7 +242,7 @@ namespace AngryMonkey.Cloud.Login
 							//Check if code empty create code / if we code exist goto verification
 							if (email.Code == "")//code is empty => create => push to db => goto verification
 							{
-								loading = true;
+								IsLoading = true;
 								VerificationCode = CreateRandomCode(6);//create code
 
 								SendEmail(InputValue, VerificationCode);
@@ -229,17 +254,17 @@ namespace AngryMonkey.Cloud.Login
 								};
 
 								await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);//push to db
-								State = ProcessEvent.PendingVerification;//goto verification
-								loading = false;
+								SwitchState(ProcessState.PendingVerification);
+								IsLoading = false;
 								StateHasChanged();
 
 							}
 							else//code exists => goto verification
 							{
-								loading = true;
+								IsLoading = true;
 								DebugCodeShow = email.Code; //DEBUG ONLY
-								State = ProcessEvent.PendingVerification;//goto verification
-								loading = false;
+								SwitchState(ProcessState.PendingVerification);
+								IsLoading = false;
 								StateHasChanged();
 							}
 						}
@@ -250,7 +275,7 @@ namespace AngryMonkey.Cloud.Login
 					});
 				else //user doesn't exist => Create code => create instance in db => IsRegistered = false/IsVerified = false/IsLocked = false
 				{
-					loading = true;
+					IsLoading = true;
 					VerificationCode = CreateRandomCode(6);//create code
 					DebugCodeShow = VerificationCode;
 					SendEmail(InputValue, VerificationCode);
@@ -275,8 +300,8 @@ namespace AngryMonkey.Cloud.Login
 							}
 					};
 					await Cosmos.Container.CreateItemAsync(user);//create instance in db ..
-					State = ProcessEvent.PendingVerification; //go to verification
-					loading = false;
+					SwitchState(ProcessState.PendingVerification);
+					IsLoading = false;
 					StateHasChanged();
 				}
 			}
@@ -293,7 +318,7 @@ namespace AngryMonkey.Cloud.Login
 						{
 							if (phonenumber.Code == "")
 							{
-								loading = true;
+								IsLoading = true;
 								VerificationCode = CreateRandomCode(6);//create code
 
 								//SEND SMS CODE
@@ -306,16 +331,16 @@ namespace AngryMonkey.Cloud.Login
 								};
 
 								await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);//push to db
-								State = ProcessEvent.PendingVerification;//goto verification
-								loading = false;
+								SwitchState(ProcessState.PendingVerification);
+								IsLoading = false;
 
 								StateHasChanged();
 							}
 							else
 							{
-								loading = true;
+								IsLoading = true;
 								DebugCodeShow = phonenumber.Code; //DEBUG ONLY
-								State = ProcessEvent.PendingVerification;//goto verification
+								SwitchState(ProcessState.PendingVerification);
 								StateHasChanged();
 							}
 						}
@@ -326,7 +351,7 @@ namespace AngryMonkey.Cloud.Login
 					});
 				else//user doesn't exist => Create code => create instance in db => IsRegistered = false/IsVerified = false/IsLocked = false
 				{
-					loading = true;
+					IsLoading = true;
 					VerificationCode = CreateRandomCode(6);//create code
 					DebugCodeShow = VerificationCode;
 
@@ -356,8 +381,8 @@ namespace AngryMonkey.Cloud.Login
 							}
 					};
 					await Cosmos.Container.CreateItemAsync(user);//create instance in db ..
-					State = ProcessEvent.PendingVerification; //go to verification
-					loading = false;
+					SwitchState(ProcessState.PendingVerification);
+					IsLoading = false;
 					StateHasChanged();
 				}
 			}
@@ -394,7 +419,7 @@ namespace AngryMonkey.Cloud.Login
 								if (CheckUser?.IsRegistered == false)
 								{// user is not registered => Make code empty => Goto verified
 
-									loading = true;
+									IsLoading = true;
 									List<PatchOperation> patchOperations = new()
 								{
 									PatchOperation.Replace("/EmailAddresses/0/Code", ""),//code empty
@@ -403,13 +428,13 @@ namespace AngryMonkey.Cloud.Login
 									await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);
 
 									//Code is now empty goto registration
-									State = ProcessEvent.PendingRegisteration;
-									loading = false;
+									SwitchState(ProcessState.PendingRegisteration);
+									IsLoading = false;
 									StateHasChanged();
 								}
 								else//User is registered => make code empty =>update time => Login user
 								{
-									loading = true;
+									IsLoading = true;
 									List<PatchOperation> patchOperations = new()
 								{
 									PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow), //update time
@@ -448,7 +473,7 @@ namespace AngryMonkey.Cloud.Login
 								if (CheckUser?.IsRegistered == false)
 								{// user is not registered => Make code empty => Goto verified
 
-									loading = true;
+									IsLoading = true;
 									List<PatchOperation> patchOperations = new()
 									{
 										PatchOperation.Replace("/PhoneNumbers/0/Code", ""),//code empty
@@ -457,13 +482,13 @@ namespace AngryMonkey.Cloud.Login
 									await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);
 
 									//Code is now empty goto registration
-									State = ProcessEvent.PendingRegisteration;
-									loading = false;
+									SwitchState(ProcessState.PendingRegisteration);
+									IsLoading = false;
 									StateHasChanged();
 								}
 								else//User is registered => make code empty =>update time => Login user
 								{
-									loading = true;
+									IsLoading = true;
 									List<PatchOperation> patchOperations = new()
 								{
 									PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow), //update time
@@ -498,7 +523,7 @@ namespace AngryMonkey.Cloud.Login
 			else//all input has value
 			{
 				EmptyInput = false;
-				loading = true;
+				IsLoading = true;
 				CloudUser? user;
 
 				List<PatchOperation> patchOperations = new();
@@ -546,7 +571,6 @@ namespace AngryMonkey.Cloud.Login
 			}
 
 			public string Code { get; private set; }
-			//public string LoginUrl => $"cloudlogin/login?redirectUri=/&identity={Code}";
 			public string? Name => Code switch
 			{
 				"microsoft" => "Microsoft",
@@ -555,6 +579,9 @@ namespace AngryMonkey.Cloud.Login
 				"phonenumber" => "SMS Code",
 				_ => Code
 			};
+
+			public bool ProcessEmailAddresses => !Code.Equals("phonenumber", StringComparison.OrdinalIgnoreCase);
+			public bool ProcessPhoneNumbers => !Code.Equals("emailaddress", StringComparison.OrdinalIgnoreCase);
 		}
 
 		//protected void CheckFormat()

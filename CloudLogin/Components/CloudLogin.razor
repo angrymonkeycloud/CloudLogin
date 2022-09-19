@@ -4,232 +4,213 @@
 @inject NavigationManager navigationManager
 @inject CloudGeographyClient cloudGeography
 
-<section>
-    <div draggable class="amc-cloudlogin">
-        <div class="login">
-            <div class="login-loading @(loading?  "" : "--hide" )">
+<div draggable class="amc-cloudlogin">
+    <div class="amc-cloudlogin-header">
+
+        @* Loading *@
+
+        @if (IsLoading)
+        {
+            <div class="amc-cloudlogin-loading">
                 <div></div>
             </div>
-            @if (!string.IsNullOrEmpty(Logo))
+        }
+
+        @* Logo *@
+
+        @if (!string.IsNullOrEmpty(Logo))
+        {
+            <div class="amc-cloudlogin-logo">
+                <img src="@Logo" alt="logo" />
+            </div>
+        }
+
+        @* Title *@
+
+        <div class="amc-cloudlogin-title">
+
+            @if (State != ProcessState.PendingSignIn)
             {
-                <div class="login-logo">
-
-                    <img src="@Logo" alt="logo" />
-
-                </div>
+                <button class="--button _back" @onclick="OnBackClicked">
+                    <AngryMonkey.Cloud.Components.Icons.Back />
+                </button>
             }
-            @if (State == ProcessEvent.PendingSignIn)//PendingSignIn
-            {
-                <div class="login-form _center @(checkError? "error" : "")">
-                    <div class="login-form-title">
-                        <h1>Sign in</h1>
-                    </div>
-                    <div class="login-form-error">
-                        <span>*email not found</span>
-                    </div>
-                    <div class="login-form-email --input">
-                        <input type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
-                        <label for="email">
-                            @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.Email)
-                            {
-                                <span>Email</span>
-                            }
-                            @if (InputValueFormat == InputFormat.Other)
-                            {
-                                <span> or </span>
-                            }
-                            @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.PhoneNumber)
-                            {
-                                <span>Phone number</span>
-                            }
-                        </label>
-                    </div>
-                    <div class="login-form-next ">
-                        <button class="--button _primary @(loading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.Email))? "" : "--disable" )" @onclick="OnNextClicked">
-                            <span>Next</span>
-                            <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(loading ? true : false)" />
-                        </button>
-                    </div>
-                </div>
-            }
-            else if (State == ProcessEvent.PendingAuthorization)//PendingAuthorization
-            {
-                <div class="login-form">
-                    <div class="login-form-back">
-                        <button class="--button _back" @onclick="OnBackClicked">
-                            <AngryMonkey.Cloud.Components.Icons.Back />
-                        </button>
-                        <span>
-                            @InputValue
-                        </span>
-                    </div>
-                    <div class="login-form-provider">
-                        @foreach (Provider provider in Providers)
-                        {
-                            <button class="--button _@provider.Name.Split(" ")[0].ToLower()" @onclick="() => OnProviderClickedAsync(provider)">@provider.Name</button>
-                        }
-                        <div class="login-form-provider-keepMe">
-                            <input type="checkbox" id="keepme" style="appearance: auto;" @bind-value="KeepMeSignedIn">
-                            <label for="keepme"> Keep me signed in </label>
-                        </div>
-                    </div>
-                </div>
-
-            }
-            else if (State == ProcessEvent.PendingProviders)
-            {
-                <div class="login-form">
-                    <div class="login-form-back">
-                        <button class="--button _back" @onclick="OnBackClicked">
-                            <AngryMonkey.Cloud.Components.Icons.Back />
-                        </button>
-                        <span>
-                            @InputValue
-                        </span>
-                    </div>
-                    <div class="login-form-notFound">
-                        <h4>This Email was not found: </h4>
-                        <h5>Please register below.</h5>
-                    </div>
-                    <div class="login-form-provider">
-                        @foreach (Provider provider in Providers)
-                        {
-                            <button class="--button _@provider.Name.Split(" ")[0].ToLower()" @onclick="() => OnProviderClickedAsync(provider)">
-                                <span>
-                                    @provider.Name
-                                </span>
-                            </button>
-                        }
-
-                        <div class="login-form-provider-keepMe">
-                            <input type="checkbox" id="keepme" style="appearance: auto;" @bind-value="KeepMeSignedIn">
-                            <label for="keepme"> Keep me signed in </label>
-                        </div>
-                    </div>
-                </div>
-
-            }
-            else if (State == ProcessEvent.PendingVerification)
-            {
-                <div class="login-form">
-                    <div class="login-form-back">
-                        <button class="--button _back" @onclick="OnBackClicked">
-                            <AngryMonkey.Cloud.Components.Icons.Back />
-                        </button>
-                        <span>
-                            @InputValue
-                        </span>
-                    </div>
-                    <div class="login-form-Verification">
-                        <span>Please check your emails for a message with your code. Your code is 7 numbers long.</span>
-                    </div>
-                    <div class="login-form-error _wrong">
-                        @if (WrongCode)
-                        {
-                            <span>*Wrong code</span>
-                        }
-                    </div>
-                    <div class="login-form-emailVerification  --input">
-                        <input type="text" id="code" class=" @(VerificationValue!=""? "active": "")" @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
-                        <label for="code">Enter Code</label>
-                    </div>
-                    <div class="login-form-resend">
-                        <button @onclick="OnNewCodeClicked">Resend code ?</button>
-                    </div>
-                    <div class="login-form-expire _wrong ">
-                        @if (ExpiredCode)
-                        {
-                            <button class="--button _error" @onclick="OnNewCodeClicked">New Code</button>
-                            <span>Expired code</span>
-                        }
-                    </div>
-                    <div class="login-form-verify">
-                        <button class="--button _primary @(loading? "_loading --disable" : "")" @onclick="OnVerifyClicked">
-                            <span>Verify</span>
-                            <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(loading ? true : false)" />
-                        </button>
-                    </div>
-                </div>
-
-            }
-            else if (State == ProcessEvent.PendingRegisteration)
-            {
-                <div class="login-form">
-                    <div class="login-form-back">
-                        <button class="--button _back" @onclick="OnBackClicked">
-                            <AngryMonkey.Cloud.Components.Icons.Back />
-                        </button>
-                        <span>
-                            @InputValue
-                        </span>
-                    </div>
-                    <div class="login-form-Verification">
-                        <span>Email is verified => Create user</span>
-                    </div>
-
-                    <div class="login-form-error @(EmptyInput? "_wrong" : "")">
-                        @if (EmptyInput)
-                        {
-                            <span>You have an input empty!</span>
-                        }
-                    </div>
-                    <div class="login-form-register">
-                        <div class="--input">
-                            <input type="text" id="firstName" class=" @(FirstName!=""? "active": "")" @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
-                            <label for="firstName">First Name</label>
-                        </div>
-                        <div class="--input">
-                            <input type="text" id="lastName" class=" @(LastName!=""? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
-                            <label for="lastName">Last Name</label>
-                        </div>
-                        <div class="--input">
-                            <input type="text" id="displayName" class=" @(DisplayName!=""? "active": "")" @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" />
-                            <label for="displayName">Display Name</label>
-                        </div>
-                    </div>
-
-                    <div class="login-form-finish">
-                        <button class="--button _primary @(loading? "_loading --disable" : "")" @onclick="OnRegisterClicked">
-                            <span>Register</span>
-                            <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(loading ? true : false)" />
-                        </button>
-                    </div>
-                </div>
-
-            }
-            else if (State == ProcessEvent.PendingCheckNumber)
-            {
-                @Prefix
-                @InputValue
-
-
-
-                <button @onclick="OnContinueClicked">Continue</button>
-
-
-
-                <button @onclick="OnBackClicked">Back</button>
-            }
-            <div class="login-icon">
-                <AngryMonkey.Cloud.Login.Components.ProviderIcons />
+            <div>
+                @Title
             </div>
         </div>
+
+        @* Subtitle *@
+
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <div class="amc-cloudlogin-subtitle">
+                @Subtitle
+            </div>
+        }
+
+        @* Errors *@
+
+        @if (Errors.Any())
+        {
+            <div class="amc-cloudlogin-errors">
+                <ul>
+                    @foreach (string error in Errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
-</section>
 
+    <div class="amc-cloudlogin-body">
 
+        @if (DisplayInputValue)
+        {
+            <div class="amc-cloudlogin-panel">
+                <div class="amc-cloudlogin-inputdisplay">
+                    @InputValue
+                </div>
 
+                <div class="amc-cloudlogin-keppsignedin">
+                    <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                    <label for="keepme">Keep me signed in</label>
+                </div>
+            </div>
+        }
 
-@*
+        @if (State == ProcessState.PendingSignIn)
+        {
+            <div class="login-form _center @(checkError? "error" : "")">
+                <div class="login-form-email --input">
+                    <input type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
+                    <label for="email">
+                        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.Email)
+                        {
+                            <span>Email</span>
+                        }
+                        @if (InputValueFormat == InputFormat.Other)
+                        {
+                            <span> or </span>
+                        }
+                        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.PhoneNumber)
+                        {
+                            <span>Phone number</span>
+                        }
+                    </label>
+                </div>
+                <div class="login-form-next ">
+                    <button class="--button _primary @(IsLoading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.Email))? "" : "--disable" )" @onclick="OnNextClicked">
+                        <span>Next</span>
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
+                    </button>
+                </div>
+            </div>
+        }
+        else if (State == ProcessState.PendingAuthorization)//PendingAuthorization
+        {
+            <div class="login-form">
+                <div class="login-form-provider">
+                    @foreach (Provider provider in Providers)
+                    {
+                        <button class="--button _@provider.Code.ToLower()" @onclick="() => OnProviderClickedAsync(provider)">@provider.Name</button>
+                    }
+                </div>
+            </div>
+        }
+        else if (State == ProcessState.PendingProviders)
+        {
+            <div class="login-form">
+                <div class="login-form-provider">
+                    @foreach (Provider provider in Providers)
+                    {
+                        <button class="--button _@provider.Code.ToLower()" @onclick="() => OnProviderClickedAsync(provider)">
+                            <span>
+                                @provider.Name
+                            </span>
+                        </button>
+                    }
 
-<div draggable class="amc-cloudlogin">
+                </div>
+            </div>
 
+        }
+        else if (State == ProcessState.PendingVerification)
+        {
+            <div class="login-form">
+                <div class="login-form-Verification">
+                    <span>Please check your emails for a message with your code. Your code is 7 numbers long.</span>
+                </div>
+                <div class="login-form-error _wrong">
+                    @if (WrongCode)
+                    {
+                        <span>*Wrong code</span>
+                    }
+                </div>
+                <div class="login-form-emailVerification  --input">
+                    <input type="text" id="code" class=" @(VerificationValue!=""? "active": "")" @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                    <label for="code">Enter Code</label>
+                </div>
+                <div class="login-form-resend">
+                    <button @onclick="OnNewCodeClicked">Resend code ?</button>
+                </div>
+                <div class="login-form-expire _wrong ">
+                    @if (ExpiredCode)
+                    {
+                        <button class="--button _error" @onclick="OnNewCodeClicked">New Code</button>
+                        <span>Expired code</span>
+                    }
+                </div>
+                <div class="login-form-verify">
+                    <button class="--button _primary @(IsLoading? "_loading --disable" : "")" @onclick="OnVerifyClicked">
+                        <span>Verify</span>
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
+                    </button>
+                </div>
+            </div>
 
-    else if (State == ProcessEvent.PendingCheckNumber)
-    {
-        @PhoneNumber
+        }
+        else if (State == ProcessState.PendingRegisteration)
+        {
+            <div class="login-form">
+                <div class="login-form-Verification">
+                    <span>Email is verified => Create user</span>
+                </div>
 
-        <button @onclick="OnBackClicked">Back</button>
-    }
+                <div class="login-form-error @(EmptyInput? "_wrong" : "")">
+                    @if (EmptyInput)
+                    {
+                        <span>You have an input empty!</span>
+                    }
+                </div>
+                <div class="login-form-register">
+                    <div class="--input">
+                        <input type="text" id="firstName" class=" @(FirstName!=""? "active": "")" @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                        <label for="firstName">First Name</label>
+                    </div>
+                    <div class="--input">
+                        <input type="text" id="lastName" class=" @(LastName!=""? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
+                        <label for="lastName">Last Name</label>
+                    </div>
+                    <div class="--input">
+                        <input type="text" id="displayName" class=" @(DisplayName!=""? "active": "")" @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" />
+                        <label for="displayName">Display Name</label>
+                    </div>
+                </div>
 
-</div>*@
+                <div class="login-form-finish">
+                    <button class="--button _primary @(IsLoading? "_loading --disable" : "")" @onclick="OnRegisterClicked">
+                        <span>Register</span>
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
+                    </button>
+                </div>
+            </div>
+
+        }
+    </div>
+
+    <div class="amc-cloudlogin-footer">
+        <AngryMonkey.Cloud.Login.Components.ProviderIcons />
+    </div>
+</div>

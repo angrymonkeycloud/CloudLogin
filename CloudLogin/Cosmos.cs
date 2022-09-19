@@ -3,7 +3,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
 using System.Net.Mail;
-using User = AngryMonkey.Cloud.Login.DataContract.User;
+using CloudUser = AngryMonkey.Cloud.Login.DataContract.CloudUser;
 
 namespace AngryMonkey.Cloud.Login
 {
@@ -74,21 +74,29 @@ namespace AngryMonkey.Cloud.Login
 
 		#endregion
 
-		public async Task<User?> GetUserById(string Id)
+		public async Task<CloudUser?> GetUserById(string Id)
 		{
-            IQueryable<User> usersQueryable = Queryable<User>("User", user => user.EmailAddresses.Where(key => key.ProviderId.Equals(Id.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+            IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.EmailAddresses.Where(key => key.ProviderId.Equals(Id.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
             var users = await ToListAsync(usersQueryable);
 
             return users.FirstOrDefault();
         }
-		public async Task<User?> GetUserByEmailAddress(string emailAddress)
+		public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
 		{
-			IQueryable<User> usersQueryable = Queryable<User>("User", user => user.EmailAddresses.Where(key => key.EmailAddress.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.EmailAddresses.Where(key => key.EmailAddress.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
 			var users = await ToListAsync(usersQueryable);
 
 			return users.FirstOrDefault();
 		}
-	}
+        public async Task<CloudUser?> GetUserByPhoneNumber(string phonenumber)
+        {
+            IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.PhoneNumbers.Where(key => key.PhoneNumber.Equals(phonenumber)).Any());
+
+            var users = await ToListAsync(usersQueryable);
+
+            return users.FirstOrDefault();
+        }
+    }
 }

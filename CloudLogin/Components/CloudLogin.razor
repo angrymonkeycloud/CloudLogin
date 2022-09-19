@@ -1,7 +1,8 @@
 ﻿@namespace AngryMonkey.Cloud.Login
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
 @inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
-@inject NavigationManager NavigationManager
+@inject NavigationManager navigationManager
+@inject CloudGeographyClient cloudGeography
 
 <section>
     <div draggable class="amc-cloudlogin">
@@ -73,7 +74,6 @@
                         </div>
                     </div>
                 </div>
-
             }
             else if (State == ProcessEvent.PendingProviders)
             {
@@ -203,8 +203,20 @@
     </div>
 </section>
 
+    }
+    else if (State == ProcessEvent.PendingRegisteration)
+    {
+        <div>@InputValue is verified => Create user</div>
 
-
+        <button @onclick="OnRegisterClicked">Register</button>
+        if (EmptyInput)
+        {
+            <div>You have an input empty!</div>
+        }
+    }
+    else if (State == ProcessEvent.PendingAuthorization)
+    {
+        <h2><button @onclick="OnBackClicked">Back</button> @InputValue</h2>
 
 @*
 

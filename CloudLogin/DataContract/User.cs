@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Infrastructure;
+﻿using AngryMonkey.Cloud.Geography;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -25,15 +26,15 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string Discriminator { get; internal set; }
 	}
 
-	public record User : BaseRecord
+	public record CloudUser : BaseRecord
 	{
-		public User() : base("User", "User") { }
+		public CloudUser() : base("User", "User") { }
 
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string? DisplayName { get; set; }
-		public bool? IsRegistered { get; set; }
-		public bool? IsLocked { get; set; }
+		public bool IsRegistered { get; set; } = false;
+		public bool IsLocked { get; set; } = false;
 		public string? Username { get; set; }
 		public DateOnly? DateOfBirth { get; set; }
 		public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
@@ -82,9 +83,23 @@ namespace AngryMonkey.Cloud.Login.DataContract
 
 	public record UserPhoneNumber
 	{
-		public string PhoneNumber { get; set; } = string.Empty;
-		public string? Provider { get; set; }
+		public string CountryCode { get; set; } = string.Empty;//LB
+
+		public int CountryCallingCode { get; set; } = 0;//961
+
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string FullPhoneNumber
+        {
+            get
+            {
+                return $"{CountryCallingCode}{PhoneNumber}";
+            }
+        }
+        public string? Provider { get; set; }
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
-	}
+        public bool IsVerified { get; set; }
+        public string? Code { get; set; }
+        public DateTimeOffset? VerificationCodeTime { get; set; }
+    }
 }

@@ -27,14 +27,19 @@ using Microsoft.Azure.Cosmos.Linq;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Hosting;
+using AngryMonkey.Cloud.Components.Icons;
+using System.Runtime.CompilerServices;
 
 namespace AngryMonkey.Cloud.Login
 {
     public partial class CloudLogin
     {
+
+        public bool checkError { get; set; } = false;
+        public bool loading { get; set; } = false;
         public Action OnInput { get; set; }
 
-        private string _value;
+        private string _value = "";
 
         [Parameter]
         public string Value
@@ -52,10 +57,11 @@ namespace AngryMonkey.Cloud.Login
         }
 
 
-        [Parameter] public string FirstName { get; set; }
-        [Parameter] public string LastName { get; set; }
-        [Parameter] public string DisplayName { get; set; }
-        [Parameter] public string VerificationValue { get; set; }
+        [Parameter] public string Imagelogo { get; set; } = "";
+        [Parameter] public string FirstName { get; set; } = "";
+        [Parameter] public string LastName { get; set; } = "";
+        [Parameter] public string DisplayName { get; set; } = "";
+        [Parameter] public string VerificationValue { get; set; } = "";
         [Parameter] public bool KeepMeSignedIn { get; set; }
         [Parameter] public bool WrongCode { get; set; } = false;
         [Parameter] public bool EmptyInput { get; set; } = false;
@@ -88,7 +94,7 @@ namespace AngryMonkey.Cloud.Login
                 if (checkEmail)
                     return InputFormat.Email;
 
-                if (checkPhoneNumber &&!CheckCharacters)
+                if (checkPhoneNumber && !CheckCharacters)
                     return InputFormat.PhoneNumber;
 
                 return InputFormat.Other;
@@ -144,7 +150,8 @@ namespace AngryMonkey.Cloud.Login
                 if (string.IsNullOrEmpty(Value))
                     return;
 
-                State = ProcessEvent.PendingLoading;
+                loading = true;
+                // State = ProcessEvent.PendingLoading;
 
                 Value = Value.ToLower();
 
@@ -162,6 +169,7 @@ namespace AngryMonkey.Cloud.Login
 
                         Providers = user.Providers.Select(key => new Provider(key)).ToList();
                         State = ProcessEvent.PendingAuthorization;
+                        loading = false;
                         StateHasChanged();
                     }
                 }
@@ -169,6 +177,7 @@ namespace AngryMonkey.Cloud.Login
                 {
                     Providers = cloudLogin.Options.Providers.Select(key => new Provider(key.Code)).ToList();
                     State = ProcessEvent.PendingProviders;
+                    loading = false;
                     StateHasChanged();
                 }
             }
@@ -181,7 +190,7 @@ namespace AngryMonkey.Cloud.Login
         }
         private async Task OnNewCodeClicked(MouseEventArgs e)
         {
-            State = ProcessEvent.PendingLoading;
+            loading = true;
             ExpiredCode = false;
             VerificationCode = CreateRandomCode(6);
             DebugCodeShow = VerificationCode; //DEBUG ONLY
@@ -198,6 +207,7 @@ namespace AngryMonkey.Cloud.Login
             await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
 
             State = ProcessEvent.PendingVerification;
+            loading = false;
             StateHasChanged();
         }
         private async Task OnProviderClickedAsync(Provider provider)
@@ -218,7 +228,7 @@ namespace AngryMonkey.Cloud.Login
                             //Check if code empty create code / if we code exist goto verification
                             if (email.Code == "")//code is empty => create => push to db => goto verification
                             {
-                                State = ProcessEvent.PendingLoading;
+                                loading = true;
                                 VerificationCode = CreateRandomCode(6);//create code
 
                                 SendMail(Value, VerificationCode);
@@ -233,13 +243,16 @@ namespace AngryMonkey.Cloud.Login
                                 PartitionKey partitionKey = new PartitionKey(CheckUser.PartitionKey);
                                 await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
                                 State = ProcessEvent.PendingVerification;//goto verification
+                                loading = false;
                                 StateHasChanged();
 
                             }
                             else//code exists => goto verification
                             {
+                                loading = true;
                                 DebugCodeShow = email.Code; //DEBUG ONLY
                                 State = ProcessEvent.PendingVerification;//goto verification
+                                loading = false;
                                 StateHasChanged();
                             }
                         }
@@ -251,7 +264,7 @@ namespace AngryMonkey.Cloud.Login
                 }
                 else //user doesn't exist => Create code => create instance in db => IsRegistered = false/IsVerified = false/IsLocked = false
                 {
-                    State = ProcessEvent.PendingLoading;
+                    loading = true;
                     VerificationCode = CreateRandomCode(6);//create code
                     DebugCodeShow = VerificationCode;
                     SendMail(Value, VerificationCode);
@@ -277,6 +290,7 @@ namespace AngryMonkey.Cloud.Login
                     };
                     await Cosmos.Container.CreateItemAsync(user);//create instance in db ..
                     State = ProcessEvent.PendingVerification; //go to verification
+                    loading = false;
                     StateHasChanged();
                 }
             }
@@ -305,7 +319,7 @@ namespace AngryMonkey.Cloud.Login
                             if (CheckUser?.IsRegistered == false)
                             {// user is not registered => Make code empty => Goto verified
 
-                                State = ProcessEvent.PendingLoading;
+                                loading = true;
                                 List<PatchOperation> patchOperations = new List<PatchOperation>()
                                 {
                                     PatchOperation.Replace("/EmailAddresses/0/Code", ""),//code empty
@@ -316,11 +330,12 @@ namespace AngryMonkey.Cloud.Login
 
                                 //Code is now empty goto registration
                                 State = ProcessEvent.PendingRegisteration;
+                                loading = false;
                                 StateHasChanged();
                             }
                             else//User is registered => make code empty =>update time => Login user
                             {
-                                State = ProcessEvent.PendingLoading;
+                                loading = true;
                                 List<PatchOperation> patchOperations = new List<PatchOperation>()
                                 {
                                     PatchOperation.Add("/LastSignedIn", DateTimeOffset.UtcNow), //update time
@@ -348,12 +363,12 @@ namespace AngryMonkey.Cloud.Login
         private async Task OnRegisterClicked(MouseEventArgs e)
         {
             //Register button is clicked => IsRegistered = true / IsVerified = true => Update user info => push to database => Login user
-            if (FirstName == null || LastName == null || DisplayName == null)//check if any of the input is empty
+            if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(FirstName))//check if any of the input is empty
                 EmptyInput = true;
             else//all input has value
             {
                 EmptyInput = false;
-                State = ProcessEvent.PendingLoading;
+                loading = true;
                 AngryMonkey.Cloud.Login.DataContract.User? user = await Cosmos.GetUserByEmailAddress(Value);
 
                 List<PatchOperation> patchOperations = new List<PatchOperation>()
@@ -460,7 +475,14 @@ namespace AngryMonkey.Cloud.Login
                 };
 
                 StringBuilder builder = new();
-                builder.AppendLine($"code: <b>{Code}</b> <br />");
+                builder.AppendLine("<div style=\"width:300px;margin:20px auto;padding: 15px;border:1px dashed  #4569D4;text-align:center\">");
+                builder.AppendLine($"<h3>Dear <b>{receiver.Split("@")[0]}</b>,</h3>");
+                builder.AppendLine("<p>We recevied a request to login page.</p>");
+                builder.AppendLine("<p style=\"margin-top: 0;\">Enter the following password login code:</p>");
+                builder.AppendLine("<div style=\"width:150px;border:1px solid #4569D4;margin: 0 auto;padding: 10px;text-align:center;\">");
+                builder.AppendLine($"code: <b style=\"color:#202124;text-decoration:none\">{Code}</b> <br />");
+                builder.AppendLine("</div>");
+                builder.AppendLine("</div>");
 
                 mailMessage.To.Add(receiver);
                 mailMessage.Body = builder.ToString();

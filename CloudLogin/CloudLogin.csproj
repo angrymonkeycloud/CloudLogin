@@ -24,7 +24,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.0.1" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.0.1" />
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.0.5" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="6.0.9" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="6.0.9" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.9" NoWarn="NU1605" />

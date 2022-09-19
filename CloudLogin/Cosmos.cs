@@ -1,4 +1,5 @@
-﻿using AngryMonkey.Cloud.Login.DataContract;
+﻿using AngryMonkey.Cloud.Geography;
+using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
@@ -90,11 +91,20 @@ namespace AngryMonkey.Cloud.Login
 
 			return users.FirstOrDefault();
 		}
-        public async Task<CloudUser?> GetUserByPhoneNumber(string phonenumber)
-        {
-            IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.PhoneNumbers.Where(key => key.PhoneNumber.Equals(phonenumber)).Any());
 
-            var users = await ToListAsync(usersQueryable);
+        public async Task<CloudUser?> GetUserByPhoneNumber(string number)
+        {
+			CloudGeographyClient cloudGeography = new();
+
+			PhoneNumber phoneNumber= cloudGeography.PhoneNumbers.Get(number);
+
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user 
+				=> user.PhoneNumbers.Where(key 
+					=> key.PhoneNumber.Equals(phoneNumber.Number) 
+					&& (string.IsNullOrEmpty(phoneNumber.CountryCode) || key.CountryCode.Equals(phoneNumber.CountryCode, StringComparison.OrdinalIgnoreCase)))
+				.Any());
+
+			var users = await ToListAsync(usersQueryable);
 
             return users.FirstOrDefault();
         }

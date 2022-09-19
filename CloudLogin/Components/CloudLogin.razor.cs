@@ -26,7 +26,6 @@ namespace AngryMonkey.Cloud.Login
 		private string _inputValue;
 		Provider providerType { get; set; }
 
-		public string PhoneNumber { get; set; }
 		public string Prefix { get; set; }
 		[Parameter]
 		public string InputValue
@@ -67,7 +66,7 @@ namespace AngryMonkey.Cloud.Login
 				if (IsValidEmail)
 					return InputFormat.Email;
 
-				if (IsValidPhoneNumber)
+				if (cloudGeography.PhoneNumbers.IsValidPhoneNumber(InputValue))
 					return InputFormat.PhoneNumber;
 
 				return InputFormat.Other;
@@ -108,25 +107,9 @@ namespace AngryMonkey.Cloud.Login
 
 		private async Task OnNextClicked(MouseEventArgs e)
 		{
-			if (InputValueFormat == InputFormat.PhoneNumber)//Signin in with Phone Number
+			if (InputValueFormat == InputFormat.PhoneNumber) //Signin in with Phone Number
 			{
-				if (InputValue.StartsWith("00"))
-					InputValue = $"+{InputValue[2..]}";
-
-				if (InputValue.StartsWith("0"))
-					InputValue = InputValue[1..];
-
-				InputValue = Regex.Replace(InputValue, $"[{PhoneNumberValidCharacters}]", "");
-
-				//check for country if +
-				if (InputValue.StartsWith("+"))
-				{
-					// + removed
-					Country country = GetPhoneNumberCountryCode(InputValue);
-					PhoneNumber = InputValue.Substring(1 + country.CallingCode.ToString().Length);
-				}
-				else
-					PhoneNumber = InputValue;
+				InputValue = cloudGeography.PhoneNumbers.Get(InputValue).GetFullPhoneNumber();
 
 				State = ProcessEvent.PendingCheckNumber;
 			}
@@ -137,7 +120,6 @@ namespace AngryMonkey.Cloud.Login
 					return;
 
 				loading = true;
-				// State = ProcessEvent.PendingLoading;
 
 				InputValue = InputValue.ToLower();
 
@@ -147,7 +129,6 @@ namespace AngryMonkey.Cloud.Login
 			}
 
 			StateHasChanged();
-
 		}
 
 		private void CheckUser(CloudUser? user)
@@ -167,30 +148,30 @@ namespace AngryMonkey.Cloud.Login
 			StateHasChanged();
 		}
 
-		private Geography.Country? GetPhoneNumberCountryCode(string phoneNumber)
-		{
-			// Remove +
-			phoneNumber = InputValue[1..];
+		//private Geography.Country? GetPhoneNumberCountryCode(string phoneNumber)
+		//{
+		//	// Remove +
+		//	phoneNumber = InputValue[1..];
 
-			Prefix = "";
+		//	Prefix = "";
 
-			for (int i = 0; i < 3; i++)
-			{
-				Prefix = $"{Prefix}{phoneNumber[i]}";
+		//	for (int i = 0; i < 3; i++)
+		//	{
+		//		Prefix = $"{Prefix}{phoneNumber[i]}";
 
-				List<Geography.Country> countries = cloudGeography.Countries.GetByCallingCode(int.Parse(Prefix));
+		//		List<Country> countries = cloudGeography.Countries.GetByCallingCode(int.Parse(Prefix));
 
-				if (countries.Any())
-					return countries.First();
-			}
+		//		if (countries.Any())
+		//			return countries.First();
+		//	}
 
-			return null;
-		}
+		//	return null;
+		//}
 
 		private async Task OnContinueClicked(MouseEventArgs e)
 		{
 			loading = true;
-			CloudUser? user = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
+			CloudUser? user = await Cosmos.GetUserByPhoneNumber(InputValue);
 			CheckUser(user);
 		}
 		private async Task OnBackClicked(MouseEventArgs e)
@@ -212,9 +193,7 @@ namespace AngryMonkey.Cloud.Login
 			};
 
 			CloudUser? user = await Cosmos.GetUserByEmailAddress(InputValue);
-			string id = $"CloudUser|{user.ID}";
-			PartitionKey partitionKey = new(user.PartitionKey);
-			await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+			await Cosmos.Container.PatchItemAsync<dynamic>(user.CosmosId, new(user.PartitionKey), patchOperations);
 
 			State = ProcessEvent.PendingVerification;
 			loading = false;
@@ -249,9 +228,7 @@ namespace AngryMonkey.Cloud.Login
                                     PatchOperation.Replace("/EmailAddresses/0/VerificationCodeTime",DateTimeOffset.UtcNow)
 								};
 
-								string id = $"CloudUser|{CheckUser.ID}";
-								PartitionKey partitionKey = new(CheckUser.PartitionKey);
-								await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+								await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);//push to db
 								State = ProcessEvent.PendingVerification;//goto verification
 								loading = false;
 								StateHasChanged();
@@ -328,9 +305,7 @@ namespace AngryMonkey.Cloud.Login
                                     PatchOperation.Replace("/PhoneNumbers/0/VerificationCodeTime",DateTimeOffset.UtcNow)
 								};
 
-								string id = $"CloudUser|{CheckUser.ID}";
-								PartitionKey partitionKey = new(CheckUser.PartitionKey);
-								await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);//push to db
+								await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);//push to db
 								State = ProcessEvent.PendingVerification;//goto verification
 								loading = false;
 
@@ -357,7 +332,7 @@ namespace AngryMonkey.Cloud.Login
 
 					//SEND PHONE NUMBER
 
-					Country? country = GetPhoneNumberCountryCode(InputValue);
+					Country? country = cloudGeography.Countries.GuessCountryByPhoneNumber(InputValue);
 					Guid CustomUserID = Guid.NewGuid();//create id
 					CloudUser user = new()
 					{
@@ -370,7 +345,7 @@ namespace AngryMonkey.Cloud.Login
 								{
 									CountryCode = country.Code,
 									CountryCallingCode = country.CallingCode,
-									PhoneNumber = PhoneNumber,
+									PhoneNumber = GetPhoneNumberWithoutCode(InputValue),
 									Provider = "PhoneNumber",
 									ProviderId = CustomUserID.ToString(),
 									IsPrimary = true,
@@ -389,6 +364,17 @@ namespace AngryMonkey.Cloud.Login
 			else//Login from other providers
 				navigationManager.NavigateTo($"/cloudlogin/login/{provider.Code}?emailaddress={InputValue}&redirectUri=/&KeepMeSignedIn={KeepMeSignedIn}", true);
 		}
+
+		private string GetPhoneNumberWithoutCode(string phoneNumber)
+		{
+			Country? country = cloudGeography.Countries.GuessCountryByPhoneNumber(InputValue);
+
+			if (country == null)
+				return phoneNumber;
+
+			return phoneNumber[$"+{country.CallingCode}".Length..];
+		}
+
 		private async Task OnVerifyClicked(MouseEventArgs e)
 		{
 			if (providerType.Code.ToLower() == "emailaddress")//verifying as email adress
@@ -413,9 +399,8 @@ namespace AngryMonkey.Cloud.Login
 								{
 									PatchOperation.Replace("/EmailAddresses/0/Code", ""),//code empty
                                 };
-									string id = $"CloudUser|{CheckUser.ID}";
-									PartitionKey partitionKey = new(CheckUser.PartitionKey);
-									await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+									await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);
 
 									//Code is now empty goto registration
 									State = ProcessEvent.PendingRegisteration;
@@ -431,9 +416,7 @@ namespace AngryMonkey.Cloud.Login
                                     PatchOperation.Replace("/EmailAddresses/0/Code", "")//code empty
                                 };
 
-									string id = $"CloudUser|{CheckUser.ID}";
-									PartitionKey partitionKey = new(CheckUser.PartitionKey);
-									await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+									await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);
 
 									navigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={CheckUser.ID}&KeepMeSignedIn=false", true);
 								}
@@ -451,7 +434,7 @@ namespace AngryMonkey.Cloud.Login
 			else if (providerType.Code.ToLower() == "phonenumber")//verifying as phone number
 			{//Verify button clicked => check if code is right => check if expired
 			 //Check if IsRegistered => Login / else : Make code empty => Goto verified
-				CloudUser? CheckUser = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
+				CloudUser? CheckUser = await Cosmos.GetUserByPhoneNumber(InputValue);
 				CheckUser?.PhoneNumbers?.ForEach(async phonenumber =>
 				{
 					if (phonenumber?.Provider?.ToLower() == "phonenumber")
@@ -470,9 +453,8 @@ namespace AngryMonkey.Cloud.Login
 									{
 										PatchOperation.Replace("/PhoneNumbers/0/Code", ""),//code empty
                                     };
-									string id = $"CloudUser|{CheckUser.ID}";
-									PartitionKey partitionKey = new(CheckUser.PartitionKey);
-									await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+									await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);
 
 									//Code is now empty goto registration
 									State = ProcessEvent.PendingRegisteration;
@@ -488,9 +470,8 @@ namespace AngryMonkey.Cloud.Login
                                     PatchOperation.Replace("/PhoneNumbers/0/Code", "")//code empty
                                 };
 
-									string id = $"CloudUser|{CheckUser.ID}";
-									PartitionKey partitionKey = new(CheckUser.PartitionKey);
-									await Cosmos.Container.PatchItemAsync<dynamic>(id, partitionKey, patchOperations);
+
+									await Cosmos.Container.PatchItemAsync<dynamic>(CheckUser.CosmosId, new(CheckUser.PartitionKey), patchOperations);
 
 									navigationManager.NavigateTo($"/cloudlogin/Custom/CustomLogin?userID={CheckUser.ID}&KeepMeSignedIn=false", true);
 								}
@@ -530,7 +511,7 @@ namespace AngryMonkey.Cloud.Login
 				}
 				else
 				{
-					user = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
+					user = await Cosmos.GetUserByPhoneNumber(InputValue);
 
 					patchOperations.Add(PatchOperation.Add("/PhoneNumbers/0/IsVerified", true));
 				}
@@ -594,8 +575,6 @@ namespace AngryMonkey.Cloud.Login
 		//}
 
 		bool IsValidEmail => Regex.IsMatch(InputValue, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
-		bool IsValidPhoneNumber => Regex.IsMatch(InputValue, @$"^\+?[0-9({PhoneNumberValidCharacters})]{{8,20}}$");
-		private static string PhoneNumberValidCharacters => string.Join(@"\", new[] { ' ', '.', '-', '/', '\\', '(', ')' });
 
 		public static async void SendEmail(string receiver, string Code)
 		{

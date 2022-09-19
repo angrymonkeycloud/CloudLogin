@@ -127,6 +127,10 @@ namespace AngryMonkey.Cloud.Login
 
 
                 }
+                else
+                {
+                    PhoneNumber = InputValue;
+                }
 
                 State = ProcessEvent.PendingCheckNumber;
             }
@@ -161,6 +165,7 @@ namespace AngryMonkey.Cloud.Login
                 Providers = cloudLogin.Options.Providers.Select(key => new Provider(key.Code)).ToList();
                 State = ProcessEvent.PendingProviders;
             }
+            StateHasChanged();
         }
         private Geography.Country? GetPhoneNumberCountryCode(string phoneNumber)
         {
@@ -184,6 +189,7 @@ namespace AngryMonkey.Cloud.Login
 
         private async Task OnContinueClicked(MouseEventArgs e)
         {
+            State = ProcessEvent.PendingLoading;
             CloudUser? user = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
             CheckUser(user);
         }
@@ -198,7 +204,7 @@ namespace AngryMonkey.Cloud.Login
             ExpiredCode = false;
             VerificationCode = CreateRandomCode(6);
             DebugCodeShow = VerificationCode; //DEBUG ONLY
-            SendMail(InputValue, VerificationCode);
+            SendEmail(InputValue, VerificationCode);
             List<PatchOperation> patchOperations = new List<PatchOperation>()
             {
                 PatchOperation.Replace("/EmailAddresses/0/Code",VerificationCode),
@@ -234,7 +240,7 @@ namespace AngryMonkey.Cloud.Login
                                 State = ProcessEvent.PendingLoading;
                                 VerificationCode = CreateRandomCode(6);//create code
 
-                                SendMail(InputValue, VerificationCode);
+                                SendEmail(InputValue, VerificationCode);
                                 DebugCodeShow = VerificationCode; //DEBUG ONLY
                                 List<PatchOperation> patchOperations = new List<PatchOperation>()
                                 {
@@ -266,7 +272,7 @@ namespace AngryMonkey.Cloud.Login
                     State = ProcessEvent.PendingLoading;
                     VerificationCode = CreateRandomCode(6);//create code
                     DebugCodeShow = VerificationCode;
-                    SendMail(InputValue, VerificationCode);
+                    SendEmail(InputValue, VerificationCode);
                     Guid CustomUserID = Guid.NewGuid();//create id
                     CloudUser user = new()
                     {
@@ -292,7 +298,7 @@ namespace AngryMonkey.Cloud.Login
                     StateHasChanged();
                 }
             }
-            else if (provider.Code.ToLower() == "PhoneNumber")// check if phone code login 
+            else if (provider.Code.ToLower() == "phonenumber")// check if phone code login 
             {
                 //Provider is clicked we need to check if the user exists
                 CloudUser? CheckUser = await Cosmos.GetUserByEmailAddress(InputValue);
@@ -357,7 +363,7 @@ namespace AngryMonkey.Cloud.Login
                                     CountryCode = country.Code,
                                     CountryCallingCode = country.CallingCode,
                                     PhoneNumber = PhoneNumber,
-                                    Provider = "EmailAddress",
+                                    Provider = "PhoneNumber",
                                     ProviderId = CustomUserID.ToString(),
                                     IsPrimary = true,
                                     IsVerified = false, //x
@@ -432,11 +438,11 @@ namespace AngryMonkey.Cloud.Login
                             WrongCode = true;
                 });
             }
-            else if (providerType.Code.ToLower() == "PhoneNumber")//verifying as phone number
+            else if (providerType.Code.ToLower() == "phonenumber")//verifying as phone number
             {//Verify button clicked => check if code is right => check if expired
                 //Check if IsRegistered => Login / else : Make code empty => Goto verified
                 CloudUser? CheckUser = await Cosmos.GetUserByPhoneNumber(PhoneNumber);
-                CheckUser?.EmailAddresses?.ForEach(async phonenumber =>
+                CheckUser?.PhoneNumbers?.ForEach(async phonenumber =>
                 {
                     if (phonenumber?.Provider?.ToLower() == "phonenumber")
                         if (VerificationValue == phonenumber.Code)
@@ -600,7 +606,7 @@ namespace AngryMonkey.Cloud.Login
         bool IsValidPhoneNumber => Regex.IsMatch(InputValue, @$"^\+?[0-9({PhoneNumberValidCharacters})]{{8,20}}$");
         private static string PhoneNumberValidCharacters => string.Join(@"\", new[] { ' ', '.', '-', '/', '\\', '(', ')' });
 
-        public static async void SendMail(string receiver, string Code)
+        public static async void SendEmail(string receiver, string Code)
         {
             string smtpEmail = "AngryMonkeyDev@gmail.com";
             string smtpPassword = "nllvbaqoxvfqsssh";

@@ -90,5 +90,13 @@ namespace AngryMonkey.Cloud.Login
 
 			return users.FirstOrDefault();
 		}
-	}
+        public async Task<CloudUser?> GetUserByPhoneNumber(string emailAddress)
+        {
+            IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.PhoneNumbers.Where(key => key.PhoneNumber.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+
+            var users = await ToListAsync(usersQueryable);
+
+            return users.FirstOrDefault();
+        }
+    }
 }

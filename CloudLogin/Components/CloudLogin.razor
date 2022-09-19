@@ -1,7 +1,8 @@
 ﻿@namespace AngryMonkey.Cloud.Login
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
 @inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
-@inject NavigationManager NavigationManager
+@inject NavigationManager navigationManager
+@inject CloudGeographyClient cloudGeography
 
 <div draggable class="amc-cloudlogin">
     @if (State == ProcessEvent.PendingSignIn)
@@ -37,7 +38,10 @@
     }
     else if (State == ProcessEvent.PendingCheckNumber)
     {
-        @InputValue
+        @Prefix
+        @PhoneNumber
+
+        <button @onclick="OnContinueClicked">Continue</button>
 
         <button @onclick="OnBackClicked">Back</button>
     }

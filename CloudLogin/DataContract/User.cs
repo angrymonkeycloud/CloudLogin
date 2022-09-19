@@ -83,9 +83,11 @@ namespace AngryMonkey.Cloud.Login.DataContract
 
 	public record UserPhoneNumber
 	{
-		public string CountryCode { get; set; }//LB
-		public int CountryCallingCode { get; set; }//961
-		public string PhoneNumber { get; set; } = string.Empty;
+		public string CountryCode { get; set; } = string.Empty;//LB
+
+		public int CountryCallingCode { get; set; } = 0;//961
+
+        public string PhoneNumber { get; set; } = string.Empty;
         public string FullPhoneNumber
         {
             get

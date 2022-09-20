@@ -4,7 +4,7 @@
 @inject NavigationManager navigationManager
 @inject CloudGeographyClient cloudGeography
 
-<div draggable class="amc-cloudlogin">
+<div class="amc-cloudlogin">
     <div class="amc-cloudlogin-header">
 
         @* Loading *@
@@ -86,7 +86,7 @@
                 <div class="login-form-email --input">
                     <input type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="email">
-                        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.Email)
+                        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.EmailAddress)
                         {
                             <span>Email</span>
                         }
@@ -101,7 +101,7 @@
                     </label>
                 </div>
                 <div class="login-form-next ">
-                    <button class="--button _primary @(IsLoading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.Email))? "" : "--disable" )" @onclick="OnNextClicked">
+                    <button class="--button _primary @(IsLoading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnNextClicked">
                         <span>Next</span>
                         <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
                     </button>
@@ -149,7 +149,7 @@
                     }
                 </div>
                 <div class="login-form-emailVerification  --input">
-                    <input type="text" id="code" class=" @(VerificationValue!=""? "active": "")" @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                    <input autocomplete="off" type="text" id="code" class=" @(VerificationValue!=""? "active": "")" @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="code">Enter Code</label>
                 </div>
                 <div class="login-form-resend">

@@ -75,38 +75,39 @@ namespace AngryMonkey.Cloud.Login
 
 		#endregion
 
-		public async Task<CloudUser?> GetUserById(string Id)
-		{
-            IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.EmailAddresses.Where(key => key.ProviderId.Equals(Id.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
-
-            var users = await ToListAsync(usersQueryable);
-
-            return users.FirstOrDefault();
-        }
 		public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
 		{
-			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.EmailAddresses.Where(key => key.EmailAddress.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.Inputs.Where(key => key.InputFormat == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
 			var users = await ToListAsync(usersQueryable);
 
 			return users.FirstOrDefault();
 		}
 
-        public async Task<CloudUser?> GetUserByPhoneNumber(string number)
-        {
+		public async Task<CloudUser?> GetUserByPhoneNumber(string number)
+		{
 			CloudGeographyClient cloudGeography = new();
 
-			PhoneNumber phoneNumber= cloudGeography.PhoneNumbers.Get(number);
+			PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(number);
 
-			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user 
-				=> user.PhoneNumbers.Where(key 
-					=> key.PhoneNumber.Equals(phoneNumber.Number) 
-					&& (string.IsNullOrEmpty(phoneNumber.CountryCode) || key.CountryCode.Equals(phoneNumber.CountryCode, StringComparison.OrdinalIgnoreCase)))
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user
+				=> user.Inputs.Where(key => key.InputFormat == InputFormat.PhoneNumber &&
+				key.Input.Equals(phoneNumber.Number)
+					&& (string.IsNullOrEmpty(phoneNumber.CountryCode)
+					|| key.PhoneNumberCountryCode.Equals(phoneNumber.CountryCode, StringComparison.OrdinalIgnoreCase)))
 				.Any());
 
 			var users = await ToListAsync(usersQueryable);
 
-            return users.FirstOrDefault();
-        }
-    }
+			return users.FirstOrDefault();
+		}
+
+		public async Task<CloudUser> GetUserById(Guid id)
+		{
+			CloudUser user = new() { ID = id };
+			ItemResponse<CloudUser> response = await Container.ReadItemAsync<CloudUser>(user.CosmosId, user.CosmosPartitionKey);
+
+			return response.Resource;
+		}
+	}
 }

@@ -60,19 +60,19 @@
   max-width: 20rem;
 }
 .amc-cloudlogin-panel {
-  padding: 10px;
-  margin-bottom: 10px;
-  text-align: center;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #4569D4;
+  padding: 7px 5px;
+  margin-bottom: 20px;
+  border-top: 1px solid #4569D4;
 }
 .amc-cloudlogin-inputdisplay {
   font-weight: 700;
+  color: #4569D4;
 }
 .amc-cloudlogin-keppsignedin {
   display: flex;
   display: inline-block;
   font-size: 0;
+  opacity: 0.7;
 }
 .amc-cloudlogin-keppsignedin label,
 .amc-cloudlogin-keppsignedin input {

@@ -13,6 +13,7 @@ using Microsoft.Azure.Cosmos;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Mail;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -23,114 +24,119 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public class CloudLoginService
 {
-    IServiceCollection AddCloudLogin { get; }
-    public CloudLoginConfiguration Options { get; set; }
+	IServiceCollection AddCloudLogin { get; }
+	public CloudLoginConfiguration Options { get; set; }
 }
 
 public static class MvcServiceCollectionExtensions
 {
 
-    public static CloudLoginService AddCloudLogin(this IServiceCollection services, CloudLoginConfiguration options)
-    {
-        services.AddSingleton(new CloudLoginService() { Options = options });
-        services.AddSingleton(new CloudGeographyClient());
-        //services.AddSingleton<CloudLoginProcess>();
+	public static CloudLoginService AddCloudLogin(this IServiceCollection services, CloudLoginConfiguration options)
+	{
+		services.AddSingleton(new CloudLoginService() { Options = options });
+		services.AddSingleton(new CloudGeographyClient());
+		//services.AddSingleton<CloudLoginProcess>();
 
-        var service = services.AddAuthentication("Cookies").AddCookie((Action<AspNetCore.Authentication.Cookies.CookieAuthenticationOptions>)(option =>
-        {
-            option.Cookie.Name = "CloudLogin";
-            option.Events = new AspNetCore.Authentication.Cookies.CookieAuthenticationEvents()
-            {
-                OnSignedIn = async context =>
-                {
-                    string? userID = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    string? emaillAddress = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
+		var service = services.AddAuthentication("Cookies").AddCookie((option =>
+		{
+			option.Cookie.Name = "CloudLogin";
+			option.Events = new AspNetCore.Authentication.Cookies.CookieAuthenticationEvents()
+			{
+				OnSignedIn = async context =>
+				{
+					string? userID = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+					string? emaillAddress = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
 
-                    if (string.IsNullOrEmpty(emaillAddress))
-                    {
-                        CloudUser? user = await options.Cosmos.Methods.GetUserById(userID);
+					//if (string.IsNullOrEmpty(emaillAddress))
+					//{
+					//	CloudUser? user = await options.Cosmos.Methods.GetUserById(userID);
 
-                        var NameIdentity = new ClaimsIdentity();
-                        var GivenNameIdentity = new ClaimsIdentity();
-                        var SurnameIdentity = new ClaimsIdentity();
-                        var EmailIdentity = new ClaimsIdentity();
+					//	var NameIdentity = new ClaimsIdentity();
+					//	var GivenNameIdentity = new ClaimsIdentity();
+					//	var SurnameIdentity = new ClaimsIdentity();
+					//	var EmailIdentity = new ClaimsIdentity();
 
-                        NameIdentity.AddClaim(new Claim(ClaimTypes.Name, (string?)user.DisplayName));
-                        GivenNameIdentity.AddClaim(new Claim(ClaimTypes.GivenName, (string)user.FirstName));
-                        SurnameIdentity.AddClaim(new Claim(ClaimTypes.Surname, (string)user.FirstName));
-                        EmailIdentity.AddClaim(new Claim(ClaimTypes.Email, Enumerable.FirstOrDefault<UserEmailAddress>(user.EmailAddresses).EmailAddress));
+					//	NameIdentity.AddClaim(new Claim(ClaimTypes.Name, user.DisplayName));
+					//	GivenNameIdentity.AddClaim(new Claim(ClaimTypes.GivenName, user.FirstName));
+					//	SurnameIdentity.AddClaim(new Claim(ClaimTypes.Surname, user.FirstName));
+					//	EmailIdentity.AddClaim(new Claim(ClaimTypes.Email, emaillAddress));
 
 
-                        context.Principal.AddIdentity(NameIdentity);
-                        context.Principal.AddIdentity(GivenNameIdentity);
-                        context.Principal.AddIdentity(SurnameIdentity);
-                        context.Principal.AddIdentity(EmailIdentity);
-                    }
-                    else
-                    {
-                        CloudUser? user = await options.Cosmos.Methods.GetUserByEmailAddress(emaillAddress);
+					//	context.Principal.AddIdentity(NameIdentity);
+					//	context.Principal.AddIdentity(GivenNameIdentity);
+					//	context.Principal.AddIdentity(SurnameIdentity);
+					//	context.Principal.AddIdentity(EmailIdentity);
+					//}
+					//else
+					//{
+					CloudUser? user = await options.Cosmos.Methods.GetUserByEmailAddress(emaillAddress);
 
-                        string provider = context.Principal.Identity.AuthenticationType;
+					string? provider = context.Principal?.Identity?.AuthenticationType;
 
-						bool doesUserExist = user != null;
+					if (provider == ".")
+						provider = null;
 
-                        user ??= new CloudUser()
-                        {
-                            ID = Guid.NewGuid(),
-                            IsRegistered = true,
+					bool doesUserExist = user != null;
 
-                            EmailAddresses = new()
-                            {
-                                new UserEmailAddress()
-                                {
-                                    EmailAddress = emaillAddress,
-                                    IsPrimary = true,
-                                    ProviderId = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-                                    Provider = provider,
-                                    IsVerified = true
-                                }
-                            }
-                        };
+					string firstName = context.Principal?.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
+					string lastName = context.Principal?.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
 
-                        user.LastSignedIn = DateTimeOffset.UtcNow;
-                        user.FirstName = context.Principal?.FindFirst(ClaimTypes.GivenName)?.Value ?? user.FirstName;
-                        user.LastName = context.Principal?.FindFirst(ClaimTypes.Surname)?.Value ?? user.LastName;
-                        user.DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? user.DisplayName;
+					user ??= new CloudUser()
+					{
+						ID = Guid.NewGuid(),
+						FirstName = firstName,
+						LastName = lastName,
+						DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}",
 
-                        if (doesUserExist)
-                            await options.Cosmos.Methods.Container.UpsertItemAsync(user);
-                        else
-                            await options.Cosmos.Methods.Container.CreateItemAsync(user);
-                    }
-                }
-            };
-        }));
+						Inputs = new()
+							{
+								new LoginInput()
+								{
+									Input = emaillAddress,
+									InputFormat = InputFormat.EmailAddress,
+									IsPrimary = true,
+									ProviderId = provider != null ? context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value : null,
+									Provider = provider
+								}
+							}
+					};
 
-        foreach (CloudLoginConfiguration.Provider provider in options.Providers)
-        {
-            // Microsoft
+					user.LastSignedIn = DateTimeOffset.UtcNow;
 
-            if (provider.GetType() == typeof(CloudLoginConfiguration.MicrosoftAccount))
-                service.AddMicrosoftAccount(Option =>
-                {
-                    Option.SignInScheme = "Cookies";
-                    Option.ClientId = provider.ClientId;
-                    Option.ClientSecret = provider.ClientSecret;
-                });
+					if (doesUserExist)
+						await options.Cosmos.Methods.Container.UpsertItemAsync(user);
+					else
+						await options.Cosmos.Methods.Container.CreateItemAsync(user);
+					//}
+				}
+			};
+		}));
 
-            // Google
+		foreach (CloudLoginConfiguration.Provider provider in options.Providers)
+		{
+			// Microsoft
 
-            if (provider.GetType() == typeof(CloudLoginConfiguration.GoogleAccount))
-                service.AddGoogle(Option =>
-                {
-                    Option.SignInScheme = "Cookies";
-                    Option.ClientId = provider.ClientId;
-                    Option.ClientSecret = provider.ClientSecret;
-                });
-        }
+			if (provider.GetType() == typeof(CloudLoginConfiguration.MicrosoftAccount))
+				service.AddMicrosoftAccount(Option =>
+				{
+					Option.SignInScheme = "Cookies";
+					Option.ClientId = provider.ClientId;
+					Option.ClientSecret = provider.ClientSecret;
+				});
 
-        return null;
-    }
+			// Google
+
+			if (provider.GetType() == typeof(CloudLoginConfiguration.GoogleAccount))
+				service.AddGoogle(Option =>
+				{
+					Option.SignInScheme = "Cookies";
+					Option.ClientId = provider.ClientId;
+					Option.ClientSecret = provider.ClientSecret;
+				});
+		}
+
+		return null;
+	}
 }
 
 //public class CloudLoginProcess
@@ -142,55 +148,42 @@ public static class MvcServiceCollectionExtensions
 
 public class CloudLoginConfiguration
 {
-    public List<Provider> Providers { get; set; } = new();
-    public CosmosDatabase? Cosmos { get; set; }
+	public List<Provider> Providers { get; set; } = new();
+	public CosmosDatabase? Cosmos { get; set; }
+	public SmtpClient SmtpClient { get; set; }
+	public MailMessage MailMessage { get; set; }
+	public bool AllowLoginWithEmailCode { get; set; } = true;
 
-    public class Provider
-    {
-        public string Code { get; set; }
-        public string ClientId { get; set; }
-        public string ClientSecret { get; set; }
-    }
-
-    public class MicrosoftAccount : Provider
-    {
-        public MicrosoftAccount()
-        {
-            Code = "Microsoft";
-        }
-    }
-
-    public class GoogleAccount : Provider
-    {
-        public GoogleAccount()
-        {
-            Code = "Google";
-        }
+	public class Provider
+	{
+		public string Code { get; set; }
+		public string ClientId { get; set; }
+		public string ClientSecret { get; set; }
 	}
 
-	public class EmailAddress : Provider
+	public class MicrosoftAccount : Provider
 	{
-		public EmailAddress()
+		public MicrosoftAccount()
 		{
-			Code = "EmailAddress";
+			Code = "Microsoft";
 		}
 	}
 
-	public class PhoneNumber : Provider
+	public class GoogleAccount : Provider
 	{
-		public PhoneNumber()
+		public GoogleAccount()
 		{
-			Code = "PhoneNumber";
+			Code = "Google";
 		}
 	}
 
 	public class CosmosDatabase
-    {
-        public string ConnectionString { get; set; }
-        public string DatabaseId { get; set; }
-        public string ContainerId { get; set; }
+	{
+		public string ConnectionString { get; set; }
+		public string DatabaseId { get; set; }
+		public string ContainerId { get; set; }
 
-        private CosmosMethods? methods = null;
-        internal CosmosMethods Methods => methods ??= new CosmosMethods(ConnectionString, DatabaseId, ContainerId);
-    }
+		private CosmosMethods? methods = null;
+		internal CosmosMethods Methods => methods ??= new CosmosMethods(ConnectionString, DatabaseId, ContainerId);
+	}
 }

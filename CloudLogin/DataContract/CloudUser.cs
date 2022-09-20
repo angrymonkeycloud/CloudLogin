@@ -1,14 +1,25 @@
 ﻿using AngryMonkey.Cloud.Geography;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.Extensions.DependencyInjection.CloudLoginConfiguration;
 
 namespace AngryMonkey.Cloud.Login.DataContract
 {
+	[JsonConverter(typeof(StringEnumConverter))]
+	public enum InputFormat
+	{
+		EmailAddress,
+		PhoneNumber,
+		Other
+	}
+
 	public record BaseRecord
 	{
 		internal BaseRecord(string partitionKey, string discriminator)
@@ -24,6 +35,9 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public Guid ID { get; set; }
 		public string PartitionKey { get; internal set; }
 		public string Discriminator { get; internal set; }
+
+		[JsonIgnore]
+		internal PartitionKey CosmosPartitionKey => new PartitionKey(PartitionKey);
 	}
 
 	public record CloudUser : BaseRecord
@@ -33,7 +47,6 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string? DisplayName { get; set; }
-		public bool IsRegistered { get; set; } = false;
 		public bool IsLocked { get; set; } = false;
 		public string? Username { get; set; }
 		public DateOnly? DateOfBirth { get; set; }
@@ -41,65 +54,66 @@ namespace AngryMonkey.Cloud.Login.DataContract
 
 		// Lists
 
-		public List<UserEmailAddress>? EmailAddresses { get; set; }
-		public List<UserPhoneNumber>? PhoneNumbers { get; set; }
+		public List<LoginInput> Inputs { get; set; } = new List<LoginInput>();
+
+		[JsonIgnore]
+		public List<LoginInput> EmailAddresses => Inputs.Where(key => key.InputFormat == InputFormat.EmailAddress).ToList();
+
+		[JsonIgnore]
+		public List<LoginInput> PhoneNumbers => Inputs.Where(key => key.InputFormat == InputFormat.PhoneNumber).ToList();
+
 
 		// Ignore
 
 		[JsonIgnore]
-		public UserEmailAddress? PrimaryEmailAddress => EmailAddresses?.FirstOrDefault(key => key.IsPrimary);
+		public LoginInput? PrimaryEmailAddress => EmailAddresses?.FirstOrDefault(key => key.IsPrimary);
 
 		[JsonIgnore]
-		public UserPhoneNumber? PrimaryPhoneNumber => PhoneNumbers?.FirstOrDefault(key => key.IsPrimary);
+		public LoginInput? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault(key => key.IsPrimary);
 
 		[JsonIgnore]
-		public List<string> Providers
-		{
-			get
-			{
-				List<string> providers = new();
-
-				if (EmailAddresses != null)
-					providers.AddRange(EmailAddresses.Where(key => !string.IsNullOrEmpty(key.Provider)).Select(key => key.Provider).ToList());
-
-				if (PhoneNumbers != null)
-					providers.AddRange(PhoneNumbers.Where(key => !string.IsNullOrEmpty(key.Provider)).Select(key => key.Provider).ToList());
-
-				return providers;
-			}
-		}
+		public List<string> Providers => Inputs.Where(key => !string.IsNullOrEmpty(key.Provider)).Select(key => key.Provider).ToList();
 	}
 
-	public record UserEmailAddress
+
+	public record LoginInput
 	{
-		public string EmailAddress { get; set; } = string.Empty;
+		public string Input { get; set; } = string.Empty;
+		public InputFormat InputFormat { get; set; } = InputFormat.Other;
+		public string? PhoneNumberCountryCode { get; set; }
 		public string? Provider { get; set; }
 		public string? ProviderId { get; set; }
 		public bool IsPrimary { get; set; } = false;
-		public bool IsVerified { get; set; }
-		public string? Code { get; set; }
-		public DateTimeOffset? VerificationCodeTime { get; set; }
 	}
 
-	public record UserPhoneNumber
-	{
-		public string CountryCode { get; set; } = string.Empty;//LB
+	//public record UserEmailAddress
+	//{
+	//	public string EmailAddress { get; set; } = string.Empty;
+	//	public string? Provider { get; set; }
+	//	public string? ProviderId { get; set; }
+	//	public bool IsPrimary { get; set; } = false;
+	//	public bool IsVerified { get; set; }
+	//	public string? VerificationCode { get; set; }
+	//	public DateTimeOffset? VerificationCodeTime { get; set; }
+	//}
 
-		public int CountryCallingCode { get; set; } = 0;//961
-
-        public string PhoneNumber { get; set; } = string.Empty;
-        public string FullPhoneNumber
-        {
-            get
-            {
-                return $"{CountryCallingCode}{PhoneNumber}";
-            }
-        }
-        public string? Provider { get; set; }
-		public string? ProviderId { get; set; }
-		public bool IsPrimary { get; set; } = false;
-        public bool IsVerified { get; set; }
-        public string? Code { get; set; }
-        public DateTimeOffset? VerificationCodeTime { get; set; }
-    }
+	//public record UserPhoneNumber
+	//{
+	//	public string CountryCode { get; set; } = string.Empty;//LB
+	//	public string CountryCallingCode { get; set; } = string.Empty;//961
+	//	public string PhoneNumber { get; set; } = string.Empty;
+	//	public string FullPhoneNumber
+	//	{
+	//		get
+	//		{
+	//			return $"{CountryCallingCode}{PhoneNumber}";
+	//		}
+	//	}
+	//	public string? Provider { get; set; }
+	//	public string? ProviderId { get; set; }
+	//	public bool IsPrimary { get; set; } = false;
+	//	public bool IsVerified { get; set; }
+	//	public string? VerificationCode { get; set; }
+	//	public DateTimeOffset? VerificationCodeTime { get; set; }
+	//}
 }

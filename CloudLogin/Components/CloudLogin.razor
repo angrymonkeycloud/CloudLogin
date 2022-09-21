@@ -1,4 +1,5 @@
 ﻿@namespace AngryMonkey.Cloud.Login
+@using static Microsoft.Extensions.DependencyInjection.CloudLoginConfiguration
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
 @inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
 @inject NavigationManager navigationManager
@@ -114,7 +115,11 @@
                 <div class="login-form-provider">
                     @foreach (Provider provider in Providers)
                     {
-                        <button class="--button _@provider.Code.ToLower()" @onclick="() => OnProviderClickedAsync(provider)">@provider.Name</button>
+                        <button class="--button _@provider.Code.ToLower()" @onclick="() => OnProviderClickedAsync(provider)">
+                            <span>
+                                @provider.Label
+                            </span>
+                        </button>
                     }
                 </div>
             </div>
@@ -127,7 +132,7 @@
                     {
                         <button class="--button _@provider.Code.ToLower()" @onclick="() => OnProviderClickedAsync(provider)">
                             <span>
-                                @provider.Name
+                                @provider.Label
                             </span>
                         </button>
                     }

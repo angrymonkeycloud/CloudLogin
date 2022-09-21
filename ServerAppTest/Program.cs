@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos.Core;
 using ServerAppTest.Controllers;
 using System.Net.Mail;
 using System.Text;
@@ -68,7 +69,9 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 		{
 			ClientId = builder.Configuration["Google:ClientId"],
 			ClientSecret= builder.Configuration["Google:ClientSecret"]
-		}
+		},
+		new CloudLoginConfiguration.EmailAccount(),
+		new CloudLoginConfiguration.SMSAccount()
 	}
 });
 builder.Services.AddAuthentication(opt =>

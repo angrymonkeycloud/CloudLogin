@@ -156,24 +156,35 @@ public class CloudLoginConfiguration
 
 	public class Provider
 	{
-		public string Code { get; set; }
-		public string ClientId { get; set; }
-		public string ClientSecret { get; set; }
+		public Provider(string code, string? label = null)
+		{
+			Code = code;
+			Label ??= Code;
+		}
+
+		public string Code { get; init; } = string.Empty;
+		public string Label { get; init; } = string.Empty;
+		public string ClientId { get; init; } = string.Empty;
+		public string ClientSecret { get; init; } = string.Empty;
+		public bool HandlesEmailAddress { get; init; } = false;
+		public bool HandlesPhoneNumber { get; init; } = false;
+		public bool AlwaysShow { get; init; } = false;
 	}
 
 	public class MicrosoftAccount : Provider
 	{
-		public MicrosoftAccount()
+		public MicrosoftAccount(string? label = null) : base("Microsoft", label)
 		{
-			Code = "Microsoft";
+			HandlesEmailAddress = true;
+			HandlesPhoneNumber = true;
 		}
 	}
 
 	public class GoogleAccount : Provider
 	{
-		public GoogleAccount()
+		public GoogleAccount(string? label = null) : base("Google", label)
 		{
-			Code = "Google";
+			HandlesEmailAddress = true;
 		}
 	}
 

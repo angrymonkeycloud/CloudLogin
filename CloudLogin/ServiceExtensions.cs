@@ -47,28 +47,6 @@ public static class MvcServiceCollectionExtensions
 					string? userID = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 					string? emaillAddress = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
 
-					//if (string.IsNullOrEmpty(emaillAddress))
-					//{
-					//	CloudUser? user = await options.Cosmos.Methods.GetUserById(userID);
-
-					//	var NameIdentity = new ClaimsIdentity();
-					//	var GivenNameIdentity = new ClaimsIdentity();
-					//	var SurnameIdentity = new ClaimsIdentity();
-					//	var EmailIdentity = new ClaimsIdentity();
-
-					//	NameIdentity.AddClaim(new Claim(ClaimTypes.Name, user.DisplayName));
-					//	GivenNameIdentity.AddClaim(new Claim(ClaimTypes.GivenName, user.FirstName));
-					//	SurnameIdentity.AddClaim(new Claim(ClaimTypes.Surname, user.FirstName));
-					//	EmailIdentity.AddClaim(new Claim(ClaimTypes.Email, emaillAddress));
-
-
-					//	context.Principal.AddIdentity(NameIdentity);
-					//	context.Principal.AddIdentity(GivenNameIdentity);
-					//	context.Principal.AddIdentity(SurnameIdentity);
-					//	context.Principal.AddIdentity(EmailIdentity);
-					//}
-					//else
-					//{
 					CloudUser? user = await options.Cosmos.Methods.GetUserByEmailAddress(emaillAddress);
 
 					string? provider = context.Principal?.Identity?.AuthenticationType;
@@ -107,7 +85,6 @@ public static class MvcServiceCollectionExtensions
 						await options.Cosmos.Methods.Container.UpsertItemAsync(user);
 					else
 						await options.Cosmos.Methods.Container.CreateItemAsync(user);
-					//}
 				}
 			};
 		}));
@@ -159,7 +136,7 @@ public class CloudLoginConfiguration
 		public Provider(string code, string? label = null)
 		{
 			Code = code;
-			Label ??= Code;
+			Label = label ?? Code;
 		}
 
 		public string Code { get; init; } = string.Empty;
@@ -187,8 +164,24 @@ public class CloudLoginConfiguration
 			HandlesEmailAddress = true;
 		}
 	}
+    public class EmailAccount : Provider
+    {
+        public EmailAccount(string? label = null) : base("Email", label)
+        {
+            HandlesEmailAddress = true;
+			AlwaysShow = true;
+        }
+    }
+	public class SMSAccount : Provider
+    {
+        public SMSAccount(string? label = null) : base("SMS", label)
+        {
+            HandlesPhoneNumber = true;
+            AlwaysShow = true;
+        }
+    }
 
-	public class CosmosDatabase
+    public class CosmosDatabase
 	{
 		public string ConnectionString { get; set; }
 		public string DatabaseId { get; set; }

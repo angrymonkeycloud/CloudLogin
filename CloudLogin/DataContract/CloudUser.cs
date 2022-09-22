@@ -42,7 +42,7 @@ namespace AngryMonkey.Cloud.Login.DataContract
 
 	public record CloudUser : BaseRecord
 	{
-		public CloudUser() : base("User", "CloudUser") { }
+		public CloudUser() : base("CloudUser", "CloudUser") { }
 
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
@@ -50,6 +50,7 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public bool IsLocked { get; set; } = false;
 		public string? Username { get; set; }
 		public DateOnly? DateOfBirth { get; set; }
+		public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;
 		public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
 
 		// Lists
@@ -57,10 +58,10 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public List<LoginInput> Inputs { get; set; } = new List<LoginInput>();
 
 		[JsonIgnore]
-		public List<LoginInput> EmailAddresses => Inputs.Where(key => key.InputFormat == InputFormat.EmailAddress).ToList();
+		public List<LoginInput> EmailAddresses => Inputs.Where(key => key.Format == InputFormat.EmailAddress).ToList();
 
 		[JsonIgnore]
-		public List<LoginInput> PhoneNumbers => Inputs.Where(key => key.InputFormat == InputFormat.PhoneNumber).ToList();
+		public List<LoginInput> PhoneNumbers => Inputs.Where(key => key.Format == InputFormat.PhoneNumber).ToList();
 
 
 		// Ignore
@@ -75,49 +76,18 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public List<string> Providers => Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct().ToList();
 	}
 
-
-	public record Providers
+	public record LoginProvider
     {
         public string Code { get; set; } = string.Empty;
-        public string NameIdentifier { get; set; } = string.Empty;
+        public string Identifier { get; set; } = string.Empty;
     }
+
 	public record LoginInput
 	{
 		public string Input { get; set; } = string.Empty;
-		public InputFormat InputFormat { get; set; } = InputFormat.Other;
+		public InputFormat Format { get; set; } = InputFormat.Other;
 		public string? PhoneNumberCountryCode { get; set; }
-        public List<Providers> Providers { get; set; } = new List<Providers>();
+        public List<LoginProvider> Providers { get; set; } = new List<LoginProvider>();
 		public bool IsPrimary { get; set; } = false;
 	}
-
-	//public record UserEmailAddress
-	//{
-	//	public string EmailAddress { get; set; } = string.Empty;
-	//	public string? Provider { get; set; }
-	//	public string? ProviderId { get; set; }
-	//	public bool IsPrimary { get; set; } = false;
-	//	public bool IsVerified { get; set; }
-	//	public string? VerificationCode { get; set; }
-	//	public DateTimeOffset? VerificationCodeTime { get; set; }
-	//}
-
-	//public record UserPhoneNumber
-	//{
-	//	public string CountryCode { get; set; } = string.Empty;//LB
-	//	public string CountryCallingCode { get; set; } = string.Empty;//961
-	//	public string PhoneNumber { get; set; } = string.Empty;
-	//	public string FullPhoneNumber
-	//	{
-	//		get
-	//		{
-	//			return $"{CountryCallingCode}{PhoneNumber}";
-	//		}
-	//	}
-	//	public string? Provider { get; set; }
-	//	public string? ProviderId { get; set; }
-	//	public bool IsPrimary { get; set; } = false;
-	//	public bool IsVerified { get; set; }
-	//	public string? VerificationCode { get; set; }
-	//	public DateTimeOffset? VerificationCodeTime { get; set; }
-	//}
 }

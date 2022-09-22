@@ -33,10 +33,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Pages\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Include="compilerconfig.json" />
 	</ItemGroup>
 

@@ -72,17 +72,21 @@ namespace AngryMonkey.Cloud.Login.DataContract
 		public LoginInput? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault(key => key.IsPrimary);
 
 		[JsonIgnore]
-		public List<string> Providers => Inputs.Where(key => !string.IsNullOrEmpty(key.Provider)).Select(key => key.Provider).ToList();
+		public List<string> Providers => Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct().ToList();
 	}
 
 
+	public record Providers
+    {
+        public string Code { get; set; } = string.Empty;
+        public string NameIdentifier { get; set; } = string.Empty;
+    }
 	public record LoginInput
 	{
 		public string Input { get; set; } = string.Empty;
 		public InputFormat InputFormat { get; set; } = InputFormat.Other;
 		public string? PhoneNumberCountryCode { get; set; }
-		public string? Provider { get; set; }
-		public string? ProviderId { get; set; }
+        public List<Providers> Providers { get; set; } = new List<Providers>();
 		public bool IsPrimary { get; set; } = false;
 	}
 

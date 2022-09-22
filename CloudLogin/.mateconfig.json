@@ -1,0 +1,8 @@
+{
+  "files": [
+    {
+      "output": "Components/CloudLogin.razor.css",
+      "input": "Components/CloudLogin.razor.less"
+    }
+  ]
+}

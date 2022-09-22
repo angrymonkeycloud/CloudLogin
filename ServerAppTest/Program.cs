@@ -11,6 +11,7 @@ using Microsoft.Azure.Cosmos.Core;
 using ServerAppTest.Controllers;
 using System.Net.Mail;
 using System.Text;
+using Twilio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +42,6 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 		DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
 		ContainerId = builder.Configuration["Cosmos:ContainerId"]
 	},
-
 	SmtpClient = new("smtp.gmail.com", 587)
 	{
 		EnableSsl = true,
@@ -49,8 +49,16 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 		UseDefaultCredentials = false,
 		Credentials = new System.Net.NetworkCredential("wissamfarhat51@gmail.com", "ycqirwqugebkxfmh")
 	},
+    Twilio = new()
+    {
+        AccountId = builder.Configuration["Twilio:AccountId"],
+        AuthenticationId = builder.Configuration["Twilio:AuthenticationId"],
+        PhoneNumber = builder.Configuration["Twilio:PhoneNumber"],
+        Message = "We recevied a request to login page, enter the following password login code: {{code}}"
+    },
 
-	MailMessage = new()
+
+    MailMessage = new()
 	{
 		From = new MailAddress("wissamfarhat51@gmail.com", "Cloud Login"),
 		Subject = "Login Code",

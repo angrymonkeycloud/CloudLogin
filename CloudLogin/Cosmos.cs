@@ -4,6 +4,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
 using System.Net.Mail;
+using Twilio;
 using CloudUser = AngryMonkey.Cloud.Login.DataContract.CloudUser;
 
 namespace AngryMonkey.Cloud.Login
@@ -14,6 +15,7 @@ namespace AngryMonkey.Cloud.Login
 
 		public Container Container { get; set; }
 
+		
 		internal CosmosMethods(string connectionString, string databaseId, string containerId)
 		{
 			CosmosClient client = new(connectionString, new CosmosClientOptions()

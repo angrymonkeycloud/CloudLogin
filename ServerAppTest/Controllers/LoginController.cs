@@ -51,20 +51,25 @@ namespace AngryMonkey.Cloud.Login.Controllers
 				ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
 				IsPersistent = keepMeSignedIn
 			};
-
+			
 			//create claimsIdentity
 			var claimsIdentity = new ClaimsIdentity(new[] {
 
 				new Claim(ClaimTypes.NameIdentifier, userDictionary["UserId"]),
 				new Claim(ClaimTypes.GivenName, userDictionary["FirstName"]),
 				new Claim(ClaimTypes.Surname, userDictionary["LastName"]),
-				new Claim(ClaimTypes.Name, userDictionary["DisplayName"]),
-				new Claim(ClaimTypes.Email, userDictionary["Input"]),
+				new Claim(ClaimTypes.Name, userDictionary["DisplayName"])
 
-			}, ".");
+			}, userDictionary["Type"]);
 
-			//create claimsPrincipal
-			var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+			if (userDictionary["Type"].ToLower() == "phonenumber")
+				claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, userDictionary["Input"]));
+			if (userDictionary["Type"].ToLower() == "email")
+				claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, userDictionary["Input"]));
+
+
+            //create claimsPrincipal
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 			//Sign In User
 
 			await HttpContext.SignInAsync(claimsPrincipal, properties);

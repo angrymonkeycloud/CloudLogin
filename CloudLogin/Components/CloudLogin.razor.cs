@@ -192,11 +192,8 @@ namespace AngryMonkey.Cloud.Login
 
 				foreach (Provider provider in cloudLogin.Options.Providers.Where(key => key.AlwaysShow))
 					if (!Providers.Any(key => key.Code == provider.Code))
-					{
-						if ((InputValueFormat == InputFormat.EmailAddress && provider.HandlesEmailAddress)
-							|| (InputValueFormat == InputFormat.PhoneNumber && provider.HandlesPhoneNumber))
+						if ((InputValueFormat == InputFormat.EmailAddress && provider.HandlesEmailAddress) || (InputValueFormat == InputFormat.PhoneNumber && provider.HandlesPhoneNumber))
 							Providers.Add(provider);
-					}
 
 				UserId = user.ID;
 
@@ -205,11 +202,7 @@ namespace AngryMonkey.Cloud.Login
 			else // New user
 			{
 				Providers = cloudLogin.Options.Providers
-				.Where(key
-					=> key.AlwaysShow
-						|| (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
-						|| (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)
-					)
+				.Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress) || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber))
 				.ToList();
 
 				SwitchState(ProcessState.PendingProviders);

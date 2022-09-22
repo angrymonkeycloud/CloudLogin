@@ -203,6 +203,7 @@ public class CloudLoginConfiguration
 		public FacebookAccount(string? label = null) : base("Facebook", label)
 		{
 			HandlesEmailAddress = true;
+			HandlesPhoneNumber = true;
 		}
 	}
 	public class EmailAccount : Provider
@@ -213,14 +214,14 @@ public class CloudLoginConfiguration
 			AlwaysShow = true;
 		}
 	}
-	public class SMSAccount : Provider
-	{
-		public SMSAccount(string? label = null) : base("SMS", label)
-		{
-			HandlesPhoneNumber = true;
-			AlwaysShow = true;
-		}
-	}
+	//public class SMSAccount : Provider
+	//{
+	//	public SMSAccount(string? label = null) : base("SMS", label)
+	//	{
+	//		HandlesPhoneNumber = true;
+	//		AlwaysShow = true;
+	//	}
+	//}
 
 	public class CosmosDatabase
 	{

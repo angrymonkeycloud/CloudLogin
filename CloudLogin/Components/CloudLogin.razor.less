@@ -7,7 +7,7 @@
 @--colorEmail: #6200EE;
 @--colorGoogle: #DB4437;
 @--colorMicrosoft: #00A4EF;
-@--facebookColor: #4267B2;
+@--colorFacebook: #4267B2;
 @--colorError: #f53030;
 
 .amc {
@@ -423,6 +423,18 @@
 
 		&:hover {
 			color: @--colorMicrosoft;
+			background-color: transparent;
+		}
+	}
+
+	&._facebook {
+		border: 1px solid @--colorFacebook;
+		background-color: @--colorFacebook;
+		transition: all .5s;
+
+
+		&:hover {
+			color: @--colorFacebook;
 			background-color: transparent;
 		}
 	}

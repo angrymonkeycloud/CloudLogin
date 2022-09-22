@@ -255,7 +255,7 @@ namespace AngryMonkey.Cloud.Login
         {
             providerType = provider;
 
-            if (provider.Code.ToLower() == "emailaddress")
+            if (provider.Code.ToLower() == "email")
             {
                 IsLoading = true;
 
@@ -298,7 +298,7 @@ namespace AngryMonkey.Cloud.Login
 
         private async Task OnVerifyClicked(MouseEventArgs e)
         {
-            if (providerType.Code.ToLower() == "emailaddress")
+            if (providerType.Code.ToLower() == "email")
             {
                 switch (GetVerificationCodeResult(VerificationValue))
                 {
@@ -356,68 +356,10 @@ namespace AngryMonkey.Cloud.Login
             return builder.ToString();
         }
 
-        //public class Provider
-        //{
-        //    public string Code { get; set; }
-        //    public string Label { get; set; }
-        //    public string ClientId { get; set; }
-        //    public string ClientSecret { get; set; }
-        //    public bool HandlesEmailAddress { get; set; }
-        //    public bool HandlesPhoneNumber { get; set; }
-        //    public bool AlwaysShow { get; set; }
-        //}
-        //public class Provider
-        //{
-        //	public Provider(string code)
-        //	{
-        //		Code = code;
-        //	}
-
-        //	public string Code { get; private set; }
-        //	public string LowerCode => Code.ToLower();
-
-        //	public string? Name => LowerCode switch
-        //	{
-        //		"microsoft" => "Microsoft",
-        //		"google" => "Google",
-        //		"emailaddress" => "Email Code",
-        //		"phonenumber" => "SMS Code",
-        //		_ => Code
-        //	};
-
-        //	public bool ProcessEmailAddresses => !Code.Equals("phonenumber", StringComparison.OrdinalIgnoreCase);
-        //	public bool ProcessPhoneNumbers => !Code.Equals("emailaddress", StringComparison.OrdinalIgnoreCase);
-        //}
-
-
-
-
-
-
-        //protected void CheckFormat()
-        //{
-        //    var checkEmail = IsValidEmail(Value);
-        //    var checkPhoneNumber = IsValidPhoneNumber(Value);
-        //    var CheckCharacters = HasCharacters(Value);
-
-        //    if (checkEmail)
-        //        InputType = InputFormat.Email;
-        //    else if (checkPhoneNumber)
-        //        if(!CheckCharacters)
-        //            InputType = InputFormat.PhoneNumber;
-        //    else if(CheckCharacters)
-        //        InputType = InputFormat.Other;
-
-        //    StateHasChanged();
-        //}
-
         bool IsValidEmail => Regex.IsMatch(InputValue, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
 
         public async Task SendEmail(string receiver, string Code)
         {
-            //string smtpEmail = "AngryMonkeyDev@gmail.com";
-            //string smtpPassword = "nllvbaqoxvfqsssh";
-
             cloudLogin.Options.MailMessage.To.Add(receiver);
             cloudLogin.Options.MailMessage.Body = cloudLogin.Options.MailMessage.Body.Replace("{{code}}", Code);
 

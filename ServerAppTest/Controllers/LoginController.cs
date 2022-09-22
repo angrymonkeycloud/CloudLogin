@@ -1,5 +1,7 @@
-﻿using AngryMonkey.Cloud.Login.DataContract;
+﻿using AngryMonkey.Cloud.Components.Icons;
+using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +36,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 			{
 				"microsoft" => Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme),
 				"google" => Challenge(properties, GoogleDefaults.AuthenticationScheme),
+				"facebook" => Challenge(properties, FacebookDefaults.AuthenticationScheme),
 				_ => null,
 			};
 		}

@@ -70,6 +70,11 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 			ClientId = builder.Configuration["Google:ClientId"],
 			ClientSecret= builder.Configuration["Google:ClientSecret"]
 		},
+		new CloudLoginConfiguration.FacebookAccount()
+		{
+			ClientId = builder.Configuration["Facebook:ClientId"],
+			ClientSecret= builder.Configuration["Facebook:ClientSecret"]
+		},
 		new CloudLoginConfiguration.EmailAccount(),
 		new CloudLoginConfiguration.SMSAccount()
 	}

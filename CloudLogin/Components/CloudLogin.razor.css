@@ -370,6 +370,15 @@
   color: #00A4EF;
   background-color: transparent;
 }
+.--button._facebook {
+  border: 1px solid #4267B2;
+  background-color: #4267B2;
+  transition: all 0.5s;
+}
+.--button._facebook:hover {
+  color: #4267B2;
+  background-color: transparent;
+}
 .--button._error {
   border: 1px solid #f53030;
   background-color: #f53030;

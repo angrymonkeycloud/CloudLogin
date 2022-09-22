@@ -215,6 +215,29 @@
     </div>
 
     <div class="amc-cloudlogin-footer">
-        <AngryMonkey.Cloud.Login.Components.ProviderIcons />
+
+        @foreach (Provider provider in cloudLogin.Options.Providers)
+            switch (provider.Code)
+            {
+                case "Microsoft":
+                    <AngryMonkey.Cloud.Components.Icons.MicrosoftLogo />
+                    break;
+
+                case "Google":
+                    <AngryMonkey.Cloud.Components.Icons.GoogleLogo />
+                    break;
+
+                case "Facebook":
+                    <AngryMonkey.Cloud.Components.Icons.Facebook />
+                    break;
+
+                case "Apple":
+                    <AngryMonkey.Cloud.Components.Icons.AppleLogo />
+                    break;
+
+                default: break;
+            }
+
+        <AngryMonkey.Cloud.Components.Icons.AppleLogo />
     </div>
 </div>

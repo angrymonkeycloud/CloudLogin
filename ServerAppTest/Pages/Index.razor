@@ -1,13 +1,20 @@
 ﻿@page "/"
 @using System.Security.Claims
- 
+
 <AuthorizeView>
     <Authorized>
         Name: @context.User.FindFirst(ClaimTypes.Name).Value
         <br />
         ID: @context.User.FindFirst(ClaimTypes.NameIdentifier).Value
         <br />
-        Email: @context.User.FindFirst(ClaimTypes.Email).Value
+        @if (string.IsNullOrEmpty(context?.User?.FindFirst(ClaimTypes.Email)?.Value))
+        {
+            Input: @context.User.FindFirst(ClaimTypes.Email);
+        }
+        else
+        {
+            Input: @context.User.FindFirst(ClaimTypes.MobilePhone);
+        }
         <br />
         <a href="cloudlogin/logout">Logout</a>
     </Authorized>

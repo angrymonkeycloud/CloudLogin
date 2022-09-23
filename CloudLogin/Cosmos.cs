@@ -4,6 +4,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
 using System.Net.Mail;
+using Twilio;
 using CloudUser = AngryMonkey.Cloud.Login.DataContract.CloudUser;
 
 namespace AngryMonkey.Cloud.Login
@@ -14,6 +15,7 @@ namespace AngryMonkey.Cloud.Login
 
 		public Container Container { get; set; }
 
+		
 		internal CosmosMethods(string connectionString, string databaseId, string containerId)
 		{
 			CosmosClient client = new(connectionString, new CosmosClientOptions()
@@ -77,7 +79,7 @@ namespace AngryMonkey.Cloud.Login
 
 		public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
 		{
-			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
 			var users = await ToListAsync(usersQueryable);
 
@@ -90,7 +92,7 @@ namespace AngryMonkey.Cloud.Login
 
 			PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(number);
 
-			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user
 				=> user.Inputs.Where(key => key.Format == InputFormat.PhoneNumber &&
 				key.Input.Equals(phoneNumber.Number)
 					&& (string.IsNullOrEmpty(phoneNumber.CountryCode)

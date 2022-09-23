@@ -408,4 +408,5 @@ namespace AngryMonkey.Cloud.Login
             await cloudLogin.Options.SmtpClient.SendMailAsync(cloudLogin.Options.MailMessage);
         }
     }
+
 }

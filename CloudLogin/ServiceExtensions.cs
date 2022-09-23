@@ -274,4 +274,5 @@ public class CloudLoginConfiguration
         private CosmosMethods? methods = null;
         internal CosmosMethods Methods => methods ??= new CosmosMethods(ConnectionString, DatabaseId, ContainerId);
     }
+
 }

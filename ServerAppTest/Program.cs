@@ -52,9 +52,9 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 	},
 	Whatsapp = new()
 	{
-        RequestUri = "https://graph.facebook.com/v14.0/104165565796348/messages",
-        Authorization = "Bearer EAAT0MmYLBC8BAE2dFcPkV0cfHQ3hOQff7TZBtUsSkIEi7wg7ZCZBpiyIHAt0FlQrZBddVW4lyFtxzl7ZC0vtLuHQ2Pr3gNBkIgTkVN3lHAEH6svSAiTyazFwuuMCRSklCvaKKswKI8CPS0ZAVCCHFW91WsJeZB3vnJz7PebB7EUk5EVMePRKYPgZCQxPUvqDgOdYCzPVYBadfQZDZD",
-		Template = "sendcode",
+        RequestUri = "https://graph.facebook.com/v14.0/110279391841940/messages",
+        Authorization = "Bearer EAAT0MmYLBC8BADZAENunU89KZBbkeigZAPE0ZBhUm65udCZAC1Fwil9k5HR8O5qv5AIM8CznHfFctzaXNO80IOY2gNQU9jxahTB8c2EZABgwYBrZAA94DAaw1SkpHGpOOZAY0ZADOOBJnhLMC2JbgBgBnh4ltvZBgWsmgKQCoEe0d2sK7ivz276mMHbxtQMtPvKOHn2U1UiBfjvAZDZD",
+		Template = "testcode",
 		Language = "en"
     },
 

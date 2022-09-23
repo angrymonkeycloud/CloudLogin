@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.Authentication.Twitter;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Razor.Internal;
 using Microsoft.Azure.Cosmos;
@@ -37,6 +38,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 				"microsoft" => Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme),
 				"google" => Challenge(properties, GoogleDefaults.AuthenticationScheme),
 				"facebook" => Challenge(properties, FacebookDefaults.AuthenticationScheme),
+				"twitter" => Challenge(properties, TwitterDefaults.AuthenticationScheme),
 				_ => null,
 			};
 		}
@@ -64,7 +66,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
 			if (userDictionary["Type"].ToLower() == "phonenumber")
 				claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, userDictionary["Input"]));
-			if (userDictionary["Type"].ToLower() == "email")
+			if (userDictionary["Type"].ToLower() == "emailaddress")
 				claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, userDictionary["Input"]));
 
 

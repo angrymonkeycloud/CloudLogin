@@ -79,7 +79,7 @@ namespace AngryMonkey.Cloud.Login
 
 		public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
 		{
-			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
 			var users = await ToListAsync(usersQueryable);
 
@@ -92,7 +92,7 @@ namespace AngryMonkey.Cloud.Login
 
 			PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(number);
 
-			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("User", user
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user
 				=> user.Inputs.Where(key => key.Format == InputFormat.PhoneNumber &&
 				key.Input.Equals(phoneNumber.Number)
 					&& (string.IsNullOrEmpty(phoneNumber.CountryCode)

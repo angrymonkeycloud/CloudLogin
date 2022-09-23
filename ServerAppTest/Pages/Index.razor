@@ -7,7 +7,7 @@
         <br />
         ID: @context.User.FindFirst(ClaimTypes.NameIdentifier).Value
         <br />
-        @if (string.IsNullOrEmpty(context.User.FindFirst(ClaimTypes.Email).Value))
+        @if (string.IsNullOrEmpty(context?.User?.FindFirst(ClaimTypes.Email)?.Value))
         {
             Input: @context.User.FindFirst(ClaimTypes.Email);
         }

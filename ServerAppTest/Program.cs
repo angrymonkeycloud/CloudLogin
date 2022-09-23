@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos.Core;
 using ServerAppTest.Controllers;
+using System.Net;
 using System.Net.Mail;
 using System.Text;
 using Twilio;
@@ -49,14 +50,13 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 		UseDefaultCredentials = false,
 		Credentials = new System.Net.NetworkCredential("wissamfarhat51@gmail.com", "ycqirwqugebkxfmh")
 	},
-    Twilio = new()
-    {
-        AccountId = builder.Configuration["Twilio:AccountId"],
-        AuthenticationId = builder.Configuration["Twilio:AuthenticationId"],
-        PhoneNumber = builder.Configuration["Twilio:PhoneNumber"],
-        Message = "We recevied a request to login page, enter the following password login code: {{code}}"
+	Whatsapp = new()
+	{
+        RequestUri = "https://graph.facebook.com/v14.0/104165565796348/messages",
+        Authorization = "Bearer EAAT0MmYLBC8BAE2dFcPkV0cfHQ3hOQff7TZBtUsSkIEi7wg7ZCZBpiyIHAt0FlQrZBddVW4lyFtxzl7ZC0vtLuHQ2Pr3gNBkIgTkVN3lHAEH6svSAiTyazFwuuMCRSklCvaKKswKI8CPS0ZAVCCHFW91WsJeZB3vnJz7PebB7EUk5EVMePRKYPgZCQxPUvqDgOdYCzPVYBadfQZDZD",
+		Template = "sendcode",
+		Language = "en"
     },
-
 
     MailMessage = new()
 	{
@@ -83,8 +83,13 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 			ClientId = builder.Configuration["Facebook:ClientId"],
 			ClientSecret= builder.Configuration["Facebook:ClientSecret"]
 		},
+		new CloudLoginConfiguration.TwitterAccount()
+		{
+			ClientId = builder.Configuration["Twitter:ClientId"],
+			ClientSecret= builder.Configuration["Twitter:ClientSecret"]
+		},
 		new CloudLoginConfiguration.EmailAccount(),
-		new CloudLoginConfiguration.SMSAccount()
+		new CloudLoginConfiguration.Whataspp()
 	}
 });
 builder.Services.AddAuthentication(opt =>

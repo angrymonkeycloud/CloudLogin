@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Newtonsoft.Json;
 using System.Linq.Expressions;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using Twilio;
@@ -188,7 +189,6 @@ namespace AngryMonkey.Cloud.Login
                         if ((InputValueFormat == InputFormat.EmailAddress && provider.HandlesEmailAddress)
                             || (InputValueFormat == InputFormat.PhoneNumber && provider.HandlesPhoneNumber))
                             Providers.Add(provider);
-
                 UserId = user.ID;
 
                 SwitchState(ProcessState.PendingAuthorization);
@@ -232,8 +232,6 @@ namespace AngryMonkey.Cloud.Login
                 await SendEmail(InputValue, VerificationCode);
             if (InputValueFormat == InputFormat.PhoneNumber)
                 await SendSMS(InputValue, VerificationCode);
-
-            ;
         }
 
         private async Task OnNewCodeClicked(MouseEventArgs e)
@@ -256,7 +254,7 @@ namespace AngryMonkey.Cloud.Login
 
                 SwitchState(ProcessState.PendingVerification);
             }
-            else if (provider.Code.ToLower() == "sms")
+            else if (provider.Code.ToLower() == "whatsapp")
             {
                 IsLoading = true;
 
@@ -324,7 +322,7 @@ namespace AngryMonkey.Cloud.Login
                 else SwitchState(ProcessState.PendingRegisteration);
 
             }
-            else if (providerType.Code.ToLower() == "sms")
+            else if (providerType.Code.ToLower() == "whatsapp")
             {
                 CloudUser? checkUser = await Cosmos.GetUserByPhoneNumber(InputValue);
 
@@ -370,15 +368,37 @@ namespace AngryMonkey.Cloud.Login
         bool IsValidEmail => Regex.IsMatch(InputValue, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
         public async Task SendSMS(string receiver, string code)
         {
-            TwilioClient.Init(cloudLogin.Options.Twilio.AccountId, cloudLogin.Options.Twilio.AuthenticationId);
 
-            string messageBody = cloudLogin.Options.Twilio.Message.Replace("{{code}}", code);
 
-            MessageResource message = MessageResource.Create(
-                body: messageBody,
-                from: new Twilio.Types.PhoneNumber(cloudLogin.Options.Twilio.PhoneNumber),
-                to: new Twilio.Types.PhoneNumber(receiver)
-            );
+            string serialize = "{\"messaging_product\": \"whatsapp\",\"recipient_type\": \"individual\",\"to\": \"" + receiver.Replace("+", "") + "\",\"type\": \"template\",\"template\": {\"name\": \""+ cloudLogin.Options.Whatsapp.Template +"\",\"language\": {\"code\": \""+ cloudLogin.Options.Whatsapp.Language +"\"},\"components\": [{\"type\": \"body\",\"parameters\": [{\"type\": \"text\",\"text\": \"" + code + "\"}]}]}}";
+
+
+
+            using (HttpRequestMessage request = new()
+            {
+                Method = new HttpMethod("POST"),
+                RequestUri = new(cloudLogin.Options.Whatsapp.RequestUri),
+                Content = new StringContent(serialize),
+            })
+            {
+                request.Headers.Add("Authorization", cloudLogin.Options.Whatsapp.Authorization);
+                request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                var response = await httpClient.SendAsync(request); 
+            }
+
+            //TwilioClient.Init(cloudLogin.Options.Twilio.AccountId, cloudLogin.Options.Twilio.AuthenticationId);
+
+            //string messageBody = cloudLogin.Options.Twilio.Message.Replace("{{code}}", code);
+            //var from = new Twilio.Types.PhoneNumber(cloudLogin.Options.Twilio.PhoneNumber);
+            //var to = new Twilio.Types.PhoneNumber(receiver);
+
+
+            //MessageResource message = MessageResource.Create(
+            //    body: messageBody,
+            //    from: from,
+            //    to: to
+            //);
         }
         public async Task SendEmail(string receiver, string code)
         {

@@ -39,6 +39,7 @@ public static class MvcServiceCollectionExtensions
     {
         services.AddSingleton(new CloudLoginService() { Options = options });
         services.AddSingleton(new CloudGeographyClient());
+        services.AddSingleton(new HttpClient());
         //services.AddSingleton<CloudLoginProcess>();
 
         var service = services.AddAuthentication("Cookies").AddCookie((option =>
@@ -51,6 +52,7 @@ public static class MvcServiceCollectionExtensions
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
 
                     CloudUser? user ;
+                    InputFormat FormatValue = InputFormat.EmailAddress;
 
                     string userID = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     string input = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
@@ -59,6 +61,7 @@ public static class MvcServiceCollectionExtensions
                     {
                         input = context.Principal?.FindFirst(ClaimTypes.MobilePhone)?.Value;
                         user = await options.Cosmos.Methods.GetUserByPhoneNumber(input);
+                        FormatValue = InputFormat.PhoneNumber;
                     }
                     else user = await options.Cosmos.Methods.GetUserByEmailAddress(input);
 
@@ -99,7 +102,7 @@ public static class MvcServiceCollectionExtensions
                                 new LoginInput()
                                 {
                                     Input = input,
-                                    Format = InputFormat.EmailAddress,
+                                    Format = FormatValue,
                                     IsPrimary = true,
                                 }
                             }
@@ -151,6 +154,16 @@ public static class MvcServiceCollectionExtensions
                     Option.ClientId = provider.ClientId;
                     Option.ClientSecret = provider.ClientSecret;
                 });
+
+            // Twitter
+
+            if (provider.GetType() == typeof(CloudLoginConfiguration.TwitterAccount))
+                service.AddTwitter(Option =>
+                {
+                    Option.SignInScheme = "Cookies";
+                    Option.ConsumerKey = provider.ClientId;
+                    Option.ConsumerSecret = provider.ClientSecret;
+                });
         }
 
         if (options.MailMessage != null)
@@ -173,7 +186,7 @@ public class CloudLoginConfiguration
 {
     public List<Provider> Providers { get; set; } = new();
     public CosmosDatabase? Cosmos { get; set; }
-    public TwilioAccount? Twilio { get; set; }
+    public WhatsappAccount? Whatsapp { get; set; }
     public SmtpClient SmtpClient { get; set; }
     public MailMessage MailMessage { get; set; }
     public bool AllowLoginWithEmailCode { get; set; } = true;
@@ -220,6 +233,14 @@ public class CloudLoginConfiguration
             //HandlesPhoneNumber = true;
         }
     }
+    public class TwitterAccount : Provider
+    {
+        public TwitterAccount(string? label = null) : base("Twitter", label)
+        {
+            HandlesEmailAddress = true;
+            //HandlesPhoneNumber = true;
+        }
+    }
     public class EmailAccount : Provider
     {
         public EmailAccount(string? label = null) : base("Email", label)
@@ -228,21 +249,20 @@ public class CloudLoginConfiguration
             AlwaysShow = true;
         }
     }
-    public class SMSAccount : Provider
+    public class Whataspp : Provider
     {
-        public SMSAccount(string? label = null) : base("SMS", label)
+        public Whataspp(string? label = null) : base("whatsapp", label)
         {
             //AlwaysShow = true;
             HandlesPhoneNumber = true;
         }
     }
-    public class TwilioAccount
+    public class WhatsappAccount
     {
-        public string AccountId { get; set; }
-        public string AuthenticationId { get; set; }
-        public string PhoneNumber { get; set; }
-        public string Message { get; set; }
-
+        public string RequestUri { get; set; }
+        public string Authorization { get; set; }
+        public string Template { get; set; }
+        public string Language { get; set; }
     }
 
     public class CosmosDatabase

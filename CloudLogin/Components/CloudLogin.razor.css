@@ -59,10 +59,124 @@
   width: 100%;
   max-width: 20rem;
 }
+.amc-cloudlogin-body .login-form {
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  margin: 0 auto;
+  min-height: 20rem;
+}
+.amc-cloudlogin-body .login-form-title {
+  width: fit-content;
+  margin: 0 auto 0 auto;
+  transition: all 0.8s;
+  line-height: 0;
+}
+.amc-cloudlogin-body .login-form-back {
+  min-height: 1rem;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.amc-cloudlogin-body .login-form-back span {
+  font-size: 0.9rem;
+}
+.amc-cloudlogin-body .login-form-notFound {
+  flex-direction: column;
+}
+.amc-cloudlogin-body .login-form-notFound h4 {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+.amc-cloudlogin-body .login-form-notFound h5 {
+  font-size: 0.8rem;
+  font-weight: normal;
+  margin-top: 0;
+}
+.amc-cloudlogin-body .login-form-Verification {
+  padding: 7px 5px;
+  border-top: 1px solid #4569D4;
+  text-align: left;
+}
+.amc-cloudlogin-body .login-form-Verification span {
+  font-size: 1rem;
+}
+.amc-cloudlogin-body .login-form-resend button {
+  border: none;
+  background-color: transparent;
+  color: #4569D4;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.amc-cloudlogin-body .login-form-resend button:hover {
+  text-decoration: underline;
+}
+.amc-cloudlogin-body .login-form-provider {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 50px;
+}
+.amc-cloudlogin-body .login-form-provider button {
+  max-width: 250px;
+}
+.amc-cloudlogin-body .login-form-register {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.amc-cloudlogin-body .login-form-error,
+.amc-cloudlogin-body .login-form-expire {
+  padding-left: 6px;
+  margin-bottom: 10px;
+  transition: all 0.5s;
+  min-height: 20px;
+}
+.amc-cloudlogin-body .login-form-error span,
+.amc-cloudlogin-body .login-form-expire span {
+  display: none;
+  font-size: 0.9rem;
+  color: #f53030;
+  text-align: center;
+}
+.amc-cloudlogin-body .login-form-error._wrong,
+.amc-cloudlogin-body .login-form-expire._wrong {
+  margin-top: 10px;
+}
+.amc-cloudlogin-body .login-form-error._wrong span,
+.amc-cloudlogin-body .login-form-expire._wrong span {
+  display: block;
+  text-align: left;
+}
+.amc-cloudlogin-body .login-form-expire {
+  min-height: 40px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.amc-cloudlogin-body .login-form-next {
+  margin-block: 2rem;
+  text-align: right;
+}
+.amc-cloudlogin-body .login-form-verify,
+.amc-cloudlogin-body .login-form-finish {
+  text-align: right;
+  margin-bottom: 50px;
+}
+.amc-cloudlogin-body .login-form ._center {
+  justify-content: center;
+}
 .amc-cloudlogin-panel {
   padding: 7px 5px;
+  margin: 0 auto;
   margin-bottom: 20px;
   border-top: 1px solid #4569D4;
+  width: fit-content;
 }
 .amc-cloudlogin-inputdisplay {
   font-weight: 700;
@@ -86,9 +200,6 @@
 .amc-cloudlogin-keppsignedin input {
   appearance: checkbox;
   margin: 0;
-}
-.amc-cloudlogin-footer {
-  text-align: center;
 }
 .amc-cloudlogin-loading {
   position: fixed;
@@ -116,116 +227,6 @@
   width: 100px;
   margin: 30px auto 5px auto;
 }
-.amc-cloudlogin-form {
-  display: flex;
-  flex-direction: column;
-  width: 80%;
-  margin: 0 auto;
-  min-height: 20rem;
-}
-.amc-cloudlogin-form-title {
-  width: fit-content;
-  margin: 0 auto 0 auto;
-  transition: all 0.8s;
-  line-height: 0;
-}
-.amc-cloudlogin-form-back {
-  min-height: 1rem;
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-.amc-cloudlogin-form-back span {
-  font-size: 0.9rem;
-}
-.amc-cloudlogin-form-notFound {
-  flex-direction: column;
-}
-.amc-cloudlogin-form-notFound h4 {
-  font-size: 1rem;
-  margin-bottom: 0;
-}
-.amc-cloudlogin-form-notFound h5 {
-  font-size: 0.8rem;
-  font-weight: normal;
-  margin-top: 0;
-}
-.amc-cloudlogin-form-Verification {
-  margin-top: 10px;
-}
-.amc-cloudlogin-form-Verification span {
-  font-size: 1rem;
-}
-.amc-cloudlogin-form-resend button {
-  border: none;
-  background-color: transparent;
-  color: #4569D4;
-  font-size: 0.8rem;
-  transition: all 0.3s;
-  cursor: pointer;
-}
-.amc-cloudlogin-form-resend button:hover {
-  text-decoration: underline;
-}
-.amc-cloudlogin-form-provider {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px;
-  margin-bottom: 50px;
-}
-.amc-cloudlogin-form-provider button {
-  max-width: 250px;
-}
-.amc-cloudlogin-form-register {
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.amc-cloudlogin-form-error,
-.amc-cloudlogin-form-expire {
-  padding-left: 6px;
-  margin-bottom: 10px;
-  transition: all 0.5s;
-  min-height: 20px;
-}
-.amc-cloudlogin-form-error span,
-.amc-cloudlogin-form-expire span {
-  display: none;
-  font-size: 0.9rem;
-  color: #f53030;
-  text-align: center;
-}
-.amc-cloudlogin-form-error._wrong,
-.amc-cloudlogin-form-expire._wrong {
-  margin-top: 10px;
-}
-.amc-cloudlogin-form-error._wrong span,
-.amc-cloudlogin-form-expire._wrong span {
-  display: block;
-  text-align: left;
-}
-.amc-cloudlogin-form-expire {
-  min-height: 40px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.amc-cloudlogin-form-next {
-  margin-block: 2rem;
-  text-align: right;
-}
-.amc-cloudlogin-form-verify,
-.amc-cloudlogin-form-finish {
-  text-align: right;
-  margin-bottom: 50px;
-}
-.amc-cloudlogin-form ._center {
-  justify-content: center;
-}
 .amc-cloudlogin-footer {
   position: absolute;
   bottom: 10px;
@@ -236,25 +237,35 @@
   justify-content: center;
   align-items: stretch;
   gap: 10px;
+  text-align: center;
 }
 .amc-cloudlogin-footer ::deep svg .amc-svg-fill {
   fill: #4569D4;
 }
-.login {
-  position: relative;
-  width: min(400px, 90%);
-  min-height: min(500px, 90%);
-  background-color: #fff;
-  border: 1px solid #dadce0;
-  border-radius: 1px;
-  /*box-shadow: 0px 3px 4px @--borderColor;*/
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-.login .error .login-form-title h1 {
-  font-size: 1.5rem;
-}
+/*.login {
+	position: relative;
+	width: min(400px,90%);
+	min-height: min(500px,90%);
+	background-color: #fff;
+	border: 1px solid @--borderColor;
+	border-radius: 1px;*/
+/*box-shadow: 0px 3px 4px @--borderColor;*/
+/*display: flex;
+	flex-direction: column;
+	gap: 15px;
+
+	.error {
+		.login {
+			&-form {
+				&-title {
+					h1 {
+						font-size: 1.5rem;
+					}
+				}
+			}
+		}
+	}
+}*/
 .--disable {
   cursor: none;
   opacity: 0.2;
@@ -316,20 +327,6 @@
   color: white;
   cursor: pointer;
   border-radius: 3px;
-  /*  &._email, &._google, &._microsoft{
-        span {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            justify-content: left;
-            margin: 0 auto;
-            width: 100px;
-
-            ::deep svg {
-                width: 20px;
-            }
-        }
-    }*/
 }
 .--button._loading span {
   display: none;
@@ -379,6 +376,15 @@
   color: #4267B2;
   background-color: transparent;
 }
+.--button._twitter {
+  border: 1px solid #00acee;
+  background-color: #00acee;
+  transition: all 0.5s;
+}
+.--button._twitter:hover {
+  color: #00acee;
+  background-color: transparent;
+}
 .--button._error {
   border: 1px solid #f53030;
   background-color: #f53030;
@@ -403,6 +409,12 @@
 }
 .--button._back:hover {
   background-color: rgba(0, 0, 0, 0.1);
+}
+@media only screen and (min-width: 800px) {
+  .amc-cloudlogin-panel {
+    margin: 0;
+    width: 100%;
+  }
 }
 @keyframes move {
   0% {

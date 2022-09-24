@@ -55,6 +55,11 @@
   font-size: 0.8rem;
   opacity: 0.7;
 }
+.amc-cloudlogin-errors ul {
+  list-style: none;
+  font-size: 0.8rem;
+  color: #f53030;
+}
 .amc-cloudlogin-body {
   width: 100%;
   max-width: 20rem;
@@ -383,6 +388,15 @@
 }
 .--button._twitter:hover {
   color: #00acee;
+  background-color: transparent;
+}
+.--button._whatsapp {
+  border: 1px solid #25d366;
+  background-color: #25d366;
+  transition: all 0.5s;
+}
+.--button._whatsapp:hover {
+  color: #25d366;
   background-color: transparent;
 }
 .--button._error {

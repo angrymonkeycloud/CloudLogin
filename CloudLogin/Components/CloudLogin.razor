@@ -86,24 +86,11 @@
         {
             <div class="login-form _center @(checkError? "error" : "")">
                 <div class="login-form-email --input">
-                    <input type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
-                    <label for="email">
-                        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.EmailAddress)
-                        {
-                            <span>Email</span>
-                        }
-                        @if (InputValueFormat == InputFormat.Other)
-                        {
-                            <span> or </span>
-                        }
-                        @if (InputValueFormat == InputFormat.Other || InputValueFormat == InputFormat.PhoneNumber)
-                        {
-                            <span>Phone number</span>
-                        }
-                    </label>
+                    <input @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
+                    <label for="email">@InputLabel</label>
                 </div>
                 <div class="login-form-next ">
-                    <button class="--button _primary @(IsLoading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnNextClicked">
+                    <button class="--button _primary @(IsLoading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
                         <span>Next</span>
                         <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
                     </button>

@@ -131,8 +131,8 @@ public static class MvcServiceCollectionExtensions
                 service.AddMicrosoftAccount(Option =>
                 {
                     Option.SignInScheme = "Cookies";
-                    Option.ClientId = provider.ClientId;
-                    Option.ClientSecret = provider.ClientSecret;
+                    Option.ClientId = ((CloudLoginConfiguration.MicrosoftAccount)provider).ClientId;
+                    Option.ClientSecret = ((CloudLoginConfiguration.MicrosoftAccount)provider).ClientSecret;
                 });
 
             // Google
@@ -141,8 +141,8 @@ public static class MvcServiceCollectionExtensions
                 service.AddGoogle(Option =>
                 {
                     Option.SignInScheme = "Cookies";
-                    Option.ClientId = provider.ClientId;
-                    Option.ClientSecret = provider.ClientSecret;
+                    Option.ClientId = ((CloudLoginConfiguration.GoogleAccount)provider).ClientId;
+                    Option.ClientSecret = ((CloudLoginConfiguration.GoogleAccount)provider).ClientSecret;
                 });
 
             // Facebook
@@ -151,8 +151,8 @@ public static class MvcServiceCollectionExtensions
                 service.AddFacebook(Option =>
                 {
                     Option.SignInScheme = "Cookies";
-                    Option.ClientId = provider.ClientId;
-                    Option.ClientSecret = provider.ClientSecret;
+                    Option.ClientId = ((CloudLoginConfiguration.FacebookAccount)provider).ClientId;
+                    Option.ClientSecret = ((CloudLoginConfiguration.FacebookAccount)provider).ClientSecret;
                 });
 
             // Twitter
@@ -161,8 +161,8 @@ public static class MvcServiceCollectionExtensions
                 service.AddTwitter(Option =>
                 {
                     Option.SignInScheme = "Cookies";
-                    Option.ConsumerKey = provider.ClientId;
-                    Option.ConsumerSecret = provider.ClientSecret;
+                    Option.ConsumerKey = ((CloudLoginConfiguration.TwitterAccount)provider).ClientId;
+                    Option.ConsumerSecret = ((CloudLoginConfiguration.TwitterAccount)provider).ClientSecret;
                 });
         }
 
@@ -202,16 +202,17 @@ public class CloudLoginConfiguration
 
         public string Code { get; init; } = string.Empty;
         public string Label { get; init; } = string.Empty;
-        public string ClientId { get; init; } = string.Empty;
-        public string ClientSecret { get; init; } = string.Empty;
         public bool HandlesEmailAddress { get; init; } = false;
         public bool HandlesPhoneNumber { get; init; } = false;
         public bool AlwaysShow { get; init; } = false;
     }
 
     public class MicrosoftAccount : Provider
-    {
-        public MicrosoftAccount(string? label = null) : base("Microsoft", label)
+	{
+		public string ClientId { get; init; } = string.Empty;
+		public string ClientSecret { get; init; } = string.Empty;
+
+		public MicrosoftAccount(string? label = null) : base("Microsoft", label)
         {
             HandlesEmailAddress = true;
             //HandlesPhoneNumber = true;
@@ -219,23 +220,32 @@ public class CloudLoginConfiguration
     }
 
     public class GoogleAccount : Provider
-    {
-        public GoogleAccount(string? label = null) : base("Google", label)
+	{
+		public string ClientId { get; init; } = string.Empty;
+		public string ClientSecret { get; init; } = string.Empty;
+
+		public GoogleAccount(string? label = null) : base("Google", label)
         {
             HandlesEmailAddress = true;
         }
     }
     public class FacebookAccount : Provider
-    {
-        public FacebookAccount(string? label = null) : base("Facebook", label)
+	{
+		public string ClientId { get; init; } = string.Empty;
+		public string ClientSecret { get; init; } = string.Empty;
+
+		public FacebookAccount(string? label = null) : base("Facebook", label)
         {
             HandlesEmailAddress = true;
             //HandlesPhoneNumber = true;
         }
     }
     public class TwitterAccount : Provider
-    {
-        public TwitterAccount(string? label = null) : base("Twitter", label)
+	{
+		public string ClientId { get; init; } = string.Empty;
+		public string ClientSecret { get; init; } = string.Empty;
+
+		public TwitterAccount(string? label = null) : base("Twitter", label)
         {
             HandlesEmailAddress = true;
             //HandlesPhoneNumber = true;

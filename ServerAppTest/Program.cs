@@ -48,12 +48,12 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 		EnableSsl = true,
 		DeliveryMethod = SmtpDeliveryMethod.Network,
 		UseDefaultCredentials = false,
-		Credentials = new System.Net.NetworkCredential("wissamfarhat51@gmail.com", "ycqirwqugebkxfmh")
+		Credentials = new NetworkCredential("wissamfarhat51@gmail.com", "ycqirwqugebkxfmh")
 	},
 	Whatsapp = new()
 	{
-        RequestUri = "https://graph.facebook.com/v14.0/110279391841940/messages",
-        Authorization = "Bearer EAAT0MmYLBC8BADZAENunU89KZBbkeigZAPE0ZBhUm65udCZAC1Fwil9k5HR8O5qv5AIM8CznHfFctzaXNO80IOY2gNQU9jxahTB8c2EZABgwYBrZAA94DAaw1SkpHGpOOZAY0ZADOOBJnhLMC2JbgBgBnh4ltvZBgWsmgKQCoEe0d2sK7ivz276mMHbxtQMtPvKOHn2U1UiBfjvAZDZD",
+        RequestUri = builder.Configuration["WhatsApp:RequestUri"],
+        Authorization = builder.Configuration["WhatsApp:Authorization"],
 		Template = "testcode",
 		Language = "en"
     },

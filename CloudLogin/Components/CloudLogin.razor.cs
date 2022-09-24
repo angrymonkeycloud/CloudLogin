@@ -330,7 +330,7 @@ namespace AngryMonkey.Cloud.Login
                     CustomSignInChallenge(checkUser);
                 else SwitchState(ProcessState.PendingRegisteration);
 
-            }                                   
+            }
         }
 
         private async Task OnRegisterClicked(MouseEventArgs e)
@@ -384,7 +384,17 @@ namespace AngryMonkey.Cloud.Login
                 request.Headers.Add("Authorization", cloudLogin.Options.Whatsapp.Authorization);
                 request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
-                var response = await httpClient.SendAsync(request); 
+                try
+                {
+                    var response = await httpClient.SendAsync(request);
+
+                    if (!response.IsSuccessStatusCode)
+                        throw new Exception();
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
             }
 
             //TwilioClient.Init(cloudLogin.Options.Twilio.AccountId, cloudLogin.Options.Twilio.AuthenticationId);

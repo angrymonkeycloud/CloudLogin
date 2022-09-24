@@ -147,14 +147,14 @@
                 <div class="login-form-Verification">
                     <span>Please check your emails for a message with your code. Your code is 7 numbers long.</span>
                 </div>
-                <div class="login-form-error _wrong">
+                <div class="login-form-error ">
                     @if (WrongCode)
                     {
                         <span>*Wrong code</span>
                     }
                 </div>
                 <div class="login-form-emailVerification  --input">
-                    <input autocomplete="off" type="text" id="code" class=" @(VerificationValue!=""? "active": "")" @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                    <input autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="code">Enter Code</label>
                 </div>
                 <div class="login-form-resend">
@@ -191,15 +191,15 @@
                 </div>
                 <div class="login-form-register">
                     <div class="--input">
-                        <input type="text" id="firstName" class=" @(FirstName!=""? "active": "")" @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                        <input type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="firstName">First Name</label>
                     </div>
                     <div class="--input">
-                        <input type="text" id="lastName" class=" @(LastName!=""? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
+                        <input type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="lastName">Last Name</label>
                     </div>
                     <div class="--input">
-                        <input type="text" id="displayName" class=" @(DisplayName!=""? "active": "")" @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" />
+                        <input type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="displayName">Display Name</label>
                     </div>
                 </div>

@@ -6,17 +6,14 @@
 @inject CloudGeographyClient cloudGeography
 @inject HttpClient httpClient
 
-<div class="amc-cloudlogin">
+<div class="amc-cloudlogin @CssClass">
     <div class="amc-cloudlogin-header">
 
         @* Loading *@
 
-        @if (IsLoading)
-        {
-            <div class="amc-cloudlogin-loading">
-                <div></div>
-            </div>
-        }
+        <div class="amc-cloudlogin-loading">
+            <div></div>
+        </div>
 
         @* Logo *@
 
@@ -85,48 +82,34 @@
         @if (State == ProcessState.PendingSignIn)
         {
             <div class="login-form _center @(checkError? "error" : "")">
-                <div class="login-form-email --input">
+                <div>
                     <input @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="email">@InputLabel</label>
                 </div>
                 <div class="login-form-next ">
-                    <button class="--button _primary @(IsLoading? "_loading --disable" : "") @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
+                    <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
                         <span>Next</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
         }
-        else if (State == ProcessState.PendingAuthorization)//PendingAuthorization
+        else if (State == ProcessState.PendingAuthorization || State == ProcessState.PendingProviders)
         {
             <div class="login-form">
-                <div class="login-form-provider">
+                <div class="amc-cloudlogin-providers">
                     @foreach (Provider provider in Providers)
                     {
-                        <button class="--button _@provider.Code.ToLower()" @onclick="() => OnProviderClickedAsync(provider)">
-                            <span>
-                                @provider.Label
-                            </span>
-                        </button>
-                    }
-                </div>
-            </div>
-        }
-        else if (State == ProcessState.PendingProviders)
-        {
-            <div class="login-form">
-                <div class="login-form-provider">
-                    @foreach (Provider provider in Providers)
-                    {
-                        <button class="--button _@provider.Code.ToLower()" @onclick="() => OnProviderClickedAsync(provider)">
-                            <span>
-                                @provider.Label
-                            </span>
-                        </button>
-                    }
-                </div>
-            </div>
+                        <button class="amc-cloudlogin-provider @provider.CssClass" @onclick="() => OnProviderClickedAsync(provider)">
+                            <div class="amc-cloudlogin-provider-icon">
+                                <AngryMonkey.Cloud.Login.Components.ProviderButton Provider="provider" />
 
+                            </div>
+                            <div class="amc-cloudlogin-provider-label">@provider.Label</div>
+                        </button>
+                    }
+                </div>
+            </div>
         }
         else if (State == ProcessState.PendingVerification)
         {
@@ -140,7 +123,7 @@
                         <span>*Wrong code</span>
                     }
                 </div>
-                <div class="login-form-emailVerification  --input">
+                <div class="login-form-emailVerification">
                     <input autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="code">Enter Code</label>
                 </div>
@@ -155,9 +138,9 @@
                     }
                 </div>
                 <div class="login-form-verify">
-                    <button class="--button _primary @(IsLoading? "_loading --disable" : "")" @onclick="OnVerifyClicked">
+                    <button class="amc-cloudlogin-button" @onclick="OnVerifyClicked">
                         <span>Verify</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
@@ -177,24 +160,24 @@
                     }
                 </div>
                 <div class="login-form-register">
-                    <div class="--input">
+                    <div>
                         <input type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="firstName">First Name</label>
                     </div>
-                    <div class="--input">
+                    <div>
                         <input type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="lastName">Last Name</label>
                     </div>
-                    <div class="--input">
-                        <input type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" />
+                    <div>
+                        <input type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
                         <label for="displayName">Display Name</label>
                     </div>
                 </div>
 
                 <div class="login-form-finish">
-                    <button class="--button _primary @(IsLoading? "_loading --disable" : "")" @onclick="OnRegisterClicked">
+                    <button class="amc-cloudlogin-button" @onclick="OnRegisterClicked">
                         <span>Register</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton view="@(IsLoading ? true : false)" />
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
@@ -203,29 +186,20 @@
     </div>
 
     <div class="amc-cloudlogin-footer">
-
-        @foreach (Provider provider in cloudLogin.Options.Providers)
-            switch (provider.Code)
+        <div class="amc-cloudlogin-footer-providers">
+            @foreach (Provider provider in cloudLogin.Options.Providers)
             {
-                case "Microsoft":
-                    <AngryMonkey.Cloud.Components.Icons.MicrosoftLogo />
-                    break;
-
-                case "Google":
-                    <AngryMonkey.Cloud.Components.Icons.GoogleLogo />
-                    break;
-
-                case "Facebook":
-                    <AngryMonkey.Cloud.Components.Icons.Facebook />
-                    break;
-
-                case "Apple":
-                    <AngryMonkey.Cloud.Components.Icons.AppleLogo />
-                    break;
-
-                default: break;
+                <AngryMonkey.Cloud.Login.Components.ProviderButton Provider="@provider" />
             }
+        </div>
 
-        <AngryMonkey.Cloud.Components.Icons.AppleLogo />
+        <div class="amc-cloudlogin-footer-separator">
+        </div>
+
+        <div class="amc-cloudlogin-footer-links">
+            <a target="_blank" href="https://angrymonkeycloud.com/">Privacy</a>
+            <a target="_blank" href="https://angrymonkeycloud.com/">Terms</a>
+            <a target="_blank" href="https://angrymonkeycloud.com/">Info</a>
+        </div>
     </div>
 </div>

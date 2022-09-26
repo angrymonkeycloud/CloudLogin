@@ -88,9 +88,14 @@ namespace AngryMonkey.Cloud.Login
 
 		public async Task<CloudUser?> GetUserByPhoneNumber(string number)
 		{
-			CloudGeographyClient cloudGeography = new();
+			CloudGeographyClient geographyClient = new();
 
-			PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(number);
+			return await GetUserByPhoneNumber(geographyClient.PhoneNumbers.Get(number));
+		}
+
+		public async Task<CloudUser?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
+		{
+			CloudGeographyClient cloudGeography = new();
 
 			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user
 				=> user.Inputs.Where(key => key.Format == InputFormat.PhoneNumber &&

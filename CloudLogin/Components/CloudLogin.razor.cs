@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Components.Web;
 using Newtonsoft.Json;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Web;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 using static Microsoft.Extensions.DependencyInjection.CloudLoginConfiguration;
@@ -20,12 +22,11 @@ namespace AngryMonkey.Cloud.Login
 		protected string Title { get; set; } = string.Empty;
 		protected string Subtitle { get; set; } = string.Empty;
 		protected List<string> Errors { get; set; } = new List<string>();
-
+		public Provider? SelectedProvider { get; set; }
 		public Action OnInput { get; set; }
 		public Guid UserId { get; set; } = Guid.NewGuid();
 
 		private string _inputValue;
-		Provider providerType { get; set; }
 
 		[Parameter]
 		public string InputValue
@@ -39,6 +40,19 @@ namespace AngryMonkey.Cloud.Login
 				_inputValue = value;
 
 				OnInput.Invoke();
+			}
+		}
+
+		protected string CssClass
+		{
+			get
+			{
+				List<string> classes = new();
+
+				if (IsLoading)
+					classes.Add("_loading");
+
+				return string.Join(" ", classes);
 			}
 		}
 
@@ -189,8 +203,7 @@ namespace AngryMonkey.Cloud.Login
 					break;
 			}
 
-			IsLoading = false;
-			StateHasChanged();
+			EndLoading();
 		}
 
 		protected enum ProcessState
@@ -200,6 +213,17 @@ namespace AngryMonkey.Cloud.Login
 			PendingProviders,
 			PendingVerification,
 			PendingRegisteration
+		}
+
+		private void StartLoading()
+		{
+			IsLoading = true;
+		}
+
+		private void EndLoading()
+		{
+			IsLoading = false;
+			StateHasChanged();
 		}
 
 		protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -231,56 +255,61 @@ namespace AngryMonkey.Cloud.Login
 
 			if (InputValueFormat == InputFormat.PhoneNumber)
 			{
-				InputValue = cloudGeography.PhoneNumbers.Get(InputValue).GetFullPhoneNumber();
+				PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(InputValue);
 
-				user = await Cosmos.GetUserByPhoneNumber(InputValue);
+				InputValue = phoneNumber.GetFullPhoneNumber();
+
+				user = await Cosmos.GetUserByPhoneNumber(phoneNumber);
 			}
 			else
 				user = await Cosmos.GetUserByEmailAddress(InputValue);
 
-			CheckUser(user);
-		}
+			Providers = new List<Provider>();
 
-		private void CheckUser(CloudUser? user)
-		{
-			if (user != null) // Existing user
+			if (cloudLogin.Options.EmailSendCodeRequest != null && InputValueFormat == InputFormat.EmailAddress)
+				Providers.Add(new Provider(string.Empty) { Label = "Email Code", IsCodeVerification = true });
+
+			// Existing user
+
+			if (user != null)
 			{
-				Providers = user.Providers.Select(key => new Provider(key)).ToList();
+				if (user.Providers.Any())
+					Providers.AddRange(user.Providers.Select(key => new Provider(key)).ToList());
+				else Providers.AddRange(cloudLogin.Options.Providers
+					.Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
+								|| (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
-				foreach (Provider provider in cloudLogin.Options.Providers.Where(key => key.AlwaysShow))
-					if (!Providers.Any(key => key.Code == provider.Code))
-						if ((InputValueFormat == InputFormat.EmailAddress && provider.HandlesEmailAddress)
-							|| (InputValueFormat == InputFormat.PhoneNumber && provider.HandlesPhoneNumber))
-							Providers.Add(provider);
 				UserId = user.ID;
 
 				SwitchState(ProcessState.PendingAuthorization);
 			}
-			else // New user
+
+			// New user
+
+			else
 			{
 				if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
 				{
 					Errors.Add("Phone number must start with the country code preceding with a + sign");
-					IsLoading = false;
+					EndLoading();
 
 					return;
 				}
 
-				Providers = cloudLogin.Options.Providers
+				Providers.AddRange(cloudLogin.Options.Providers
 				.Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
-							|| (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber))
-				.ToList();
+							|| (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
 				SwitchState(ProcessState.PendingProviders);
 			}
 		}
 
-		private async Task OnContinueClicked(MouseEventArgs e)
-		{
-			IsLoading = true;
-			CloudUser? user = await Cosmos.GetUserByPhoneNumber(InputValue);
-			CheckUser(user);
-		}
+		//private async Task OnContinueClicked(MouseEventArgs e)
+		//{
+		//	StartLoading();
+		//	CloudUser? user = await Cosmos.GetUserByPhoneNumber(InputValue);
+		//	CheckUser(user);
+		//}
 
 		private async Task OnBackClicked(MouseEventArgs e)
 		{
@@ -293,47 +322,67 @@ namespace AngryMonkey.Cloud.Login
 
 		private async Task RefreshVerificationCode()
 		{
+			Errors.Clear();
+			StartLoading();
+
 			VerificationCode = CreateRandomCode(6);
 			VerificationCodeExpiry = DateTimeOffset.UtcNow.AddMinutes(5);
 
 			ExpiredCode = false;
 			WrongCode = false;
 
-			if (InputValueFormat == InputFormat.EmailAddress)
-				await SendEmail(InputValue, VerificationCode);
+			switch (SelectedProvider?.Code.ToLower())
+			{
+				case "whatsapp":
+					await SendWhatsAppCode((Whataspp)SelectedProvider, InputValue, VerificationCode);
+					break;
 
-			if (InputValueFormat == InputFormat.PhoneNumber)
-				await SendWhatsAppCode(InputValue, VerificationCode);
+				default:
+					if (cloudLogin.Options.EmailSendCodeRequest == null)
+						throw new Exception("Email Code is not configured.");
+
+					await cloudLogin.Options.EmailSendCodeRequest.Invoke(new SendCodeValue(VerificationCode, InputValue));
+
+					break;
+			}
 		}
 
-		private async Task OnNewCodeClicked(MouseEventArgs e)
+		private async Task OnNewCodeClicked()
 		{
-			IsLoading = true;
+			StartLoading();
 
-			await RefreshVerificationCode();
+			try
+			{
+				await RefreshVerificationCode();
+			}
+			catch (Exception e)
+			{
+				Errors.Add(e.Message);
+				EndLoading();
+				return;
+			}
 
 			SwitchState(ProcessState.PendingVerification);
 		}
+
 		private async Task OnProviderClickedAsync(Provider provider)
 		{
-			providerType = provider;
+			StartLoading();
 
-			if (provider.Code.ToLower() == "email")
+			SelectedProvider = provider;
+
+			if (provider.IsCodeVerification)
 			{
-				IsLoading = true;
-
-				await RefreshVerificationCode();
-
-				SwitchState(ProcessState.PendingVerification);
-			}
-			else if (provider.Code.ToLower() == "whatsapp")
-			{
-				IsLoading = true;
-
-				await RefreshVerificationCode();
-
-				SwitchState(ProcessState.PendingVerification);
-
+				try
+				{
+					await RefreshVerificationCode();
+					SwitchState(ProcessState.PendingVerification);
+				}
+				catch (Exception e)
+				{
+					Errors.Add(e.Message);
+					EndLoading();
+				}
 			}
 			else ProviderSignInChallenge(provider.Code);
 		}
@@ -364,14 +413,15 @@ namespace AngryMonkey.Cloud.Login
 				{ "Input", InputValue },
 				{ "Type", InputValueFormat },
 			};
+
 			string userInfoJSON = JsonConvert.SerializeObject(userInfo);
 
-			navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={userInfoJSON}&keepMeSignedIn={KeepMeSignedIn}", true);
+			navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}", true);
 		}
 
 		private async Task OnVerifyClicked(MouseEventArgs e)
 		{
-			IsLoading = true;
+			StartLoading();
 
 			switch (GetVerificationCodeResult(VerificationValue))
 			{
@@ -385,24 +435,25 @@ namespace AngryMonkey.Cloud.Login
 
 				default: break;
 			}
-			if (providerType.Code.ToLower() == "email")
-			{
-				CloudUser? checkUser = await Cosmos.GetUserByEmailAddress(InputValue);
 
-				if (checkUser != null)
-					CustomSignInChallenge(checkUser);
-				else SwitchState(ProcessState.PendingRegisteration);
+			CloudUser? checkUser = null;
 
-			}
-			else if (providerType.Code.ToLower() == "whatsapp")
-			{
-				CloudUser? checkUser = await Cosmos.GetUserByPhoneNumber(InputValue);
+			if (string.IsNullOrEmpty(SelectedProvider?.Code) && InputValueFormat == InputFormat.EmailAddress)
+				checkUser = await Cosmos.GetUserByEmailAddress(InputValue);
+			else if (SelectedProvider?.Code.ToLower() == "whatsapp")
+				checkUser = await Cosmos.GetUserByPhoneNumber(InputValue);
 
-				if (checkUser != null)
-					CustomSignInChallenge(checkUser);
-				else SwitchState(ProcessState.PendingRegisteration);
+			if (checkUser != null)
+				CustomSignInChallenge(checkUser);
+			else SwitchState(ProcessState.PendingRegisteration);
+		}
 
-			}
+		protected void OnDisplayNameFocus()
+		{
+			if (!string.IsNullOrEmpty(DisplayName) || string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
+				return;
+
+			DisplayName = $"{FirstName} {LastName}";
 		}
 
 		private async Task OnRegisterClicked(MouseEventArgs e)
@@ -416,7 +467,7 @@ namespace AngryMonkey.Cloud.Login
 			}
 
 			EmptyInput = false;
-			IsLoading = true;
+			StartLoading();
 
 			CustomSignInChallenge(new CloudUser()
 			{
@@ -431,26 +482,26 @@ namespace AngryMonkey.Cloud.Login
 		{
 			StringBuilder builder = new();
 
-			for (int i = 0; i <= length; i++)
+			for (int i = 0; i < length; i++)
 				builder.Append(new Random().Next(0, 9));
 
 			return builder.ToString();
 		}
 
 		bool IsValidEmail => Regex.IsMatch(InputValue, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
-		
-		public async Task SendWhatsAppCode(string receiver, string code)
+
+		public async Task SendWhatsAppCode(Whataspp whatsappProvider, string receiver, string code)
 		{
-			string serialize = "{\"messaging_product\": \"whatsapp\",\"recipient_type\": \"individual\",\"to\": \"" + receiver.Replace("+", "") + "\",\"type\": \"template\",\"template\": {\"name\": \"" + cloudLogin.Options.Whatsapp.Template + "\",\"language\": {\"code\": \"" + cloudLogin.Options.Whatsapp.Language + "\"},\"components\": [{\"type\": \"body\",\"parameters\": [{\"type\": \"text\",\"text\": \"" + code + "\"}]}]}}";
+			string serialize = "{\"messaging_product\": \"whatsapp\",\"recipient_type\": \"individual\",\"to\": \"" + receiver.Replace("+", "") + "\",\"type\": \"template\",\"template\": {\"name\": \"" + whatsappProvider.Template + "\",\"language\": {\"code\": \"" + whatsappProvider.Language + "\"},\"components\": [{\"type\": \"body\",\"parameters\": [{\"type\": \"text\",\"text\": \"" + code + "\"}]}]}}";
 
 			using HttpRequestMessage request = new()
 			{
 				Method = new HttpMethod("POST"),
-				RequestUri = new(cloudLogin.Options.Whatsapp.RequestUri),
+				RequestUri = new(whatsappProvider.RequestUri),
 				Content = new StringContent(serialize),
 			};
 
-			request.Headers.Add("Authorization", cloudLogin.Options.Whatsapp.Authorization);
+			request.Headers.Add("Authorization", whatsappProvider.Authorization);
 			request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
 			try
@@ -465,30 +516,5 @@ namespace AngryMonkey.Cloud.Login
 				throw e;
 			}
 		}
-
-		//private async Task SendSMSCode(string receiver, string code)
-		//{
-		//	TwilioClient.Init(cloudLogin.Options.Twilio.AccountId, cloudLogin.Options.Twilio.AuthenticationId);
-
-		//	string messageBody = cloudLogin.Options.Twilio.Message.Replace("{{code}}", code);
-		//	var from = new Twilio.Types.PhoneNumber(cloudLogin.Options.Twilio.PhoneNumber);
-		//	var to = new Twilio.Types.PhoneNumber(receiver);
-
-
-		//	MessageResource message = MessageResource.Create(
-		//		body: messageBody,
-		//		from: from,
-		//		to: to
-		//	);
-		//}
-
-		public async Task SendEmail(string receiver, string code)
-		{
-			cloudLogin.Options.MailMessage.To.Add(receiver);
-			cloudLogin.Options.MailMessage.Body = cloudLogin.Options.EmailMessageBody.Replace("{{code}}", code);
-
-			await cloudLogin.Options.SmtpClient.SendMailAsync(cloudLogin.Options.MailMessage);
-		}
 	}
-
 }

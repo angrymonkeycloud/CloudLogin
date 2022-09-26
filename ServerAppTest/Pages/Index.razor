@@ -1,22 +1,34 @@
 ﻿@page "/"
 @using System.Security.Claims
 
+<HeadContent>
+    <CloudBundle Source="css/index.css" />
+</HeadContent>
+
 <AuthorizeView>
     <Authorized>
-        Name: @context.User.FindFirst(ClaimTypes.Name).Value
-        <br />
-        ID: @context.User.FindFirst(ClaimTypes.NameIdentifier).Value
-        <br />
-        @if (string.IsNullOrEmpty(context?.User?.FindFirst(ClaimTypes.Email)?.Value))
-        {
-            Input: @context.User.FindFirst(ClaimTypes.Email);
-        }
-        else
-        {
-            Input: @context.User.FindFirst(ClaimTypes.MobilePhone);
-        }
-        <br />
-        <a href="cloudlogin/logout">Logout</a>
+        <section class="authorized">
+            <div>
+                @{
+                    string input = context?.User?.FindFirst(ClaimTypes.Email)?.Value;
+
+                    if (string.IsNullOrEmpty(input))
+                        input = context.User.FindFirst(ClaimTypes.MobilePhone).Value;
+                }
+
+                <h1>Success!</h1>
+                <b>Name:</b> @context.User.FindFirst(ClaimTypes.Name).Value
+                <br />
+                <b>ID:</b> @context.User.FindFirst(ClaimTypes.NameIdentifier).Value
+                <br />
+                
+                <b>Input:</b> @input
+
+                <br />
+                <br />
+                <a href="cloudlogin/logout">Logout</a>
+            </div>
+        </section>
     </Authorized>
     <NotAuthorized>
         <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />

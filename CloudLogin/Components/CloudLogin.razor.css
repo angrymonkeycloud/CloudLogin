@@ -27,16 +27,84 @@
   font-display: swap;
   src: url(https://fonts.gstatic.com/s/tajawal/v9/Iurf6YBj_oCad4k1l4qkLrY.ttf) format('truetype');
 }
+/*var(--amc-accentColor): #4569D4;*/
 .amc-cloudlogin {
+  --amc-accentColor: #000;
+  --microsoftColor: #00A4EF;
+  --googleColor: #DB4437;
+  --facebookColor: #4267B2;
+  --twitterColor: #00acee;
+  --whatsappColor: #6200EE;
   font-family: 'Tajawal', sans-serif;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: block;
   align-items: center;
+  padding-bottom: 20px;
+  overflow: auto;
+  background-color: #fff;
+}
+.amc-cloudlogin a,
+.amc-cloudlogin a:visited,
+.amc-cloudlogin a:focus,
+.amc-cloudlogin a:hover,
+.amc-cloudlogin a:active {
+  color: var(--amc-accentColor);
+}
+.amc-cloudlogin a:hover,
+.amc-cloudlogin a:visited:hover,
+.amc-cloudlogin a:focus:hover,
+.amc-cloudlogin a:hover:hover,
+.amc-cloudlogin a:active:hover {
+  text-decoration: underline;
+}
+.amc-cloudlogin div:has(> input[type=text]) {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  margin-top: 10px;
+}
+.amc-cloudlogin input[type="text"] {
+  width: 100%;
+  height: 100%;
+  color: #000;
+  background-color: transparent;
+  font-size: 0.9rem;
+  padding: 10px;
+  border: 1px solid var(--amc-accentColor);
+  border-radius: 3px;
+  -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
+  -webkit-transition-delay: 9999s;
+  transition: color 9999s ease-out, background-color 9999s ease-out;
+  transition-delay: 9999s;
+}
+.amc-cloudlogin input[type="text"]:focus {
+  outline: none;
+}
+.amc-cloudlogin input[type="text"] ~ label {
+  position: absolute;
+  top: 24%;
+  left: 10px;
+  font-size: 1rem;
+  color: var(--amc-accentColor);
+  background-color: #fff;
+  transition: all 0.3s;
+  padding-inline: 5px;
+  user-select: none;
+  cursor: text;
+  pointer-events: none;
+}
+.amc-cloudlogin input[type="text"].active ~ label,
+.amc-cloudlogin input[type="text"]:focus ~ label {
+  top: -10px;
+  left: 10px;
+  font-size: 0.8rem;
+  color: var(--amc-accentColor);
 }
 .amc-cloudlogin-header {
   text-align: center;
   min-height: 12rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .amc-cloudlogin-title {
   color: #202124;
@@ -60,9 +128,73 @@
   font-size: 0.8rem;
   color: #f53030;
 }
+.amc-cloudlogin-providers {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 50px;
+}
+.amc-cloudlogin-provider {
+  --currentColor: var(--amc-accentColor);
+  background-color: transparent;
+  cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.5s;
+  border: 1px solid var(--currentColor);
+  border-radius: 3px;
+  color: var(--currentColor);
+  padding: 5px 8px;
+}
+.amc-cloudlogin-provider._primary {
+  --currentColor: #ffd800;
+}
+.amc-cloudlogin-provider._microsoft {
+  --currentColor: var(--microsoftColor);
+}
+.amc-cloudlogin-provider._google {
+  --currentColor: var(--googleColor);
+}
+.amc-cloudlogin-provider._facebook {
+  --currentColor: var(--facebookColor);
+}
+.amc-cloudlogin-provider._twitter {
+  --currentColor: var(--twitterColor);
+}
+.amc-cloudlogin-provider._whatsapp {
+  --currentColor: var(--whatsappColor);
+}
+.amc-cloudlogin-provider-icon {
+  height: 32px;
+  width: 32px;
+}
+.amc-cloudlogin-provider ::deep svg {
+  width: 32px;
+  height: 32px;
+}
+.amc-cloudlogin-provider ::deep svg .amc-svg-fill {
+  transition: all 0.5s;
+  fill: var(--currentColor);
+}
+.amc-cloudlogin-provider:hover {
+  color: #fff;
+  background-color: var(--currentColor);
+}
+.amc-cloudlogin-provider:hover ::deep svg .amc-svg-fill {
+  fill: #fff;
+}
 .amc-cloudlogin-body {
   width: 100%;
   max-width: 20rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 .amc-cloudlogin-body .login-form {
   display: flex;
@@ -109,25 +241,13 @@
 .amc-cloudlogin-body .login-form-resend button {
   border: none;
   background-color: transparent;
-  color: #4569D4;
+  color: var(--activeColor);
   font-size: 0.8rem;
   transition: all 0.3s;
   cursor: pointer;
 }
 .amc-cloudlogin-body .login-form-resend button:hover {
   text-decoration: underline;
-}
-.amc-cloudlogin-body .login-form-provider {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px;
-  margin-bottom: 50px;
-}
-.amc-cloudlogin-body .login-form-provider button {
-  max-width: 250px;
 }
 .amc-cloudlogin-body .login-form-register {
   margin-bottom: 15px;
@@ -165,7 +285,7 @@
   align-items: center;
 }
 .amc-cloudlogin-body .login-form-next {
-  margin-block: 2rem;
+  margin-top: 15px;
   text-align: right;
 }
 .amc-cloudlogin-body .login-form-verify,
@@ -180,12 +300,12 @@
   padding: 7px 5px;
   margin: 0 auto;
   margin-bottom: 20px;
-  border-top: 1px solid #4569D4;
+  border-top: 1px solid var(--amc-accentColor);
   width: fit-content;
 }
 .amc-cloudlogin-inputdisplay {
   font-weight: 700;
-  color: #4569D4;
+  color: var(--amc-accentColor);
 }
 .amc-cloudlogin-keppsignedin {
   display: flex;
@@ -209,13 +329,14 @@
 .amc-cloudlogin-loading {
   position: fixed;
   min-height: 10px;
+  display: none;
 }
 .amc-cloudlogin-loading > div {
   position: relative;
   top: 0px;
   width: 100px;
   height: 5px;
-  background-color: #4569D4;
+  background-color: var(--amc-accentColor);
   border-radius: 20px;
   margin: 0 auto;
   animation: move 4s cubic-bezier(0.31, 0.33, 1, 1) infinite;
@@ -226,102 +347,95 @@
   width: 10px;
   height: 5px;
   border-radius: 20px;
-  background-color: #4569D4;
+  background-color: var(--amc-accentColor);
 }
 .amc-cloudlogin-logo {
+  display: block;
   width: 100px;
   margin: 30px auto 5px auto;
 }
 .amc-cloudlogin-footer {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
   width: 100%;
-  height: 1.5rem;
   display: flex;
-  justify-content: center;
-  align-items: stretch;
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
-  text-align: center;
+  padding: 5px;
+  font-size: 0.9rem;
+}
+.amc-cloudlogin-footer-providers {
+  display: flex;
+  gap: 20px;
+}
+.amc-cloudlogin-footer-separator {
+  border-top: 1px solid var(--amc-accentColor);
+  max-width: 20rem;
+  width: 100%;
+  opacity: 0.6;
+}
+.amc-cloudlogin-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 10px;
+}
+.amc-cloudlogin-footer ::deep svg {
+  opacity: 0.5;
+  height: 24px;
+  width: 24px;
 }
 .amc-cloudlogin-footer ::deep svg .amc-svg-fill {
-  fill: #4569D4;
+  fill: var(--amc-accentColor);
 }
-/*.login {
-	position: relative;
-	width: min(400px,90%);
-	min-height: min(500px,90%);
-	background-color: #fff;
-	border: 1px solid @--borderColor;
-	border-radius: 1px;*/
-/*box-shadow: 0px 3px 4px @--borderColor;*/
-/*display: flex;
-	flex-direction: column;
-	gap: 15px;
-
-	.error {
-		.login {
-			&-form {
-				&-title {
-					h1 {
-						font-size: 1.5rem;
-					}
-				}
-			}
-		}
-	}
-}*/
+.amc-cloudlogin-button {
+  width: 100%;
+  max-width: 100px;
+  padding: 10px;
+  text-transform: capitalize;
+  font-size: 0.8rem;
+  color: white;
+  cursor: pointer;
+  border-radius: 3px;
+  background-color: transparent;
+  color: var(--amc-accentColor);
+  border: 1px solid var(--amc-accentColor);
+  transition: all 0.5s;
+  position: relative;
+}
+.amc-cloudlogin-button:hover {
+  background-color: var(--amc-accentColor);
+  color: #fff;
+}
+.amc-cloudlogin-button ::deep svg {
+  display: none;
+}
+.amc-cloudlogin._loading .amc-cloudlogin-loading {
+  display: block;
+}
+.amc-cloudlogin._loading .amc-cloudlogin-button {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.amc-cloudlogin._loading .amc-cloudlogin-button span {
+  opacity: 0;
+}
+.amc-cloudlogin._loading .amc-cloudlogin-button ::deep svg {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+}
+.amc-cloudlogin._loading .amc-cloudlogin-button ::deep svg rect {
+  fill: var(--amc-accentColor);
+}
 .--disable {
   cursor: none;
   opacity: 0.2;
   pointer-events: none;
-}
-.--input {
-  position: relative;
-  width: 100%;
-  margin: 0 auto;
-}
-.--input input {
-  width: 100%;
-  height: 100%;
-  color: #202124;
-  background-color: transparent;
-  font-size: 1rem;
-  padding: 10px 5px;
-  border: 1px solid #4569D4;
-  border-radius: 3px;
-  -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
-  -webkit-transition-delay: 9999s;
-  transition: color 9999s ease-out, background-color 9999s ease-out;
-  transition-delay: 9999s;
-}
-.--input input:focus {
-  outline: none;
-}
-.--input input:focus ~ label {
-  top: -10px;
-  left: 10px;
-  font-size: 0.8rem;
-  color: #4569D4;
-}
-.--input label {
-  position: absolute;
-  top: 24%;
-  left: 10px;
-  font-size: 1rem;
-  color: #4569D4;
-  background-color: #fff;
-  transition: all 0.3s;
-  padding-inline: 5px;
-  user-select: none;
-  cursor: text;
-  pointer-events: none;
-}
-.--input .active ~ label {
-  top: -10px;
-  left: 10px;
-  font-size: 0.8rem;
-  color: #4569D4;
 }
 .--button {
   width: 100%;
@@ -335,69 +449,6 @@
 }
 .--button._loading span {
   display: none;
-}
-.--button._primary {
-  border: 1px solid #4569D4;
-  background-color: #4569D4;
-  transition: all 0.5s;
-}
-.--button._primary:hover {
-  color: #4569D4;
-  background-color: transparent;
-}
-.--button._email {
-  border: 1px solid #6200EE;
-  background-color: #6200EE;
-  transition: all 0.5s;
-}
-.--button._email:hover {
-  color: #6200EE;
-  background-color: transparent;
-}
-.--button._google {
-  border: 1px solid #DB4437;
-  background-color: #DB4437;
-  transition: all 0.5s;
-}
-.--button._google:hover {
-  color: #DB4437;
-  background-color: transparent;
-}
-.--button._microsoft {
-  border: 1px solid #00A4EF;
-  background-color: #00A4EF;
-  transition: all 0.5s;
-}
-.--button._microsoft:hover {
-  color: #00A4EF;
-  background-color: transparent;
-}
-.--button._facebook {
-  border: 1px solid #4267B2;
-  background-color: #4267B2;
-  transition: all 0.5s;
-}
-.--button._facebook:hover {
-  color: #4267B2;
-  background-color: transparent;
-}
-.--button._twitter {
-  border: 1px solid #00acee;
-  background-color: #00acee;
-  transition: all 0.5s;
-}
-.--button._twitter:hover {
-  color: #00acee;
-  background-color: transparent;
-}
-.--button._whatsapp {
-  border: 1px solid #25d366;
-  background-color: #25d366;
-  transition: all 0.5s;
-}
-.--button._whatsapp:hover {
-  color: #25d366;
-  background-color: transparent;
 }
 .--button._error {
   border: 1px solid #f53030;

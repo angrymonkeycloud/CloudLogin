@@ -1,0 +1,28 @@
+﻿@using static Microsoft.Extensions.DependencyInjection.CloudLoginConfiguration
+
+        @switch (Provider.Code)
+        {
+            case "Microsoft":
+                <AngryMonkey.Cloud.Components.Icons.MicrosoftLogo UseDefaultTheme="UseDefaultColor" />
+                break;
+
+            case "Google":
+                <AngryMonkey.Cloud.Components.Icons.GoogleLogo UseDefaultTheme="UseDefaultColor" />
+                break;
+
+            case "Facebook":
+                <AngryMonkey.Cloud.Components.Icons.FacebookLogo UseDefaultTheme="UseDefaultColor" />
+                break;
+
+            case "Apple":
+                <AngryMonkey.Cloud.Components.Icons.AppleLogo UseDefaultTheme="UseDefaultColor" />
+                break;
+
+            case "Twitter":
+                <AngryMonkey.Cloud.Components.Icons.TwitterLogo UseDefaultTheme="UseDefaultColor" />
+                break;
+
+            default: break;
+        }
+
+

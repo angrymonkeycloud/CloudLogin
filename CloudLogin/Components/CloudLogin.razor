@@ -100,10 +100,9 @@
                 <div class="amc-cloudlogin-providers">
                     @foreach (Provider provider in Providers)
                     {
-                        <button class="amc-cloudlogin-provider @provider.CssClass" @onclick="() => OnProviderClickedAsync(provider)">
+                        <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                             <div class="amc-cloudlogin-provider-icon">
                                 <AngryMonkey.Cloud.Login.Components.ProviderButton Provider="provider" />
-
                             </div>
                             <div class="amc-cloudlogin-provider-label">@provider.Label</div>
                         </button>
@@ -114,28 +113,12 @@
         else if (State == ProcessState.PendingVerification)
         {
             <div class="login-form">
-                <div class="login-form-Verification">
-                    <span>Please check your emails for a message with your code. Your code is 7 numbers long.</span>
-                </div>
-                <div class="login-form-error ">
-                    @if (WrongCode)
-                    {
-                        <span>*Wrong code</span>
-                    }
-                </div>
                 <div class="login-form-emailVerification">
-                    <input autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                    <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="code">Enter Code</label>
                 </div>
                 <div class="login-form-resend">
                     <button @onclick="OnNewCodeClicked">Resend code ?</button>
-                </div>
-                <div class="login-form-expire _wrong ">
-                    @if (ExpiredCode)
-                    {
-                        <button class="--button _error" @onclick="OnNewCodeClicked">New Code</button>
-                        <span>Expired code</span>
-                    }
                 </div>
                 <div class="login-form-verify">
                     <button class="amc-cloudlogin-button" @onclick="OnVerifyClicked">
@@ -149,33 +132,23 @@
         else if (State == ProcessState.PendingRegisteration)
         {
             <div class="login-form">
-                <div class="login-form-Verification">
-                    <span>Email is verified => Create user</span>
-                </div>
-
-                <div class="login-form-error @(EmptyInput? "_wrong" : "")">
-                    @if (EmptyInput)
-                    {
-                        <span>You have an input empty!</span>
-                    }
-                </div>
                 <div class="login-form-register">
                     <div>
-                        <input type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                        <input @onkeydown="OnInputKeyPressed" type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="firstName">First Name</label>
                     </div>
                     <div>
-                        <input type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
+                        <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="lastName">Last Name</label>
                     </div>
                     <div>
-                        <input type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
+                        <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
                         <label for="displayName">Display Name</label>
                     </div>
                 </div>
 
                 <div class="login-form-finish">
-                    <button class="amc-cloudlogin-button" @onclick="OnRegisterClicked">
+                    <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))? "" : "--disable" )" @onclick="OnRegisterClicked">
                         <span>Register</span>
                         <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                     </button>

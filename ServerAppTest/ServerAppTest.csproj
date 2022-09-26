@@ -11,4 +11,8 @@
     <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>

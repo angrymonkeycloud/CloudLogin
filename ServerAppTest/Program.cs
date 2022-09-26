@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos.Core;
-using ServerAppTest.Controllers;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -37,12 +36,12 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 
 	EmailSendCodeRequest = async (sendCode) =>
 	{
-		SmtpClient smtpClient = new("smtp.gmail.com", 587)
+		SmtpClient smtpClient = new(builder.Configuration["SMTP:Email"], 587)
 		{
 			EnableSsl = true,
 			DeliveryMethod = SmtpDeliveryMethod.Network,
 			UseDefaultCredentials = false,
-			Credentials = new NetworkCredential("wissamfarhat51@gmail.com", "ycqirwqugebkxfmh")
+			Credentials = new NetworkCredential(builder.Configuration["SMTP:Email"], builder.Configuration["SMTP:Password"])
 		};
 
 		StringBuilder mailBody = new();
@@ -56,7 +55,7 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 
 		MailMessage mailMessage = new()
 		{
-			From = new MailAddress("wissamfarhat51@gmail.com", "Cloud Login"),
+			From = new MailAddress("angtest78@gmail.com", "Cloud Login"),
 			Subject = "Login Code",
 			IsBodyHtml = true,
 			Body = mailBody.ToString()
@@ -107,7 +106,7 @@ builder.Services.AddAuthentication(opt =>
 builder.Services.AddOptions();
 builder.Services.AddAuthenticationCore();
 
-builder.Services.AddScoped<ServerAppTest.Controllers.CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<CloudLogin.MyFeature.Controllers.CustomAuthenticationStateProvider>();
 
 //builder.Services.AddScoped<IClaimsTransformation, UserInfoClaims>();
 var app = builder.Build();

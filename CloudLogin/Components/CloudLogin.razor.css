@@ -28,6 +28,12 @@
   src: url(https://fonts.gstatic.com/s/tajawal/v9/Iurf6YBj_oCad4k1l4qkLrY.ttf) format('truetype');
 }
 /*var(--amc-accentColor): #4569D4;*/
+.disableProvider ::deep svg:first-child {
+  display: none;
+}
+.disableProvider ::deep svg:last-child {
+  display: block;
+}
 .amc-cloudlogin {
   --amc-accentColor: #000;
   --microsoftColor: #00A4EF;

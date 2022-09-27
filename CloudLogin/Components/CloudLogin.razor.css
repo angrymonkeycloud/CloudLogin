@@ -441,19 +441,23 @@
 .amc-cloudlogin._loading .amc-cloudlogin-button ::deep svg rect {
   fill: var(--amc-accentColor);
 }
-.amc-cloudlogin._next .amc-cloudlogin-header,
-.amc-cloudlogin._next .amc-cloudlogin-footer {
+.amc-cloudlogin._next .amc-cloudlogin-header {
   animation: next 1.3s ease-in-out forwards;
 }
 .amc-cloudlogin._next .amc-cloudlogin-body {
   animation: next 2s ease-in-out forwards;
 }
-.amc-cloudlogin._back .amc-cloudlogin-header,
-.amc-cloudlogin._back .amc-cloudlogin-footer {
+.amc-cloudlogin._next .amc-cloudlogin-footer {
+  animation: next 2.3s ease-in-out forwards;
+}
+.amc-cloudlogin._back .amc-cloudlogin-header {
   animation: back 1.3s ease-in-out forwards;
 }
 .amc-cloudlogin._back .amc-cloudlogin-body {
   animation: back 2s ease-in-out forwards;
+}
+.amc-cloudlogin._back .amc-cloudlogin-footer {
+  animation: back 2.3s ease-in-out forwards;
 }
 .--disable {
   cursor: none;

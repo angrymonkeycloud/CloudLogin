@@ -1,4 +1,5 @@
-﻿using AngryMonkey.Cloud.Geography;
+﻿using AngryMonkey.Cloud.Components.Icons;
+using AngryMonkey.Cloud.Geography;
 using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -21,6 +22,8 @@ namespace AngryMonkey.Cloud.Login
         public bool IsLoading { get; set; } = false;
         protected string Title { get; set; } = string.Empty;
         protected string Subtitle { get; set; } = string.Empty;
+        protected bool next { get; set; } = false;
+        protected bool back { get; set; } = false;
         protected List<string> Errors { get; set; } = new List<string>();
         public Provider? SelectedProvider { get; set; }
         public Action OnInput { get; set; }
@@ -217,7 +220,7 @@ namespace AngryMonkey.Cloud.Login
                         InputType = "Whatsapp";
                     Title = $"Verify your {InputType}";
                     Subtitle = $"Please check your {InputType} for a message with your code (6 numbers long).";
-                    DisplayInputValue= true;
+                    DisplayInputValue = true;
                     break;
 
                 case ProcessState.PendingRegisteration:
@@ -332,7 +335,13 @@ namespace AngryMonkey.Cloud.Login
                 .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                             || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
+                next = true;
+                StateHasChanged();
+                await Task.Delay(1000);
                 SwitchState(ProcessState.PendingProviders);
+                await Task.Delay(1500);
+                next = false;
+
             }
         }
 
@@ -349,7 +358,13 @@ namespace AngryMonkey.Cloud.Login
                 return;
 
             Errors.Clear();
+            back = true;
+            StateHasChanged();
+            await Task.Delay(1000);
             SwitchState(ProcessState.PendingSignIn);
+            await Task.Delay(1500);
+            back = false;
+
         }
 
         private async Task RefreshVerificationCode()

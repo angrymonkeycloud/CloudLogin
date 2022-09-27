@@ -7,6 +7,16 @@
 @--colorError: #f53030;
 @--colorWhatsApp: #25d366;
 
+.disableProvider {
+	::deep svg:first-child {
+		display: none
+	}
+
+	::deep svg:last-child {
+		display: block;
+	}
+}
+
 .amc-cloudlogin {
 	--amc-accentColor: #000;
 	--microsoftColor: #00A4EF;
@@ -137,6 +147,7 @@
 
 	&-provider {
 		--currentColor: var(--amc-accentColor);
+
 
 		&._primary {
 			--currentColor: #ffd800;

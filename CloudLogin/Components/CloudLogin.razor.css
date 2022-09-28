@@ -454,13 +454,13 @@
 .amc-cloudlogin._next .amc-cloudlogin-footer {
   animation: next 2.3s ease-in-out forwards;
 }
-.amc-cloudlogin._back .amc-cloudlogin-header {
+.amc-cloudlogin._preview .amc-cloudlogin-header {
   animation: back 1.3s ease-in-out forwards;
 }
-.amc-cloudlogin._back .amc-cloudlogin-body {
+.amc-cloudlogin._preview .amc-cloudlogin-body {
   animation: back 2s ease-in-out forwards;
 }
-.amc-cloudlogin._back .amc-cloudlogin-footer {
+.amc-cloudlogin._preview .amc-cloudlogin-footer {
   animation: back 2.3s ease-in-out forwards;
 }
 .--disable {

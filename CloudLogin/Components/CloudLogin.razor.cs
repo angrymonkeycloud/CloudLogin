@@ -22,8 +22,8 @@ namespace AngryMonkey.Cloud.Login
         public bool IsLoading { get; set; } = false;
         protected string Title { get; set; } = string.Empty;
         protected string Subtitle { get; set; } = string.Empty;
-        protected bool next { get; set; } = false;
-        protected bool back { get; set; } = false;
+        protected bool Next { get; set; } = false;
+        protected bool Preview { get; set; } = false;
         protected List<string> Errors { get; set; } = new List<string>();
         public Provider? SelectedProvider { get; set; }
         public Action OnInput { get; set; }
@@ -54,6 +54,12 @@ namespace AngryMonkey.Cloud.Login
 
                 if (IsLoading)
                     classes.Add("_loading");
+
+                if (Next)
+                    classes.Add("_next");
+
+                if (Preview)
+                    classes.Add("_preview");
 
                 return string.Join(" ", classes);
             }
@@ -336,14 +342,14 @@ namespace AngryMonkey.Cloud.Login
                             || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
 
-                StateAnimation(1000, ProcessState.PendingProviders, 1200);
+                StateAnimation(ProcessState.PendingProviders);
 
             }
         }
 
 
 
-     
+
         //private async Task OnContinueClicked(MouseEventArgs e)
         //{
         //	StartLoading();
@@ -358,8 +364,8 @@ namespace AngryMonkey.Cloud.Login
 
             Errors.Clear();
 
-            StateAnimation(1000, ProcessState.PendingSignIn, 1200,false);
-        
+            StateAnimation(ProcessState.PendingSignIn, false);
+
         }
 
         private async Task RefreshVerificationCode()
@@ -553,23 +559,23 @@ namespace AngryMonkey.Cloud.Login
             }
         }
 
-        private async void StateAnimation(int firstDelay, ProcessState state, int lastDelay, bool toNext = true)
+        private async void StateAnimation(ProcessState state, bool toNext = true)
         {
             if (toNext)
-                next = true;
+                Next = true;
             else
-                back = true;
+                Preview = true;
 
             StateHasChanged();
-            await Task.Delay(firstDelay);
+            await Task.Delay(1000);
 
             SwitchState(state);
-            await Task.Delay(lastDelay);
+            await Task.Delay(1200);
 
             if (toNext)
-                next = false;
+                Next = false;
             else
-                back = false;
+                Preview = false;
 
             StateHasChanged();
         }

@@ -6,7 +6,7 @@
 @inject CloudGeographyClient cloudGeography
 @inject HttpClient httpClient
 
-<div class="amc-cloudlogin @(next? "_next":null) @(back? "_back":null)  @CssClass">
+<div class="amc-cloudlogin @CssClass">
     <div class="amc-cloudlogin-header">
 
         @* Loading *@
@@ -63,7 +63,7 @@
         }
     </div>
 
-    <div class="amc-cloudlogin-body   ">
+    <div class="amc-cloudlogin-body">
 
         @if (DisplayInputValue)
         {

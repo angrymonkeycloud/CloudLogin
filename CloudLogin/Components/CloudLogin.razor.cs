@@ -1,4 +1,5 @@
-﻿using AngryMonkey.Cloud.Geography;
+﻿using AngryMonkey.Cloud.Components.Icons;
+using AngryMonkey.Cloud.Geography;
 using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -21,6 +22,8 @@ namespace AngryMonkey.Cloud.Login
         public bool IsLoading { get; set; } = false;
         protected string Title { get; set; } = string.Empty;
         protected string Subtitle { get; set; } = string.Empty;
+        protected bool Next { get; set; } = false;
+        protected bool Preview { get; set; } = false;
         protected List<string> Errors { get; set; } = new List<string>();
         public Provider? SelectedProvider { get; set; }
         public Action OnInput { get; set; }
@@ -51,6 +54,12 @@ namespace AngryMonkey.Cloud.Login
 
                 if (IsLoading)
                     classes.Add("_loading");
+
+                if (Next)
+                    classes.Add("_next");
+
+                if (Preview)
+                    classes.Add("_preview");
 
                 return string.Join(" ", classes);
             }
@@ -217,7 +226,7 @@ namespace AngryMonkey.Cloud.Login
                         InputType = "Whatsapp";
                     Title = $"Verify your {InputType}";
                     Subtitle = $"Please check your {InputType} for a message with your code (6 numbers long).";
-                    DisplayInputValue= true;
+                    DisplayInputValue = true;
                     break;
 
                 case ProcessState.PendingRegisteration:
@@ -332,9 +341,14 @@ namespace AngryMonkey.Cloud.Login
                 .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                             || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
-                SwitchState(ProcessState.PendingProviders);
+
+                StateAnimation(ProcessState.PendingProviders);
+
             }
         }
+
+
+
 
         //private async Task OnContinueClicked(MouseEventArgs e)
         //{
@@ -349,7 +363,9 @@ namespace AngryMonkey.Cloud.Login
                 return;
 
             Errors.Clear();
-            SwitchState(ProcessState.PendingSignIn);
+
+            StateAnimation(ProcessState.PendingSignIn, false);
+
         }
 
         private async Task RefreshVerificationCode()
@@ -541,6 +557,27 @@ namespace AngryMonkey.Cloud.Login
             {
                 throw e;
             }
+        }
+
+        private async void StateAnimation(ProcessState state, bool toNext = true)
+        {
+            if (toNext)
+                Next = true;
+            else
+                Preview = true;
+
+            StateHasChanged();
+            await Task.Delay(1000);
+
+            SwitchState(state);
+            await Task.Delay(1200);
+
+            if (toNext)
+                Next = false;
+            else
+                Preview = false;
+
+            StateHasChanged();
         }
     }
 }

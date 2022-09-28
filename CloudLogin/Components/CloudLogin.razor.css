@@ -47,6 +47,7 @@
   padding-bottom: 20px;
   overflow: auto;
   background-color: #fff;
+  overflow-x: hidden;
 }
 .amc-cloudlogin a,
 .amc-cloudlogin a:visited,
@@ -111,6 +112,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  transform: translateX(0);
 }
 .amc-cloudlogin-title {
   color: #202124;
@@ -201,6 +203,7 @@
   max-width: 20rem;
   margin-left: auto;
   margin-right: auto;
+  transform: translateX(0);
 }
 .amc-cloudlogin-body .login-form {
   display: flex;
@@ -417,6 +420,10 @@
 .amc-cloudlogin._loading .amc-cloudlogin-loading {
   display: block;
 }
+.amc-cloudlogin._loading .amc-cloudlogin-providers button {
+  opacity: 0.3;
+  pointer-events: none;
+}
 .amc-cloudlogin._loading .amc-cloudlogin-button {
   opacity: 0.3;
   pointer-events: none;
@@ -437,6 +444,24 @@
 }
 .amc-cloudlogin._loading .amc-cloudlogin-button ::deep svg rect {
   fill: var(--amc-accentColor);
+}
+.amc-cloudlogin._next .amc-cloudlogin-header {
+  animation: next 1.3s ease-in-out forwards;
+}
+.amc-cloudlogin._next .amc-cloudlogin-body {
+  animation: next 2s ease-in-out forwards;
+}
+.amc-cloudlogin._next .amc-cloudlogin-footer {
+  animation: next 2.3s ease-in-out forwards;
+}
+.amc-cloudlogin._preview .amc-cloudlogin-header {
+  animation: back 1.3s ease-in-out forwards;
+}
+.amc-cloudlogin._preview .amc-cloudlogin-body {
+  animation: back 2s ease-in-out forwards;
+}
+.amc-cloudlogin._preview .amc-cloudlogin-footer {
+  animation: back 2.3s ease-in-out forwards;
 }
 .--disable {
   cursor: none;
@@ -507,5 +532,37 @@
   100% {
     width: 100px;
     left: 0;
+  }
+}
+@keyframes next {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-100vw);
+  }
+  55% {
+    opacity: 0;
+    transform: translateX(100vw);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes back {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(100vw);
+  }
+  55% {
+    opacity: 0;
+    transform: translateX(-100vw);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
   }
 }

@@ -335,16 +335,15 @@ namespace AngryMonkey.Cloud.Login
                 .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                             || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
-                next = true;
-                StateHasChanged();
-                await Task.Delay(1000);
-                SwitchState(ProcessState.PendingProviders);
-                await Task.Delay(1500);
-                next = false;
+
+                StateAnimation(1000, ProcessState.PendingProviders, 1200);
 
             }
         }
 
+
+
+     
         //private async Task OnContinueClicked(MouseEventArgs e)
         //{
         //	StartLoading();
@@ -358,13 +357,9 @@ namespace AngryMonkey.Cloud.Login
                 return;
 
             Errors.Clear();
-            back = true;
-            StateHasChanged();
-            await Task.Delay(1000);
-            SwitchState(ProcessState.PendingSignIn);
-            await Task.Delay(1500);
-            back = false;
 
+            StateAnimation(1000, ProcessState.PendingSignIn, 1200,false);
+        
         }
 
         private async Task RefreshVerificationCode()
@@ -556,6 +551,27 @@ namespace AngryMonkey.Cloud.Login
             {
                 throw e;
             }
+        }
+
+        private async void StateAnimation(int firstDelay, ProcessState state, int lastDelay, bool toNext = true)
+        {
+            if (toNext)
+                next = true;
+            else
+                back = true;
+
+            StateHasChanged();
+            await Task.Delay(firstDelay);
+
+            SwitchState(state);
+            await Task.Delay(lastDelay);
+
+            if (toNext)
+                next = false;
+            else
+                back = false;
+
+            StateHasChanged();
         }
     }
 }

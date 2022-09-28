@@ -420,6 +420,10 @@
 .amc-cloudlogin._loading .amc-cloudlogin-loading {
   display: block;
 }
+.amc-cloudlogin._loading .amc-cloudlogin-providers button {
+  opacity: 0.3;
+  pointer-events: none;
+}
 .amc-cloudlogin._loading .amc-cloudlogin-button {
   opacity: 0.3;
   pointer-events: none;

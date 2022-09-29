@@ -1,0 +1,24 @@
+﻿@page "/All"
+@inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
+
+<HeadContent>
+    <CloudBundle Source="css/index.css" />
+</HeadContent>
+
+<AuthorizeView>
+    <Authorized>
+        <a href="cloudlogin/logout">Logout</a>
+        All users:
+        @foreach (CloudUser users in Users){
+            <details>
+                <summary>@users.DisplayName</summary>
+                <div  style="width: 500px;">@users.ToString();</div>
+            </details>
+
+        }
+    </Authorized>
+    <NotAuthorized>
+        Login First: 
+        <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
+    </NotAuthorized>
+</AuthorizeView>

@@ -115,6 +115,19 @@ namespace AngryMonkey.Cloud.Login
 			ItemResponse<CloudUser> response = await Container.ReadItemAsync<CloudUser>(user.CosmosId, user.CosmosPartitionKey);
 
 			return response.Resource;
-		}
-	}
+        }
+
+        public async Task<List<CloudUser>> GetUsers(Expression<Func<CloudUser, bool>>? predicate = null)
+        {
+            IQueryable<CloudUser> usersQueryable = Queryable("CloudUser", predicate);
+
+            return await ToListAsync(usersQueryable);
+        }
+
+        public async Task DeleteUser(Guid userId)
+        {
+			CloudUser user = new() { ID = userId };
+			await Container.DeleteItemStreamAsync(user.CosmosId, user.CosmosPartitionKey);
+        }
+    }
 }

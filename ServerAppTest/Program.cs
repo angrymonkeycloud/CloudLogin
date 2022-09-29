@@ -27,13 +27,13 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 
 builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 {
+    RedirectUri = "/all",
     Cosmos = new CloudLoginConfiguration.CosmosDatabase()
     {
         ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
         DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
         ContainerId = builder.Configuration["Cosmos:ContainerId"]
     },
-
     EmailSendCodeRequest = async (sendCode) =>
     {
         SmtpClient smtpClient = new(builder.Configuration["SMTP:Host"], int.Parse(builder.Configuration["SMTP:Port"]))
@@ -65,7 +65,6 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 
         await smtpClient.SendMailAsync(mailMessage);
     },
-
     Providers = new List<CloudLoginConfiguration.Provider>()
     {
         new CloudLoginConfiguration.MicrosoftAccount()

@@ -1,5 +1,6 @@
 ﻿@page "/"
-@using System.Security.Claims
+@inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
+@inject NavigationManager navigate
 
 <HeadContent>
     <CloudBundle Source="css/index.css" />
@@ -10,6 +11,9 @@
         <section class="authorized">
             <div>
                 @{
+                    Console.WriteLine(context.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+                    UserId = new Guid(context.User.FindFirst(ClaimTypes.NameIdentifier).Value);
                     string input = context?.User?.FindFirst(ClaimTypes.Email)?.Value;
 
                     if (string.IsNullOrEmpty(input))
@@ -19,14 +23,15 @@
                 <h1>Success!</h1>
                 <b>Name:</b> @context.User.FindFirst(ClaimTypes.Name).Value
                 <br />
-                <b>ID:</b> @context.User.FindFirst(ClaimTypes.NameIdentifier).Value
+                <b>ID:</b> @UserId
                 <br />
-                
+
                 <b>Input:</b> @input
 
                 <br />
                 <br />
                 <a href="cloudlogin/logout">Logout</a>
+                <a href="cloudlogin/logout" @onclick="DeleteButton">Delete</a>
             </div>
         </section>
     </Authorized>
@@ -34,3 +39,9 @@
         <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
     </NotAuthorized>
 </AuthorizeView>
+
+@code {
+    Guid UserId = Guid.Empty;
+
+    private async Task DeleteButton() => await cloudLogin.Options.Cosmos.Methods.DeleteUser(UserId);
+}

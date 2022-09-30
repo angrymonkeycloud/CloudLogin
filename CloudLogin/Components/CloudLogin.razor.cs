@@ -3,6 +3,8 @@ using AngryMonkey.Cloud.Geography;
 using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Linq.Expressions;
 using System.Net.Http.Headers;
@@ -28,6 +30,10 @@ namespace AngryMonkey.Cloud.Login
         public Provider? SelectedProvider { get; set; }
         public Action OnInput { get; set; }
         public Guid UserId { get; set; } = Guid.NewGuid();
+        public string RedirectUrl
+        {
+            get => cloudLogin.Options.RedirectUri ??= navigationManager.BaseUri;
+        }
 
         private string _inputValue;
 
@@ -445,9 +451,8 @@ namespace AngryMonkey.Cloud.Login
 
         private void ProviderSignInChallenge(string provider)
         {
-            navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri=/&keepMeSignedIn={KeepMeSignedIn}", true);
+            navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUrl}&keepMeSignedIn={KeepMeSignedIn}", true);
         }
-
         private void CustomSignInChallenge(CloudUser user)
         {
             Dictionary<string, object> userInfo = new()
@@ -462,7 +467,7 @@ namespace AngryMonkey.Cloud.Login
 
             string userInfoJSON = JsonConvert.SerializeObject(userInfo);
 
-            navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}", true);
+            navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={RedirectUrl}", true);
         }
 
         private async Task OnVerifyClicked()

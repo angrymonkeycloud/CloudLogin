@@ -6,9 +6,10 @@
     <CloudBundle Source="css/index.css" />
 </HeadContent>
 
+
 <AuthorizeView>
     <Authorized>
-        <section class="authorized">
+        <section class="amc-authorized">
             <div>
                 @{
                     Console.WriteLine(context.User.FindFirst(ClaimTypes.NameIdentifier).Value);
@@ -20,18 +21,31 @@
                         input = context.User.FindFirst(ClaimTypes.MobilePhone).Value;
                 }
 
-                <h1>Success!</h1>
-                <b>Name:</b> @context.User.FindFirst(ClaimTypes.Name).Value
-                <br />
-                <b>ID:</b> @UserId
-                <br />
+                <div class="amc-authorized-title">
+                    <img class="amc-authorized-title-logo" src="./img/logo.svg">
+                    Angry Monkey Cloud Login
+                </div>
 
-                <b>Input:</b> @input
+                <div class="amc-authorized-info">
+                    <div class="amc-authorized-info-event">Login is succesful</div>
+                    <div class="amc-authorized-info-inside">
+                        <b>Name:</b> @context.User.FindFirst(ClaimTypes.Name).Value
+                    </div>
+                    <div class="amc-authorized-info-inside">
+                        <b>ID:</b> @UserId
+                    </div>
 
-                <br />
-                <br />
-                <a href="cloudlogin/logout">Logout</a>
-                <a href="cloudlogin/logout" @onclick="DeleteButton">Delete</a>
+                    <div class="amc-authorized-info-inside">
+                        <b>Input:</b> @input
+                    </div>
+
+
+                    <div class="amc-authorized-info-nav">
+                        <a href="./cloudlogin/logout" class="--button">Logout</a>
+                        <a href="./cloudlogin/logout" @onclick="DeleteButton" class="--button">Delete</a>
+                        <a href="./all" class="--button">All</a>
+                    </div>
+                </div>
             </div>
         </section>
     </Authorized>

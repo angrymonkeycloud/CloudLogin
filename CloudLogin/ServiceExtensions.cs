@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
@@ -222,6 +223,7 @@ public class CloudLoginConfiguration
 {
     public List<Provider> Providers { get; set; } = new();
     public CosmosDatabase? Cosmos { get; set; }
+    public List<Links>? CloudLoginFooterLink { get; set; }
     public string? RedirectUrl { get; set; }
     internal string EmailMessageBody { get; set; }
     public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; } = null;
@@ -312,7 +314,14 @@ public class CloudLoginConfiguration
         }
     }
 
-    public class CosmosDatabase
+    public class Links
+    {
+        public string Title { get; set; }
+        public string Url { get; set; }
+
+    }
+
+        public class CosmosDatabase
     {
         public string ConnectionString { get; set; }
         public string DatabaseId { get; set; }

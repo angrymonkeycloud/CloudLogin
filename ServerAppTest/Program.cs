@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using Twilio.Rest.Verify.V2.Service.Entity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +17,21 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 
 builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 {
-	RedirectUrl = "/all",
-	Cosmos = new CloudLoginConfiguration.CosmosDatabase()
+	//RedirectUrl = "/all",
+ //   CloudLoginFooterLink = new()
+	//{
+ //       new CloudLoginConfiguration.Links
+	//	{
+	//		Title = "All",
+	//		Url = "/all"
+	//	},
+	//	new CloudLoginConfiguration.Links
+	//	{
+	//		Title = "Google",
+	//		Url = "https://gmail.com/"
+ //       }
+ //   },
+    Cosmos = new CloudLoginConfiguration.CosmosDatabase()
 	{
 		ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
 		DatabaseId = builder.Configuration["Cosmos:DatabaseId"],

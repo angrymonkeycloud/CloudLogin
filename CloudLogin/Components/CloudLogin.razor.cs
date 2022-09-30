@@ -393,7 +393,8 @@ namespace AngryMonkey.Cloud.Login
 			try
 			{
 				await RefreshVerificationCode();
-			}
+                EndLoading();
+            }
 			catch (Exception e)
 			{
 				Errors.Add(e.Message);

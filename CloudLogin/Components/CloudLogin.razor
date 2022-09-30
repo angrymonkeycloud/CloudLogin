@@ -28,7 +28,7 @@
 
         <div class="amc-cloudlogin-title">
 
-            @if (State != ProcessState.PendingSignIn)
+            @if (State != ProcessState.InputValue)
             {
                 <button class="--button _back" @onclick="OnBackClicked">
                     <AngryMonkey.Cloud.Components.Icons.Back />
@@ -79,7 +79,7 @@
             </div>
         }
 
-        @if (State == ProcessState.PendingSignIn)
+        @if (State == ProcessState.InputValue)
         {
             <div class="login-form _center @(checkError? "error" : "")">
                 <div>
@@ -94,7 +94,7 @@
                 </div>
             </div>
         }
-        else if (State == ProcessState.PendingAuthorization || State == ProcessState.PendingProviders)
+        else if (State == ProcessState.Providers)
         {
             <div class="login-form">
                 <div class="amc-cloudlogin-providers">
@@ -110,7 +110,7 @@
                 </div>
             </div>
         }
-        else if (State == ProcessState.PendingVerification)
+        else if (State == ProcessState.CodeVerification)
         {
             <div class="login-form">
                 <div class="login-form-emailVerification">
@@ -129,7 +129,7 @@
             </div>
 
         }
-        else if (State == ProcessState.PendingRegisteration)
+        else if (State == ProcessState.Registration)
         {
             <div class="login-form">
                 <div class="login-form-register">

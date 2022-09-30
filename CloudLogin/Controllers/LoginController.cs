@@ -19,12 +19,7 @@ using System.Configuration;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Web;
-using Twilio.TwiML.Voice;
-using static Microsoft.Extensions.DependencyInjection.CloudLoginConfiguration;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using static Microsoft.Extensions.DependencyInjection.CloudLoginConfiguration;
-
-
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {

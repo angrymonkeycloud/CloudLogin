@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace CloudLogin.MyFeature.Controllers
+namespace AngryMonkey.Cloud.Login.Controllers
 {
     public class UserInfoClaims : IClaimsTransformation
     {

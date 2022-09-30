@@ -5,6 +5,7 @@ using AngryMonkey.Cloud.Geography;
 using AngryMonkey.Cloud.Login;
 using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -44,9 +45,17 @@ public static class MvcServiceCollectionExtensions
         services.AddSingleton(new CloudLoginService() { Options = options });
         services.AddSingleton(cloudGeography);
         services.AddSingleton(new HttpClient());
-        //services.AddSingleton<CloudLoginProcess>();
+		services.AddScoped<AngryMonkey.Cloud.Login.Controllers.CustomAuthenticationStateProvider>();
 
-        var service = services.AddAuthentication("Cookies").AddCookie((option =>
+		services.AddAuthentication(opt =>
+		{
+			opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+		});
+
+		services.AddOptions();
+		services.AddAuthenticationCore();
+
+		var service = services.AddAuthentication("Cookies").AddCookie((option =>
         {
             option.Cookie.Name = "CloudLogin";
             option.Events = new AspNetCore.Authentication.Cookies.CookieAuthenticationEvents()
@@ -213,12 +222,8 @@ public class CloudLoginConfiguration
 {
     public List<Provider> Providers { get; set; } = new();
     public CosmosDatabase? Cosmos { get; set; }
-    public string? RedirectUri { get; set; }
+    public string? RedirectUrl { get; set; }
     internal string EmailMessageBody { get; set; }
-
-    /// <summary>
-    /// string code, string receiverInput
-    /// </summary>
     public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; } = null;
 
     public class Provider

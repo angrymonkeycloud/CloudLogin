@@ -134,7 +134,7 @@
             <div class="login-form">
                 <div class="login-form-register">
                     <div>
-                        <input @onkeydown="OnInputKeyPressed" type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                        <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="firstName">First Name</label>
                     </div>
                     <div>
@@ -170,8 +170,14 @@
         </div>
 
         <div class="amc-cloudlogin-footer-links">
-            <a target="_blank" href="https://angrymonkeycloud.com/">Privacy</a>
-            <a target="_blank" href="https://angrymonkeycloud.com/">Terms</a>
+            @if (cloudLogin.Options.CloudLoginFooterLink != null)
+            {
+                @foreach (Links link in cloudLogin.Options.CloudLoginFooterLink)
+                {
+                    <a target="_blank" href="@link.Url">@link.Title</a>
+                }
+
+            }
             <a target="_blank" href="https://angrymonkeycloud.com/">Info</a>
         </div>
     </div>

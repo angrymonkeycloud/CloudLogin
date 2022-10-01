@@ -199,9 +199,43 @@ namespace AngryMonkey.Cloud.Login
 		}
 
 		protected ProcessState State { get; set; }
-		private void SwitchState(ProcessState state)
+
+		private async Task SwitchState(ProcessState state)
 		{
+			if (state == State)
+				return;
+
+			bool toNext = true;
+
+			switch (state)
+			{
+				case ProcessState.InputValue:
+					toNext = false;
+					break;
+
+				case ProcessState.CodeVerification:
+					if (State == ProcessState.Registration)
+						toNext = false;
+
+					break;
+
+				case ProcessState.Providers:
+					if (State != ProcessState.InputValue)
+						toNext = false;
+
+					break;
+
+				default: break;
+			}
+
+			if (toNext)
+				Next = true;
+			else
+				Preview = true;
+
 			StateHasChanged();
+			await Task.Delay(1000);
+
 			State = state;
 
 			switch (State)
@@ -244,6 +278,15 @@ namespace AngryMonkey.Cloud.Login
 			}
 
 			EndLoading();
+
+			await Task.Delay(1200);
+
+			if (toNext)
+				Next = false;
+			else
+				Preview = false;
+
+			StateHasChanged();
 		}
 
 		protected enum ProcessState
@@ -278,7 +321,7 @@ namespace AngryMonkey.Cloud.Login
 					StateHasChanged();
 				};
 
-				SwitchState(ProcessState.InputValue);
+				await SwitchState(ProcessState.InputValue);
 			}
 		}
 
@@ -340,7 +383,7 @@ namespace AngryMonkey.Cloud.Login
 					.Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
 								|| (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
-			StateAnimation(ProcessState.Providers);
+			await SwitchState(ProcessState.Providers);
 		}
 
 		//private async Task OnContinueClicked(MouseEventArgs e)
@@ -357,7 +400,7 @@ namespace AngryMonkey.Cloud.Login
 
 			Errors.Clear();
 
-			StateAnimation(ProcessState.InputValue, false);
+			await SwitchState(ProcessState.InputValue);
 
 		}
 
@@ -401,7 +444,7 @@ namespace AngryMonkey.Cloud.Login
 				return;
 			}
 
-			//SwitchState(ProcessState.CodeVerification);
+			//await SwitchState(ProcessState.CodeVerification);
 		}
 
 		private async Task OnProviderClickedAsync(Provider provider)
@@ -415,7 +458,7 @@ namespace AngryMonkey.Cloud.Login
 				try
 				{
 					await RefreshVerificationCode();
-					SwitchState(ProcessState.CodeVerification);
+					await SwitchState(ProcessState.CodeVerification);
 				}
 				catch (Exception e)
 				{
@@ -486,7 +529,7 @@ namespace AngryMonkey.Cloud.Login
 
 			if (checkUser != null)
 				CustomSignInChallenge(checkUser);
-			else SwitchState(ProcessState.Registration);
+			else await SwitchState(ProcessState.Registration);
 		}
 
 		protected void OnDisplayNameFocus()
@@ -551,25 +594,25 @@ namespace AngryMonkey.Cloud.Login
 			}
 		}
 
-		private async void StateAnimation(ProcessState state, bool toNext = true)
-		{
-			if (toNext)
-				Next = true;
-			else
-				Preview = true;
+		//private async void StateAnimation(ProcessState state)
+		//{
+		//	if (toNext)
+		//		Next = true;
+		//	else
+		//		Preview = true;
 
-			StateHasChanged();
-			await Task.Delay(1000);
+		//	StateHasChanged();
+		//	await Task.Delay(1000);
 
-			SwitchState(state);
-			await Task.Delay(1200);
+		//	SwitchState(state);
+		//	await Task.Delay(1200);
 
-			if (toNext)
-				Next = false;
-			else
-				Preview = false;
+		//	if (toNext)
+		//		Next = false;
+		//	else
+		//		Preview = false;
 
-			StateHasChanged();
-		}
+		//	StateHasChanged();
+		//}
 	}
 }

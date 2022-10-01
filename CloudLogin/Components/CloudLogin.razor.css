@@ -534,14 +534,29 @@
     left: 0;
   }
 }
+/*
+
+@keyframes next {
+    0% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(-100vw);
+    }
+
+    55% {
+        opacity: 0;
+        transform: translateX(100vw);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}*/
 @keyframes next {
   0% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(-100vw);
-  }
-  55% {
     opacity: 0;
     transform: translateX(100vw);
   }

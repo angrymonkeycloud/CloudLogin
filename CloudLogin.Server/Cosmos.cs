@@ -4,7 +4,6 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
 using System.Net.Mail;
-using Twilio;
 using CloudUser = AngryMonkey.Cloud.Login.DataContract.CloudUser;
 
 namespace AngryMonkey.Cloud.Login
@@ -12,22 +11,6 @@ namespace AngryMonkey.Cloud.Login
 	public class CosmosMethods
 	{
 		#region Internal
-
-		public Container Container { get; set; }
-
-		
-		internal CosmosMethods(string connectionString, string databaseId, string containerId)
-		{
-			CosmosClient client = new(connectionString, new CosmosClientOptions()
-			{
-				SerializerOptions = new()
-				{
-					IgnoreNullValues = true
-				}
-			});
-
-			Container = client.GetContainer(databaseId, containerId);
-		}
 
 		internal IQueryable<T> Queryable<T>(string partitionKey) where T : BaseRecord
 		{
@@ -75,7 +58,20 @@ namespace AngryMonkey.Cloud.Login
 			}
 		}
 
+		internal static PartitionKey GetPartitionKey<T>(T record) where T : BaseRecord => new PartitionKey(record.PartitionKey);
+
+		internal static string GetCosmosId<T>(T record) where T : BaseRecord => $"{record.Discriminator}|{record.ID}";
+
 		#endregion
+
+		public CosmosMethods(string connectionString, string databaseId, string containerId)
+		{
+			CosmosClient client = new(connectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
+
+			Container = client.GetContainer(databaseId, containerId);
+		}
+
+		public Container Container { get; set; }
 
 		public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
 		{
@@ -112,22 +108,22 @@ namespace AngryMonkey.Cloud.Login
 		public async Task<CloudUser> GetUserById(Guid id)
 		{
 			CloudUser user = new() { ID = id };
-			ItemResponse<CloudUser> response = await Container.ReadItemAsync<CloudUser>(user.CosmosId, user.CosmosPartitionKey);
+			ItemResponse<CloudUser> response = await Container.ReadItemAsync<CloudUser>(GetCosmosId(user), GetPartitionKey(user));
 
 			return response.Resource;
-        }
+		}
 
-        public async Task<List<CloudUser>> GetUsers(Expression<Func<CloudUser, bool>>? predicate = null)
-        {
-            IQueryable<CloudUser> usersQueryable = Queryable("CloudUser", predicate);
+		public async Task<List<CloudUser>> GetUsers()
+		{
+			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser");
 
-            return await ToListAsync(usersQueryable);
-        }
+			return await ToListAsync(usersQueryable);
+		}
 
-        public async Task DeleteUser(Guid userId)
-        {
+		public async Task DeleteUser(Guid userId)
+		{
 			CloudUser user = new() { ID = userId };
-			await Container.DeleteItemStreamAsync(user.CosmosId, user.CosmosPartitionKey);
-        }
-    }
+			await Container.DeleteItemStreamAsync(GetCosmosId(user), GetPartitionKey(user));
+		}
+	}
 }

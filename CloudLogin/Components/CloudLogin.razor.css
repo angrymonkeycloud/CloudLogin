@@ -126,6 +126,21 @@
   left: 0;
   height: 0;
   transform: translate(-100%, 50%);
+  width: 25px;
+  height: 25px;
+  padding: 5px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-content: stretch;
+  background-color: transparent;
+  transition: all 0.6s;
+  cursor: pointer;
+}
+.amc-cloudlogin-title button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 .amc-cloudlogin-subtitle {
   font-size: 0.8rem;
@@ -212,41 +227,6 @@
   margin: 0 auto;
   min-height: 20rem;
 }
-.amc-cloudlogin-body .login-form-title {
-  width: fit-content;
-  margin: 0 auto 0 auto;
-  transition: all 0.8s;
-  line-height: 0;
-}
-.amc-cloudlogin-body .login-form-back {
-  min-height: 1rem;
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-.amc-cloudlogin-body .login-form-back span {
-  font-size: 0.9rem;
-}
-.amc-cloudlogin-body .login-form-notFound {
-  flex-direction: column;
-}
-.amc-cloudlogin-body .login-form-notFound h4 {
-  font-size: 1rem;
-  margin-bottom: 0;
-}
-.amc-cloudlogin-body .login-form-notFound h5 {
-  font-size: 0.8rem;
-  font-weight: normal;
-  margin-top: 0;
-}
-.amc-cloudlogin-body .login-form-Verification {
-  padding: 7px 5px;
-  border-top: 1px solid #4569D4;
-  text-align: left;
-}
-.amc-cloudlogin-body .login-form-Verification span {
-  font-size: 1rem;
-}
 .amc-cloudlogin-body .login-form-resend button {
   border: none;
   background-color: transparent;
@@ -263,35 +243,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-.amc-cloudlogin-body .login-form-error,
-.amc-cloudlogin-body .login-form-expire {
-  padding-left: 6px;
-  margin-bottom: 10px;
-  transition: all 0.5s;
-  min-height: 20px;
-}
-.amc-cloudlogin-body .login-form-error span,
-.amc-cloudlogin-body .login-form-expire span {
-  display: none;
-  font-size: 0.9rem;
-  color: #f53030;
-  text-align: center;
-}
-.amc-cloudlogin-body .login-form-error._wrong,
-.amc-cloudlogin-body .login-form-expire._wrong {
-  margin-top: 10px;
-}
-.amc-cloudlogin-body .login-form-error._wrong span,
-.amc-cloudlogin-body .login-form-expire._wrong span {
-  display: block;
-  text-align: left;
-}
-.amc-cloudlogin-body .login-form-expire {
-  min-height: 40px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
 }
 .amc-cloudlogin-body .login-form-next {
   margin-top: 15px;
@@ -445,66 +396,30 @@
 .amc-cloudlogin._loading .amc-cloudlogin-button ::deep svg rect {
   fill: var(--amc-accentColor);
 }
-.amc-cloudlogin._next .amc-cloudlogin-header {
-  animation: next 1.3s ease-in-out forwards;
+.amc-cloudlogin._animatestep-out._animatedirection-forward .amc-cloudlogin-body .amc-cloudlogin-panel,
+.amc-cloudlogin._animatestep-out._animatedirection-forward .amc-cloudlogin-body .amc-cloudlogin-input,
+.amc-cloudlogin._animatestep-out._animatedirection-forward .amc-cloudlogin-body button {
+  animation: animateOutForward 400ms ease-in-out forwards;
 }
-.amc-cloudlogin._next .amc-cloudlogin-body {
-  animation: next 2s ease-in-out forwards;
+.amc-cloudlogin._animatestep-out._animatedirection-backward .amc-cloudlogin-body .amc-cloudlogin-panel,
+.amc-cloudlogin._animatestep-out._animatedirection-backward .amc-cloudlogin-body .amc-cloudlogin-input,
+.amc-cloudlogin._animatestep-out._animatedirection-backward .amc-cloudlogin-body button {
+  animation: animateOutBackward 400ms ease-in-out forwards;
 }
-.amc-cloudlogin._next .amc-cloudlogin-footer {
-  animation: next 2.3s ease-in-out forwards;
+.amc-cloudlogin._animatestep-in._animatedirection-forward .amc-cloudlogin-body .amc-cloudlogin-panel,
+.amc-cloudlogin._animatestep-in._animatedirection-forward .amc-cloudlogin-body .amc-cloudlogin-input,
+.amc-cloudlogin._animatestep-in._animatedirection-forward .amc-cloudlogin-body button {
+  animation: animateInForward 300ms ease-in-out forwards;
 }
-.amc-cloudlogin._preview .amc-cloudlogin-header {
-  animation: back 1.3s ease-in-out forwards;
-}
-.amc-cloudlogin._preview .amc-cloudlogin-body {
-  animation: back 2s ease-in-out forwards;
-}
-.amc-cloudlogin._preview .amc-cloudlogin-footer {
-  animation: back 2.3s ease-in-out forwards;
+.amc-cloudlogin._animatestep-in._animatedirection-backward .amc-cloudlogin-body .amc-cloudlogin-panel,
+.amc-cloudlogin._animatestep-in._animatedirection-backward .amc-cloudlogin-body .amc-cloudlogin-input,
+.amc-cloudlogin._animatestep-in._animatedirection-backward .amc-cloudlogin-body button {
+  animation: animateInBackward 300ms ease-in-out forwards;
 }
 .--disable {
   cursor: none;
   opacity: 0.2;
   pointer-events: none;
-}
-.--button {
-  width: 100%;
-  max-width: 100px;
-  padding: 10px;
-  text-transform: capitalize;
-  font-size: 0.8rem;
-  color: white;
-  cursor: pointer;
-  border-radius: 3px;
-}
-.--button._loading span {
-  display: none;
-}
-.--button._error {
-  border: 1px solid #f53030;
-  background-color: #f53030;
-  transition: all 0.5s;
-}
-.--button._error:hover {
-  color: #f53030;
-  background-color: transparent;
-}
-.--button._back {
-  width: 25px;
-  height: 25px;
-  padding: 5px;
-  border: none;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-content: stretch;
-  background-color: transparent;
-  transition: all 0.6s;
-}
-.--button._back:hover {
-  background-color: rgba(0, 0, 0, 0.1);
 }
 @media only screen and (min-width: 800px) {
   .amc-cloudlogin-panel {
@@ -534,50 +449,39 @@
     left: 0;
   }
 }
-/*
-
-@keyframes next {
-    0% {
-        transform: translateX(0);
-    }
-
-    50% {
-        transform: translateX(-100vw);
-    }
-
-    55% {
-        opacity: 0;
-        transform: translateX(100vw);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}*/
-@keyframes next {
+@keyframes animateOutForward {
   0% {
-    opacity: 0;
-    transform: translateX(100vw);
+    opacity: 1;
   }
   100% {
-    opacity: 1;
-    transform: translateX(0);
+    opacity: 0;
+    transform: translateX(-10px);
   }
 }
-@keyframes back {
+@keyframes animateOutBackward {
   0% {
-    transform: translateX(0);
+    opacity: 1;
   }
-  50% {
-    transform: translateX(100vw);
-  }
-  55% {
+  100% {
     opacity: 0;
-    transform: translateX(-100vw);
+    transform: translateX(10px);
+  }
+}
+@keyframes animateInForward {
+  0% {
+    opacity: 0;
+    transform: translateX(10px);
   }
   100% {
     opacity: 1;
-    transform: translateX(0);
+  }
+}
+@keyframes animateInBackward {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  100% {
+    opacity: 1;
   }
 }

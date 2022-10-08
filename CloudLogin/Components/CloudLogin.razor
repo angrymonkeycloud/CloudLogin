@@ -1,10 +1,9 @@
 ﻿@namespace AngryMonkey.Cloud.Login
-@using static Microsoft.Extensions.DependencyInjection.CloudLoginConfiguration
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
 @inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
+@inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLoginClient
 @inject NavigationManager navigationManager
 @inject CloudGeographyClient cloudGeography
-@inject HttpClient httpClient
 
 <div class="amc-cloudlogin @CssClass">
     <div class="amc-cloudlogin-header">
@@ -30,7 +29,7 @@
 
             @if (State != ProcessState.InputValue)
             {
-                <button class="--button _back" @onclick="OnBackClicked">
+                <button @onclick="OnBackClicked">
                     <AngryMonkey.Cloud.Components.Icons.Back />
                 </button>
             }
@@ -82,7 +81,7 @@
         @if (State == ProcessState.InputValue)
         {
             <div class="login-form _center @(checkError? "error" : "")">
-                <div>
+                <div class="amc-cloudlogin-input">
                     <input @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="email">@InputLabel</label>
                 </div>
@@ -98,7 +97,7 @@
         {
             <div class="login-form">
                 <div class="amc-cloudlogin-providers">
-                    @foreach (Provider provider in Providers)
+                    @foreach (ProviderDefinition provider in Providers)
                     {
                         <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                             <div class="amc-cloudlogin-provider-icon">
@@ -113,7 +112,7 @@
         else if (State == ProcessState.CodeVerification)
         {
             <div class="login-form">
-                <div class="login-form-emailVerification">
+                <div class="amc-cloudlogin-input login-form-emailVerification">
                     <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="code">Enter Code</label>
                 </div>
@@ -133,15 +132,15 @@
         {
             <div class="login-form">
                 <div class="login-form-register">
-                    <div>
+                    <div class="amc-cloudlogin-input">
                         <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="firstName">First Name</label>
                     </div>
-                    <div>
+                    <div class="amc-cloudlogin-input">
                         <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="lastName">Last Name</label>
                     </div>
-                    <div>
+                    <div class="amc-cloudlogin-input">
                         <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
                         <label for="displayName">Display Name</label>
                     </div>
@@ -160,7 +159,7 @@
 
     <div class="amc-cloudlogin-footer">
         <div class="amc-cloudlogin-footer-providers">
-            @foreach (Provider provider in cloudLogin.Options.Providers)
+            @foreach (ProviderDefinition provider in AllProvider)
             {
                 <AngryMonkey.Cloud.Login.Components.ProviderButton Provider="@provider" />
             }
@@ -170,15 +169,11 @@
         </div>
 
         <div class="amc-cloudlogin-footer-links">
-            @if (cloudLogin.Options.CloudLoginFooterLink != null)
-            {
-                @foreach (Links link in cloudLogin.Options.CloudLoginFooterLink)
-                {
-                    <a target="_blank" href="@link.Url">@link.Title</a>
-                }
 
+            @foreach (Link link in cloudLoginClient.FooterLinks)
+            {
+                <a target="_blank" href="@link.Url">@link.Title</a>
             }
-            <a target="_blank" href="https://angrymonkeycloud.com/">Info</a>
         </div>
     </div>
 </div>

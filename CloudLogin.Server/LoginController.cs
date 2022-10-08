@@ -1,24 +1,13 @@
-﻿using AngryMonkey.Cloud.Components.Icons;
-using AngryMonkey.Cloud.Login.DataContract;
+﻿using System.Web;
+using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Razor.Internal;
-using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using Microsoft.Owin.Security;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Configuration;
-using System.Net.Mail;
-using System.Security.Claims;
-using System.Web;
+using AngryMonkey.Cloud.Login.DataContract;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
 
 namespace AngryMonkey.Cloud.Login.Controllers

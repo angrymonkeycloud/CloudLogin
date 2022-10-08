@@ -1,5 +1,5 @@
 ﻿@page "/"
-@inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
+@inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
 @inject NavigationManager navigate
 
 <HeadContent>
@@ -57,5 +57,5 @@
 @code {
     Guid UserId = Guid.Empty;
 
-    private async Task DeleteButton() => await cloudLogin.Options.Cosmos.Methods.DeleteUser(UserId);
+    private async Task DeleteButton() => await cloudLogin.DeleteUser(UserId);
 }

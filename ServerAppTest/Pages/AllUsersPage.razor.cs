@@ -26,9 +26,7 @@ namespace ServerAppTest.Pages
 
         protected override async Task OnInitializedAsync()
         {
-              Users = await cloudLogin.Options.Cosmos.Methods.GetUsers();
+              Users = await cloudLogin.GetAllUsers();
         }
-
-        private async Task DeleteButton(Guid userId) => await cloudLogin.Options.Cosmos.Methods.DeleteUser(userId);
     }
 }

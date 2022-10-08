@@ -62,7 +62,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Controllers\" />
+	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
 	</ItemGroup>
 
 

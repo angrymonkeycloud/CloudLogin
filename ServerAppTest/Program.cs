@@ -1,8 +1,8 @@
-using System.Linq.Expressions;
+using AngryMonkey.Cloud.Login.DataContract;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using Twilio.Rest.Verify.V2.Service.Entity;
+using AngryMonkey.Cloud.Login.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,23 +15,9 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 	TitlePrefix = "Cloud Login"
 });
 
-builder.Services.AddCloudLogin(new CloudLoginConfiguration()
+CloudLoginConfiguration cloudLoginConfig = new()
 {
-	//RedirectUrl = "/all",
- //   CloudLoginFooterLink = new()
-	//{
- //       new CloudLoginConfiguration.Links
-	//	{
-	//		Title = "All",
-	//		Url = "/all"
-	//	},
-	//	new CloudLoginConfiguration.Links
-	//	{
-	//		Title = "Google",
-	//		Url = "https://gmail.com/"
- //       }
- //   },
-    Cosmos = new CloudLoginConfiguration.CosmosDatabase()
+	Cosmos = new CosmosDatabase()
 	{
 		ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
 		DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
@@ -68,29 +54,29 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 
 		await smtpClient.SendMailAsync(mailMessage);
 	},
-	Providers = new List<CloudLoginConfiguration.Provider>()
+	Providers = new List<ProviderConfiguration>()
 	{
-		new CloudLoginConfiguration.MicrosoftAccount()
+		new MicrosoftProviderConfiguration()
 		{
 			ClientId = builder.Configuration["Microsoft:ClientId"],
 			ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
 		},
-		new CloudLoginConfiguration.GoogleAccount()
+		new GoogleProviderConfiguration()
 		{
 			ClientId = builder.Configuration["Google:ClientId"],
 			ClientSecret= builder.Configuration["Google:ClientSecret"]
 		},
-		new CloudLoginConfiguration.FacebookAccount()
+		new FacebookProviderConfiguration()
 		{
 			ClientId = builder.Configuration["Facebook:ClientId"],
 			ClientSecret= builder.Configuration["Facebook:ClientSecret"]
 		},
-		new CloudLoginConfiguration.TwitterAccount()
+		new TwitterProviderConfiguration()
 		{
 			ClientId = builder.Configuration["Twitter:ClientId"],
 			ClientSecret= builder.Configuration["Twitter:ClientSecret"]
 		},
-		new CloudLoginConfiguration.Whataspp()
+		new WhatsAppProviderConfiguration()
 		{
 			RequestUri = builder.Configuration["WhatsApp:RequestUri"],
 			Authorization = builder.Configuration["WhatsApp:Authorization"],
@@ -98,7 +84,13 @@ builder.Services.AddCloudLogin(new CloudLoginConfiguration()
 			Language = "en"
 		}
 	}
-});
+};
+
+builder.Services.AddCloudLogin();
+builder.Services.AddCloudLoginServer(cloudLoginConfig);
+
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped(key => new UserController());
 
 WebApplication app = builder.Build();
 
@@ -109,6 +101,8 @@ if (!app.Environment.IsDevelopment())
 	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
 	app.UseHsts();
 }
+
+app.UseCloudLogin();
 
 app.UseHttpsRedirection();
 

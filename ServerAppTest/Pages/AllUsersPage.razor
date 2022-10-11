@@ -1,12 +1,12 @@
 ﻿@page "/All"
+@inject IHttpContextAccessor HttpContextAccessor
 @inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
 
 <HeadContent>
     <CloudBundle Source="css/index.css" />
 </HeadContent>
 
-<AuthorizeView>
-    <Authorized>
+@if(Authorized){
         <section class="amc-authorized">
             <div>
                 <div class="amc-authorized-all">
@@ -54,9 +54,8 @@
                 </div>
             </div>
         </section>
-    </Authorized>
-    <NotAuthorized>
-        Login First:
-        <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
-    </NotAuthorized>
-</AuthorizeView>
+
+}else{
+    <div>Login First:</div>
+    <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
+}

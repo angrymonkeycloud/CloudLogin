@@ -17,14 +17,16 @@ using AngryMonkey.Cloud.Components;
 using Microsoft.Azure.Cosmos;
 using System.Security.Claims;
 using AngryMonkey.Cloud.Login.DataContract;
+using Newtonsoft.Json;
 
 namespace ServerAppTest.Pages
 {
-    public partial class AllUsersPage
+    public partial class Index
     {
-
+        public CloudUser User { get; set; }
         public bool Authorized { get; set; }
-        public List<CloudUser> Users { get; set; } = new();
+        private async Task DeleteButton() => await cloudLogin.DeleteUser(User.ID);
+        private string cookieContent;
         protected override async Task OnParametersSetAsync()
         {
             var context = HttpContextAccessor.HttpContext;
@@ -32,14 +34,12 @@ namespace ServerAppTest.Pages
             {
                 var cookies = context.Request.Cookies;
                 var loginCookie = cookies["CloudLogin"];
+                var Cookie = cookies["CloudUser"];
                 if (String.IsNullOrEmpty(loginCookie))
                     return;
                 Authorized = true;
+                User = JsonConvert.DeserializeObject<CloudUser>(Cookie);
             }
-        }
-        protected override async Task OnInitializedAsync()
-        {
-            Users = await cloudLogin.GetAllUsers();
         }
     }
 }

@@ -1,61 +1,46 @@
 ﻿@page "/"
+@using Newtonsoft.Json
 @inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
 @inject NavigationManager navigate
+@inject IHttpContextAccessor HttpContextAccessor
 
 <HeadContent>
     <CloudBundle Source="css/index.css" />
 </HeadContent>
 
-
-<AuthorizeView>
-    <Authorized>
-        <section class="amc-authorized">
-            <div>
-                @{
-                    Console.WriteLine(context.User.FindFirst(ClaimTypes.NameIdentifier).Value);
-
-                    UserId = new Guid(context.User.FindFirst(ClaimTypes.NameIdentifier).Value);
-                    string input = context?.User?.FindFirst(ClaimTypes.Email)?.Value;
-
-                    if (string.IsNullOrEmpty(input))
-                        input = context.User.FindFirst(ClaimTypes.MobilePhone).Value;
-                }
-
-                <div class="amc-authorized-title">
-                    <img class="amc-authorized-title-logo" src="./img/logo.svg">
-                    Angry Monkey Cloud Login
+@if (!Authorized)
+{
+    <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
+}
+else
+{
+    <section class="amc-authorized">
+        <div>
+            <div class="amc-authorized-title">
+                <img class="amc-authorized-title-logo" src="./img/logo.svg">
+                Angry Monkey Cloud Login
+            </div>
+            <div class="amc-authorized-info">
+                <div class="amc-authorized-info-event">Login is succesful</div>
+                <div class="amc-authorized-info-inside">
+                    <b>Display Name:</b> @User.DisplayName
+                </div>
+                <div class="amc-authorized-info-inside">
+                    <b>ID:</b> @User.ID
                 </div>
 
-                <div class="amc-authorized-info">
-                    <div class="amc-authorized-info-event">Login is succesful</div>
-                    <div class="amc-authorized-info-inside">
-                        <b>Name:</b> @context.User.FindFirst(ClaimTypes.Name).Value
-                    </div>
-                    <div class="amc-authorized-info-inside">
-                        <b>ID:</b> @UserId
-                    </div>
+                <div class="amc-authorized-info-inside">
+                    <b>Primary input Input:</b> @User.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input;
+                </div>
 
-                    <div class="amc-authorized-info-inside">
-                        <b>Input:</b> @input
-                    </div>
-
-
-                    <div class="amc-authorized-info-nav">
-                        <a href="./cloudlogin/logout" class="--button">Logout</a>
-                        <a href="./cloudlogin/logout" @onclick="DeleteButton" class="--button">Delete</a>
-                        <a href="./all" class="--button">All</a>
-                    </div>
+                <div class="amc-authorized-info-nav">
+                    <a href="./cloudlogin/logout" class="--button">Logout</a>
+                    <a href="./cloudlogin/logout" @onclick="DeleteButton" class="--button">Delete</a>
+                    <a href="./all" class="--button">All</a>
                 </div>
             </div>
-        </section>
-    </Authorized>
-    <NotAuthorized>
-        <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
-    </NotAuthorized>
-</AuthorizeView>
-
-@code {
-    Guid UserId = Guid.Empty;
-
-    private async Task DeleteButton() => await cloudLogin.DeleteUser(UserId);
+        </div>
+    </section>
 }
+
+

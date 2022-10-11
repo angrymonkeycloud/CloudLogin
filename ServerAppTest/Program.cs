@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Text;
 using AngryMonkey.Cloud.Login.Controllers;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +89,14 @@ CloudLoginConfiguration cloudLoginConfig = new()
 
 builder.Services.AddCloudLogin();
 builder.Services.AddCloudLoginServer(cloudLoginConfig);
+
+builder.Services.AddAuthentication(opt =>
+{
+	opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+});
+
+builder.Services.AddOptions();
+builder.Services.AddAuthenticationCore();
 
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped(key => new UserController());

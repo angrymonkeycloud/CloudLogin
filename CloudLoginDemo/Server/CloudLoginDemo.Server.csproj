@@ -4,6 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>fc43be74-d64c-4c6d-b05e-5be68f55a835</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
     <ProjectReference Include="..\Client\CloudLoginDemo.Client.csproj" />
     <ProjectReference Include="..\Shared\CloudLoginDemo.Shared.csproj" />
   </ItemGroup>

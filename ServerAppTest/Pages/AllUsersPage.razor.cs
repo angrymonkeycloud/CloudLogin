@@ -25,7 +25,7 @@ namespace ServerAppTest.Pages
 
         public bool Authorized { get; set; }
         public List<CloudUser> Users { get; set; } = new();
-        protected override async Task OnParametersSetAsync()
+        protected override async Task OnInitializedAsync()
         {
             var context = HttpContextAccessor.HttpContext;
             if (context != null)
@@ -36,10 +36,8 @@ namespace ServerAppTest.Pages
                     return;
                 Authorized = true;
             }
-        }
-        protected override async Task OnInitializedAsync()
-        {
-            Users = await cloudLogin.GetAllUsers();
+            if(Authorized)
+                Users = await cloudLogin.GetAllUsers();
         }
     }
 }

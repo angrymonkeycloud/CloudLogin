@@ -82,9 +82,9 @@ CloudLoginConfiguration cloudLoginConfig = new()
 		{
 			RequestUri = builder.Configuration["WhatsApp:RequestUri"],
 			Authorization = builder.Configuration["WhatsApp:Authorization"],
-			Template = "testcode",
-			Language = "en"
-		}
+            Template = builder.Configuration["WhatsApp:Template"],
+            Language = builder.Configuration["WhatsApp:Language"]
+        }
 	}
 };
 

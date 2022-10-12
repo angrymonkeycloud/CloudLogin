@@ -18,16 +18,17 @@ using Microsoft.Azure.Cosmos;
 using System.Security.Claims;
 using AngryMonkey.Cloud.Login.DataContract;
 using Newtonsoft.Json;
+using AngryMonkey.Cloud.Login;
 
 namespace ServerAppTest.Pages
 {
     public partial class Index
     {
         public CloudUser User { get; set; }
+        public CloudLoginClient test { get; set; }
         public bool Authorized { get; set; }
         private async Task DeleteButton() => await cloudLogin.DeleteUser(User.ID);
-        private string cookieContent;
-        protected override async Task OnParametersSetAsync()
+        protected override async Task OnInitializedAsync()
         {
             var context = HttpContextAccessor.HttpContext;
             if (context != null)

@@ -17,6 +17,9 @@ using AngryMonkey.Cloud.Components;
 using Microsoft.Azure.Cosmos;
 using System.Security.Claims;
 using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.Cloud.Login;
+using Newtonsoft.Json;
+using System.Net;
 
 namespace ServerAppTest.Pages
 {
@@ -24,6 +27,8 @@ namespace ServerAppTest.Pages
     {
 
         public bool Authorized { get; set; }
+        public CloudLoginClient CloudClient { get; set; }
+        public CloudUser User { get; set; }
         public List<CloudUser> Users { get; set; } = new();
         protected override async Task OnInitializedAsync()
         {
@@ -32,9 +37,15 @@ namespace ServerAppTest.Pages
             {
                 var cookies = context.Request.Cookies;
                 var loginCookie = cookies["CloudLogin"];
+                var cookie = cookies["CloudUser"];
                 if (String.IsNullOrEmpty(loginCookie))
                     return;
-                Authorized = true;
+                User = JsonConvert.DeserializeObject<CloudUser>(cookie);
+                CloudClient = new CloudLoginClient()
+                {
+                    CurrentUser = User,
+                    IsAuthenticated = true
+                };
             }
             if(Authorized)
                 Users = await cloudLogin.GetAllUsers();

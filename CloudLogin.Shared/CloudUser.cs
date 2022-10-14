@@ -8,7 +8,6 @@ public record CloudUser : BaseRecord
 
 	public string FirstName { get; set; }
 	public string LastName { get; set; }
-	public bool IsAuthorized { get; set; }
 	public string? DisplayName { get; set; }
 	public bool IsLocked { get; set; } = false;
 	public string? Username { get; set; }

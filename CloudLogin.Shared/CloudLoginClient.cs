@@ -19,7 +19,6 @@ namespace AngryMonkey.Cloud.Login
     {
         //public static CloudLoginConfiguration CloudLogin { get; set; }
         private HttpClient _httpClient;
-
         public HttpClient HttpClient
         {
             get
@@ -33,6 +32,8 @@ namespace AngryMonkey.Cloud.Login
             }
         }
         public string? RedirectUrl { get; set; }
+        public bool IsAuthenticated { get; set; }
+        public CloudUser CurrentUser { get; set; }
         public List<Link> FooterLinks { get; set; } = new();
 
         private CloudGeographyClient _cloudGepgraphy;

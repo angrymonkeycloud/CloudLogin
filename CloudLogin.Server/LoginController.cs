@@ -90,10 +90,14 @@ namespace AngryMonkey.Cloud.Login.Controllers
                 new Claim(ClaimTypes.GivenName, user.FirstName),
                 new Claim(ClaimTypes.Surname, user.LastName),
                 new Claim(ClaimTypes.Name, user.DisplayName),
-                new Claim(ClaimTypes.Email, user.EmailAddresses.FirstOrDefault().Input),
                 new Claim(ClaimTypes.Hash, "Cloud Login")
 
             }, ".");
+            if (user.EmailAddresses.FirstOrDefault() == null)
+            {
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+            }else
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.Where(key=> key.IsPrimary == true).FirstOrDefault().Input));
 
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 

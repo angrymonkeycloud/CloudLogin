@@ -17,19 +17,17 @@ using AngryMonkey.Cloud.Components;
 using Microsoft.Azure.Cosmos;
 using System.Security.Claims;
 using AngryMonkey.Cloud.Login.DataContract;
-using AngryMonkey.Cloud.Login;
 using Newtonsoft.Json;
-using System.Net;
+using AngryMonkey.Cloud.Login;
 
 namespace ServerAppTest.Pages
 {
-    public partial class AllUsersPage
+    public partial class Index
     {
-
-        public bool Authorized { get; set; }
-        public CloudLoginClient CloudClient { get; set; }
         public CloudUser User { get; set; }
-        public List<CloudUser> Users { get; set; } = new();
+        public CloudLoginClient CloudClient { get; set; }
+        public bool Authorized { get; set; }
+        private async Task DeleteButton() => await cloudLogin.DeleteUser(User.ID);
         protected override async Task OnInitializedAsync()
         {
             var context = HttpContextAccessor.HttpContext;
@@ -47,8 +45,6 @@ namespace ServerAppTest.Pages
                     IsAuthenticated = true
                 };
             }
-            if(Authorized)
-                Users = await cloudLogin.GetAllUsers();
         }
     }
 }

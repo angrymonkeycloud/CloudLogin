@@ -217,14 +217,20 @@ namespace AngryMonkey.Cloud.Login
 
 		protected InputFormat InputValueFormat => cloudLoginClient.GetInputFormat(InputValue);
 
-		protected ProcessState State { get; set; }
+		protected ProcessState State { get; set; } = ProcessState.InputValue;
 
 		private async Task SwitchState(ProcessState state)
 		{
 			if (state == State)
+			{
+                Title = "Sign in";
+                Subtitle = String.Empty;
+                DisplayInputValue = false;
+				StateHasChanged();
 				return;
+            }
 
-			bool toNext = true;
+            bool toNext = true;
 
 			switch (state)
 			{
@@ -263,14 +269,14 @@ namespace AngryMonkey.Cloud.Login
 			{
 				case ProcessState.InputValue:
 					Title = "Sign in";
-					Subtitle = string.Empty;
-					DisplayInputValue = false;
+					Subtitle = String.Empty;
+                    DisplayInputValue = false;	
 
 					break;
 
 				case ProcessState.Providers:
 					Title = "Continue signing in";
-					Subtitle = "Choose a provider to sign in.";
+					Subtitle = "Sign In with";
 					DisplayInputValue = true;
 					break;
 
@@ -281,7 +287,7 @@ namespace AngryMonkey.Cloud.Login
 						InputType = "Whatsapp";
 
 					Title = $"Verify your {InputType}";
-					Subtitle = $"Please check your {InputType} for a message with your code (6 numbers long).";
+					Subtitle = $"A verification code has been sent to your {InputType}, if not received, you can send another one.";
 					DisplayInputValue = true;
 					break;
 
@@ -329,11 +335,17 @@ namespace AngryMonkey.Cloud.Login
 		}
 
 		private async Task OnInputNextClicked()
-		{
+        {
+            Errors.Clear();
+
+            if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress){
+				Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
+				return;
+            }
+
 			if (string.IsNullOrEmpty(InputValue))
 				return;
 
-			Errors.Clear();
 
 			IsLoading = true;
 
@@ -364,7 +376,7 @@ namespace AngryMonkey.Cloud.Login
 
 			else if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
 			{
-				Errors.Add("Phone number must start with the country code preceding with a + sign");
+				Errors.Add("The (+) sign followed by your country code must precede your phone number.");
 				EndLoading();
 
 				return;
@@ -498,12 +510,12 @@ namespace AngryMonkey.Cloud.Login
 			switch (GetVerificationCodeResult(VerificationValue))
 			{
 				case VerificationCodeResult.NotValid:
-					Errors.Add("Wrong Code, check your email again or resend another.");
+					Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
 					EndLoading();
 					return;
 
 				case VerificationCodeResult.Expired:
-					Errors.Add("Code Expired, resend another one");
+					Errors.Add("The code validity has expired, please send another one.");
 					EndLoading();
 					return;
 
@@ -532,6 +544,12 @@ namespace AngryMonkey.Cloud.Login
 
 		private async Task OnRegisterClicked()
 		{
+			if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName)){
+				Errors.Add("Unable to log you in. Please check that your first name, last name and your display name are correct.");
+				return;
+			}
+
+
 			StartLoading();
 
 			CustomSignInChallenge(new CloudUser()

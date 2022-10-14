@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
@@ -81,9 +82,9 @@ CloudLoginConfiguration cloudLoginConfig = new()
 		{
 			RequestUri = builder.Configuration["WhatsApp:RequestUri"],
 			Authorization = builder.Configuration["WhatsApp:Authorization"],
-			Template = "testcode",
-			Language = "en"
-		}
+            Template = builder.Configuration["WhatsApp:Template"],
+            Language = builder.Configuration["WhatsApp:Language"]
+        }
 	}
 };
 

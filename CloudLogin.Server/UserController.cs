@@ -46,7 +46,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
                 return Ok(user);
             }
-            catch
+            catch(Exception e)
             {
                 return Problem();
             }

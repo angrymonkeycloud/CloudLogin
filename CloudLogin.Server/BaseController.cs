@@ -10,7 +10,15 @@ namespace AngryMonkey.Cloud.Login.Controllers
 		public static CloudLoginConfiguration Configuration;
 
 		private CosmosMethods _cosmosMethods;
-		internal CosmosMethods CosmosMethods => _cosmosMethods ??= new CosmosMethods(Configuration.Cosmos.ConnectionString, Configuration.Cosmos.DatabaseId, Configuration.Cosmos.ContainerId);
+		internal CosmosMethods CosmosMethods
+		{
+			get
+			{
+				if (Configuration.Cosmos == null)
+					throw new Exception();
+				return _cosmosMethods ??= new CosmosMethods(Configuration.Cosmos.ConnectionString, Configuration.Cosmos.DatabaseId, Configuration.Cosmos.ContainerId);
 
+			}
+		}
 	}
 }

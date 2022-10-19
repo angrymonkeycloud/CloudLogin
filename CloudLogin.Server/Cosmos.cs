@@ -54,7 +54,7 @@ namespace AngryMonkey.Cloud.Login
 			}
 			catch (Exception e)
 			{
-				throw e;
+				throw;
 			}
 		}
 
@@ -94,11 +94,10 @@ namespace AngryMonkey.Cloud.Login
 			CloudGeographyClient cloudGeography = new();
 
 			IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user
-				=> user.Inputs.Where(key => key.Format == InputFormat.PhoneNumber &&
+				=> user.Inputs.Any(key => key.Format == InputFormat.PhoneNumber &&
 				key.Input.Equals(phoneNumber.Number)
 					&& (string.IsNullOrEmpty(phoneNumber.CountryCode)
-					|| key.PhoneNumberCountryCode.Equals(phoneNumber.CountryCode, StringComparison.OrdinalIgnoreCase)))
-				.Any());
+					|| key.PhoneNumberCountryCode.Equals(phoneNumber.CountryCode, StringComparison.OrdinalIgnoreCase))));
 
 			var users = await ToListAsync(usersQueryable);
 

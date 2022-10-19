@@ -14,6 +14,7 @@ using System.Net.Mail;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
+using Microsoft.Azure.Cosmos.Linq;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {
@@ -40,11 +41,12 @@ namespace AngryMonkey.Cloud.Login.Controllers
         {
             try
             {
+
                 CloudUser? user = await CosmosMethods.GetUserByEmailAddress(emailAddress);
 
                 return Ok(user);
             }
-            catch
+            catch(Exception e)
             {
                 return Problem();
             }

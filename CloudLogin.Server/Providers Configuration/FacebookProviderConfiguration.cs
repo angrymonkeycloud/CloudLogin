@@ -8,5 +8,6 @@ public class FacebookProviderConfiguration : ProviderConfiguration
 	public FacebookProviderConfiguration(string? label = null) : base("Facebook", label)
 	{
 		HandlesEmailAddress = true;
-	}
+
+    }
 }

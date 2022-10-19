@@ -20,12 +20,13 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-    Cosmos = new CosmosDatabase()
-    {
-        ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
-        DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
-        ContainerId = builder.Configuration["Cosmos:ContainerId"]
-    },
+
+    //Cosmos = new CosmosDatabase()
+    //{
+    //    ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
+    //    DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
+    //    ContainerId = builder.Configuration["Cosmos:ContainerId"]
+    //},
     EmailSendCodeRequest = async (sendCode) =>
     {
         SmtpClient smtpClient = new(builder.Configuration["SMTP:Host"], int.Parse(builder.Configuration["SMTP:Port"]))

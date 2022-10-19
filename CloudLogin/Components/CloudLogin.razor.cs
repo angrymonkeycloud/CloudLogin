@@ -10,7 +10,8 @@ namespace AngryMonkey.Cloud.Login
 {
     public partial class CloudLogin
     {
-        public bool checkError { get; set; } = false;
+        public string? VerificationCode { get; set; }
+        public DateTimeOffset? VerificationCodeExpiry { get; set; }
         public bool IsLoading { get; set; } = false;
         protected string Title { get; set; } = string.Empty;
         protected string Subtitle { get; set; } = string.Empty;
@@ -194,8 +195,6 @@ namespace AngryMonkey.Cloud.Login
             }
         }
 
-        public string? VerificationCode { get; set; }
-        public DateTimeOffset? VerificationCodeExpiry { get; set; }
 
         private VerificationCodeResult GetVerificationCodeResult(string code)
         {
@@ -436,11 +435,11 @@ namespace AngryMonkey.Cloud.Login
             switch (SelectedProvider?.Code.ToLower())
             {
                 case "whatsapp":
-                    await SendWhatsAppCode(InputValue, VerificationCode);
+                    await cloudLoginClient.SendWhatsAppCode(InputValue, VerificationCode);
                     break;
 
                 default:
-                    await SendEmailCode(InputValue, VerificationCode);
+                    await cloudLoginClient.SendEmailCode(InputValue, VerificationCode);
 
                     break;
             }
@@ -586,16 +585,6 @@ namespace AngryMonkey.Cloud.Login
                 builder.Append(new Random().Next(0, 9));
 
             return builder.ToString();
-        }
-
-        public async Task SendEmailCode(string receiver, string code)
-        {
-            await cloudLoginClient.SendEmailCode(receiver, code);
-        }
-
-        public async Task SendWhatsAppCode(string receiver, string code)
-        {
-            await cloudLoginClient.SendWhatsAppCode(receiver, code);
         }
     }
 }

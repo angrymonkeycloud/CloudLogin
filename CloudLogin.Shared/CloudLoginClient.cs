@@ -17,13 +17,11 @@ namespace AngryMonkey.Cloud.Login
 {
     public class CloudLoginClient
     {
-        //public static CloudLoginConfiguration CloudLogin { get; set; }
         private HttpClient _httpClient;
         public HttpClient HttpClient
         {
             get
             {
-                //return _httpClient ??= new HttpClient() { };
                 return _httpClient;
             }
             set

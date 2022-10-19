@@ -65,13 +65,10 @@ namespace AngryMonkey.Cloud.Login.Controllers
                 claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, userDictionary["Input"]));
 
 
-            //create claimsPrincipal
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-            //Sign In User
 
             await HttpContext.SignInAsync(claimsPrincipal, properties);
 
-            //await HttpContext.SignInAsync(claimsPrincipal, properties);
 
             return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}");
         }
@@ -83,7 +80,6 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
             AuthenticationProperties properties = new();
 
-            //create claimsIdentity
             var claimsIdentity = new ClaimsIdentity(new[] {
 
                 new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),

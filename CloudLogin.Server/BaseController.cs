@@ -7,17 +7,16 @@ namespace AngryMonkey.Cloud.Login.Controllers
 {
 	public class BaseController : Controller
 	{
-		public static CloudLoginConfiguration Configuration;
+		public static CloudLoginConfiguration? Configuration;
 
-		private CosmosMethods _cosmosMethods;
+		private CosmosMethods? _cosmosMethods;
 		internal CosmosMethods CosmosMethods
 		{
 			get
 			{
-				if (Configuration.Cosmos == null)
-					throw new Exception();
-				return _cosmosMethods ??= new CosmosMethods(Configuration.Cosmos.ConnectionString, Configuration.Cosmos.DatabaseId, Configuration.Cosmos.ContainerId);
-
+				return Configuration?.Cosmos == null
+					? throw new Exception()
+					: (_cosmosMethods ??= new CosmosMethods(Configuration.Cosmos.ConnectionString, Configuration.Cosmos.DatabaseId, Configuration.Cosmos.ContainerId));
 			}
 		}
 	}

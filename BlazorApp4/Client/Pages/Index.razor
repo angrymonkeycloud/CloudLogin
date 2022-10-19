@@ -9,7 +9,7 @@
     <CloudBundle Source="css/index.css" />
 </HeadContent>
 
-@if (!CloudClient.IsAuthenticated)
+@if (cloudLogin.IsAuthenticated == false)
 {
     <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
 }

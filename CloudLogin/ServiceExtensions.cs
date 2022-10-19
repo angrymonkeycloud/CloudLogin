@@ -12,25 +12,20 @@ public class CloudLoginService
 
 public static class MvcServiceCollectionExtensions
 {
-
-	public static CloudLoginService AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
+	public static async Task<CloudLoginService> AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
 	{
-		CloudGeographyClient cloudGeography = new();
-
 		CloudLoginClient cloudLoginClient = new() { HttpClient = httpServer };
 
-		//cloudLoginClient = cloudLoginClient.InitFromServer();
+        cloudLoginClient = await cloudLoginClient.InitFromServer();
 
-		cloudLoginClient.FooterLinks.Add(new Link()
+        cloudLoginClient.FooterLinks.Add(new Link()
 		{
 			Url = "https://angrymonkeycloud.com/",
 			Title = "Info"
 		});
 
-		services.AddSingleton(new CloudLoginService());
-		services.AddSingleton(cloudGeography);
 		services.AddSingleton(cloudLoginClient);
 
 		return null;
-	}
+    }
 }

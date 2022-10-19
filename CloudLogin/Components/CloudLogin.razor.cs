@@ -90,10 +90,8 @@ namespace AngryMonkey.Cloud.Login
         List<ProviderDefinition> Providers { get; set; } = new();
         public bool DisplayInputValue { get; set; } = false;
 
-        static List<ProviderDefinition> AllProvider = new();
-
-        public bool EmailAddressEnabled => AllProvider.Any(key => key.HandlesEmailAddress);
-        public bool PhoneNumberEnabled => AllProvider.Any(key => key.HandlesPhoneNumber);
+        public bool EmailAddressEnabled => cloudLoginClient.Providers.Any(key => key.HandlesEmailAddress);
+        public bool PhoneNumberEnabled => cloudLoginClient.Providers.Any(key => key.HandlesPhoneNumber);
 
         List<InputFormat> AvailableFormats
         {
@@ -113,9 +111,6 @@ namespace AngryMonkey.Cloud.Login
 
         protected override async Task OnInitializedAsync()
         {
-            if (!AllProvider.Any())
-                AllProvider = await cloudLoginClient.GetProviders();
-
             await base.OnInitializedAsync();
         }
 
@@ -387,7 +382,7 @@ namespace AngryMonkey.Cloud.Login
                 }
 
                 if (addAllProviders)
-                    Providers.AddRange(AllProvider
+                    Providers.AddRange(cloudLoginClient.Providers
                         .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                                     || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
@@ -395,7 +390,7 @@ namespace AngryMonkey.Cloud.Login
             }
             catch (Exception e)
             {
-                Providers.AddRange(AllProvider
+                Providers.AddRange(cloudLoginClient.Providers
                         .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                                     || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
@@ -488,7 +483,7 @@ namespace AngryMonkey.Cloud.Login
 
         private string GetPhoneNumberWithoutCode(string phoneNumber)
         {
-            Country? country = cloudGeography.Countries.GuessCountryByPhoneNumber(InputValue);
+            Country? country = cloudLoginClient.CloudGeography.Countries.GuessCountryByPhoneNumber(InputValue);
 
             if (country == null)
                 return phoneNumber;

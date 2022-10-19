@@ -33,6 +33,7 @@ namespace AngryMonkey.Cloud.Login
         public bool IsAuthenticated { get; set; }
         public CloudUser CurrentUser { get; set; }
         public List<Link> FooterLinks { get; set; } = new();
+        public bool UsingDatabase { get; set; } = false;
 
         private CloudGeographyClient _cloudGepgraphy;
 

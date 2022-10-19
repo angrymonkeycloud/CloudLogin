@@ -9,105 +9,130 @@ using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AngryMonkey.Cloud.Login.DataContract;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
+using Microsoft.Azure.Cosmos.Linq;
+using System.Configuration;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {
-    [Route("CloudLogin")]
-    [ApiController]
-    public class LoginController : Controller
-    {
-        [HttpGet("Login/{identity}")]
-        public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn)
-        {
-            AuthenticationProperties properties = new()
-            {
-                RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}",
-                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
-                IsPersistent = keepMeSignedIn,
-            };
+	[Route("CloudLogin")]
+	[ApiController]
+	public class LoginController : BaseController
+	{
+		[HttpGet("Login/{identity}")]
+		public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn)
+		{
+			AuthenticationProperties properties = new()
+			{
+				RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}",
+				ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
+				IsPersistent = keepMeSignedIn,
+			};
 
-            properties.SetParameter("login_hint", input);
+			properties.SetParameter("login_hint", input);
 
-            return identity.Trim().ToLower() switch
-            {
-                "microsoft" => Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme),
-                "google" => Challenge(properties, GoogleDefaults.AuthenticationScheme),
-                "facebook" => Challenge(properties, FacebookDefaults.AuthenticationScheme),
-                "twitter" => Challenge(properties, TwitterDefaults.AuthenticationScheme),
-                _ => null,
-            };
-        }
+			return identity.Trim().ToLower() switch
+			{
+				"microsoft" => Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme),
+				"google" => Challenge(properties, GoogleDefaults.AuthenticationScheme),
+				"facebook" => Challenge(properties, FacebookDefaults.AuthenticationScheme),
+				"twitter" => Challenge(properties, TwitterDefaults.AuthenticationScheme),
+				_ => null,
+			};
+		}
 
-        [HttpGet("Login/CustomLogin")]
-        public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri)
-        {
-            Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
+		[HttpGet("Login/CustomLogin")]
+		public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri)
+		{
+			Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
+			
+			AuthenticationProperties properties = new()
+			{
+				ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
+				IsPersistent = keepMeSignedIn
+			};
 
-            AuthenticationProperties properties = new()
-            {
-                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
-                IsPersistent = keepMeSignedIn
-            };
+			string firstName = userDictionary["FirstName"];
+			string lastName = userDictionary["LastName"];
+			string displayName = userDictionary["DisplayName"];
 
-            //create claimsIdentity
-            var claimsIdentity = new ClaimsIdentity(new[] {
+			if (Configuration.Cosmos == null)
+			{
+				firstName ??= "Guest";
+				lastName ??= "User";
+			}
 
-                new Claim(ClaimTypes.NameIdentifier, userDictionary["UserId"]),
-                new Claim(ClaimTypes.GivenName, userDictionary["FirstName"]),
-                new Claim(ClaimTypes.Surname, userDictionary["LastName"]),
-                new Claim(ClaimTypes.Name, userDictionary["DisplayName"])
+			displayName ??= $"{firstName} {lastName}";
 
-            }, ".");
+			//create claimsIdentity
+			var claimsIdentity = new ClaimsIdentity(new[] {
 
-            if (userDictionary["Type"].ToLower() == "phonenumber")
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, userDictionary["Input"]));
-            if (userDictionary["Type"].ToLower() == "emailaddress")
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, userDictionary["Input"]));
+				new Claim(ClaimTypes.NameIdentifier, userDictionary["UserId"]),
+				new Claim(ClaimTypes.GivenName, firstName),
+				new Claim(ClaimTypes.Surname, lastName),
+				new Claim(ClaimTypes.Name, displayName)
+
+			}, ".");
+
+			if (userDictionary["Type"].ToLower() == "phonenumber")
+				claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, userDictionary["Input"]));
+			if (userDictionary["Type"].ToLower() == "emailaddress")
+				claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, userDictionary["Input"]));
 
 
-            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+			var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            await HttpContext.SignInAsync(claimsPrincipal, properties);
+			await HttpContext.SignInAsync(claimsPrincipal, properties);
 
 
-            return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}");
-        }
+			return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}");
+		}
 
-        [HttpGet("Result")]
-        public async Task<ActionResult<string>> LoginResult(string redirectUri)
-        {
-            CloudUser user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
+		[HttpGet("Result")]
+		public async Task<ActionResult<string>> LoginResult(string redirectUri)
+		{
+			CloudUser user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
 
-            AuthenticationProperties properties = new();
+			AuthenticationProperties properties = new();
+			string firstName = user.FirstName;
+			string lastName = user.LastName;
+			string displayName = user.DisplayName;
 
-            var claimsIdentity = new ClaimsIdentity(new[] {
+			if (Configuration.Cosmos == null)
+			{
+				firstName ??= "Guest";
+				lastName ??= "User";
+			}
 
-                new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
-                new Claim(ClaimTypes.GivenName, user.FirstName),
-                new Claim(ClaimTypes.Surname, user.LastName),
-                new Claim(ClaimTypes.Name, user.DisplayName),
-                new Claim(ClaimTypes.Hash, "Cloud Login")
+			displayName ??= $"{firstName} {lastName}";
+			var claimsIdentity = new ClaimsIdentity(new[] {
 
-            }, ".");
-            if (user.EmailAddresses.FirstOrDefault() == null)
-            {
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
-            }else
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.Where(key=> key.IsPrimary == true).FirstOrDefault().Input));
+				new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+				new Claim(ClaimTypes.GivenName, firstName),
+				new Claim(ClaimTypes.Surname, lastName),
+				new Claim(ClaimTypes.Name, displayName),
+				new Claim(ClaimTypes.Hash, "Cloud Login")
 
-            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+			}, ".");
+			if (user.EmailAddresses.FirstOrDefault() == null)
+			{
+				claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+			}
+			else
+				claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
 
-            await HttpContext.SignInAsync(claimsPrincipal, properties);
+			var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            return Redirect(redirectUri);
-        }
+			await HttpContext.SignInAsync(claimsPrincipal, properties);
 
-        [HttpGet("Logout")]
-        public async Task<ActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync();
+			return Redirect(redirectUri);
+		}
 
-            return Redirect("/");
-        }
-    }
+		[HttpGet("Logout")]
+		public async Task<ActionResult> Logout()
+		{
+			await HttpContext.SignOutAsync();
+
+			return Redirect("/");
+		}
+	}
 }

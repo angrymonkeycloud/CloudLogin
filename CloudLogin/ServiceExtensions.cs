@@ -18,6 +18,9 @@ public static class MvcServiceCollectionExtensions
 		CloudGeographyClient cloudGeography = new();
 
 		CloudLoginClient cloudLoginClient = new() { HttpClient = httpServer };
+
+		//cloudLoginClient = cloudLoginClient.InitFromServer();
+
 		cloudLoginClient.FooterLinks.Add(new Link()
 		{
 			Url = "https://angrymonkeycloud.com/",

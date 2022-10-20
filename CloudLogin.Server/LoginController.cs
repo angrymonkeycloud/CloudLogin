@@ -24,7 +24,8 @@ namespace AngryMonkey.Cloud.Login.Controllers
         {
             bool isAuthenticated = false;
             CloudUser User = new();
-            if (Request.Cookies["CloudLogin"] == "")
+            string? test = Request.Cookies["CloudLogin"];
+            if (test != null)
             {
                 isAuthenticated = true;
                 User = JsonConvert.DeserializeObject<CloudUser>(Request.Cookies["CloudUser"]);
@@ -87,6 +88,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
             string firstName = userDictionary["FirstName"];
             string lastName = userDictionary["LastName"];
             string displayName = userDictionary["DisplayName"];
+            string input = userDictionary["Input"];
 
             if (Configuration.Cosmos == null)
             {
@@ -107,9 +109,9 @@ namespace AngryMonkey.Cloud.Login.Controllers
             }, ".");
 
             if (userDictionary["Type"].ToLower() == "phonenumber")
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, userDictionary["Input"]));
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
             if (userDictionary["Type"].ToLower() == "emailaddress")
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, userDictionary["Input"]));
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
 
 
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);

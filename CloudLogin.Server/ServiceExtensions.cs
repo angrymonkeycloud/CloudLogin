@@ -82,7 +82,7 @@ public static class MvcServiceCollectionExtensions
                     string firstName = context.Principal?.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
                     string lastName = context.Principal?.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
 
-                    bool doesUserExist = user != null;
+                    bool doesUserExist = user.DisplayName != null;
 
                     LoginProvider? provider = providerCode.Equals(".") ? null : new()
                     {

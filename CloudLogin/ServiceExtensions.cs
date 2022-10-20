@@ -1,6 +1,7 @@
 ﻿using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Login;
 using AngryMonkey.Cloud.Login.DataContract;
+using Microsoft.AspNetCore.Components;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -23,8 +24,14 @@ public static class MvcServiceCollectionExtensions
 			Url = "https://angrymonkeycloud.com/",
 			Title = "Info"
 		});
+        HttpClient NewClient = new HttpClient();
+		NewClient.BaseAddress = new Uri(ba;
 
-		services.AddSingleton(cloudLoginClient);
+        cloudLoginClient.HttpClient = new();
+
+
+
+        services.AddSingleton(cloudLoginClient);
 
 		return null;
     }

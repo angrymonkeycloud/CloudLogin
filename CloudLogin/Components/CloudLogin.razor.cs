@@ -10,8 +10,7 @@ namespace AngryMonkey.Cloud.Login
 {
     public partial class CloudLogin
     {
-        public string? VerificationCode { get; set; }
-        public DateTimeOffset? VerificationCodeExpiry { get; set; }
+        public bool checkError { get; set; } = false;
         public bool IsLoading { get; set; } = false;
         protected string Title { get; set; } = string.Empty;
         protected string Subtitle { get; set; } = string.Empty;
@@ -90,6 +89,7 @@ namespace AngryMonkey.Cloud.Login
         List<ProviderDefinition> Providers { get; set; } = new();
         public bool DisplayInputValue { get; set; } = false;
 
+
         public bool EmailAddressEnabled => cloudLoginClient.Providers.Any(key => key.HandlesEmailAddress);
         public bool PhoneNumberEnabled => cloudLoginClient.Providers.Any(key => key.HandlesPhoneNumber);
 
@@ -111,6 +111,12 @@ namespace AngryMonkey.Cloud.Login
 
         protected override async Task OnInitializedAsync()
         {
+
+            HttpClient NewClient = new HttpClient();
+            NewClient.BaseAddress = new Uri(navigationManager.BaseUri);
+
+            cloudLoginClient.HttpClient = NewClient;
+
             await base.OnInitializedAsync();
         }
 
@@ -190,6 +196,8 @@ namespace AngryMonkey.Cloud.Login
             }
         }
 
+        public string? VerificationCode { get; set; }
+        public DateTimeOffset? VerificationCodeExpiry { get; set; }
 
         private VerificationCodeResult GetVerificationCodeResult(string code)
         {
@@ -430,11 +438,13 @@ namespace AngryMonkey.Cloud.Login
             switch (SelectedProvider?.Code.ToLower())
             {
                 case "whatsapp":
-                    await cloudLoginClient.SendWhatsAppCode(InputValue, VerificationCode);
+                    HttpClient client = new HttpClient();
+                    client.BaseAddress = new Uri(navigationManager.BaseUri);
+                    await SendWhatsAppCode(InputValue, VerificationCode);
                     break;
 
                 default:
-                    await cloudLoginClient.SendEmailCode(InputValue, VerificationCode);
+                    await SendEmailCode(InputValue, VerificationCode);
 
                     break;
             }
@@ -467,16 +477,9 @@ namespace AngryMonkey.Cloud.Login
 
             if (provider.IsCodeVerification)
             {
-                try
-                {
                     await RefreshVerificationCode();
                     await SwitchState(ProcessState.CodeVerification);
-                }
-                catch (Exception e)
-                {
-                    Errors.Add(e.Message);
-                    EndLoading();
-                }
+
             }
             else ProviderSignInChallenge(provider.Code);
         }
@@ -580,6 +583,16 @@ namespace AngryMonkey.Cloud.Login
                 builder.Append(new Random().Next(0, 9));
 
             return builder.ToString();
+        }
+
+        public async Task SendEmailCode(string receiver, string code)
+        {
+            await cloudLoginClient.SendEmailCode(receiver, code);
+        }
+
+        public async Task SendWhatsAppCode(string receiver, string code)
+        {
+            await cloudLoginClient.SendWhatsAppCode(receiver, code);
         }
     }
 }

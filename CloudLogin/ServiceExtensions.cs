@@ -24,8 +24,6 @@ public static class MvcServiceCollectionExtensions
 			Url = "https://angrymonkeycloud.com/",
 			Title = "Info"
 		});
-        HttpClient NewClient = new HttpClient();
-		NewClient.BaseAddress = new Uri(ba;
 
         cloudLoginClient.HttpClient = new();
 

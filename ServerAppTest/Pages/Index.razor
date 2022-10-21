@@ -8,7 +8,7 @@
     <CloudBundle Source="css/index.css" />
 </HeadContent>
 
-@if (!cloudLogin.IsAuthenticated)
+@if (!isAuthenticated)
 {
     <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
 }
@@ -23,14 +23,14 @@ else
             <div class="amc-authorized-info">
                 <div class="amc-authorized-info-event">Login is succesful</div>
                 <div class="amc-authorized-info-inside">
-                    <b>Display Name:</b> @cloudLogin.CurrentUser.DisplayName
+                    <b>Display Name:</b> @user.DisplayName
                 </div>
                 <div class="amc-authorized-info-inside">
-                    <b>ID:</b> @cloudLogin.CurrentUser.ID
+                    <b>ID:</b> @user.ID
                 </div>
 
                 <div class="amc-authorized-info-inside">
-                    <b>Primary input Input:</b> @cloudLogin.CurrentUser.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input
+                    <b>Primary input Input:</b> @user.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input
                 </div>
 
                 <div class="amc-authorized-info-nav">

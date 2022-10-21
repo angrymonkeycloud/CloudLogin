@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\CloudLogin\CloudLogin.csproj" />
-    <ProjectReference Include="..\Shared\BlazorApp4.Shared.csproj" />
+    <ProjectReference Include="..\Shared\ServerClientDemo.Shared.csproj" />
   </ItemGroup>
 
 </Project>

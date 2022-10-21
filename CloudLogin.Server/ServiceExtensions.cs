@@ -42,6 +42,8 @@ public static class MvcServiceCollectionExtensions
         services.AddSingleton(new CloudLoginServerService());
         services.AddSingleton(configuration);
 
+
+
         CloudGeographyClient cloudGeography = new();
 
         var service = services.AddAuthentication("Cookies").AddCookie((option =>

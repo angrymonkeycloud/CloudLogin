@@ -27,9 +27,8 @@ namespace AngryMonkey.Cloud.Login.Controllers
         {
             bool isAuthenticated = false;
             CloudUser User = new();
-
-            string? loginCookie = Request.Cookies["CloudLogin"];
-            string? userCookie = Request.Cookies["CloudUser"];
+            string? loginCookie = HttpContext.Request.Cookies["CloudLogin"];
+            string? userCookie = HttpContext.Request.Cookies["CloudUser"];
 
             if (loginCookie != null)
             {
@@ -46,9 +45,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
                     HandlesEmailAddress = key.HandlesEmailAddress
                 }).ToList(),
                 FooterLinks = Configuration.FooterLinks,
-                RedirectUrl = Configuration.RedirectUri,
-                CurrentUser = User,
-                IsAuthenticated = isAuthenticated
+                RedirectUrl = Configuration.RedirectUri
             };
 
             client.FooterLinks.Add(new Link()

@@ -24,27 +24,10 @@ namespace ServerAppTest.Pages
 {
     public partial class Index
     {
-        public CloudUser User { get; set; }
-        public CloudLoginClient CloudClient { get; set; }
-        public bool Authorized { get; set; }
-        private async Task DeleteButton() => await cloudLogin.DeleteUser(User.ID);
+        private async Task DeleteButton() => Console.WriteLine("DELETE");
         protected override async Task OnInitializedAsync()
         {
-            var context = HttpContextAccessor.HttpContext;
-            if (context != null)
-            {
-                var cookies = context.Request.Cookies;
-                var loginCookie = cookies["CloudLogin"];
-                var cookie = cookies["CloudUser"];
-                if (String.IsNullOrEmpty(loginCookie))
-                    return;
-                User = JsonConvert.DeserializeObject<CloudUser>(cookie);
-                CloudClient = new CloudLoginClient()
-                {
-                    CurrentUser = User,
-                    IsAuthenticated = true
-                };
-            }
+            Console.WriteLine(currentUser.ToString());
         }
     }
 }

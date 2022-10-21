@@ -29,6 +29,8 @@ namespace Microsoft.AspNetCore.Builder
 					string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
 					cloudLoginClient.HttpClient = new HttpClient() { BaseAddress = new Uri(baseUrl) };
+
+					cloudLoginClient.InitFromServer();
 				}
 
 				if (BaseController.Configuration == null)

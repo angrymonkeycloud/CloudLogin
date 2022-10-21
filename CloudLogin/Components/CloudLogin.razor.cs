@@ -10,8 +10,7 @@ namespace AngryMonkey.Cloud.Login
 {
     public partial class CloudLogin
     {
-        public string? VerificationCode { get; set; }
-        public DateTimeOffset? VerificationCodeExpiry { get; set; }
+        public bool checkError { get; set; } = false;
         public bool IsLoading { get; set; } = false;
         protected string Title { get; set; } = string.Empty;
         protected string Subtitle { get; set; } = string.Empty;
@@ -90,10 +89,9 @@ namespace AngryMonkey.Cloud.Login
         List<ProviderDefinition> Providers { get; set; } = new();
         public bool DisplayInputValue { get; set; } = false;
 
-        static List<ProviderDefinition> AllProvider = new();
 
-        public bool EmailAddressEnabled => AllProvider.Any(key => key.HandlesEmailAddress);
-        public bool PhoneNumberEnabled => AllProvider.Any(key => key.HandlesPhoneNumber);
+        public bool EmailAddressEnabled => cloudLoginClient.Providers.Any(key => key.HandlesEmailAddress);
+        public bool PhoneNumberEnabled => cloudLoginClient.Providers.Any(key => key.HandlesPhoneNumber);
 
         List<InputFormat> AvailableFormats
         {
@@ -113,8 +111,13 @@ namespace AngryMonkey.Cloud.Login
 
         protected override async Task OnInitializedAsync()
         {
-            if (!AllProvider.Any())
-                AllProvider = await cloudLoginClient.GetProviders();
+
+            HttpClient NewClient = new HttpClient();
+            NewClient.BaseAddress = new Uri(navigationManager.BaseUri);
+
+            cloudLoginClient.HttpClient = NewClient;
+
+
 
             await base.OnInitializedAsync();
         }
@@ -195,6 +198,8 @@ namespace AngryMonkey.Cloud.Login
             }
         }
 
+        public string? VerificationCode { get; set; }
+        public DateTimeOffset? VerificationCodeExpiry { get; set; }
 
         private VerificationCodeResult GetVerificationCodeResult(string code)
         {
@@ -387,7 +392,7 @@ namespace AngryMonkey.Cloud.Login
                 }
 
                 if (addAllProviders)
-                    Providers.AddRange(AllProvider
+                    Providers.AddRange(cloudLoginClient.Providers
                         .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                                     || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
@@ -395,7 +400,7 @@ namespace AngryMonkey.Cloud.Login
             }
             catch (Exception e)
             {
-                Providers.AddRange(AllProvider
+                Providers.AddRange(cloudLoginClient.Providers
                         .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                                     || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
@@ -435,11 +440,13 @@ namespace AngryMonkey.Cloud.Login
             switch (SelectedProvider?.Code.ToLower())
             {
                 case "whatsapp":
-                    await cloudLoginClient.SendWhatsAppCode(InputValue, VerificationCode);
+                    HttpClient client = new HttpClient();
+                    client.BaseAddress = new Uri(navigationManager.BaseUri);
+                    await SendWhatsAppCode(InputValue, VerificationCode);
                     break;
 
                 default:
-                    await cloudLoginClient.SendEmailCode(InputValue, VerificationCode);
+                    await SendEmailCode(InputValue, VerificationCode);
 
                     break;
             }
@@ -472,23 +479,16 @@ namespace AngryMonkey.Cloud.Login
 
             if (provider.IsCodeVerification)
             {
-                try
-                {
                     await RefreshVerificationCode();
                     await SwitchState(ProcessState.CodeVerification);
-                }
-                catch (Exception e)
-                {
-                    Errors.Add(e.Message);
-                    EndLoading();
-                }
+
             }
             else ProviderSignInChallenge(provider.Code);
         }
 
         private string GetPhoneNumberWithoutCode(string phoneNumber)
         {
-            Country? country = cloudGeography.Countries.GuessCountryByPhoneNumber(InputValue);
+            Country? country = cloudLoginClient.CloudGeography.Countries.GuessCountryByPhoneNumber(InputValue);
 
             if (country == null)
                 return phoneNumber;
@@ -585,6 +585,16 @@ namespace AngryMonkey.Cloud.Login
                 builder.Append(new Random().Next(0, 9));
 
             return builder.ToString();
+        }
+
+        public async Task SendEmailCode(string receiver, string code)
+        {
+            await cloudLoginClient.SendEmailCode(receiver, code);
+        }
+
+        public async Task SendWhatsAppCode(string receiver, string code)
+        {
+            await cloudLoginClient.SendWhatsAppCode(receiver, code);
         }
     }
 }

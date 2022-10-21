@@ -1,9 +1,7 @@
 ﻿@namespace AngryMonkey.Cloud.Login
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
-@inject Microsoft.Extensions.DependencyInjection.CloudLoginService cloudLogin
 @inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLoginClient
 @inject NavigationManager navigationManager
-@inject CloudGeographyClient cloudGeography
 
 <div class="amc-cloudlogin @CssClass">
     <div class="amc-cloudlogin-header">
@@ -159,7 +157,7 @@
 
     <div class="amc-cloudlogin-footer">
         <div class="amc-cloudlogin-footer-providers">
-            @foreach (ProviderDefinition provider in AllProvider)
+            @foreach (ProviderDefinition provider in cloudLoginClient.Providers)
             {
                 <AngryMonkey.Cloud.Login.Components.ProviderButton Provider="@provider" />
             }

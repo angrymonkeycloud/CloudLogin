@@ -27,6 +27,19 @@ CloudLoginConfiguration cloudLoginConfig = new()
     //    DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
     //    ContainerId = builder.Configuration["Cosmos:ContainerId"]
     //},
+    FooterLinks = new List<Link>()
+    {
+        new Link()
+        {
+            Title = "Link 1",
+            Url = "#"
+        },
+        new Link()
+        {
+            Title = "Link 2",
+            Url = "#"
+        }
+    },
     EmailSendCodeRequest = async (sendCode) =>
     {
         SmtpClient smtpClient = new(builder.Configuration["SMTP:Host"], int.Parse(builder.Configuration["SMTP:Port"]))

@@ -1,6 +1,7 @@
 ﻿using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Login;
 using AngryMonkey.Cloud.Login.DataContract;
+using Microsoft.AspNetCore.Components;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -12,25 +13,25 @@ public class CloudLoginService
 
 public static class MvcServiceCollectionExtensions
 {
-
-	public static CloudLoginService AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
+	public static async Task<CloudLoginService> AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
 	{
-		CloudGeographyClient cloudGeography = new();
-
 		CloudLoginClient cloudLoginClient = new() { HttpClient = httpServer };
 
-		//cloudLoginClient = cloudLoginClient.InitFromServer();
+        cloudLoginClient = await cloudLoginClient.InitFromServer();
 
-		cloudLoginClient.FooterLinks.Add(new Link()
+        cloudLoginClient.FooterLinks.Add(new Link()
 		{
 			Url = "https://angrymonkeycloud.com/",
 			Title = "Info"
 		});
 
-		services.AddSingleton(new CloudLoginService());
-		services.AddSingleton(cloudGeography);
-		services.AddSingleton(cloudLoginClient);
+        cloudLoginClient.HttpClient = httpServer;
 
-		return null;
-	}
+        CurrentUser user = await cloudLoginClient.GetCurrentUser();
+
+        services.AddSingleton(cloudLoginClient);
+        services.AddScoped(sp => user);
+
+        return null;
+    }
 }

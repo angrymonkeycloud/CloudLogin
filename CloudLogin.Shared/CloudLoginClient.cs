@@ -30,15 +30,20 @@ namespace AngryMonkey.Cloud.Login
             }
         }
         public string? RedirectUrl { get; set; }
-        public bool IsAuthenticated { get; set; }
-        public CloudUser CurrentUser { get; set; }
-        public List<Link> FooterLinks { get; set; } = new();
+        public List<Link> FooterLinks { get; set; }
         public bool UsingDatabase { get; set; } = false;
 
         private CloudGeographyClient _cloudGepgraphy;
 
-        private List<ProviderDefinition> _providers;
-        public async Task<List<ProviderDefinition>> GetProviders() => _providers ??= await HttpClient.GetFromJsonAsync<List<ProviderDefinition>>("CloudLogin/Provider/All");
+        public List<ProviderDefinition> Providers { get; set; }
+        public async Task<CurrentUser> GetCurrentUser()
+        {
+            return await HttpClient.GetFromJsonAsync<CurrentUser>("CloudLogin/GetCurrentUser");
+        }
+        public async Task<CloudLoginClient> InitFromServer()
+        {
+            return await HttpClient.GetFromJsonAsync<CloudLoginClient>("CloudLogin/GetClient");
+        }
 
         public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();
 

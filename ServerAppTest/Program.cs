@@ -88,7 +88,7 @@ CloudLoginConfiguration cloudLoginConfig = new()
 	}
 };
 
-builder.Services.AddCloudLogin();
+builder.Services.AddCloudLoginAsync();
 builder.Services.AddCloudLoginServer(cloudLoginConfig);
 
 builder.Services.AddAuthentication(opt =>

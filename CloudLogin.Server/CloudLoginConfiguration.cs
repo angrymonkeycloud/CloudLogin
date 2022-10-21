@@ -3,6 +3,8 @@
 public class CloudLoginConfiguration
 {
 	public List<ProviderConfiguration> Providers { get; set; } = new();
+	public List<Link> FooterLinks { get; set; } = new();
+	public string? RedirectUri { get; set; }
 	public CosmosDatabase? Cosmos { get; set; }
 	internal string? EmailMessageBody { get; set; }
 	public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; } = null;

@@ -110,10 +110,6 @@ builder.Services.AddAuthentication(opt =>
     opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 });
 
-
-
-HttpClient ServerClient = new HttpClient();
-
 await builder.Services.AddCloudLogin();
 
 builder.Services.AddOptions();

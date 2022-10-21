@@ -17,8 +17,7 @@ public static class MvcServiceCollectionExtensions
 	{
 		CloudLoginClient cloudLoginClient = new()
 		{
-			HttpClient = httpServer,
-			Providers = new()
+			HttpClient = httpServer
 		};
 
 		if (httpServer != null)
@@ -27,11 +26,7 @@ public static class MvcServiceCollectionExtensions
 
 			cloudLoginClient.HttpClient = httpServer;
 
-			CurrentUser user = await cloudLoginClient.GetCurrentUser();
-
-			services.AddScoped(sp => user);
 		}
-		else { services.AddScoped(sp => new CurrentUser()); }
 
 		services.AddSingleton(cloudLoginClient);
 

@@ -27,7 +27,7 @@ namespace ServerAppTest.Pages
         private async Task DeleteButton() => Console.WriteLine("DELETE");
         protected override async Task OnInitializedAsync()
         {
-            Console.WriteLine(currentUser.ToString());
+            cloudLogin.InitFromServer();
         }
     }
 }

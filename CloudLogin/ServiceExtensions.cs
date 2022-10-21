@@ -7,34 +7,34 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public class CloudLoginService
 {
-    IServiceCollection AddCloudLogin { get; }
-    //public CloudLoginConfiguration Options { get; set; }
+	IServiceCollection AddCloudLogin { get; }
+	//public CloudLoginConfiguration Options { get; set; }
 }
 
 public static class MvcServiceCollectionExtensions
 {
-    public static async Task<CloudLoginService> AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
-    {
-        CloudLoginClient cloudLoginClient = new() { HttpClient = httpServer };
+	public static async Task<CloudLoginService> AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
+	{
+		CloudLoginClient cloudLoginClient = new()
+		{
+			HttpClient = httpServer,
+			Providers = new()
+		};
 
-        if (httpServer!= null)
-        {
-            cloudLoginClient = await cloudLoginClient.InitFromServer();
+		if (httpServer != null)
+		{
+			cloudLoginClient = await cloudLoginClient.InitFromServer();
 
-            cloudLoginClient.FooterLinks.Add(new Link()
-            {
-                Url = "https://angrymonkeycloud.com/",
-                Title = "Info"
-            });
+			cloudLoginClient.HttpClient = httpServer;
 
-            cloudLoginClient.HttpClient = httpServer;
+			CurrentUser user = await cloudLoginClient.GetCurrentUser();
 
-            CurrentUser user = await cloudLoginClient.GetCurrentUser();
+			services.AddScoped(sp => user);
+		}
+		else { services.AddScoped(sp => new CurrentUser()); }
 
-            services.AddScoped(sp => user);
-        }
-        services.AddSingleton(cloudLoginClient);
+		services.AddSingleton(cloudLoginClient);
 
-        return null;
-    }
+		return null;
+	}
 }

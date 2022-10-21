@@ -22,7 +22,7 @@ namespace Microsoft.AspNetCore.Builder
 			if (app == null)
 				throw new ArgumentNullException(nameof(app));
 
-			app.Use((context, next) =>
+			app.Use(async (context, next) =>
 			{
 				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient && cloudLoginClient.HttpClient == null)
 				{
@@ -30,14 +30,18 @@ namespace Microsoft.AspNetCore.Builder
 
 					cloudLoginClient.HttpClient = new HttpClient() { BaseAddress = new Uri(baseUrl) };
 
-					cloudLoginClient.InitFromServer();
+					CloudLoginClient serverClient = await cloudLoginClient.InitFromServer();
+					cloudLoginClient.Providers = serverClient.Providers;
+					cloudLoginClient.FooterLinks = serverClient.FooterLinks;
+					cloudLoginClient.RedirectUrl = serverClient.RedirectUrl;
+					cloudLoginClient.UsingDatabase = serverClient.UsingDatabase;
 				}
 
 				if (BaseController.Configuration == null)
 					if (app.ApplicationServices.GetService(typeof(CloudLoginConfiguration)) is CloudLoginConfiguration cloudLoginConfiguration)
 						BaseController.Configuration = cloudLoginConfiguration;
 
-				return next.Invoke();
+				await next.Invoke();
 			});
 
 			return app;

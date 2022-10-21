@@ -112,6 +112,10 @@ builder.Services.AddAuthentication(opt =>
 
 await builder.Services.AddCloudLogin();
 
+
+builder.Services.AddHttpContextAccessor();
+
+
 builder.Services.AddOptions();
 builder.Services.AddAuthenticationCore();
 

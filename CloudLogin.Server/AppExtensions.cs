@@ -35,8 +35,6 @@ namespace Microsoft.AspNetCore.Builder
 					cloudLoginClient.FooterLinks = serverClient.FooterLinks;
 					cloudLoginClient.RedirectUrl = serverClient.RedirectUrl;
 					cloudLoginClient.UsingDatabase = serverClient.UsingDatabase;
-					cloudLoginClient.IsAuthenticated = serverClient.IsAuthenticated;
-					cloudLoginClient.CurrentUser = serverClient.CurrentUser;
 				}
 
 				if (BaseController.Configuration == null)

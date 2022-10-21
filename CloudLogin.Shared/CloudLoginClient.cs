@@ -1,5 +1,6 @@
 ﻿using AngryMonkey.Cloud.Geography;
 using AngryMonkey.Cloud.Login.DataContract;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -33,15 +34,22 @@ namespace AngryMonkey.Cloud.Login
         public string? RedirectUrl { get; set; }
         public List<Link> FooterLinks { get; set; }
         public bool UsingDatabase { get; set; } = false;
-        public CloudUser CurrentUser { get; set; }
-        public bool IsAuthenticated { get; set; }
-
         private CloudGeographyClient _cloudGepgraphy;
 
         public List<ProviderDefinition> Providers { get; set; }
         public async Task<CloudLoginClient> InitFromServer()
         {
             return await HttpClient.GetFromJsonAsync<CloudLoginClient>("CloudLogin/GetClient");
+        }
+        public async Task<CloudUser> CurrentUser(IHttpContextAccessor accessor)
+        {
+            string? userCookie = accessor.HttpContext.Request.Cookies["CloudUser"];
+            return JsonConvert.DeserializeObject<CloudUser>(userCookie);
+        }
+        public async Task<bool> IsAuthenticated(IHttpContextAccessor accessor)
+        {
+            string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
+            return userCookie != null;
         }
 
         public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();

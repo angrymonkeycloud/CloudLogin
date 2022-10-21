@@ -30,14 +30,16 @@ namespace AngryMonkey.Cloud.Login
             }
         }
         public string? RedirectUrl { get; set; }
-        public bool IsAuthenticated { get; set; }
-        public CloudUser CurrentUser { get; set; }
         public List<Link> FooterLinks { get; set; }
         public bool UsingDatabase { get; set; } = false;
 
         private CloudGeographyClient _cloudGepgraphy;
 
         public List<ProviderDefinition> Providers { get; set; }
+        public async Task<CurrentUser> GetCurrentUser()
+        {
+            return await HttpClient.GetFromJsonAsync<CurrentUser>("CloudLogin/GetCurrentUser");
+        }
         public async Task<CloudLoginClient> InitFromServer()
         {
             return await HttpClient.GetFromJsonAsync<CloudLoginClient>("CloudLogin/GetClient");

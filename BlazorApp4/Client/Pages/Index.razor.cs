@@ -14,13 +14,7 @@ namespace BlazorApp4.Client.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            Console.Write(cloudLogin.IsAuthenticated);
-            if (cloudLogin.IsAuthenticated == true)
-            {
-                User = cloudLogin.CurrentUser;
-            }
-
-            StateHasChanged();
+            Console.WriteLine(CurrentUser);
         }
     }
 }

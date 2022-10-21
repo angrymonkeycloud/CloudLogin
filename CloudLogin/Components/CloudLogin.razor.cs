@@ -117,6 +117,8 @@ namespace AngryMonkey.Cloud.Login
 
             cloudLoginClient.HttpClient = NewClient;
 
+
+
             await base.OnInitializedAsync();
         }
 

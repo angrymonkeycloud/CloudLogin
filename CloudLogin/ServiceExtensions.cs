@@ -25,12 +25,13 @@ public static class MvcServiceCollectionExtensions
 			Title = "Info"
 		});
 
-        cloudLoginClient.HttpClient = new();
+        cloudLoginClient.HttpClient = httpServer;
 
-
+        CurrentUser user = await cloudLoginClient.GetCurrentUser();
 
         services.AddSingleton(cloudLoginClient);
+        services.AddScoped(sp => user);
 
-		return null;
+        return null;
     }
 }

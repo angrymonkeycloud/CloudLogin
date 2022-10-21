@@ -32,23 +32,7 @@ namespace ServerAppTest.Pages
         public List<CloudUser> Users { get; set; } = new();
         protected override async Task OnInitializedAsync()
         {
-            var context = HttpContextAccessor.HttpContext;
-            if (context != null)
-            {
-                var cookies = context.Request.Cookies;
-                var loginCookie = cookies["CloudLogin"];
-                var cookie = cookies["CloudUser"];
-                if (String.IsNullOrEmpty(loginCookie))
-                    return;
-                User = JsonConvert.DeserializeObject<CloudUser>(cookie);
-                CloudClient = new CloudLoginClient()
-                {
-                    CurrentUser = User,
-                    IsAuthenticated = true
-                };
-            }
-            if(Authorized)
-                Users = await cloudLogin.GetAllUsers();
+            
         }
     }
 }

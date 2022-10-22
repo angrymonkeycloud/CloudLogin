@@ -4,17 +4,16 @@ using AngryMonkey.Cloud.Login;
 using Microsoft.AspNetCore.Components;
 
 
-namespace BlazorApp4.Client.Pages
+namespace ServerClientDemo.Client.Pages
 {
     public partial class Index
     {
-        public CloudUser User { get; set; } = new();
-        public bool Authorized { get; set; } = false;
-        private async Task DeleteButton() => await cloudLogin.DeleteUser(User.ID);
+        public CloudUser CurrentUser { get; set; } = new();
+        public bool IsAuthorized { get; set; } = false;
+        private async Task DeleteButton() => await cloudLogin.DeleteUser(CurrentUser.ID);
 
         protected override async Task OnInitializedAsync()
         {
-            Console.WriteLine(CurrentUser);
         }
     }
 }

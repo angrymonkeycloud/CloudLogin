@@ -19,23 +19,9 @@ namespace AngryMonkey.Cloud.Login.Controllers
     [ApiController]
     public class LoginController : BaseController
     {
-
-
-
         [HttpGet("GetClient")]
         public async Task<CloudLoginClient> getClient()
         {
-            bool isAuthenticated = false;
-            CloudUser User = new();
-            string? loginCookie = HttpContext.Request.Cookies["CloudLogin"];
-            string? userCookie = HttpContext.Request.Cookies["CloudUser"];
-
-            if (loginCookie != null)
-            {
-                isAuthenticated = true;
-                User = JsonConvert.DeserializeObject<CloudUser>(userCookie);
-
-            }
             CloudLoginClient client = new()
             {
                 Providers = Configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.Label)
@@ -56,7 +42,6 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
             return client;
         }
-
 
         [HttpGet("Login/{identity}")]
         public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn)

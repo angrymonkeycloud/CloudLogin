@@ -17,14 +17,21 @@ public static class MvcServiceCollectionExtensions
 	{
 		CloudLoginClient cloudLoginClient = new()
 		{
-			HttpClient = httpServer
+			HttpServer = httpServer
 		};
 
 		if (httpServer != null)
 		{
-			cloudLoginClient = await cloudLoginClient.InitFromServer();
+			try
+			{
+				cloudLoginClient = await cloudLoginClient.InitFromServer();
+			}
+			catch (Exception e)
+			{
+				throw e;
+			}
 
-			cloudLoginClient.HttpClient = httpServer;
+			cloudLoginClient.HttpServer = httpServer;
 
 		}
 

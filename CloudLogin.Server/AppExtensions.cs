@@ -24,11 +24,11 @@ namespace Microsoft.AspNetCore.Builder
 
 			app.Use(async (context, next) =>
 			{
-				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient && cloudLoginClient.HttpClient == null)
+				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient && cloudLoginClient.HttpServer == null)
 				{
 					string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
-					cloudLoginClient.HttpClient = new HttpClient() { BaseAddress = new Uri(baseUrl) };
+					cloudLoginClient.HttpServer = new HttpClient() { BaseAddress = new Uri(baseUrl) };
 
 					CloudLoginClient serverClient = await cloudLoginClient.InitFromServer();
 					cloudLoginClient.Providers = serverClient.Providers;

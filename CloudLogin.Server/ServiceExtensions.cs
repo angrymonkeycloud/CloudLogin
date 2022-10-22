@@ -41,8 +41,7 @@ public static class MvcServiceCollectionExtensions
     {
         services.AddSingleton(new CloudLoginServerService());
         services.AddSingleton(configuration);
-
-
+        services.AddSingleton(new CloudLoginClient());
 
         CloudGeographyClient cloudGeography = new();
 
@@ -57,7 +56,7 @@ public static class MvcServiceCollectionExtensions
 
                     CloudLoginClient cloudLogin = new()
                     {
-                        HttpClient = new HttpClient() { BaseAddress = new Uri(baseUrl) }
+                        HttpServer = new HttpClient() { BaseAddress = new Uri(baseUrl) }
                     };
 
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;

@@ -116,16 +116,10 @@ builder.Services.AddAuthenticationCore();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped(key => new UserController());
 
-builder.Services.AddScoped<CustomAuthenticationStateProvider>();
-builder.Services.AddScoped(key => new UserController());
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
-{
     app.UseWebAssemblyDebugging();
-}
 else
 {
     app.UseExceptionHandler("/Error");

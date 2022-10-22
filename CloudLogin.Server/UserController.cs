@@ -171,6 +171,43 @@ namespace AngryMonkey.Cloud.Login.Controllers
             {
                 return Problem();
             }
-        }
-    }
+		}
+
+		[HttpGet("IsAuthenticated")]
+		public async Task<ActionResult<bool>> IsAuthenticated()
+		{
+			try
+			{
+				string? userCookie = Request.Cookies["CloudLogin"];
+				return Ok(userCookie != null);
+			}
+			catch
+			{
+				return Problem();
+			}
+		}
+
+		[HttpGet("CurrentUser")]
+		public async Task<ActionResult<CloudUser?>> CurrentUser()
+		{
+			try
+			{
+				string? userCookie = Request.Cookies["CloudUser"];
+
+				if (userCookie == null)
+					return Ok(null);
+
+				CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(userCookie);
+
+				if (user == null)
+					return Ok(null);
+
+				return Ok(user);
+			}
+			catch
+			{
+				return Problem();
+			}
+		}
+	}
 }

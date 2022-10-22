@@ -115,7 +115,7 @@ namespace AngryMonkey.Cloud.Login
             HttpClient NewClient = new HttpClient();
             NewClient.BaseAddress = new Uri(navigationManager.BaseUri);
 
-            cloudLoginClient.HttpClient = NewClient;
+            cloudLoginClient.HttpServer = NewClient;
 
 
 

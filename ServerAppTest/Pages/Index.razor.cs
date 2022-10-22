@@ -24,24 +24,22 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ServerAppTest.Pages
 {
-    public partial class Index
-    {
-        private async Task DeleteButton() => Console.WriteLine("DELETE");
-        CloudUser user = new();
-        bool isAuthenticated = false;
-        protected override async Task OnInitializedAsync()
-        {
-            cloudLogin.InitFromServer();
+	public partial class Index
+	{
+		private async Task DeleteButton() => Console.WriteLine("DELETE");
+		CloudUser user = new();
+		bool isAuthenticated = false;
 
-            user = await cloudLogin.CurrentUser(HttpContextAccessor);
-            isAuthenticated = await cloudLogin.IsAuthenticated(HttpContextAccessor);
+		protected override async Task OnInitializedAsync()
+		{
+			cloudLogin.InitFromServer();
 
+			user = await cloudLogin.CurrentUser(HttpContextAccessor);
+			isAuthenticated = await cloudLogin.IsAuthenticated(HttpContextAccessor);
 
+			IHttpContextAccessor test = HttpContextAccessor;//.HttpContext.Request.Cookies["CloudUser"];
 
-            IHttpContextAccessor test = HttpContextAccessor;//.HttpContext.Request.Cookies["CloudUser"];
-
-            Console.WriteLine(test);
-
-        }
-    }
+			Console.WriteLine(test);
+		}
+	}
 }

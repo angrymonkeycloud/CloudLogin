@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BlazorApp4.Server
+namespace ServerClientDemo.Server
 {
     [Route("LoginHandler")]
     [ApiController]

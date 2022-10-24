@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "BlazorApp4": {
+    "ServerClientDemo": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

@@ -14,6 +14,8 @@ namespace ServerClientDemo.Client.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            IsAuthorized = await cloudLogin.IsAuthenticated();
+            CurrentUser = await cloudLogin.CurrentUser();
         }
     }
 }

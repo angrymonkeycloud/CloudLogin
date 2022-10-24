@@ -43,10 +43,37 @@ namespace AngryMonkey.Cloud.Login
 			return client;
 		}
 
-		public async Task<CloudUser?> CurrentUser(IHttpContextAccessor? accessor)
+		public async Task<bool> IsAuthenticated(IHttpContextAccessor? accessor = null)
 		{
 			if (accessor == null)
-				return await HttpServer.GetFromJsonAsync<CloudUser>("CloudLogin/User/CurrentUser");
+				try
+				{
+					HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/IsAuthenticated");
+
+					if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+						return false;
+
+					return await message.Content.ReadFromJsonAsync<bool>();
+				}
+				catch { throw; }
+
+			string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
+			return userCookie != null;
+		}
+
+		public async Task<CloudUser?> CurrentUser(IHttpContextAccessor? accessor = null)
+		{
+			if (accessor == null)
+				try
+				{
+					HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
+
+					if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+						return null;
+
+					return await message.Content.ReadFromJsonAsync<CloudUser>();
+				}
+				catch { throw; }
 
 			string? userCookie = accessor.HttpContext.Request.Cookies["CloudUser"];
 
@@ -54,15 +81,6 @@ namespace AngryMonkey.Cloud.Login
 				return null;
 
 			return JsonConvert.DeserializeObject<CloudUser>(userCookie);
-		}
-
-		public async Task<bool> IsAuthenticated(IHttpContextAccessor? accessor)
-		{
-			if (accessor == null)
-				return await HttpServer.GetFromJsonAsync<bool>("CloudLogin/User/IsAuthenticated");
-
-			string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
-			return userCookie != null;
 		}
 
 		public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();

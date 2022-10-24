@@ -135,7 +135,6 @@ if (!app.Environment.IsDevelopment())
 	app.UseHsts();
 }
 
-app.UseCloudLogin();
 
 app.UseHttpsRedirection();
 
@@ -143,6 +142,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseCloudLogin();
 app.UseAuthentication();
 app.UseAuthorization();
 

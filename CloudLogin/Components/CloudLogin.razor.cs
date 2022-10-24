@@ -363,12 +363,7 @@ namespace AngryMonkey.Cloud.Login
 
                 Providers = new List<ProviderDefinition>();
 
-                //if (cloudLogin.Options.EmailSendCodeRequest != null && InputValueFormat == InputFormat.EmailAddress)
-                //	Providers.Add(new ProviderDefinition(string.Empty) { Label = "Email Code", IsCodeVerification = true });
-
                 bool addAllProviders = true;
-
-                // Existing user
 
                 if (user != null)
                 {
@@ -381,7 +376,6 @@ namespace AngryMonkey.Cloud.Login
                     UserId = user.ID;
                 }
 
-                // New user
 
                 else if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
                 {
@@ -409,13 +403,6 @@ namespace AngryMonkey.Cloud.Login
 
 
         }
-
-        //private async Task OnContinueClicked(MouseEventArgs e)
-        //{
-        //	StartLoading();
-        //	CloudUser? user = await Cosmos.GetUserByPhoneNumber(InputValue);
-        //	CheckUser(user);
-        //}
 
         private async Task OnBackClicked(MouseEventArgs e)
         {
@@ -468,7 +455,6 @@ namespace AngryMonkey.Cloud.Login
                 return;
             }
 
-            //await SwitchState(ProcessState.CodeVerification);
         }
 
         private async Task OnProviderClickedAsync(ProviderDefinition provider)
@@ -479,8 +465,8 @@ namespace AngryMonkey.Cloud.Login
 
             if (provider.IsCodeVerification)
             {
-                    await RefreshVerificationCode();
-                    await SwitchState(ProcessState.CodeVerification);
+                await RefreshVerificationCode();
+                await SwitchState(ProcessState.CodeVerification);
 
             }
             else ProviderSignInChallenge(provider.Code);

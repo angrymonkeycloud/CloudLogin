@@ -20,7 +20,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
     public class LoginController : BaseController
     {
         [HttpGet("GetClient")]
-        public async Task<CloudLoginClient> getClient()
+        public Task<CloudLoginClient> getClient()
         {
             CloudLoginClient client = new()
             {
@@ -40,7 +40,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
                 Title = "Info"
             });
 
-            return client;
+            return Task.FromResult(client);
         }
 
         [HttpGet("Login/{identity}")]

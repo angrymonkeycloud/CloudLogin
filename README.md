@@ -49,6 +49,18 @@ app.UseAuthorization();
 
 ```
 
+index.razor.cs
+```csharp
+CloudUser CurrentUser { get; set; } = new();
+bool IsAuthorized { get; set; } = false;
+protected override async Task OnInitializedAsync()
+{
+    CurrentUser = await cloudLogin.CurrentUser(HttpContextAccessor);
+    IsAuthorized = await cloudLogin.IsAuthenticated(HttpContextAccessor);
+}
+```
+
+
 ### Blazor Server-Client-Side Application Configuration
 
 Program.cs Server-side:
@@ -94,6 +106,18 @@ await builder.Services.AddCloudLogin(new HttpClient { BaseAddress = new Uri(buil
 builder.Services.AddApiAuthorization();
 
 builder.Services.AddHttpContextAccessor();
+```
+index.razor.cs
+```csharp
+        CloudUser CurrentUser { get; set; } = new();
+        bool IsAuthorized { get; set; } = false;
+        
+
+        protected override async Task OnInitializedAsync()
+        {
+            IsAuthorized = await cloudLogin.IsAuthenticated();
+            CurrentUser = await cloudLogin.CurrentUser();
+        }
 ```
 
 ### For the Configation code inside cloudLoginConfig
@@ -202,6 +226,31 @@ Leave empty to stay on the same page
 ```csharp
 redirectUri  = /*Redirect Link*/
 ```
+
+### lastly you have to make an authorized and not authorized state and get the signed in user id , display name etc..
+index.razor
+```csharp
+@inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
+@inject IHttpContextAccessor HttpContextAccessor
+//Injection at the top of the page
+
+
+@if (IsAuthorized == false)
+{
+    //NOT authorized
+
+    <AngryMonkey.Cloud.Login.CloudLogin Logo="<YOUR LOGO LINK>" />
+}
+else
+{
+    //Authorized
+    @CurrentUser.ID
+    @CurrentUser.DisplayName
+    @CurrentUser.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input
+    etc..
+}
+```
+
 
 ### Recommendation
 

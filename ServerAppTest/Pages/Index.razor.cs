@@ -27,19 +27,17 @@ namespace ServerAppTest.Pages
 	public partial class Index
 	{
 		private async Task DeleteButton() => Console.WriteLine("DELETE");
-		CloudUser user = new();
-		bool isAuthenticated = false;
 
-		protected override async Task OnInitializedAsync()
+        CloudUser CurrentUser { get; set; } = new();
+        bool IsAuthorized { get; set; } = false;
+        protected override async Task OnInitializedAsync()
 		{
-			cloudLogin.InitFromServer();
+            //cloudLogin.InitFromServer();test
 
-			user = await cloudLogin.CurrentUser(HttpContextAccessor);
-			isAuthenticated = await cloudLogin.IsAuthenticated(HttpContextAccessor);
+            CurrentUser = await cloudLogin.CurrentUser(HttpContextAccessor);
+            IsAuthorized = await cloudLogin.IsAuthenticated(HttpContextAccessor);
 
-			IHttpContextAccessor test = HttpContextAccessor;//.HttpContext.Request.Cookies["CloudUser"];
 
-			Console.WriteLine(test);
 		}
 	}
 }

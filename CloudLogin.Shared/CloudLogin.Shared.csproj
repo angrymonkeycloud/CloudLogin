@@ -6,7 +6,25 @@
     <Nullable>enable</Nullable>
 		<AssemblyName>AngryMonkey.Cloud.Login.Shared</AssemblyName>
 		<RootNamespace>AngryMonkey.Cloud.Login</RootNamespace>
+    <Product>Cloud Login</Product>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+    <FileVersion>$(PackageVersion)</FileVersion>
+    <Version>0.0.1</Version>
+    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
+    <Description />
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
+  
+	<ItemGroup>
+		<None Update="AngryMonkeyCloudLogo-64x64.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+    
 
   <ItemGroup>
     <Content Remove="C:\Users\USER\.nuget\packages\angrymonkey.cloud.geography\2.0.5\contentFiles\any\net6.0\Data\countries.json" />
@@ -215,6 +233,13 @@
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
   </ItemGroup>
 
 </Project>

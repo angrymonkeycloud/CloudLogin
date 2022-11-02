@@ -7,7 +7,7 @@
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 		<AssemblyName>AngryMonkey.Cloud.Login</AssemblyName>
 		<RootNamespace>AngryMonkey.Cloud.Login</RootNamespace>
-    <Product>Cloud Components</Product>
+    <Product>Cloud Login</Product>
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <Description />
@@ -16,7 +16,7 @@
 
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.0.0</Version>
+    <Version>0.0.2</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
 
@@ -33,10 +33,11 @@
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.0.4" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.0.5" />
+		<PackageReference Include="AngryMonkey.Cloud.Login.Shared" Version="0.0.1" />
 	</ItemGroup>
 
-	<ItemGroup>
+	<!--<ItemGroup>
 	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
-	</ItemGroup>
+	</ItemGroup>-->
 
 </Project>

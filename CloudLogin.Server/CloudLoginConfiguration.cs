@@ -3,6 +3,7 @@
 public class CloudLoginConfiguration
 {
 	public List<ProviderConfiguration> Providers { get; set; } = new();
+	public int CookieTime { get; set; } = new();
 	public List<Link> FooterLinks { get; set; } = new();
 	public string? RedirectUri { get; set; }
 	public CosmosDatabase? Cosmos { get; set; }

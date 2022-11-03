@@ -181,7 +181,8 @@ public static class MvcServiceCollectionExtensions
                         JsonConvert.SerializeObject(user), new CookieOptions()
                         {
                             HttpOnly = true,
-                            Secure = true
+                            Secure = true,
+                            Expires = DateTimeOffset.UtcNow.AddYears(1)//CHANGE
                         });
                 }
             };

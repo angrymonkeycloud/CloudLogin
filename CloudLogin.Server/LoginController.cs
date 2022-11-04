@@ -12,6 +12,7 @@ using AuthenticationProperties = Microsoft.AspNetCore.Authentication.Authenticat
 using Microsoft.Azure.Cosmos.Linq;
 using System.Configuration;
 using System.Net;
+using Azure.Core;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {
@@ -19,8 +20,9 @@ namespace AngryMonkey.Cloud.Login.Controllers
     [ApiController]
     public class LoginController : BaseController
     {
+        AuthenticationProperties globalProperties { get; set; }
         [HttpGet("GetClient")]
-        public async Task<CloudLoginClient> getClient()
+        public Task<CloudLoginClient> getClient()
         {
             CloudLoginClient client = new()
             {
@@ -40,29 +42,32 @@ namespace AngryMonkey.Cloud.Login.Controllers
                 Title = "Info"
             });
 
-            return client;
+            return Task.FromResult(client);
         }
 
         [HttpGet("Login/{identity}")]
         public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn)
         {
-            AuthenticationProperties properties = new()
+            globalProperties = new()
             {
-                RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}",
-                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
+                RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}" +
+                $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}",
+                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
                 IsPersistent = keepMeSignedIn,
             };
 
-            properties.SetParameter("login_hint", input);
+            globalProperties.SetParameter("login_hint", input);
 
-            return identity.Trim().ToLower() switch
+            ChallengeResult result = identity.Trim().ToLower() switch
             {
-                "microsoft" => Challenge(properties, MicrosoftAccountDefaults.AuthenticationScheme),
-                "google" => Challenge(properties, GoogleDefaults.AuthenticationScheme),
-                "facebook" => Challenge(properties, FacebookDefaults.AuthenticationScheme),
-                "twitter" => Challenge(properties, TwitterDefaults.AuthenticationScheme),
+                "microsoft" => Challenge(globalProperties, MicrosoftAccountDefaults.AuthenticationScheme),
+                "google" => Challenge(globalProperties, GoogleDefaults.AuthenticationScheme),
+                "facebook" => Challenge(globalProperties, FacebookDefaults.AuthenticationScheme),
+                "twitter" => Challenge(globalProperties, TwitterDefaults.AuthenticationScheme),
                 _ => null,
             };
+
+            return result;
         }
 
         [HttpGet("Login/CustomLogin")]
@@ -72,7 +77,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
             AuthenticationProperties properties = new()
             {
-                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(3) : null,
+                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
                 IsPersistent = keepMeSignedIn
             };
 
@@ -114,11 +119,16 @@ namespace AngryMonkey.Cloud.Login.Controllers
         }
 
         [HttpGet("Result")]
-        public async Task<ActionResult<string>> LoginResult(string redirectUri)
+        public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent = "False")
         {
             CloudUser user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
 
-            AuthenticationProperties properties = new();
+
+
+            AuthenticationProperties newProperties = new();
+            newProperties.IsPersistent =  ispersistent == "True" ? true: false;
+            newProperties.ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null;
+
             string firstName = user.FirstName;
             string lastName = user.LastName;
             string displayName = user.DisplayName;
@@ -148,7 +158,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
-            await HttpContext.SignInAsync(claimsPrincipal, properties);
+            await HttpContext.SignInAsync(claimsPrincipal, newProperties);
 
             return Redirect(redirectUri);
         }

@@ -19,11 +19,11 @@ namespace AngryMonkey.Cloud.Login
 {
 	public class CloudLoginClient
 	{
-		public HttpClient HttpServer { get; set; }
+		public HttpClient? HttpServer { get; set; }
 		public string? RedirectUrl { get; set; }
-		public List<Link> FooterLinks { get; set; }
+		public List<Link>? FooterLinks { get; set; }
 		public bool UsingDatabase { get; set; } = false;
-		private CloudGeographyClient _cloudGepgraphy;
+		private CloudGeographyClient? _cloudGepgraphy;
 
 		public List<ProviderDefinition> Providers { get; set; }
 

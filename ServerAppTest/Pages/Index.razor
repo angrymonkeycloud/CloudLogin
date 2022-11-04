@@ -1,14 +1,13 @@
 ﻿@page "/"
 @using Newtonsoft.Json
 @inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
-@inject NavigationManager navigate
 @inject IHttpContextAccessor HttpContextAccessor
 
 <HeadContent>
     <CloudBundle Source="css/index.css" />
 </HeadContent>
 
-@if (!isAuthenticated)
+@if (!IsAuthorized)
 {
     <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
 }
@@ -23,14 +22,14 @@ else
             <div class="amc-authorized-info">
                 <div class="amc-authorized-info-event">Login is succesful</div>
                 <div class="amc-authorized-info-inside">
-                    <b>Display Name:</b> @user.DisplayName
+                    <b>Display Name:</b> @CurrentUser.DisplayName
                 </div>
                 <div class="amc-authorized-info-inside">
-                    <b>ID:</b> @user.ID
+                    <b>ID:</b> @CurrentUser.ID
                 </div>
 
                 <div class="amc-authorized-info-inside">
-                    <b>Primary input Input:</b> @user.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input
+                    <b>Primary input Input:</b> @CurrentUser.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input
                 </div>
 
                 <div class="amc-authorized-info-nav">

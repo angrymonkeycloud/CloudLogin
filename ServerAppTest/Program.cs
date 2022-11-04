@@ -20,7 +20,7 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-
+    LoginDuration =  new TimeSpan(5 * 30, 0, 0, 0),
     //Cosmos = new CosmosDatabase()
     //{
     //    ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
@@ -135,7 +135,6 @@ if (!app.Environment.IsDevelopment())
 	app.UseHsts();
 }
 
-app.UseCloudLogin();
 
 app.UseHttpsRedirection();
 
@@ -143,6 +142,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseCloudLogin();
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -100,7 +100,8 @@ CloudLoginConfiguration cloudLoginConfig = new()
             Template = builder.Configuration["WhatsApp:Template"],
             Language = builder.Configuration["WhatsApp:Language"]
         }
-    }
+    },
+    RedirectUri = "test"
 };
 
 builder.Services.AddCloudLoginServer(cloudLoginConfig);
@@ -127,7 +128,6 @@ else
     app.UseHsts();
 }
 
-app.UseCloudLogin();
 
 app.UseHttpsRedirection();
 
@@ -136,6 +136,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseCloudLogin();
 app.UseAuthentication();
 app.UseAuthorization();
 

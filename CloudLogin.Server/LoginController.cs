@@ -20,7 +20,6 @@ namespace AngryMonkey.Cloud.Login.Controllers
     [ApiController]
     public class LoginController : BaseController
     {
-        AuthenticationProperties globalProperties { get; set; }
         [HttpGet("GetClient")]
         public Task<CloudLoginClient> getClient()
         {
@@ -48,7 +47,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
         [HttpGet("Login/{identity}")]
         public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn)
         {
-            globalProperties = new()
+			AuthenticationProperties globalProperties = new()
             {
                 RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}" +
                 $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}",
@@ -58,7 +57,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
             globalProperties.SetParameter("login_hint", input);
 
-            ChallengeResult result = identity.Trim().ToLower() switch
+			return identity.Trim().ToLower() switch
             {
                 "microsoft" => Challenge(globalProperties, MicrosoftAccountDefaults.AuthenticationScheme),
                 "google" => Challenge(globalProperties, GoogleDefaults.AuthenticationScheme),
@@ -66,8 +65,6 @@ namespace AngryMonkey.Cloud.Login.Controllers
                 "twitter" => Challenge(globalProperties, TwitterDefaults.AuthenticationScheme),
                 _ => null,
             };
-
-            return result;
         }
 
         [HttpGet("Login/CustomLogin")]
@@ -121,17 +118,20 @@ namespace AngryMonkey.Cloud.Login.Controllers
         [HttpGet("Result")]
         public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent = "False")
         {
-            CloudUser user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
+            CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
 
+            if (user == null)
+				return Redirect(redirectUri);
 
-
-            AuthenticationProperties newProperties = new();
-            newProperties.IsPersistent =  ispersistent == "True" ? true: false;
-            newProperties.ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null;
+			AuthenticationProperties newProperties = new()
+            {
+                IsPersistent = ispersistent == "True",
+                ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null
+            };
 
             string firstName = user.FirstName;
             string lastName = user.LastName;
-            string displayName = user.DisplayName;
+            string? displayName = user.DisplayName;
 
             if (Configuration.Cosmos == null)
             {
@@ -149,10 +149,9 @@ namespace AngryMonkey.Cloud.Login.Controllers
                 new Claim(ClaimTypes.Hash, "Cloud Login")
 
             }, ".");
+
             if (user.EmailAddresses.FirstOrDefault() == null)
-            {
                 claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
-            }
             else
                 claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
 
@@ -167,6 +166,8 @@ namespace AngryMonkey.Cloud.Login.Controllers
         public async Task<ActionResult> Logout()
         {
             await HttpContext.SignOutAsync();
+
+            Response.Cookies.Delete("CloudUser");
 
             return Redirect("/");
         }

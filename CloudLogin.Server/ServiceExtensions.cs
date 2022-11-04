@@ -182,7 +182,7 @@ public static class MvcServiceCollectionExtensions
                         {
                             HttpOnly = true,
                             Secure = true,
-                            Expires = DateTimeOffset.UtcNow.AddYears(1)//CHANGE
+                            Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
                         });
                 }
             };

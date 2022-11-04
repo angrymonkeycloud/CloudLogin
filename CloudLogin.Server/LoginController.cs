@@ -51,9 +51,8 @@ namespace AngryMonkey.Cloud.Login.Controllers
             globalProperties = new()
             {
                 RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}" +
-                $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}&time=" +
-                $"{HttpUtility.UrlEncode(Configuration.CookieTime.ToString())}",
-                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(Configuration.CookieTime) : null,
+                $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}",
+                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
                 IsPersistent = keepMeSignedIn,
             };
 
@@ -78,7 +77,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
             AuthenticationProperties properties = new()
             {
-                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(Configuration.CookieTime) : null,
+                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
                 IsPersistent = keepMeSignedIn
             };
 
@@ -120,15 +119,15 @@ namespace AngryMonkey.Cloud.Login.Controllers
         }
 
         [HttpGet("Result")]
-        public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent = "False", string time = null)
+        public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent = "False")
         {
-            var test = HttpContext.Request.Cookies["CloudLogin"];
-
             CloudUser user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
+
+
 
             AuthenticationProperties newProperties = new();
             newProperties.IsPersistent =  ispersistent == "True" ? true: false;
-            newProperties.ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.AddMonths(Configuration.CookieTime) : null;
+            newProperties.ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null;
 
             string firstName = user.FirstName;
             string lastName = user.LastName;

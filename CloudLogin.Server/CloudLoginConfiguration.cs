@@ -1,9 +1,11 @@
-﻿namespace AngryMonkey.Cloud.Login.DataContract;
+﻿using Microsoft.VisualBasic;
+
+namespace AngryMonkey.Cloud.Login.DataContract;
 
 public class CloudLoginConfiguration
 {
 	public List<ProviderConfiguration> Providers { get; set; } = new();
-	public int CookieTime { get; set; } = new();
+	public TimeSpan LoginDuration { get; set; } = new TimeSpan(6*30, 0,0,0); //10 months
 	public List<Link> FooterLinks { get; set; } = new();
 	public string? RedirectUri { get; set; }
 	public CosmosDatabase? Cosmos { get; set; }

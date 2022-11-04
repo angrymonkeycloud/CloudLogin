@@ -20,7 +20,7 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-    CookieTime = 12,
+    LoginDuration =  new TimeSpan(5 * 30, 0, 0, 0),
     //Cosmos = new CosmosDatabase()
     //{
     //    ConnectionString = builder.Configuration["Cosmos:ConnectionString"],

@@ -35,12 +35,6 @@ namespace AngryMonkey.Cloud.Login.Controllers
                 RedirectUrl = Configuration.RedirectUri
             };
 
-            client.FooterLinks.Add(new Link()
-            {
-                Url = "https://angrymonkeycloud.com/",
-                Title = "Info"
-            });
-
             return Task.FromResult(client);
         }
 

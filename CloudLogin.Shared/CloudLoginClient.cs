@@ -95,6 +95,14 @@ namespace AngryMonkey.Cloud.Login
 			await HttpServer.DeleteAsync($"CloudLogin/User/Delete?userId={userId}");
 		}
 
+		public async Task<List<CloudUser>?> GetUsersByDisplayName(string DisplayName)
+		{
+            HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUsersByDisplayName?displayname={HttpUtility.UrlEncode(DisplayName)}");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return null;
+            return await message.Content.ReadFromJsonAsync<List<CloudUser>?>();
+        }
 		public async Task<CloudUser?> GetUserById(Guid userId)
 		{
 			try

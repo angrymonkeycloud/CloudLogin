@@ -21,12 +21,12 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 CloudLoginConfiguration cloudLoginConfig = new()
 {
 
-    //Cosmos = new CosmosDatabase()
-    //{
-    //    ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
-    //    DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
-    //    ContainerId = builder.Configuration["Cosmos:ContainerId"]
-    //},
+    Cosmos = new CosmosDatabase()
+    {
+        ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
+        DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
+        ContainerId = builder.Configuration["Cosmos:ContainerId"]
+    },
     FooterLinks = new List<Link>()
     {
         new Link()
@@ -100,8 +100,7 @@ CloudLoginConfiguration cloudLoginConfig = new()
             Template = builder.Configuration["WhatsApp:Template"],
             Language = builder.Configuration["WhatsApp:Language"]
         }
-    },
-    RedirectUri = "test"
+    }
 };
 
 builder.Services.AddCloudLoginServer(cloudLoginConfig);

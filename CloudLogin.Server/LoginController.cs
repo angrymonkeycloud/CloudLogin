@@ -41,7 +41,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
         [HttpGet("Login/{identity}")]
         public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn)
         {
-			AuthenticationProperties globalProperties = new()
+            AuthenticationProperties globalProperties = new()
             {
                 RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}" +
                 $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}",
@@ -51,7 +51,7 @@ namespace AngryMonkey.Cloud.Login.Controllers
 
             globalProperties.SetParameter("login_hint", input);
 
-			return identity.Trim().ToLower() switch
+            return identity.Trim().ToLower() switch
             {
                 "microsoft" => Challenge(globalProperties, MicrosoftAccountDefaults.AuthenticationScheme),
                 "google" => Challenge(globalProperties, GoogleDefaults.AuthenticationScheme),
@@ -62,14 +62,15 @@ namespace AngryMonkey.Cloud.Login.Controllers
         }
 
         [HttpGet("Login/CustomLogin")]
-        public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri)
+        public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "")
         {
             Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
 
             AuthenticationProperties properties = new()
             {
                 ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
-                IsPersistent = keepMeSignedIn
+                IsPersistent = keepMeSignedIn,
+                RedirectUri = redirectUri
             };
 
             string firstName = userDictionary["FirstName"];
@@ -106,18 +107,18 @@ namespace AngryMonkey.Cloud.Login.Controllers
             await HttpContext.SignInAsync(claimsPrincipal, properties);
 
 
-            return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}");
+            return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}&ispersistent={keepMeSignedIn}");
         }
 
         [HttpGet("Result")]
-        public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent = "False")
+        public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent)
         {
             CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
 
             if (user == null)
-				return Redirect(redirectUri);
+                return Redirect(redirectUri);
 
-			AuthenticationProperties newProperties = new()
+            AuthenticationProperties newProperties = new()
             {
                 IsPersistent = ispersistent == "True",
                 ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null
@@ -131,6 +132,13 @@ namespace AngryMonkey.Cloud.Login.Controllers
             {
                 firstName ??= "Guest";
                 lastName ??= "User";
+                user = new()
+                {
+                    DisplayName = $"{firstName} {lastName}",
+                    FirstName = firstName,
+                    LastName = lastName,
+                    ID = Guid.NewGuid()
+                };
             }
 
             displayName ??= $"{firstName} {lastName}";
@@ -145,9 +153,17 @@ namespace AngryMonkey.Cloud.Login.Controllers
             }, ".");
 
             if (user.EmailAddresses.FirstOrDefault() == null)
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+                if (user.PhoneNumbers.FirstOrDefault() != null)
+                    claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+                else
+                    claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, displayName));
+
             else
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+                if (user.EmailAddresses.FirstOrDefault() != null)
+                    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+                else
+                    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, displayName));
+
 
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 

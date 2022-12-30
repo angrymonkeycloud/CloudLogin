@@ -22,6 +22,20 @@ namespace AngryMonkey.Cloud.Login.Controllers
     [ApiController]
     public class UserController : BaseController
     {
+        [HttpGet("GetUsers")]
+        public async Task<ActionResult<List<CloudUser>>> GetUsers()
+        {
+            try
+            {
+                List<CloudUser> user = await CosmosMethods.GetUsers();
+                return Ok(user);
+            }
+            catch
+            {
+                return Problem();
+            }
+        }
+
         [HttpGet("GetUsersByDisplayName")]
         public async Task<ActionResult<List<CloudUser>>> GetUserByDisplayName(string displayname)
         {

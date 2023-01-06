@@ -18,6 +18,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerClientDemo.Server", "BlazorApp4\Server\ServerClientDemo.Server.csproj", "{2A81FE53-3E84-4C70-9B37-EF747B5559C0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerClientDemo.Client", "BlazorApp4\Client\ServerClientDemo.Client.csproj", "{9C48D24A-D39E-4A3B-A07A-87EFB834D6EC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{47D44D52-166D-4F08-867C-DA8F6923ECF3} = {47D44D52-166D-4F08-867C-DA8F6923ECF3}
+		{E06EE8B5-5252-42F9-B24B-4023FDC9E3E7} = {E06EE8B5-5252-42F9-B24B-4023FDC9E3E7}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerClientDemo.Shared", "BlazorApp4\Shared\ServerClientDemo.Shared.csproj", "{E06EE8B5-5252-42F9-B24B-4023FDC9E3E7}"
 EndProject

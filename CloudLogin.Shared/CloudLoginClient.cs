@@ -183,6 +183,10 @@ namespace AngryMonkey.Cloud.Login
 			return InputFormat.Other;
 		}
 
+		public async Task<CloudUser?> GetUserByDisplayName(string input)
+		{
+			return await GetUserByDisplayName(input);
+		}
 		public async Task<CloudUser?> GetUserByInput(string input) => GetInputFormat(input) switch
 		{
 			InputFormat.EmailAddress => await GetUserByEmailAddress(input),

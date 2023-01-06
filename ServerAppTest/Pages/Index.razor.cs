@@ -30,6 +30,7 @@ namespace ServerAppTest.Pages
 
         CloudUser CurrentUser { get; set; } = new();
         bool IsAuthorized { get; set; } = false;
+
         protected override async Task OnInitializedAsync()
 		{
             //cloudLogin.InitFromServer();test

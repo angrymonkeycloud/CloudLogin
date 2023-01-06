@@ -107,10 +107,7 @@ namespace AngryMonkey.Cloud.Login
 
         public async Task<List<CloudUser>> GetUsersByDisplayName(string displayName)
         {
-            while (displayName.Contains("  "))
-                displayName = displayName.Replace("  ", " ");
-
-            IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser").Where(key => key.DisplayName.Trim().Equals(displayName.Trim(), StringComparison.OrdinalIgnoreCase));
+            IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser").Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
 
             var users = await ToListAsync(usersQueryable);
 

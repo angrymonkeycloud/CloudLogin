@@ -11,6 +11,10 @@ namespace ServerClientDemo.Client.Pages
         public CloudUser CurrentUser { get; set; } = new();
         public bool IsAuthorized { get; set; } = false;
         private async Task DeleteButton() => await cloudLogin.DeleteUser(CurrentUser.ID);
+        private async Task CheckUsername()
+        {
+            await cloudLogin.GetUsersByDisplayName("rami gerges");
+        }
 
         protected override async Task OnInitializedAsync()
         {

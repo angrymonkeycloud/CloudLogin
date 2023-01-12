@@ -128,6 +128,20 @@ namespace AngryMonkey.Cloud.Login
             return await ToListAsync(usersQueryable);
         }
 
+        public async Task AddPhoneNumber(Guid userId, string number, string numberCountryCode, string numberCallingCode)
+        {
+            CloudUser user = await GetUserById(userId);
+
+            user.PhoneNumbers.Add(new LoginInput()
+            {
+                Input = number,
+                Format = InputFormat.PhoneNumber,
+                PhoneNumberCountryCode = numberCountryCode,
+                PhoneNumberCallingCode = numberCallingCode
+            });
+
+            await Container.UpsertItemAsync(user);
+        }
         public async Task DeleteUser(Guid userId)
         {
             CloudUser user = new() { ID = userId };

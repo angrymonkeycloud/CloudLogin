@@ -15,6 +15,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 using Microsoft.Azure.Cosmos.Linq;
+using Microsoft.Azure.Cosmos;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {

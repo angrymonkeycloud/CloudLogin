@@ -93,9 +93,13 @@ namespace AngryMonkey.Cloud.Login
 		public async Task DeleteUser(Guid userId)
 		{
 			await HttpServer.DeleteAsync($"CloudLogin/User/Delete?userId={userId}");
-		}
+        }
+        public async Task AddPhoneNumber(Guid userId, string number, string numberCountryCode, string numberCallingCode)
+        {
+            await HttpServer.PostAsync($"CloudLogin/User/AddPhoneNumber?userId={userId}&number={number}&numberCountryCode={numberCountryCode}&numberCallingCode={numberCallingCode}", null);
+        }
 
-		public async Task<List<CloudUser>?> GetUsersByDisplayName(string DisplayName)
+        public async Task<List<CloudUser>?> GetUsersByDisplayName(string DisplayName)
 		{
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUsersByDisplayName?displayname={HttpUtility.UrlEncode(DisplayName)}");
 

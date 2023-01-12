@@ -173,6 +173,20 @@ namespace AngryMonkey.Cloud.Login.Controllers
             }
         }
 
+        [HttpPost("AddPhoneNumber")]
+        public async Task<ActionResult> AddPhoneNumber(Guid userId, string number, string numberCountryCode, string numberCallingCode)
+        {
+            try
+            {
+                await CosmosMethods.AddPhoneNumber(userId, number, numberCountryCode, numberCallingCode);
+                return Ok();
+            }
+            catch
+            {
+                return Problem();
+            }
+        }
+
         [HttpDelete("Delete")]
         public async Task<ActionResult> Delete(Guid userId)
         {

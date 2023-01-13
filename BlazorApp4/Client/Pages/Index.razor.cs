@@ -21,5 +21,13 @@ namespace ServerClientDemo.Client.Pages
             IsAuthorized = await cloudLogin.IsAuthenticated();
             CurrentUser = await cloudLogin.CurrentUser();
         }
+        private string? ImportedPhoneNumber { get; set; }
+        private string? ImportedCountryCode { get; set; }
+        private string? ImportedCallingCode { get; set; }
+
+        private async Task ImportNumber()
+        {
+            cloudLogin.AddPhoneNumber(CurrentUser.ID, ImportedPhoneNumber, ImportedCountryCode, ImportedCallingCode);
+        }
     }
 }

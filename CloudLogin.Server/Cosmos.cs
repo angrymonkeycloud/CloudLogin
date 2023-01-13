@@ -132,12 +132,12 @@ namespace AngryMonkey.Cloud.Login
         {
             CloudUser user = await GetUserById(userId);
 
-            user.PhoneNumbers.Add(new LoginInput()
+            user.Inputs.Add(new LoginInput()
             {
-                Input = number,
+                Input = number.Trim(),
                 Format = InputFormat.PhoneNumber,
-                PhoneNumberCountryCode = numberCountryCode,
-                PhoneNumberCallingCode = numberCallingCode
+                PhoneNumberCountryCode = numberCountryCode.Trim(),
+                PhoneNumberCallingCode = numberCallingCode.Trim()
             });
 
             await Container.UpsertItemAsync(user);

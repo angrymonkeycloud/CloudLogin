@@ -173,12 +173,12 @@ namespace AngryMonkey.Cloud.Login.Controllers
             }
         }
 
-        [HttpPost("AddPhoneNumber")]
-        public async Task<ActionResult> AddPhoneNumber(Guid userId, string number, string numberCountryCode, string numberCallingCode)
+        [HttpPost("AddInput")]
+        public async Task<ActionResult> AddInput(Guid userId,[FromBody] LoginInput Input)
         {
             try
             {
-                await CosmosMethods.AddPhoneNumber(userId, number, numberCountryCode, numberCallingCode);
+                await CosmosMethods.AddInput(userId, Input);
                 return Ok();
             }
             catch

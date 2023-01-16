@@ -128,17 +128,11 @@ namespace AngryMonkey.Cloud.Login
             return await ToListAsync(usersQueryable);
         }
 
-        public async Task AddPhoneNumber(Guid userId, string number, string numberCountryCode, string numberCallingCode)
+        public async Task AddInput(Guid userId, LoginInput Input)
         {
             CloudUser user = await GetUserById(userId);
 
-            user.Inputs.Add(new LoginInput()
-            {
-                Input = number.Trim(),
-                Format = InputFormat.PhoneNumber,
-                PhoneNumberCountryCode = numberCountryCode.Trim(),
-                PhoneNumberCallingCode = numberCallingCode.Trim()
-            });
+            user.Inputs.Add(Input);
 
             await Container.UpsertItemAsync(user);
         }

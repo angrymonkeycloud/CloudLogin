@@ -34,8 +34,6 @@ else
                 </div>
                 <div>
                     <input autocomplete="off" type="text" name="phonenumber" class="--input" placeholder="Phone Number ex. +1234 567 8910" @bind-value="ImportedPhoneNumber" @bind-value:event="oninput" />
-                    <input autocomplete="off" type="text" name="phonenumber" class="--input" placeholder="Country Code ex. US" @bind-value="ImportedCountryCode" @bind-value:event="oninput" />
-                    <input autocomplete="off" type="text" name="phonenumber" class="--input" placeholder="Calling Code ex. +1934" @bind-value="ImportedCallingCode" @bind-value:event="oninput" />
                         <button @onclick="ImportNumber" class="--button _primary">Import Twilio number</button>
                 </div>
 

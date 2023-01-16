@@ -2,7 +2,8 @@ using AngryMonkey.Cloud.Login.DataContract;
 using Newtonsoft.Json;
 using AngryMonkey.Cloud.Login;
 using Microsoft.AspNetCore.Components;
-
+using AngryMonkey.Cloud;
+using AngryMonkey.Cloud.Geography;
 
 namespace ServerClientDemo.Client.Pages
 {
@@ -22,12 +23,33 @@ namespace ServerClientDemo.Client.Pages
             CurrentUser = await cloudLogin.CurrentUser();
         }
         private string? ImportedPhoneNumber { get; set; }
-        private string? ImportedCountryCode { get; set; }
-        private string? ImportedCallingCode { get; set; }
 
         private async Task ImportNumber()
         {
-            cloudLogin.AddPhoneNumber(CurrentUser.ID, ImportedPhoneNumber, ImportedCountryCode, ImportedCallingCode);
+            if (CurrentUser == null)
+                return;
+            if (ImportedPhoneNumber == null)
+                return;
+
+            CloudGeographyClient geographyClient = new();
+            PhoneNumber numberSplitted = geographyClient.PhoneNumbers.Get(ImportedPhoneNumber);
+
+            LoginInput Input = new LoginInput()
+            {
+                Input = numberSplitted.Number.Trim(),
+                Format = InputFormat.PhoneNumber,
+                PhoneNumberCountryCode = numberSplitted.CountryCode.Trim(),
+                PhoneNumberCallingCode = numberSplitted.CountryCallingCode.Trim(),
+                Providers = new()
+                {
+                    new LoginProvider()
+                    {
+                        Code = "Coverbox"
+                    }
+                }
+            };
+
+            await cloudLogin.AddInput(CurrentUser.ID, Input);
         }
     }
 }

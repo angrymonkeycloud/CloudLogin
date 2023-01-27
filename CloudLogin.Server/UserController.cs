@@ -15,6 +15,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 using Microsoft.Azure.Cosmos.Linq;
+using Microsoft.Azure.Cosmos;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {
@@ -22,6 +23,33 @@ namespace AngryMonkey.Cloud.Login.Controllers
     [ApiController]
     public class UserController : BaseController
     {
+        [HttpGet("GetUsers")]
+        public async Task<ActionResult<List<CloudUser>>> GetUsers()
+        {
+            try
+            {
+                List<CloudUser> user = await CosmosMethods.GetUsers();
+                return Ok(user);
+            }
+            catch
+            {
+                return Problem();
+            }
+        }
+
+        [HttpGet("GetUsersByDisplayName")]
+        public async Task<ActionResult<List<CloudUser>>> GetUserByDisplayName(string displayname)
+        {
+            try
+            {
+                List<CloudUser> user = await CosmosMethods.GetUsersByDisplayName(displayname);
+                return Ok(user);
+            }
+            catch
+            {
+                return Problem();
+            }
+        }
         [HttpGet("GetById")]
         public async Task<ActionResult<CloudUser>> GetById(Guid id)
         {
@@ -137,6 +165,20 @@ namespace AngryMonkey.Cloud.Login.Controllers
             try
             {
                 await CosmosMethods.Container.CreateItemAsync(user);
+                return Ok();
+            }
+            catch
+            {
+                return Problem();
+            }
+        }
+
+        [HttpPost("AddInput")]
+        public async Task<ActionResult> AddInput(Guid userId,[FromBody] LoginInput Input)
+        {
+            try
+            {
+                await CosmosMethods.AddInput(userId, Input);
                 return Ok();
             }
             catch

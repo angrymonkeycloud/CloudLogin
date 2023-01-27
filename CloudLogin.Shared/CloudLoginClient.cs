@@ -93,8 +93,23 @@ namespace AngryMonkey.Cloud.Login
 		public async Task DeleteUser(Guid userId)
 		{
 			await HttpServer.DeleteAsync($"CloudLogin/User/Delete?userId={userId}");
-		}
+        }
+        public async Task AddInput(Guid userId, LoginInput Input)
+        {
 
+            HttpContent content = JsonContent.Create(Input);
+
+            await HttpServer.PostAsync($"CloudLogin/User/AddInput?userId={userId}", content);
+        }
+
+        public async Task<List<CloudUser>?> GetUsersByDisplayName(string DisplayName)
+		{
+            HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUsersByDisplayName?displayname={HttpUtility.UrlEncode(DisplayName)}");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return null;
+            return await message.Content.ReadFromJsonAsync<List<CloudUser>?>();
+        }
 		public async Task<CloudUser?> GetUserById(Guid userId)
 		{
 			try
@@ -175,6 +190,10 @@ namespace AngryMonkey.Cloud.Login
 			return InputFormat.Other;
 		}
 
+		public async Task<CloudUser?> GetUserByDisplayName(string input)
+		{
+			return await GetUserByDisplayName(input);
+		}
 		public async Task<CloudUser?> GetUserByInput(string input) => GetInputFormat(input) switch
 		{
 			InputFormat.EmailAddress => await GetUserByEmailAddress(input),

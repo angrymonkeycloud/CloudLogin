@@ -32,7 +32,14 @@ else
                 <div class="amc-authorized-info-inside">
                     <b>Primary input Input:</b> @CurrentUser.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input
                 </div>
+                <div>
+                    <input autocomplete="off" type="text" name="phonenumber" class="--input" placeholder="Phone Number ex. +1234 567 8910" @bind-value="ImportedPhoneNumber" @bind-value:event="oninput" />
+                        <button @onclick="ImportNumber" class="--button _primary">Import Twilio number</button>
+                </div>
 
+                <div>
+                    <a @onclick="CheckUsername" class="--button">Check</a>
+                </div>
                 <div class="amc-authorized-info-nav">
                     <a href="./cloudlogin/logout" class="--button">Logout</a>
                     <a href="./cloudlogin/logout" @onclick="DeleteButton" class="--button">Delete</a>

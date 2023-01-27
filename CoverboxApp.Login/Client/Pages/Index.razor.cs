@@ -16,7 +16,10 @@ public partial class Index
         CurrentUser = await cloudLogin.CurrentUser();
 
         if (IsAuthorized)
+        {
+            Guid requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
             if (CurrentUser != null)
-                nav.NavigateTo($"https://localhost:7020/login?CurrentUser={CurrentUser.ID}");
+                nav.NavigateTo($"https://localhost:7020/login?requestID={requestID}");
+        }
     }
 }

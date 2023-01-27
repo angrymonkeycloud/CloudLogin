@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerClientDemo.Client", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerClientDemo.Shared", "BlazorApp4\Shared\ServerClientDemo.Shared.csproj", "{E06EE8B5-5252-42F9-B24B-4023FDC9E3E7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CoverboxApp", "CoverboxApp", "{4D59EC91-C6EB-47E7-99A6-D4445488CE88}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LoginRequestDemo", "LoginRequestDemo", "{4D59EC91-C6EB-47E7-99A6-D4445488CE88}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoverboxApp.Login.Server", "CoverboxApp.Login\Server\CoverboxApp.Login.Server.csproj", "{39428B74-3AD5-4FDD-867B-3C6A4E9D6415}"
 EndProject

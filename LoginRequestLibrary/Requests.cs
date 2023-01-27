@@ -8,8 +8,13 @@ namespace LoginRequestLibrary
     public class Requests
     {
 
-        public HttpClient? HttpServer { get; set; }
+        public HttpClient HttpServer { get; set; }
         public string? RedirectUrl { get; set; }
+
+        public Requests(HttpClient httpServer)
+        {
+            HttpServer = httpServer;
+        }
 
         public async Task<CloudUser?> GetRequestFromDB(Guid requestId)
         {

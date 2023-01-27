@@ -1,12 +1,14 @@
 ﻿using AngryMonkey.Cloud.Login.DataContract;
 using CoverboxApp.Main.Models;
-using CoverboxApp.Main.Security;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.Http;
+using LoginRequestLibrary;
+using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace CoverboxApp.Main.Controllers
 {
@@ -18,28 +20,35 @@ namespace CoverboxApp.Main.Controllers
         public static string PublicKey { get; set; } = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCIjmcG/IMnvFJlUzGqtLpiZHm+nIrGYidkMyLzlor3Lc8uHaJbBNp6JlQGhHK9modpWVKHCBRzM6PH+auwuLRijJv8p2D2fPD8+gvQ4+aMn59eKxIiIbOQvz66VBnJfZCtgJWPpsDMK+KphdEyVbwJvzD9MM9o1GCiZy3IIe+wbQIDAQAB";
         public static UnicodeEncoding Encoder = new ();
 
-        HomeController(HttpClient client)
-        {
-            httpClient = client;
-        }
-
+        [Route("")]
         public IActionResult Index()
         {
 
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+            httpClient = new HttpClient();
+
+            httpClient.BaseAddress = new Uri(baseUri);
+
             ViewData["DomainName"] = httpClient.BaseAddress;
             ViewData["PublicKey"] = httpClient.BaseAddress;
+
             return View();
         }
 
-        public IActionResult Login(string CurrentUser)
+        [Route("login")]
+        public async Task<IActionResult> Login(Guid requestId)
         {
-            Requests request = new();
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+            httpClient = new HttpClient();
 
 
-            CloudUser? user = await  request.GetRequestFromDB(requestId);
+            httpClient.BaseAddress = new Uri(baseUri);
 
+            Requests request = new(httpClient);
 
-            return View(user);
+            CloudUser user = await request.GetRequestFromDB(requestId);
+
+            return View();
         }
 
         public static string Decrypt(string data)

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudLogin.Server\CloudLogin.Server.csproj" />
+    <ProjectReference Include="..\LoginRequestLibrary\LoginRequestLibrary.csproj" />
   </ItemGroup>
 
 </Project>

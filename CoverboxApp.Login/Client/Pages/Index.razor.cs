@@ -17,6 +17,6 @@ public partial class Index
 
         if (IsAuthorized)
             if (CurrentUser != null)
-                nav.NavigateTo($"https://localhost:7020/login?CurrentUser={CurrentUser.ID}");
+                nav.NavigateTo($"http://localhost:5241/login?requestId={CurrentUser.ID}");
     }
 }

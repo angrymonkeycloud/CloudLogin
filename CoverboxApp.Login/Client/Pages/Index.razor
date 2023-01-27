@@ -1,9 +1,14 @@
 ﻿@page "/"
-
+@using Microsoft.AspNetCore.Http
+@using Newtonsoft.Json
+@inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
+@inject NavigationManager nav
+@inject IHttpContextAccessor HttpContextAccessor
 <PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (IsAuthorized == false)
+{
+    <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
+}else{
 
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+}

@@ -1,9 +1,9 @@
 using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.Cloud.Login.Controllers;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using AngryMonkey.Cloud.Login.Controllers;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,18 +28,18 @@ CloudLoginConfiguration cloudLoginConfig = new()
         ContainerId = builder.Configuration["Cosmos:ContainerId"]
     },
     FooterLinks = new List<Link>()
-    {
-        new Link()
         {
-            Title = "Link 1",
-            Url = "#"
+            new Link()
+            {
+                Title = "Link 1",
+                Url = "#"
+            },
+            new Link()
+            {
+                Title = "Link 2",
+                Url = "#"
+            }
         },
-        new Link()
-        {
-            Title = "Link 2",
-            Url = "#"
-        }
-    },
     EmailSendCodeRequest = async (sendCode) =>
     {
         SmtpClient smtpClient = new(builder.Configuration["SMTP:Host"], int.Parse(builder.Configuration["SMTP:Port"]))
@@ -72,35 +72,35 @@ CloudLoginConfiguration cloudLoginConfig = new()
         await smtpClient.SendMailAsync(mailMessage);
     },
     Providers = new List<ProviderConfiguration>()
-    {
-        new MicrosoftProviderConfiguration()
         {
-            ClientId = builder.Configuration["Microsoft:ClientId"],
-            ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
-        },
-        new GoogleProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Google:ClientId"],
-            ClientSecret= builder.Configuration["Google:ClientSecret"]
-        },
-        new FacebookProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Facebook:ClientId"],
-            ClientSecret= builder.Configuration["Facebook:ClientSecret"]
-        },
-        new TwitterProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Twitter:ClientId"],
-            ClientSecret= builder.Configuration["Twitter:ClientSecret"]
-        },
-        new WhatsAppProviderConfiguration()
-        {
-            RequestUri = builder.Configuration["WhatsApp:RequestUri"],
-            Authorization = builder.Configuration["WhatsApp:Authorization"],
-            Template = builder.Configuration["WhatsApp:Template"],
-            Language = builder.Configuration["WhatsApp:Language"]
+            new MicrosoftProviderConfiguration()
+            {
+                ClientId = builder.Configuration["Microsoft:ClientId"],
+                ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
+            },
+            new GoogleProviderConfiguration()
+            {
+                ClientId = builder.Configuration["Google:ClientId"],
+                ClientSecret= builder.Configuration["Google:ClientSecret"]
+            },
+            new FacebookProviderConfiguration()
+            {
+                ClientId = builder.Configuration["Facebook:ClientId"],
+                ClientSecret= builder.Configuration["Facebook:ClientSecret"]
+            },
+            new TwitterProviderConfiguration()
+            {
+                ClientId = builder.Configuration["Twitter:ClientId"],
+                ClientSecret= builder.Configuration["Twitter:ClientSecret"]
+            },
+            new WhatsAppProviderConfiguration()
+            {
+                RequestUri = builder.Configuration["WhatsApp:RequestUri"],
+                Authorization = builder.Configuration["WhatsApp:Authorization"],
+                Template = builder.Configuration["WhatsApp:Template"],
+                Language = builder.Configuration["WhatsApp:Language"]
+            }
         }
-    }
 };
 
 builder.Services.AddCloudLoginServer(cloudLoginConfig);

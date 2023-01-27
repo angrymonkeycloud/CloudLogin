@@ -4,6 +4,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>f5c5b420-1a3a-4435-b2de-1e84aa72058c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
     <ProjectReference Include="..\Client\CoverboxApp.Login.Client.csproj" />
     <ProjectReference Include="..\Shared\CoverboxApp.Login.Shared.csproj" />
   </ItemGroup>

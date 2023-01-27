@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework> 
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -16,9 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Shared\ServerClientDemo.Shared.csproj" />
     <ProjectReference Include="..\..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
     <ProjectReference Include="..\..\CloudLogin\CloudLogin.csproj" />
-    <ProjectReference Include="..\Shared\ServerClientDemo.Shared.csproj" />
   </ItemGroup>
 
 

@@ -15,8 +15,7 @@ namespace CoverboxApp.Main.Controllers
             return View();
         }
 
-        [HttpPost("Login")]
-        public IActionResult Login([FromBody] CloudUser User)
+        public IActionResult Login(string CurrentUser)
         {
             return View();
         }

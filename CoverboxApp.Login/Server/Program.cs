@@ -20,7 +20,8 @@ CloudLoginConfiguration cloudLoginConfig = new()
     {
         ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
         DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
-        ContainerId = builder.Configuration["Cosmos:ContainerId"]
+        ContainerId = builder.Configuration["Cosmos:ContainerId"],
+        RequestContainerId = builder.Configuration["Cosmos:RequestContainerId"],
     },
     FooterLinks = new List<Link>()
     {

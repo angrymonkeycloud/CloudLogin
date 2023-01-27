@@ -214,5 +214,13 @@ namespace AngryMonkey.Cloud.Login
 
 			await HttpServer.PostAsync("CloudLogin/User/Create", content);
 		}
+		public async Task<Guid> CreateUserRequest(Guid userId)
+		{
+			Guid requestId = Guid.NewGuid();
+
+            await HttpServer.PostAsync($"CloudLogin/User/CreateRequest?userID={userId}&requestId={requestId}", null);
+
+            return requestId;
+		}
 	}
 }

@@ -1,21 +1,7 @@
-﻿using System.Web;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Facebook;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
-using Microsoft.AspNetCore.Authentication.Twitter;
 using AngryMonkey.Cloud.Login.DataContract;
-using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using System.Security.Principal;
-using System.Net.Mail;
-using System.Net.Http;
 using System.Net.Http.Headers;
-using Microsoft.Extensions.Options;
-using Microsoft.Azure.Cosmos.Linq;
-using Microsoft.Azure.Cosmos;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {
@@ -251,5 +237,25 @@ namespace AngryMonkey.Cloud.Login.Controllers
 				return Problem();
 			}
 		}
-	}
+
+        [HttpPost("CreateRequest")]
+        public async Task<ActionResult> CreateRequest(Guid userID, Guid requestId)
+        {
+            try
+            {
+                CloudRequest request = new()
+                {
+                    ID = requestId,
+                    userId = userID
+                };
+
+                await CosmosMethods.RequestContainer.CreateItemAsync(request);
+                return Ok();
+            }
+            catch
+            {
+                return Problem();
+            }
+        }
+    }
 }

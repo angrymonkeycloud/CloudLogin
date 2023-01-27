@@ -65,14 +65,17 @@ namespace AngryMonkey.Cloud.Login
 
         #endregion
 
-        public CosmosMethods(string connectionString, string databaseId, string containerId)
+        public CosmosMethods(string connectionString, string databaseId, string requestcontainerId, string containerId)
         {
             CosmosClient client = new(connectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
 
             Container = client.GetContainer(databaseId, containerId);
+
+            RequestContainer = client.GetContainer(databaseId, requestcontainerId);
         }
 
         public Container Container { get; set; }
+        public Container RequestContainer { get; set; }
 
         public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
         {

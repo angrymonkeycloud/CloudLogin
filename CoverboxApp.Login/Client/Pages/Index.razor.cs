@@ -19,5 +19,4 @@ public partial class Index
             if (CurrentUser != null)
                 nav.NavigateTo($"https://localhost:7020/login?CurrentUser={CurrentUser.ID}");
     }
-
 }

@@ -1,12 +1,10 @@
-﻿using AngryMonkey.Cloud.Login.DataContract;
-using CoverboxApp.Main.Models;
-using CoverboxApp.Main.Security;
+﻿using CloudLoginDataContract;
+using LoginRequestLibrary;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
 using System.Text;
+using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace CoverboxApp.Main.Controllers
 {
@@ -18,28 +16,30 @@ namespace CoverboxApp.Main.Controllers
         public static string PublicKey { get; set; } = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCIjmcG/IMnvFJlUzGqtLpiZHm+nIrGYidkMyLzlor3Lc8uHaJbBNp6JlQGhHK9modpWVKHCBRzM6PH+auwuLRijJv8p2D2fPD8+gvQ4+aMn59eKxIiIbOQvz66VBnJfZCtgJWPpsDMK+KphdEyVbwJvzD9MM9o1GCiZy3IIe+wbQIDAQAB";
         public static UnicodeEncoding Encoder = new ();
 
-        HomeController(HttpClient client)
-        {
-            httpClient = client;
-        }
 
+        [Route("")]
         public IActionResult Index()
         {
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+            httpClient = new HttpClient(); 
+            
+            httpClient.BaseAddress = new Uri(baseUri);
 
             ViewData["DomainName"] = httpClient.BaseAddress;
-            ViewData["PublicKey"] = httpClient.BaseAddress;
+            ViewData["PublicKey"] = PublicKey;
             return View();
         }
 
-        public IActionResult Login(string CurrentUser)
+        [Route("login")]
+        public async Task<IActionResult> LoginAsync(Guid requestId)
         {
-            Requests request = new();
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+            httpClient = new HttpClient();
+
+            httpClient.BaseAddress = new Uri(baseUri);
 
 
-            CloudUser? user = await  request.GetRequestFromDB(requestId);
-
-
-            return View(user);
+            return View();
         }
 
         public static string Decrypt(string data)

@@ -1,6 +1,8 @@
 ﻿@namespace AngryMonkey.Cloud.Login
+@using CloudLoginDataContract;
+@using LoginRequestLibrary;
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
-@inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLoginClient
+@inject CloudLoginServerClient cloudLoginClient
 @inject NavigationManager navigationManager
 
 <div class="amc-cloudlogin @CssClass">

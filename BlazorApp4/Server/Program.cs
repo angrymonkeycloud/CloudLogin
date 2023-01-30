@@ -1,5 +1,5 @@
-using AngryMonkey.Cloud.Login.DataContract;
 using AngryMonkey.Cloud.Login.Controllers;
+using CloudLoginDataContract;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net;
 using System.Net.Mail;

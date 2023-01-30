@@ -1,9 +1,9 @@
-using AngryMonkey.Cloud.Login.DataContract;
 using Newtonsoft.Json;
 using AngryMonkey.Cloud.Login;
 using Microsoft.AspNetCore.Components;
 using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
+using CloudLoginDataContract;
 
 namespace ServerClientDemo.Client.Pages
 {
@@ -11,7 +11,7 @@ namespace ServerClientDemo.Client.Pages
     {
         public CloudUser CurrentUser { get; set; } = new();
         public bool IsAuthorized { get; set; } = false;
-        private async Task DeleteButton() => await cloudLogin.DeleteUser(CurrentUser.ID);
+        //private async Task DeleteButton() => await cloudLogin.DeleteUser(CurrentUser.ID);
         private async Task CheckUsername()
         {
             await cloudLogin.GetUsersByDisplayName("rami gerges");
@@ -49,7 +49,7 @@ namespace ServerClientDemo.Client.Pages
                 }
             };
 
-            await cloudLogin.AddInput(CurrentUser.ID, Input);
+            //await cloudLogin.AddInput(CurrentUser.ID, Input);
         }
     }
 }

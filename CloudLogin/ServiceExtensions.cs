@@ -1,6 +1,6 @@
 ﻿using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Login;
-using AngryMonkey.Cloud.Login.DataContract;
+using LoginRequestLibrary;
 using Microsoft.AspNetCore.Components;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -15,7 +15,7 @@ public static class MvcServiceCollectionExtensions
 {
     public static async Task<CloudLoginService> AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
     {
-        CloudLoginClient cloudLoginClient = new()
+        CloudLoginServerClient cloudLoginClient = new()
         {
             HttpServer = httpServer
         };

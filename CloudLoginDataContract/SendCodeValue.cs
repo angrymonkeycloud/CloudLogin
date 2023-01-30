@@ -1,4 +1,4 @@
-﻿namespace AngryMonkey.Cloud.Login.DataContract;
+﻿namespace CloudLoginDataContract;
 
 public class SendCodeValue
 {

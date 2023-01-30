@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using AngryMonkey.Cloud.Login.DataContract;
-using Microsoft.Azure.Cosmos;
-using System.Configuration;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {

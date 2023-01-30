@@ -2,29 +2,12 @@
 using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
 using AngryMonkey.Cloud.Login;
-using AngryMonkey.Cloud.Login.DataContract;
-using Microsoft.AspNetCore.Authentication;
+using AngryMonkey.Cloud.Login.Providers;
+using CloudLoginDataContract;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Net.Mail;
-using System.Reflection;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using static Azure.Core.HttpHeader;
-using CloudUser = AngryMonkey.Cloud.Login.DataContract.CloudUser;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -46,7 +29,7 @@ public static class MvcServiceCollectionExtensions
 
         services.AddSingleton(new CloudLoginServerService());
         services.AddSingleton(configuration);
-        services.AddSingleton(new CloudLoginClient());
+        services.AddSingleton(new CloudLoginServerClient());
 
         CloudGeographyClient cloudGeography = new();
 
@@ -59,7 +42,7 @@ public static class MvcServiceCollectionExtensions
                 {
                     string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
-                    CloudLoginClient cloudLogin = new()
+                    CloudLoginServerClient cloudLogin = new()
                     {
                         HttpServer = new HttpClient() { BaseAddress = new Uri(baseUrl) }
                     };

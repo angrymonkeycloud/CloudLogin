@@ -1,4 +1,4 @@
-﻿namespace AngryMonkey.Cloud.Login.DataContract;
+﻿namespace AngryMonkey.Cloud.Login.Providers;
 
 public class WhatsAppProviderConfiguration : ProviderConfiguration
 {

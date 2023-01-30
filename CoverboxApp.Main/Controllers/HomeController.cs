@@ -2,8 +2,6 @@
 using CoverboxApp.Main.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
 using System.Text;
 using System.Net.Http;

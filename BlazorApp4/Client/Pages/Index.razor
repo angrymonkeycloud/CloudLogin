@@ -1,7 +1,8 @@
 ﻿@page "/"
+@using LoginRequestLibrary;
 @using Microsoft.AspNetCore.Http
 @using Newtonsoft.Json
-@inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
+@inject CloudLoginClient cloudLogin
 @inject IHttpContextAccessor HttpContextAccessor
 
 <HeadContent>

@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
-using AngryMonkey.Cloud.Login.DataContract;
 using System.Net.Http.Headers;
+using CloudLoginDataContract;
+using AngryMonkey.Cloud.Login.Providers;
 
 namespace AngryMonkey.Cloud.Login.Controllers
 {

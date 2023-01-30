@@ -1,23 +1,24 @@
 using AngryMonkey.Cloud.Login;
-using AngryMonkey.Cloud.Login.DataContract;
-using Newtonsoft.Json;
-using System.Net.Http.Json;
+using CloudLoginDataContract;
+using LoginRequestLibrary;
 
 namespace CoverboxApp.Login.Client.Pages;
 public partial class Index
 {
     public CloudUser CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
-    private HttpClient HttpServer { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        IsAuthorized = await cloudLogin.IsAuthenticated();
-        CurrentUser = await cloudLogin.CurrentUser();
+        CloudLoginClient cloudLoginClient = new();
+        cloudLoginClient.HttpServer = cloudLogin.HttpServer;
+
+        IsAuthorized = await cloudLoginClient.IsAuthenticated();
+        CurrentUser = await cloudLoginClient.CurrentUser();
 
         if (IsAuthorized)
         {
-            Guid requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
+            Guid requestID = await cloudLoginClient.CreateUserRequest(CurrentUser.ID);
             if (CurrentUser != null)
                 nav.NavigateTo($"http://localhost:5241/login?requestId={CurrentUser.ID}");
         }

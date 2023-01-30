@@ -1,5 +1,5 @@
 ﻿using AngryMonkey.Cloud.Geography;
-using AngryMonkey.Cloud.Login.DataContract;
+using CloudLoginDataContract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Newtonsoft.Json;

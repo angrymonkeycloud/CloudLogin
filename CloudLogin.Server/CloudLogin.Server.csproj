@@ -40,12 +40,13 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="6.0.9" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="6.0.9" NoWarn="NU1605" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="6.0.9" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.0.5" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="5.0.0" />
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.4.2" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
+    <ProjectReference Include="..\LoginRequestLibrary\CloudLoginLibrary.csproj" />
   </ItemGroup>
 
 

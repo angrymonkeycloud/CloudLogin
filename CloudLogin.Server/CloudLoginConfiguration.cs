@@ -1,6 +1,7 @@
-﻿using Microsoft.VisualBasic;
+﻿using AngryMonkey.Cloud.Login.Providers;
+using CloudLoginDataContract;
 
-namespace AngryMonkey.Cloud.Login.DataContract;
+namespace AngryMonkey.Cloud.Login;
 
 public class CloudLoginConfiguration
 {

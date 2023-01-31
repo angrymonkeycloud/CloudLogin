@@ -17,7 +17,6 @@ builder.Services.AddServerSideBlazor();
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-
     Cosmos = new CosmosDatabase()
     {
         ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
@@ -96,7 +95,12 @@ CloudLoginConfiguration cloudLoginConfig = new()
             RequestUri = builder.Configuration["WhatsApp:RequestUri"],
             Authorization = builder.Configuration["WhatsApp:Authorization"],
             Template = builder.Configuration["WhatsApp:Template"],
-            Language = builder.Configuration["WhatsApp:Language"]
+            Language = builder.Configuration["WhatsApp:Language"],
+            Label = "WhatsApp"
+        },
+        new CustomProviderConfiguration()
+        {
+            Label = "Custom Login"
         }
     }
 };

@@ -104,17 +104,17 @@ public class CosmosMethods
         return users.FirstOrDefault();
     }
 
-    public async Task<CloudUser> GetRequest(Guid requestId, int minutesToExpiry)
+    public async Task<CloudUser?> GetUserByRequestId(Guid requestId, int minutesToExpiry)
     {
         CloudRequest request = new() { ID = requestId };
 
         ItemResponse<CloudRequest> response = await RequestContainer.ReadItemAsync<CloudRequest>(GetCosmosId(request), GetPartitionKey(request));
 
+        await RequestContainer.DeleteItemAsync<CloudRequest>(GetCosmosId(request), GetPartitionKey(request));
+
         CloudRequest selectedRequest = response.Resource;
 
         if (selectedRequest.UserId == null) return null;
-
-        if (DateTime.UtcNow.Subtract(selectedRequest.CreatedOn).TotalMinutes > minutesToExpiry) return null;
 
         return await GetUserById(selectedRequest.UserId.Value);
     }

@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 
 namespace AngryMonkey.Cloud.Login.Controllers;
+
 [Route("Api/Client")]
 [ApiController]
-public class LibraryController : BaseController
+public class ClientApiController : BaseController
 {
     [HttpGet("GetUserById")]
     public async Task<ActionResult<CloudUser>> GetUserById(Guid id)
@@ -19,6 +20,7 @@ public class LibraryController : BaseController
             return Problem();
         }
     }
+
     [HttpGet("GetUsersByDisplayName")]
     public async Task<ActionResult<List<CloudUser>>> GetUsersByDisplayName(string displayname)
     {
@@ -32,6 +34,7 @@ public class LibraryController : BaseController
             return Problem();
         }
     }
+
     [HttpGet("GetUserByRequestId")]
     public async Task<ActionResult> GetUserByRequestId(Guid requestId, int minutesToExpiry)
     {

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using CloudLoginDataContract;
+using AngryMonkey.Cloud.Login.DataContract;
 
 namespace AngryMonkey.Cloud.Login.Controllers;
 [Route("CloudLogin")]
@@ -34,12 +34,19 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Login/{identity}")]
-    public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn)
+    public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn, bool sameSite)
     {
+
+        string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
+        if (sameSite)
+        {
+            redirectUri = redirectUri.Replace($"{baseUrl}/", "");
+        }
+
         AuthenticationProperties globalProperties = new()
         {
             RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}" +
-            $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}",
+            $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}&samesite={HttpUtility.UrlEncode(sameSite.ToString())}",
             ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
             IsPersistent = keepMeSignedIn,
         };
@@ -106,9 +113,16 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Result")]
-    public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent)
+    public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent, string sameSite)
     {
         CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
+
+        string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
+
+        if (sameSite == "True")
+        {
+            redirectUri = $"{baseUrl}/{HttpUtility.UrlEncode(redirectUri)}";
+        }
 
         if (user == null)
             return Redirect(redirectUri);

@@ -1,4 +1,4 @@
-﻿namespace CloudLoginDataContract;
+﻿namespace AngryMonkey.Cloud.Login.DataContract;
 
 public record LoginInput
 {

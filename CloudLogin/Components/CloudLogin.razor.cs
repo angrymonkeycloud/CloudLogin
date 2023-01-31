@@ -1,5 +1,5 @@
 ﻿using AngryMonkey.Cloud.Geography;
-using CloudLoginDataContract;
+using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Newtonsoft.Json;
@@ -484,7 +484,14 @@ namespace AngryMonkey.Cloud.Login
 
         private void ProviderSignInChallenge(string provider)
         {
-            navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUrl}&keepMeSignedIn={KeepMeSignedIn}", true);
+            if(RedirectUrl == navigationManager.Uri)
+            {
+                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUrl}&keepMeSignedIn={KeepMeSignedIn}&samesite=true", true);
+            }
+            else
+            {
+                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUrl}&keepMeSignedIn={KeepMeSignedIn}&samesite=false", true);
+            }
         }
         private void CustomSignInChallenge(CloudUser user)
         {

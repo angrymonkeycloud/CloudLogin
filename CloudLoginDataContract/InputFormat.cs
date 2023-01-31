@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace CloudLoginDataContract;
+namespace AngryMonkey.Cloud.Login.DataContract;
 
 [JsonConverter(typeof(StringEnumConverter))]
 public enum InputFormat

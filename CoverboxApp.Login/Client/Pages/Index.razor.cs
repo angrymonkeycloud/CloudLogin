@@ -1,26 +1,25 @@
 using AngryMonkey.Cloud.Login;
-using CloudLoginDataContract;
+using AngryMonkey.Cloud.Login.DataContract;
 using LoginRequestLibrary;
+using Microsoft.AspNetCore.Components;
 
 namespace CoverboxApp.Login.Client.Pages;
 public partial class Index
 {
+    [Parameter] public string domainName { get;set; }
     public CloudUser CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
-        CloudLoginClient cloudLoginClient = new();
-        cloudLoginClient.HttpServer = cloudLogin.HttpServer;
-
-        IsAuthorized = await cloudLoginClient.IsAuthenticated();
-        CurrentUser = await cloudLoginClient.CurrentUser();
+        IsAuthorized = await cloudLogin.IsAuthenticated();
+        CurrentUser = await cloudLogin.CurrentUser();
 
         if (IsAuthorized)
         {
-            Guid requestID = await cloudLoginClient.CreateUserRequest(CurrentUser.ID);
+            Guid requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
             if (CurrentUser != null)
-                nav.NavigateTo($"http://localhost:5241/login?requestId={CurrentUser.ID}");
+                nav.NavigateTo($"{domainName}/login?requestId={requestID}");
         }
     }
 }

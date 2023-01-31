@@ -18,13 +18,12 @@ using Microsoft.Azure.Cosmos;
 using System.Security.Claims;
 using AngryMonkey.Cloud.Login.DataContract;
 using Newtonsoft.Json;
-using AngryMonkey.Cloud.Login;
 using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ServerAppTest.Pages
 {
-	public partial class Index
+    public partial class Index
 	{
 		private async Task DeleteButton() => Console.WriteLine("DELETE");
 

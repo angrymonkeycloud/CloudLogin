@@ -2,8 +2,8 @@
 using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
 using AngryMonkey.Cloud.Login;
+using AngryMonkey.Cloud.Login.DataContract;
 using AngryMonkey.Cloud.Login.Providers;
-using CloudLoginDataContract;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;

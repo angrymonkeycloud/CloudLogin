@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Components;
-using CloudLoginDataContract;
+using AngryMonkey.Cloud.Login.DataContract;
 
 namespace AngryMonkey.Cloud.Login.Components
 {
-	public partial class ProviderButton
+    public partial class ProviderButton
 	{
 		[Parameter]
 		public ProviderDefinition Provider { get; set; }

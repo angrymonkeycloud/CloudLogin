@@ -1,5 +1,5 @@
 ﻿using AngryMonkey.Cloud.Geography;
-using CloudLoginDataContract;
+using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
@@ -9,9 +9,9 @@ public class CosmosMethods
 {
     #region Internal
 
-    internal IQueryable<T> Queryable<T>(string partitionKey) where T : BaseRecord
+    internal IQueryable<T> Queryable<T>(string partitionKey, Container selectedContainer) where T : BaseRecord
     {
-        return Queryable<T>(partitionKey, null);
+        return Queryable<T>(partitionKey, selectedContainer, null);
     }
 
     internal static PartitionKey GetPartitionKey<T>(string partitionKey)
@@ -22,9 +22,9 @@ public class CosmosMethods
         return new PartitionKey(typeof(T).Name);
     }
 
-    internal IQueryable<T> Queryable<T>(string partitionKey, Expression<Func<T, bool>>? predicate) where T : BaseRecord
+    internal IQueryable<T> Queryable<T>(string partitionKey, Container selectedContainer, Expression<Func<T, bool>>? predicate) where T : BaseRecord
     {
-        var container = Container.GetItemLinqQueryable<T>(requestOptions: new QueryRequestOptions())
+        var container = selectedContainer.GetItemLinqQueryable<T>(requestOptions: new QueryRequestOptions())
                                  .Where(key => key.Discriminator == typeof(T).Name);
 
         if (!string.IsNullOrEmpty(partitionKey))
@@ -75,7 +75,7 @@ public class CosmosMethods
 
     public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
     {
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container, user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
         var users = await ToListAsync(usersQueryable);
 
@@ -93,7 +93,7 @@ public class CosmosMethods
     {
         CloudGeographyClient cloudGeography = new();
 
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", user
+        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container, user
             => user.Inputs.Any(key => key.Format == InputFormat.PhoneNumber &&
             key.Input.Equals(phoneNumber.Number)
                 && (string.IsNullOrEmpty(phoneNumber.CountryCode)
@@ -104,9 +104,24 @@ public class CosmosMethods
         return users.FirstOrDefault();
     }
 
+    public async Task<CloudUser> GetRequest(Guid requestId, int minutesToExpiry)
+    {
+        CloudRequest request = new() { ID = requestId };
+
+        ItemResponse<CloudRequest> response = await RequestContainer.ReadItemAsync<CloudRequest>(GetCosmosId(request), GetPartitionKey(request));
+
+        CloudRequest selectedRequest = response.Resource;
+
+        if (selectedRequest.UserId == null) return null;
+
+        if (DateTime.UtcNow.Subtract(selectedRequest.CreatedOn).TotalMinutes > minutesToExpiry) return null;
+
+        return await GetUserById(selectedRequest.UserId.Value);
+    }
+
     public async Task<List<CloudUser>> GetUsersByDisplayName(string displayName)
     {
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser").Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
 
         var users = await ToListAsync(usersQueryable);
 
@@ -122,7 +137,7 @@ public class CosmosMethods
 
     public async Task<List<CloudUser>> GetUsers()
     {
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser");
+        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container);
 
         return await ToListAsync(usersQueryable);
     }

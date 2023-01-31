@@ -1,16 +1,16 @@
 ﻿using AngryMonkey.Cloud.Login.DataContract;
-using AngryMonkey.Cloud.Login.Models;
+using AngryMonkey.CloudLogin.Models;
 using System.Collections.Generic;
 
-namespace LoginRequestLibrary;
+namespace AngryMonkey.CloudLogin;
+
 public class CloudLoginClientBase
 {
 
-    internal UserInformation? Parse(CloudUser cloudUser)
+    internal UserModel? Parse(CloudUser cloudUser)
     {
-        UserInformation userInformation = new()
+        UserModel userInformation = new()
         {
-            DateOfBirth= cloudUser.DateOfBirth,
             DisplayName= cloudUser.DisplayName,
             FirstName= cloudUser.FirstName,
             IsLocked= cloudUser.IsLocked,
@@ -20,7 +20,7 @@ public class CloudLoginClientBase
         return userInformation;
     }
 
-    internal List<UserInformation>? Parse(List<CloudUser> cloudUsers)
+    internal List<UserModel>? Parse(List<CloudUser> cloudUsers)
     {
         if (cloudUsers == null)
             return null;

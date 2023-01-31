@@ -11,6 +11,7 @@ using AuthenticationProperties = Microsoft.AspNetCore.Authentication.Authenticat
 using AngryMonkey.Cloud.Login.DataContract;
 
 namespace AngryMonkey.Cloud.Login.Controllers;
+
 [Route("CloudLogin")]
 [ApiController]
 public class LoginController : BaseController
@@ -109,7 +110,7 @@ public class LoginController : BaseController
         await HttpContext.SignInAsync(claimsPrincipal, properties);
 
 
-        return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}&ispersistent={keepMeSignedIn}");
+        return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}&ispersistent={keepMeSignedIn}&samesite=true");
     }
 
     [HttpGet("Result")]

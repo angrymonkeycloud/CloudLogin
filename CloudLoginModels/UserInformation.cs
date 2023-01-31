@@ -1,9 +1,9 @@
-﻿namespace AngryMonkey.Cloud.Login.Models;
-public class UserInformation
+﻿namespace AngryMonkey.CloudLogin.Models;
+
+public class UserModel
 {
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string? DisplayName { get; set; }
-    public bool IsLocked { get; set; } = false;
-    public DateOnly? DateOfBirth { get; set; }
+	public string? FirstName { get; set; }
+	public string? LastName { get; set; }
+	public string DisplayName { get; set; }
+	public bool IsLocked { get; set; }
 }

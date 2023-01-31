@@ -1,7 +1,10 @@
+using AngryMonkey.CloudLogin;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton(new CloudLoginClient("https://localhost:7061/"));
 
 var app = builder.Build();
 

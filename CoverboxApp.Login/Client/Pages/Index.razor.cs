@@ -1,6 +1,5 @@
 using AngryMonkey.Cloud.Login;
 using AngryMonkey.Cloud.Login.DataContract;
-using LoginRequestLibrary;
 using Microsoft.AspNetCore.Components;
 
 namespace CoverboxApp.Login.Client.Pages;

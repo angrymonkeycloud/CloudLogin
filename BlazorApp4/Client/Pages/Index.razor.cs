@@ -3,7 +3,6 @@ using AngryMonkey.Cloud.Login;
 using Microsoft.AspNetCore.Components;
 using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
-using CloudLoginDataContract;
 using AngryMonkey.Cloud.Login.DataContract;
 
 namespace ServerClientDemo.Client.Pages
@@ -12,7 +11,7 @@ namespace ServerClientDemo.Client.Pages
     {
         public CloudUser CurrentUser { get; set; } = new();
         public bool IsAuthorized { get; set; } = false;
-        //private async Task DeleteButton() => await cloudLogin.DeleteUser(CurrentUser.ID);
+        private async Task DeleteButton() => await cloudLogin.DeleteUser(CurrentUser.ID);
         private async Task CheckUsername()
         {
             await cloudLogin.GetUsersByDisplayName("rami gerges");
@@ -35,7 +34,7 @@ namespace ServerClientDemo.Client.Pages
             CloudGeographyClient geographyClient = new();
             PhoneNumber numberSplitted = geographyClient.PhoneNumbers.Get(ImportedPhoneNumber);
 
-            LoginInput Input = new LoginInput()
+            LoginInput Input = new()
             {
                 Input = numberSplitted.Number.Trim(),
                 Format = InputFormat.PhoneNumber,

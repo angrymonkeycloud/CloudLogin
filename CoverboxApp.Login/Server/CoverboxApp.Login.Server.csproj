@@ -14,7 +14,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
 		<ProjectReference Include="..\Client\CoverboxApp.Login.Client.csproj" />
-		<ProjectReference Include="..\Shared\CoverboxApp.Login.Shared.csproj" />
 	</ItemGroup>
 
 

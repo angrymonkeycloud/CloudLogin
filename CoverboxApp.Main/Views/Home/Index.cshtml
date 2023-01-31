@@ -1,6 +1,23 @@
-﻿@{
+﻿@model UserModel?
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<a href="~/login">Login Page</a>
+@if (Model == null)
+{
+    <a href="~/login">Login</a>
+}
+else
+{
+    <h1>User Signed In</h1>
+    <div>
+        Display Name: @Model.DisplayName
+        <br />
+        First Name: @Model.FirstName
+        <br />
+        Last Name: @Model.LastName
+        <br />
+    </div>
 
+    <a href="~/logout">Logout</a>
+}

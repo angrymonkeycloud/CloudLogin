@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
 using CloudLoginDataContract;
+using AngryMonkey.Cloud.Login.DataContract;
 
 namespace ServerClientDemo.Client.Pages
 {

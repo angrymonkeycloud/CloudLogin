@@ -1,5 +1,6 @@
-﻿using CloudLoginDataContract;
+﻿using AngryMonkey.Cloud.Login.DataContract;
 using LoginRequestLibrary;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -8,21 +9,18 @@ using System.Web;
 
 namespace AngryMonkey.Cloud.Login
 {
-	public class CloudLoginServerClient
+    public class CloudLoginServerClient
 	{
 		public HttpClient? HttpServer { get; set; }
-		public string? RedirectUrl { get; set; }
+
+
+        public string? RedirectUrl { get; set; }
 		public List<Link>? FooterLinks { get; set; }
         public List<ProviderDefinition> Providers { get; set; }
         public bool UsingDatabase { get; set; } = false;
 
 		private CloudGeographyClient? _cloudGepgraphy;
         public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();
-
-
-        private CloudLoginClient? _cloudLoginClient;
-        public CloudLoginClient CloudLoginClient => _cloudLoginClient ??= new CloudLoginClient();
-
 
         public async Task<CloudLoginServerClient> InitFromServer()
         {
@@ -31,9 +29,6 @@ namespace AngryMonkey.Cloud.Login
             try
             {
                 HttpResponseMessage response = await HttpServer.GetAsync("CloudLogin/GetClient");
-
-                if (!response.IsSuccessStatusCode)
-                    throw await ThrowHttpException(response);
 
                 client = await response.Content.ReadFromJsonAsync<CloudLoginServerClient>();
             }
@@ -44,31 +39,6 @@ namespace AngryMonkey.Cloud.Login
 
             return client;
         }
-
-
-        private static async Task<Exception> ThrowHttpException(HttpResponseMessage response)
-        {
-            try
-            {
-                HttpErrorResult? httpException = await response.Content.ReadFromJsonAsync<HttpErrorResult>();
-                Exception test = new Exception(httpException == null ? "Unknown error" : httpException.Detail);
-                return test;
-            }
-            catch (Exception ex)
-            {
-                string error = await response.Content.ReadAsStringAsync();
-                return new Exception(error);
-            }
-        }
-
-        private class HttpErrorResult
-        {
-            [JsonPropertyName("status")]
-            public int Status { get; set; }
-            [JsonPropertyName("detail")]
-            public string Detail { get; set; }
-        }
-
         public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
         {
             try
@@ -136,8 +106,8 @@ namespace AngryMonkey.Cloud.Login
 		}
         public async Task<CloudUser?> GetUserByInput(string input) => GetInputFormat(input) switch
         {
-            InputFormat.EmailAddress => await CloudLoginClient.GetUserByEmailAddress(input),
-            InputFormat.PhoneNumber => await CloudLoginClient.GetUserByPhoneNumber(input),
+            InputFormat.EmailAddress => await GetUserByEmailAddress(input),
+            InputFormat.PhoneNumber => await GetUserByPhoneNumber(input),
             _ => null,
         };
         public bool IsInputValidEmailAddress(string input) => Regex.IsMatch(input, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
@@ -148,12 +118,107 @@ namespace AngryMonkey.Cloud.Login
 
 			await HttpServer.PostAsync("CloudLogin/User/Update", content);
 		}
-
 		public async Task CreateUser(CloudUser user)
 		{
 			HttpContent content = JsonContent.Create<CloudUser>(user);
 
 			await HttpServer.PostAsync("CloudLogin/User/Create", content);
 		}
-	}
+        public async Task<bool> IsAuthenticated(IHttpContextAccessor? accessor = null)
+        {
+            if (accessor == null)
+                try
+                {
+                    HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/IsAuthenticated");
+
+                    if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                        return false;
+
+                    return await message.Content.ReadFromJsonAsync<bool>();
+                }
+                catch { throw; }
+
+            string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
+            return userCookie != null;
+        }
+        public async Task<CloudUser?> CurrentUser(IHttpContextAccessor? accessor = null)
+        {
+            if (accessor == null)
+                try
+                {
+                    HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
+
+                    if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                        return null;
+
+                    return await message.Content.ReadFromJsonAsync<CloudUser>();
+                }
+                catch { throw; }
+
+            string? userCookie = accessor.HttpContext.Request.Cookies["CloudUser"];
+
+            if (userCookie == null)
+                return null;
+
+            return JsonConvert.DeserializeObject<CloudUser>(userCookie);
+        }
+        public async Task<CloudUser?> GetUserFromRequest(Guid requestId)
+        {
+            try
+            {
+                HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUserFromRequest?requestId={HttpUtility.UrlEncode(requestId.ToString())}");
+
+                if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                    return null;
+
+                return await message.Content.ReadFromJsonAsync<CloudUser?>();
+            }
+            catch
+            {
+                throw;
+            }
+
+        }
+        public async Task<List<CloudUser>?> GetUsersByDisplayName(string DisplayName)
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUsersByDisplayName?displayname={HttpUtility.UrlEncode(DisplayName)}");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return null;
+            return await message.Content.ReadFromJsonAsync<List<CloudUser>?>();
+        }
+        public async Task<CloudUser?> GetUserById(Guid userId)
+        {
+            try
+            {
+                HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetById?id={HttpUtility.UrlEncode(userId.ToString())}");
+
+                if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                    return null;
+
+                return await message.Content.ReadFromJsonAsync<CloudUser?>();
+            }
+            catch
+            {
+                throw;
+            }
+
+        }
+        public async Task<CloudUser?> GetUserByDisplayName(string input)
+        {
+            return await GetUserByDisplayName(input);
+        }
+        public async Task<List<CloudUser>> GetAllUsers()
+        {
+            return await HttpServer.GetFromJsonAsync<List<CloudUser>>("CloudLogin/User/All");
+        }
+        public async Task<Guid> CreateUserRequest(Guid userId)
+        {
+            Guid requestId = Guid.NewGuid();
+
+            await HttpServer.PostAsync($"CloudLogin/User/CreateRequest?userID={userId}&requestId={requestId}", null);
+
+            return requestId;
+        }
+    }
 }

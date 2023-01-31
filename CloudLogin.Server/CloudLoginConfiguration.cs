@@ -1,5 +1,5 @@
-﻿using AngryMonkey.Cloud.Login.Providers;
-using CloudLoginDataContract;
+﻿using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.Cloud.Login.Providers;
 
 namespace AngryMonkey.Cloud.Login;
 

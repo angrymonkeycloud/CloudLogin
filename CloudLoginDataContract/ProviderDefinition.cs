@@ -1,4 +1,4 @@
-﻿namespace AngryMonkey.Cloud.Login;
+﻿namespace AngryMonkey.Cloud.Login.DataContract;
 
 public class ProviderDefinition
 {

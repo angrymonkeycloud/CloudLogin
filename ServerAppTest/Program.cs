@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net.Mail;
 using CloudLoginDataContract;
 using AngryMonkey.Cloud.Login;
+using AngryMonkey.Cloud.Login.DataContract;
 
 var builder = WebApplication.CreateBuilder(args);
 

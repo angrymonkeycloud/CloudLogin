@@ -183,12 +183,16 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Logout")]
-    public async Task<ActionResult> Logout()
+    public async Task<ActionResult> Logout(string? redirectUrl)
     {
         await HttpContext.SignOutAsync();
 
         Response.Cookies.Delete("CloudUser");
+        Response.Cookies.Delete("LoggedInUser");
 
-        return Redirect("/");
+        if (redirectUrl == null)
+            return Redirect("/");
+
+        return Redirect(redirectUrl);
     }
 }

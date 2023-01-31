@@ -3,5 +3,5 @@ public record CloudRequest : BaseRecord
 {
     public CloudRequest() : base("CloudRequest", "CloudRequest") { }
     public Guid? UserId { get; set; }
-    public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+    public int ttl { get; set; } = 60;
 }

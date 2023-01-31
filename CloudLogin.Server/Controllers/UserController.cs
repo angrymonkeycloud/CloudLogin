@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using AngryMonkey.Cloud.Login.Providers;
 using AngryMonkey.Cloud.Login.DataContract;
+using Microsoft.Azure.Cosmos;
 
 namespace AngryMonkey.Cloud.Login.Controllers;
 [Route("CloudLogin/User")]
@@ -250,6 +251,7 @@ public class UserController : BaseController
             };
 
             await CosmosMethods.RequestContainer.CreateItemAsync(request);
+
             return Ok();
         }
         catch

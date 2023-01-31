@@ -38,6 +38,14 @@ namespace CoverboxApp.Main.Controllers
             return View(user);
         }
 
+        [Route("logout")]
+        public async Task<IResult> logout()
+        {
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+
+            return Results.Redirect($"https://localhost:7061/CloudLogin/Logout?redirectUrl={HttpUtility.UrlEncode(baseUri)}");
+        }
+
         [Route("login")]
         public async Task<IResult> Login(Guid requestId)
         {

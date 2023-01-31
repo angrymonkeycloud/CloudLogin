@@ -536,6 +536,8 @@ namespace AngryMonkey.Cloud.Login
                 checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
             else if (SelectedProvider?.Code.ToLower() == "whatsapp")
                 checkUser = await cloudLoginClient.GetUserByPhoneNumber(InputValue);
+            else if (SelectedProvider?.Code.ToLower() == "custom")
+                checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
 
             if (checkUser != null)
                 CustomSignInChallenge(checkUser);

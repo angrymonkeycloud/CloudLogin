@@ -58,6 +58,7 @@ public static class MvcServiceCollectionExtensions
 
                     if (hash == "Cloud Login")
                         return;
+
                     user = await cloudLogin.GetUserByPhoneNumber(input);
 
                     if (string.IsNullOrEmpty(input))

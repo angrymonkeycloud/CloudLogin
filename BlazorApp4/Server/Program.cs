@@ -74,35 +74,39 @@ CloudLoginConfiguration cloudLoginConfig = new()
         await smtpClient.SendMailAsync(mailMessage);
     },
     Providers = new List<ProviderConfiguration>()
+    {
+        new MicrosoftProviderConfiguration()
         {
-            new MicrosoftProviderConfiguration()
-            {
-                ClientId = builder.Configuration["Microsoft:ClientId"],
-                ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
-            },
-            new GoogleProviderConfiguration()
-            {
-                ClientId = builder.Configuration["Google:ClientId"],
-                ClientSecret= builder.Configuration["Google:ClientSecret"]
-            },
-            new FacebookProviderConfiguration()
-            {
-                ClientId = builder.Configuration["Facebook:ClientId"],
-                ClientSecret= builder.Configuration["Facebook:ClientSecret"]
-            },
-            new TwitterProviderConfiguration()
-            {
-                ClientId = builder.Configuration["Twitter:ClientId"],
-                ClientSecret= builder.Configuration["Twitter:ClientSecret"]
-            },
-            new WhatsAppProviderConfiguration()
-            {
-                RequestUri = builder.Configuration["WhatsApp:RequestUri"],
-                Authorization = builder.Configuration["WhatsApp:Authorization"],
-                Template = builder.Configuration["WhatsApp:Template"],
-                Language = builder.Configuration["WhatsApp:Language"]
-            }
+            ClientId = builder.Configuration["Microsoft:ClientId"],
+            ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
+        },
+        new GoogleProviderConfiguration()
+        {
+            ClientId = builder.Configuration["Google:ClientId"],
+            ClientSecret= builder.Configuration["Google:ClientSecret"]
+        },
+        new FacebookProviderConfiguration()
+        {
+            ClientId = builder.Configuration["Facebook:ClientId"],
+            ClientSecret= builder.Configuration["Facebook:ClientSecret"]
+        },
+        new TwitterProviderConfiguration()
+        {
+            ClientId = builder.Configuration["Twitter:ClientId"],
+            ClientSecret= builder.Configuration["Twitter:ClientSecret"]
+        },
+        new WhatsAppProviderConfiguration()
+        {
+            RequestUri = builder.Configuration["WhatsApp:RequestUri"],
+            Authorization = builder.Configuration["WhatsApp:Authorization"],
+            Template = builder.Configuration["WhatsApp:Template"],
+            Language = builder.Configuration["WhatsApp:Language"]
+        },
+        new CustomProviderConfiguration()
+        {
+            Label = "Custom Login"
         }
+    }
 };
 
 builder.Services.AddCloudLoginServer(cloudLoginConfig);

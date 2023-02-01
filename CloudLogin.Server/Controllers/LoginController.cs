@@ -65,8 +65,15 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Login/CustomLogin")]
-    public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "")
+    public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false)
     {
+        string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
+        if (sameSite)
+        {
+            redirectUri = redirectUri.Replace($"{baseUrl}/", "");
+        }
+
+
         Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
 
         AuthenticationProperties properties = new()
@@ -110,11 +117,11 @@ public class LoginController : BaseController
         await HttpContext.SignInAsync(claimsPrincipal, properties);
 
 
-        return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}&ispersistent={keepMeSignedIn}&samesite=true");
+        return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}&ispersistent={keepMeSignedIn}&samesite={HttpUtility.UrlEncode(sameSite.ToString())}");
     }
 
     [HttpGet("Result")]
-    public async Task<ActionResult<string>> LoginResult(string redirectUri, string ispersistent, string sameSite)
+    public async Task<ActionResult<string>> LoginResult(string ispersistent, string sameSite, string? redirectUri = "")
     {
         CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
 

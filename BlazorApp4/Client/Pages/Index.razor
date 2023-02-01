@@ -4,10 +4,6 @@
 @inject CloudLoginServerClient cloudLogin
 @inject IHttpContextAccessor HttpContextAccessor
 
-<HeadContent>
-    <CloudBundle Source="css/index.css" />
-</HeadContent>
-
 @if (IsAuthorized == false)
 {
     <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
@@ -41,8 +37,7 @@ else
                     <a @onclick="CheckUsername" class="--button">Check</a>
                 </div>
                 <div class="amc-authorized-info-nav">
-                    <a href="./cloud
-logout" class="--button">Logout</a>
+                    <a href="./cloudlogin/logout" class="--button">Logout</a>
                     <a href="./cloudlogin/logout" @onclick="DeleteButton" class="--button">Delete</a>
                     <a href="./all" class="--button">All</a>
                 </div>

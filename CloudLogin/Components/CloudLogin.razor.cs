@@ -484,7 +484,7 @@ namespace AngryMonkey.Cloud.Login
 
         private void ProviderSignInChallenge(string provider)
         {
-            if(RedirectUrl == navigationManager.Uri)
+            if (RedirectUrl == navigationManager.Uri)
             {
                 navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUrl}&keepMeSignedIn={KeepMeSignedIn}&samesite=true", true);
             }
@@ -506,8 +506,14 @@ namespace AngryMonkey.Cloud.Login
             };
 
             string userInfoJSON = JsonConvert.SerializeObject(userInfo);
-
-            navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={RedirectUrl}", true);
+            if (RedirectUrl == navigationManager.Uri)
+            {
+                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={RedirectUrl}&samesite=true", true);
+            }
+            else
+            {
+                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={RedirectUrl}&samesite=false", true);
+            }
         }
 
         private async Task OnVerifyClicked()

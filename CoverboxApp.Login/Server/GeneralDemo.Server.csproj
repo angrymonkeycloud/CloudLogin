@@ -13,7 +13,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
-		<ProjectReference Include="..\Client\CoverboxApp.Login.Client.csproj" />
+		<ProjectReference Include="..\Client\GeneralDemo.Client.csproj" />
 	</ItemGroup>
 
 

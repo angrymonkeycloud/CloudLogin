@@ -1,8 +1,8 @@
-using AngryMonkey.Cloud.Login;
 using AngryMonkey.Cloud.Login.DataContract;
 using Microsoft.AspNetCore.Components;
 
-namespace CoverboxApp.Login.Client.Pages;
+namespace SharedLogin.WebAssembly.Pages;
+
 public partial class Index
 {
     [Parameter] public string domainName { get;set; }

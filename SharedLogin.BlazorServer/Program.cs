@@ -1,3 +1,4 @@
+using AngryMonkey.Cloud.Components;
 using AngryMonkey.Cloud.Login;
 using AngryMonkey.Cloud.Login.Controllers;
 using AngryMonkey.Cloud.Login.DataContract;
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {

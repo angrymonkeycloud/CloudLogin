@@ -16,8 +16,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
-		<ProjectReference Include="..\..\CloudLogin\CloudLogin.csproj" />
+	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
+	  <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
 	</ItemGroup>
 
 </Project>

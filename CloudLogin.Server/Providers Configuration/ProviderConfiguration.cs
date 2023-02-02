@@ -2,13 +2,15 @@
 
 public class ProviderConfiguration
 {
-	public ProviderConfiguration(string code, string? label = null)
-	{
-		Code = code;
-		Label = label ?? Code;
-	}
+    internal ProviderConfiguration() { }
 
-	public string Code { get; init; } = string.Empty;
+	internal void Init(string code, string? label = null)
+    {
+        Code = code;
+        Label = label ?? Code;
+    }
+
+	public string Code { get; private set; } = string.Empty;
 	public string Label { get; set; } = string.Empty;
 	public bool HandlesEmailAddress { get; init; } = false; // Should Be private
 	public bool HandlesPhoneNumber { get; set; } = false; // Should Be private

@@ -2,8 +2,10 @@
 
 public class CustomProviderConfiguration : ProviderConfiguration
 {
-    public CustomProviderConfiguration(string? label = null) : base("custom", label)
+    public CustomProviderConfiguration(string? label = null) 
     {
+        Init("custom", label);
+
         HandlesEmailAddress = true;
         IsCodeVerification = true;
     }

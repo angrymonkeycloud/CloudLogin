@@ -72,11 +72,7 @@ CloudLoginConfiguration cloudLoginConfig = new()
     },
     Providers = new List<ProviderConfiguration>()
     {
-        new MicrosoftProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Microsoft:ClientId"],
-            ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
-        },
+        new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
         new GoogleProviderConfiguration()
         {
             ClientId = builder.Configuration["Google:ClientId"],

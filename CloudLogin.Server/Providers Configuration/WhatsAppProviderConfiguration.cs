@@ -7,8 +7,10 @@ public class WhatsAppProviderConfiguration : ProviderConfiguration
 	public string Template { get; set; }
 	public string Language { get; set; }
 
-	public WhatsAppProviderConfiguration(string? label = null) : base("whatsapp", label)
+	public WhatsAppProviderConfiguration(string? label = null)
 	{
+		Init("WhatsApp", label);
+
 		HandlesPhoneNumber = true;
 		IsCodeVerification = true;
 	}

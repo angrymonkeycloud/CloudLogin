@@ -112,7 +112,8 @@ public static class MvcServiceCollectionExtensions
                                             Format = FormatValue,
                                             IsPrimary = true,
                                             PhoneNumberCountryCode = countryCode,
-                                            PhoneNumberCallingCode = callingCode
+                                            PhoneNumberCallingCode = callingCode,
+                                            IsValidated= true,
                                         }
                                     }
                                 };
@@ -151,7 +152,8 @@ public static class MvcServiceCollectionExtensions
                                     Format = FormatValue,
                                     IsPrimary = true,
                                     PhoneNumberCountryCode = countryCode,
-                                    PhoneNumberCallingCode = callingCode
+                                    PhoneNumberCallingCode = callingCode,
+                                    IsValidated= true,
                                 }
                             }
                         };

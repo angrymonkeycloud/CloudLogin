@@ -49,4 +49,19 @@ public class ClientApiController : BaseController
             return Problem();
         }
     }
+
+    [HttpPost("AddInput")]
+    public async Task<ActionResult> AddInput(Guid userId, [FromBody] LoginInput phoneNumber)
+    {
+        try
+        {
+            await CosmosMethods.AddInput(userId, phoneNumber);
+
+            return Ok();
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
 }

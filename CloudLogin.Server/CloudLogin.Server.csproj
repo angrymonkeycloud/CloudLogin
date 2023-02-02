@@ -4,16 +4,15 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-		<AssemblyName>AngryMonkey.Cloud.Login.Server</AssemblyName>
-		<RootNamespace>AngryMonkey.Cloud.Login</RootNamespace>
+		<AssemblyName>AngryMonkey.CloudLogin.Server</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
 		<UserSecretsId>16b89c4e-cbd8-4756-8ed2-cb7b829d7de2</UserSecretsId>
-    
     <Product>Cloud Login</Product>
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>0.0.10</Version>
+    <Version>0.0.11</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />

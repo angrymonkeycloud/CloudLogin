@@ -26,8 +26,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{4D59EC91
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLoginLibrary", "LoginRequestLibrary\CloudLoginLibrary.csproj", "{9F6A8DAC-3B18-4C6D-8034-57DB69CF6D34}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLoginDataContract", "CloudLoginDataContract\CloudLoginDataContract.csproj", "{E90B7A5A-E643-45F8-9732-C12E73CA1D87}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLoginModels", "CloudLoginModels\CloudLoginModels.csproj", "{0D0268D6-3B42-4D35-85B1-FE704CC9F360}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared Login", "Shared Login", "{2FCCF6F3-5430-4B15-884F-F8DAE6C07C16}"
@@ -37,6 +35,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLogin.BlazorServer", "SharedLogin.BlazorServer\SharedLogin.BlazorServer.csproj", "{8F7327BE-A995-415C-860E-3437918926A2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLogin.Website", "SharedLogin.Website\SharedLogin.Website.csproj", "{19D3C90A-D8EF-40A9-9F21-2022C2B47005}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLoginDataContract", "CloudLogin.DataContract\CloudLoginDataContract.csproj", "{CD51E821-1679-4321-90A2-20E0441EC244}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -87,12 +87,6 @@ Global
 		{9F6A8DAC-3B18-4C6D-8034-57DB69CF6D34}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{9F6A8DAC-3B18-4C6D-8034-57DB69CF6D34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F6A8DAC-3B18-4C6D-8034-57DB69CF6D34}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E90B7A5A-E643-45F8-9732-C12E73CA1D87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E90B7A5A-E643-45F8-9732-C12E73CA1D87}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E90B7A5A-E643-45F8-9732-C12E73CA1D87}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
-		{E90B7A5A-E643-45F8-9732-C12E73CA1D87}.Release_Server|Any CPU.Build.0 = Release|Any CPU
-		{E90B7A5A-E643-45F8-9732-C12E73CA1D87}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E90B7A5A-E643-45F8-9732-C12E73CA1D87}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0D0268D6-3B42-4D35-85B1-FE704CC9F360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0D0268D6-3B42-4D35-85B1-FE704CC9F360}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D0268D6-3B42-4D35-85B1-FE704CC9F360}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
@@ -117,6 +111,12 @@ Global
 		{19D3C90A-D8EF-40A9-9F21-2022C2B47005}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{19D3C90A-D8EF-40A9-9F21-2022C2B47005}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19D3C90A-D8EF-40A9-9F21-2022C2B47005}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD51E821-1679-4321-90A2-20E0441EC244}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD51E821-1679-4321-90A2-20E0441EC244}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD51E821-1679-4321-90A2-20E0441EC244}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{CD51E821-1679-4321-90A2-20E0441EC244}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{CD51E821-1679-4321-90A2-20E0441EC244}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD51E821-1679-4321-90A2-20E0441EC244}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

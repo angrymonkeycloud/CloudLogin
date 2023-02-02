@@ -1,4 +1,4 @@
-using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.AspNetCore.Components;
 
 namespace SharedLogin.WebAssembly.Pages;

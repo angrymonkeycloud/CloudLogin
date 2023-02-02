@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.CloudLogin.DataContract;
 
-namespace AngryMonkey.Cloud.Login.Controllers;
+namespace AngryMonkey.CloudLogin.Controllers;
 
 [Route("CloudLogin")]
 [ApiController]

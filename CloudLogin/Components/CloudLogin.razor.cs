@@ -1,12 +1,12 @@
 ﻿using AngryMonkey.Cloud.Geography;
-using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Newtonsoft.Json;
 using System.Text;
 using System.Web;
 
-namespace AngryMonkey.Cloud.Login
+namespace AngryMonkey.CloudLogin
 {
     public partial class CloudLogin
     {

@@ -16,8 +16,8 @@ using ServerAppTest.Shared;
 using AngryMonkey.Cloud.Components;
 using Microsoft.Azure.Cosmos;
 using System.Security.Claims;
-using AngryMonkey.Cloud.Login.DataContract;
-using AngryMonkey.Cloud.Login;
+using AngryMonkey.CloudLogin.DataContract;
+using AngryMonkey.CloudLogin;
 using Newtonsoft.Json;
 using System.Net;
 

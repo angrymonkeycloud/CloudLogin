@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace AngryMonkey.Cloud.Login.Controllers
+namespace AngryMonkey.CloudLogin.Controllers
 {
 	public class BaseController : Controller
 	{

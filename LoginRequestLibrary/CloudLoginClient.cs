@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Json;
 using System.Web;
 using AngryMonkey.Cloud;
-using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.CloudLogin.DataContract;
 using AngryMonkey.CloudLogin.Models;
 
 namespace AngryMonkey.CloudLogin;

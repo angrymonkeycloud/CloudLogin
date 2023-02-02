@@ -4,14 +4,14 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-		<AssemblyName>AngryMonkey.Cloud.Login.Shared</AssemblyName>
-		<RootNamespace>AngryMonkey.Cloud.Login</RootNamespace>
+		<AssemblyName>AngryMonkey.CloudLogin.Shared</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
     <Product>Cloud Login</Product>
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>0.0.10</Version>
+    <Version>0.0.11</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />
@@ -32,7 +32,7 @@
   </ItemGroup>
     
   <ItemGroup>
-    <ProjectReference Include="..\CloudLoginDataContract\CloudLoginDataContract.csproj" />
+    <ProjectReference Include="..\CloudLogin.DataContract\CloudLoginDataContract.csproj" />
     <ProjectReference Include="..\LoginRequestLibrary\CloudLoginLibrary.csproj" />
   </ItemGroup>
 

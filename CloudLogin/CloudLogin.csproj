@@ -5,18 +5,17 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-		<AssemblyName>AngryMonkey.Cloud.Login</AssemblyName>
-		<RootNamespace>AngryMonkey.Cloud.Login</RootNamespace>
+		<AssemblyName>AngryMonkey.CloudLogin</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
     <Product>Cloud Login</Product>
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <Description />
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageProjectUrl>https://www.angrymonkeycloud.com/</PackageProjectUrl>
-
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>0.0.10</Version>
+    <Version>0.0.11</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
 

@@ -1,7 +1,7 @@
-﻿using AngryMonkey.Cloud.Login.DataContract;
+﻿using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AngryMonkey.Cloud.Login.Controllers;
+namespace AngryMonkey.CloudLogin.Controllers;
 
 [Route("Api/Client")]
 [ApiController]

@@ -1,6 +1,6 @@
-﻿@namespace AngryMonkey.Cloud.Login
+﻿@namespace AngryMonkey.CloudLogin
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
-@using AngryMonkey.Cloud.Login.DataContract;
+@using AngryMonkey.CloudLogin.DataContract;
 @inject CloudLoginServerClient cloudLoginClient
 @inject NavigationManager navigationManager
 
@@ -100,7 +100,7 @@
                     {
                         <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                             <div class="amc-cloudlogin-provider-icon">
-                                <AngryMonkey.Cloud.Login.Components.ProviderButton Provider="provider" />
+                                <AngryMonkey.CloudLogin.Components.ProviderButton Provider="provider" />
                             </div>
                             <div class="amc-cloudlogin-provider-label">@provider.Label</div>
                         </button>
@@ -160,7 +160,7 @@
         <div class="amc-cloudlogin-footer-providers">
             @foreach (ProviderDefinition provider in cloudLoginClient.Providers)
             {
-                <AngryMonkey.Cloud.Login.Components.ProviderButton Provider="@provider" />
+                <AngryMonkey.CloudLogin.Components.ProviderButton Provider="@provider" />
             }
         </div>
 

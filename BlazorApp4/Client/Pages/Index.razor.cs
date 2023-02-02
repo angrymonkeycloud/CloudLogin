@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
-using AngryMonkey.Cloud.Login;
+using AngryMonkey.CloudLogin;
 using Microsoft.AspNetCore.Components;
 using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
-using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.CloudLogin.DataContract;
 
 namespace ServerClientDemo.Client.Pages
 {

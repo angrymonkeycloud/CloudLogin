@@ -1,11 +1,11 @@
 ﻿using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
-using AngryMonkey.Cloud.Login.Providers;
-using AngryMonkey.Cloud.Login.DataContract;
+using AngryMonkey.CloudLogin.Providers;
+using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.Azure.Cosmos;
 
-namespace AngryMonkey.Cloud.Login.Controllers;
+namespace AngryMonkey.CloudLogin.Controllers;
 [Route("CloudLogin/User")]
 [ApiController]
 public class UserController : BaseController

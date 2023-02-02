@@ -1,12 +1,12 @@
-﻿using AngryMonkey.Cloud.Login.DataContract;
+﻿using AngryMonkey.Cloud;
+using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Web;
 
-namespace AngryMonkey.Cloud.Login
+namespace AngryMonkey.CloudLogin
 {
     public class CloudLoginServerClient
 	{

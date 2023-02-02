@@ -1,5 +1,5 @@
 ﻿@page "/{domainName}"
-@using AngryMonkey.Cloud.Login;
+@using AngryMonkey.CloudLogin;
 @using Microsoft.AspNetCore.Http
 @using Newtonsoft.Json
 @inject CloudLoginServerClient cloudLogin
@@ -8,7 +8,7 @@
 
 @if (IsAuthorized == false)
 {
-    <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
+    <AngryMonkey.CloudLogin.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
 }else{
     
 }

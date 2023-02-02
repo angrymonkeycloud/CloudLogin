@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 
-namespace AngryMonkey.Cloud.Login.Controllers
+namespace AngryMonkey.CloudLogin.Controllers
 {
     public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     {

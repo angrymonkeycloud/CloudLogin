@@ -1,4 +1,4 @@
-﻿using AngryMonkey.Cloud.Login.DataContract;
+﻿using AngryMonkey.CloudLogin.DataContract;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Models;
 using Microsoft.AspNetCore.Components;

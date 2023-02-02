@@ -1,11 +1,11 @@
 using System.Net;
 using System.Text;
-using AngryMonkey.Cloud.Login.Controllers;
+using AngryMonkey.CloudLogin.Controllers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net.Mail;
-using AngryMonkey.Cloud.Login;
-using AngryMonkey.Cloud.Login.DataContract;
-using AngryMonkey.Cloud.Login.Providers;
+using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin.DataContract;
+using AngryMonkey.CloudLogin.Providers;
 
 var builder = WebApplication.CreateBuilder(args);
 

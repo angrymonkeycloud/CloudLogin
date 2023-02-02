@@ -1,6 +1,6 @@
 ﻿@page "/"
 @using Newtonsoft.Json
-@inject AngryMonkey.Cloud.Login.CloudLoginServerClient cloudLogin
+@inject AngryMonkey.CloudLogin.CloudLoginServerClient cloudLogin
 @inject IHttpContextAccessor HttpContextAccessor
 
 <HeadContent>
@@ -9,7 +9,7 @@
 
 @if (!IsAuthorized)
 {
-    <AngryMonkey.Cloud.Login.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
+    <AngryMonkey.CloudLogin.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
 }
 else
 {

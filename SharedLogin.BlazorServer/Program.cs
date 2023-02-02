@@ -1,8 +1,8 @@
 using AngryMonkey.Cloud.Components;
-using AngryMonkey.Cloud.Login;
-using AngryMonkey.Cloud.Login.Controllers;
-using AngryMonkey.Cloud.Login.DataContract;
-using AngryMonkey.Cloud.Login.Providers;
+using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin.Controllers;
+using AngryMonkey.CloudLogin.DataContract;
+using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net;
 using System.Net.Mail;
@@ -73,33 +73,11 @@ CloudLoginConfiguration cloudLoginConfig = new()
     Providers = new List<ProviderConfiguration>()
     {
         new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
-        new GoogleProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Google:ClientId"],
-            ClientSecret= builder.Configuration["Google:ClientSecret"]
-        },
-        new FacebookProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Facebook:ClientId"],
-            ClientSecret= builder.Configuration["Facebook:ClientSecret"]
-        },
-        new TwitterProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Twitter:ClientId"],
-            ClientSecret= builder.Configuration["Twitter:ClientSecret"]
-        },
-        new WhatsAppProviderConfiguration()
-        {
-            RequestUri = builder.Configuration["WhatsApp:RequestUri"],
-            Authorization = builder.Configuration["WhatsApp:Authorization"],
-            Template = builder.Configuration["WhatsApp:Template"],
-            Language = builder.Configuration["WhatsApp:Language"],
-            Label = "WhatsApp"
-        },
-        new CustomProviderConfiguration()
-        {
-            Label = "Custom Login"
-        }
+        new GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
+        new FacebookProviderConfiguration(builder.Configuration.GetSection("Facebook")),
+        new TwitterProviderConfiguration(builder.Configuration.GetSection("Twitter")),
+        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp")),
+        new CustomProviderConfiguration(builder.Configuration.GetSection("Custom"))
     }
 };
 

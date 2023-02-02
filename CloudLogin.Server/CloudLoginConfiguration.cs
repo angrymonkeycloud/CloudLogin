@@ -1,7 +1,7 @@
-﻿using AngryMonkey.Cloud.Login.DataContract;
-using AngryMonkey.Cloud.Login.Providers;
+﻿using AngryMonkey.CloudLogin.DataContract;
+using AngryMonkey.CloudLogin.Providers;
 
-namespace AngryMonkey.Cloud.Login;
+namespace AngryMonkey.CloudLogin;
 
 public class CloudLoginConfiguration
 {

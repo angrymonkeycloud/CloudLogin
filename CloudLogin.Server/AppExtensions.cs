@@ -8,9 +8,9 @@ using Microsoft.Azure.Cosmos.Serialization.HybridRow;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc;
-using AngryMonkey.Cloud.Login.Controllers;
+using AngryMonkey.CloudLogin.Controllers;
 using Microsoft.Extensions.Options;
-using AngryMonkey.Cloud.Login;
+using AngryMonkey.CloudLogin;
 
 namespace Microsoft.AspNetCore.Builder
 {

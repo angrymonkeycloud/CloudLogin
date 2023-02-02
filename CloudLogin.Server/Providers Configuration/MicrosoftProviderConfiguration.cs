@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace AngryMonkey.Cloud.Login.Providers;
+namespace AngryMonkey.CloudLogin.Providers;
 
 public class MicrosoftProviderConfiguration : ProviderConfiguration
 {

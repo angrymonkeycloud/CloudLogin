@@ -1,10 +1,11 @@
-﻿using AngryMonkey.Cloud.Geography;
-using AngryMonkey.Cloud.Login.DataContract;
+﻿using AngryMonkey.Cloud;
+using AngryMonkey.Cloud.Geography;
+using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
 
-namespace AngryMonkey.Cloud.Login;
+namespace AngryMonkey.CloudLogin;
 public class CosmosMethods
 {
     #region Internal

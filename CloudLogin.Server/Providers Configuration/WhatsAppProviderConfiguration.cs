@@ -1,4 +1,6 @@
-﻿namespace AngryMonkey.Cloud.Login.Providers;
+﻿using Microsoft.Extensions.Configuration;
+
+namespace AngryMonkey.CloudLogin.Providers;
 
 public class WhatsAppProviderConfiguration : ProviderConfiguration
 {
@@ -7,9 +9,15 @@ public class WhatsAppProviderConfiguration : ProviderConfiguration
 	public string Template { get; set; }
 	public string Language { get; set; }
 
-	public WhatsAppProviderConfiguration(string? label = null)
-	{
-		Init("WhatsApp", label);
+	public WhatsAppProviderConfiguration(IConfigurationSection configurationSection)
+    {
+        RequestUri = configurationSection["RequestUri"];
+        Authorization = configurationSection["Authorization"];
+        Template = configurationSection["Template"];
+        Language = configurationSection["Language"];
+        string label = configurationSection["Label"];
+
+        Init("WhatsApp", label);
 
 		HandlesPhoneNumber = true;
 		IsCodeVerification = true;

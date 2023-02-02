@@ -5,7 +5,24 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AngryMonkey.CloudLogin.Models</AssemblyName>
-    <RootNamespace>AngryMonkey.CloudLogin.Models</RootNamespace>
+    <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
+    <Product>Cloud Login</Product>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+    <FileVersion>$(PackageVersion)</FileVersion>
+    <Version>0.0.11</Version>
+    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
+    <Description />
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  
 </Project>

@@ -250,7 +250,7 @@ public class UserController : BaseController
                 UserId = userID
             };
 
-            await CosmosMethods.RequestContainer.CreateItemAsync(request);
+            await CosmosMethods.Container.CreateItemAsync(request);
 
             return Ok();
         }

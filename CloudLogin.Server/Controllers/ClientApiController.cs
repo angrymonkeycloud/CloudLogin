@@ -40,7 +40,7 @@ public class ClientApiController : BaseController
     {
         try
         {
-            CloudUser User = await CosmosMethods.GetUserByRequestId(requestId, minutesToExpiry);
+            CloudUser User = await CosmosMethods.GetUserByRequestId(requestId);
 
             return Ok(User);
         }

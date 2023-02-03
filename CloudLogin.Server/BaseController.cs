@@ -13,7 +13,7 @@ namespace AngryMonkey.CloudLogin.Controllers
 			{
 				return Configuration?.Cosmos == null
 					? throw new Exception()
-					: (_cosmosMethods ??= new CosmosMethods(Configuration.Cosmos.ConnectionString, Configuration.Cosmos.DatabaseId, Configuration.Cosmos.RequestContainerId, Configuration.Cosmos.ContainerId));
+					: (_cosmosMethods ??= new CosmosMethods(Configuration.Cosmos.ConnectionString, Configuration.Cosmos.DatabaseId, Configuration.Cosmos.ContainerId));
 			}
 		}
 	}

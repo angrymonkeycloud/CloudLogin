@@ -62,17 +62,15 @@ public class CosmosMethods
 
     #endregion
 
-    public CosmosMethods(string connectionString, string databaseId, string requestcontainerId, string containerId)
+    public CosmosMethods(string connectionString, string databaseId, string containerId)
     {
         CosmosClient client = new(connectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
 
         Container = client.GetContainer(databaseId, containerId);
 
-        RequestContainer = client.GetContainer(databaseId, requestcontainerId);
     }
 
     public Container Container { get; set; }
-    public Container RequestContainer { get; set; }
 
     public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
     {
@@ -105,13 +103,13 @@ public class CosmosMethods
         return users.FirstOrDefault();
     }
 
-    public async Task<CloudUser?> GetUserByRequestId(Guid requestId, int minutesToExpiry)
+    public async Task<CloudUser?> GetUserByRequestId(Guid requestId)
     {
         CloudRequest request = new() { ID = requestId };
 
-        ItemResponse<CloudRequest> response = await RequestContainer.ReadItemAsync<CloudRequest>(GetCosmosId(request), GetPartitionKey(request));
+        ItemResponse<CloudRequest> response = await Container.ReadItemAsync<CloudRequest>(GetCosmosId(request), GetPartitionKey(request));
 
-        await RequestContainer.DeleteItemAsync<CloudRequest>(GetCosmosId(request), GetPartitionKey(request));
+        await Container.DeleteItemAsync<CloudRequest>(GetCosmosId(request), GetPartitionKey(request));
 
         CloudRequest selectedRequest = response.Resource;
 

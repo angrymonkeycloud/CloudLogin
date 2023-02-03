@@ -11,6 +11,7 @@ public class CloudLoginClientBase
     {
         UserModel userInformation = new()
         {
+            ID = cloudUser.ID,
             DisplayName= cloudUser.DisplayName,
             FirstName= cloudUser.FirstName,
             IsLocked= cloudUser.IsLocked,

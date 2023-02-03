@@ -34,7 +34,7 @@ public static class MvcServiceCollectionExtensions
         CloudGeographyClient cloudGeography = new();
 
         var service = services.AddAuthentication("Cookies").AddCookie((option =>
-        {
+        {zz
             option.Cookie.Name = "CloudLogin";
             option.Events = new CookieAuthenticationEvents()
             {

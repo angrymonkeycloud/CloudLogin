@@ -9,9 +9,11 @@ namespace AngryMonkey.CloudLogin;
 public class CloudLoginClient : CloudLoginClientBase
 {
     public HttpClient? HttpServer { get; set; }
+    public String? LoginUrl { get; set; }
 
     public CloudLoginClient(string baseAddress)
     {
+        LoginUrl = baseAddress;
         HttpServer = new() { BaseAddress = new(baseAddress) };
     }
 

@@ -369,14 +369,15 @@ namespace AngryMonkey.CloudLogin
                 {
                     if (user.Providers.Any())
                     {
-                        Providers.AddRange(user.Providers.Select(key => new ProviderDefinition(key)).ToList());
+                        List<ProviderDefinition> userProviders = user.Providers.Select(key => new ProviderDefinition(key)).ToList();
+
+                        Providers.AddRange(cloudLoginClient.Providers.Where(p => p.Code == userProviders.FirstOrDefault().Code));
+
                         addAllProviders = false;
                     }
 
                     UserId = user.ID;
                 }
-
-
                 else if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
                 {
                     Errors.Add("The (+) sign followed by your country code must precede your phone number.");

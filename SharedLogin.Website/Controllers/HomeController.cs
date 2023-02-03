@@ -24,11 +24,9 @@ namespace CoverboxApp.Main.Controllers
         [Route("")]
         public IActionResult Index()
         {
-            var record = Request.Cookies.Where(c => c.Key == "LoggedInUser")
-                 .Select(p => new { p.Key, p.Value })
-                 .FirstOrDefault();
+            var record = Request.Cookies.FirstOrDefault(c => c.Key == "LoggedInUser");
 
-            if (record == null)
+            if (record.Value == null)
                 return View();
 
             string cookieContent = record.Value;
@@ -43,7 +41,7 @@ namespace CoverboxApp.Main.Controllers
         {
             var baseUri = $"{Request.Scheme}://{Request.Host}";
 
-            return Results.Redirect($"https://localhost:7061/CloudLogin/Logout?redirectUrl={HttpUtility.UrlEncode(baseUri)}");
+            return Results.Redirect($"{CloudLogin.LoginUrl}/CloudLogin/Logout?redirectUrl={HttpUtility.UrlEncode(baseUri)}");
         }
 
         [Route("login")]
@@ -52,7 +50,7 @@ namespace CoverboxApp.Main.Controllers
             var baseUri = $"{Request.Scheme}://{Request.Host}";
 
             if (requestId == Guid.Empty)
-                return Results.Redirect($"https://localhost:7061/{HttpUtility.UrlEncode(baseUri)}");
+                return Results.Redirect($"{CloudLogin.LoginUrl}/{HttpUtility.UrlEncode(baseUri)}");
 
             UserModel? user = await CloudLogin.GetUserByRequestId(requestId, 1);
 

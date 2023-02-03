@@ -1,5 +1,6 @@
 ﻿using AngryMonkey.CloudLogin.DataContract;
 using AngryMonkey.CloudLogin.Providers;
+using Microsoft.Extensions.Configuration;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -18,6 +19,13 @@ public class CosmosDatabase
 {
 	public string? ConnectionString { get; set; }
 	public string? DatabaseId { get; set; }
-	public string? ContainerId { get; set; }	
-	public string? RequestContainerId { get; set; }
+	public string? ContainerId { get; set; }
+
+
+    public CosmosDatabase(IConfigurationSection configurationSection)
+    {
+        ConnectionString = configurationSection["ConnectionString"];
+        DatabaseId = configurationSection["DatabaseId"];
+        ContainerId = configurationSection["ContainerId"];
+    }
 }

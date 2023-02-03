@@ -41,7 +41,7 @@ namespace CoverboxApp.Main.Controllers
         {
             var baseUri = $"{Request.Scheme}://{Request.Host}";
 
-            return Results.Redirect($"{CloudLogin.LoginUrl}/CloudLogin/Logout?redirectUrl={HttpUtility.UrlEncode(baseUri)}");
+            return Results.Redirect($"{CloudLogin.LoginUrl}CloudLogin/Logout?redirectUrl={HttpUtility.UrlEncode(baseUri)}");
         }
 
         [Route("login")]
@@ -50,7 +50,7 @@ namespace CoverboxApp.Main.Controllers
             var baseUri = $"{Request.Scheme}://{Request.Host}";
 
             if (requestId == Guid.Empty)
-                return Results.Redirect($"{CloudLogin.LoginUrl}/{HttpUtility.UrlEncode(baseUri)}");
+                return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}");
 
             UserModel? user = await CloudLogin.GetUserByRequestId(requestId, 1);
 

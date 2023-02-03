@@ -69,20 +69,21 @@
                 <div class="amc-cloudlogin-inputdisplay">
                     @InputValue
                 </div>
-
-                <div class="amc-cloudlogin-keppsignedin">
-                    <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                    <label for="keepme">Keep me signed in</label>
-                </div>
             </div>
         }
 
         @if (State == ProcessState.InputValue)
         {
+
+
             <div class="login-form _center ">
                 <div class="amc-cloudlogin-input">
                     <input @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="email">@InputLabel</label>
+                </div>
+                <div class="amc-cloudlogin-keppsignedin">
+                    <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                    <label for="keepme">Keep me signed in</label>
                 </div>
                 <div class="login-form-next ">
                     <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
@@ -90,6 +91,7 @@
                         <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                     </button>
                 </div>
+
             </div>
         }
         else if (State == ProcessState.Providers)

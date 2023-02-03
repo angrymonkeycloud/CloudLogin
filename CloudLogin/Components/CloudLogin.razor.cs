@@ -340,8 +340,15 @@ namespace AngryMonkey.CloudLogin
 
         private async Task OnInputNextClicked()
         {
-
             Errors.Clear();
+
+            var test = Providers.Select(s => s.HandlesPhoneNumber);
+
+            if (InputValueFormat == InputFormat.PhoneNumber && test.Count() == 0)
+            {
+                Errors.Add("Unable to log you in. only emails are allowed.");
+                return;
+            }
 
             if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress)
             {
@@ -391,7 +398,7 @@ namespace AngryMonkey.CloudLogin
                         .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                                     || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
-                await SwitchState(ProcessState.Providers);
+
             }
             catch (Exception e)
             {
@@ -399,9 +406,16 @@ namespace AngryMonkey.CloudLogin
                         .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
                                     || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
 
-                await SwitchState(ProcessState.Providers);
             }
 
+            if (Providers.Count == 1)
+                if (Providers.First().HandlesEmailAddress)
+                {
+                    SelectedProvider = Providers.First();
+                    ProviderSignInChallenge(SelectedProvider.Code);
+                }
+
+            await SwitchState(ProcessState.Providers);
 
         }
 

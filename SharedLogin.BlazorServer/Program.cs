@@ -19,13 +19,7 @@ builder.Services.AddServerSideBlazor();
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-    Cosmos = new CosmosDatabase()
-    {
-        ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
-        DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
-        ContainerId = builder.Configuration["Cosmos:ContainerId"],
-        RequestContainerId = builder.Configuration["Cosmos:RequestContainerId"],
-    },
+    Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
     FooterLinks = new List<Link>()
     {
         new Link()
@@ -73,11 +67,7 @@ CloudLoginConfiguration cloudLoginConfig = new()
     Providers = new List<ProviderConfiguration>()
     {
         new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
-        new GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
-        new FacebookProviderConfiguration(builder.Configuration.GetSection("Facebook")),
-        new TwitterProviderConfiguration(builder.Configuration.GetSection("Twitter")),
-        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp")),
-        new CustomProviderConfiguration(builder.Configuration.GetSection("Custom"))
+        new GoogleProviderConfiguration(builder.Configuration.GetSection("Google"))
     }
 };
 
@@ -112,6 +102,7 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
+
 
 app.UseCloudLogin();
 app.UseAuthentication();

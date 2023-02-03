@@ -150,6 +150,7 @@
   list-style: none;
   font-size: 0.8rem;
   color: #f53030;
+  padding-left: 0;
 }
 .amc-cloudlogin-providers {
   display: flex;
@@ -246,7 +247,7 @@
 }
 .amc-cloudlogin-body .login-form-next {
   margin-top: 15px;
-  text-align: right;
+  text-align: center;
 }
 .amc-cloudlogin-body .login-form-verify,
 .amc-cloudlogin-body .login-form-finish {
@@ -272,6 +273,8 @@
   display: inline-block;
   font-size: 0;
   opacity: 0.7;
+  margin-top: 10px;
+  margin-left: 5px;
 }
 .amc-cloudlogin-keppsignedin label,
 .amc-cloudlogin-keppsignedin input {

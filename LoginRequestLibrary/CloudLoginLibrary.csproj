@@ -11,7 +11,7 @@
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>0.0.15</Version>
+    <Version>0.0.16</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />

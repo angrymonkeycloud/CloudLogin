@@ -233,9 +233,9 @@ public class LoginController : BaseController
         Response.Cookies.Delete("CloudUser");
         Response.Cookies.Delete("LoggedInUser");
 
-        if (redirectUrl == null)
-            return Redirect("/");
+        if (!string.IsNullOrEmpty(redirectUrl))
+            return Redirect(redirectUrl);
 
-        return Redirect(redirectUrl);
+        return Redirect("/");
     }
 }

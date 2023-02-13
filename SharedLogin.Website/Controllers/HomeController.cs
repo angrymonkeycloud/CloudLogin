@@ -50,7 +50,7 @@ namespace CoverboxApp.Main.Controllers
             var baseUri = $"{Request.Scheme}://{Request.Host}";
 
             if (requestId == Guid.Empty)
-                return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}");
+                return Results.Redirect($"{CloudLogin.LoginUrl}?domainName={HttpUtility.UrlEncode(baseUri)}&actionState=login");
 
             UserModel? user = await CloudLogin.GetUserByRequestId(requestId, 1);
 
@@ -60,6 +60,32 @@ namespace CoverboxApp.Main.Controllers
             Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(user));
 
             return Results.Redirect(baseUri);
+        }
+
+        [Route("changeprimary")]
+        public async Task<IResult> ChangePrimary()
+        {
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+
+            return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/ChangePrimary");
+
+        }
+        [Route("addinput")]
+        public async Task<IResult> AddInput()
+        {
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+
+            return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/AddInput");
+
+        }
+
+        [Route("update")]
+        public async Task<IResult> Update()
+        {
+            var baseUri = $"{Request.Scheme}://{Request.Host}";
+
+            return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/UpdateInput");
+
         }
 
         public static string Decrypt(string data)

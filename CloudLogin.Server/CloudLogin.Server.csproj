@@ -45,6 +45,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
+    <ProjectReference Include="..\CloudLoginModels\CloudLoginModels.csproj" />
     <ProjectReference Include="..\LoginRequestLibrary\CloudLoginLibrary.csproj" />
   </ItemGroup>
 

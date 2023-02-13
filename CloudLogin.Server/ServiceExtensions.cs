@@ -40,6 +40,7 @@ public static class MvcServiceCollectionExtensions
             {
                 OnSignedIn = async context =>
                 {
+
                     string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
                     CloudLoginServerClient cloudLogin = new()
@@ -52,9 +53,12 @@ public static class MvcServiceCollectionExtensions
                     CloudUser? user;
                     InputFormat FormatValue = InputFormat.EmailAddress;
 
+                    string? providerCode = context.Principal?.Identity?.AuthenticationType;
+
                     string? providerUserID = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     string? input = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
                     string? hash = context.Principal?.FindFirst(ClaimTypes.Hash)?.Value;
+                    
 
                     if (hash == "Cloud Login")
                         return;
@@ -69,12 +73,27 @@ public static class MvcServiceCollectionExtensions
                     }
                     else user = await cloudLogin.GetUserByEmailAddress(input);
 
-                    string? providerCode = context.Principal?.Identity?.AuthenticationType;
                     string firstName = context.Principal?.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
                     string lastName = context.Principal?.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
 
+                    LoginProvider? provider = null;
 
-                    LoginProvider? provider = providerCode.Equals(".") ? null : new() { Code = providerCode, Identifier = providerUserID };
+                    if (providerCode.Equals("CloudLogin"))
+                    {
+                        switch (FormatValue)
+                        {
+                            case InputFormat.EmailAddress:
+                                provider = new() { Code = "CloudLogin", Identifier = providerUserID };
+                                break;
+                            case InputFormat.PhoneNumber:
+                                provider = new() { Code = "WhatsApp", Identifier = providerUserID };
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else
+                        provider = new() { Code = providerCode, Identifier = providerUserID };
 
                     if (user != null)
                     {
@@ -112,15 +131,11 @@ public static class MvcServiceCollectionExtensions
                                             Format = FormatValue,
                                             IsPrimary = true,
                                             PhoneNumberCountryCode = countryCode,
-                                            PhoneNumberCallingCode = callingCode,
-                                            IsValidated= true,
+                                            PhoneNumberCallingCode = callingCode
                                         }
                                     }
                                 };
-
                             }
-
-
                         }
                     }
                     else
@@ -152,8 +167,7 @@ public static class MvcServiceCollectionExtensions
                                     Format = FormatValue,
                                     IsPrimary = true,
                                     PhoneNumberCountryCode = countryCode,
-                                    PhoneNumberCallingCode = callingCode,
-                                    IsValidated= true,
+                                    PhoneNumberCallingCode = callingCode
                                 }
                             }
                         };
@@ -163,6 +177,21 @@ public static class MvcServiceCollectionExtensions
                     }
 
                     user.LastSignedIn = currentDateTime;
+
+                    string alreadySignedIn = context.HttpContext.Request.Cookies["CloudUser"];
+
+                    if (!string.IsNullOrEmpty(alreadySignedIn))
+                    {
+                        context.HttpContext.Response.Cookies.Append("CloudUser",
+                            JsonConvert.SerializeObject(user), new CookieOptions()
+                            {
+                                HttpOnly = true,
+                                Secure = true,
+                                Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
+                            });
+
+                        return;
+                    }
 
                     if (user != null)
                         await cloudLogin.UpdateUser(user);

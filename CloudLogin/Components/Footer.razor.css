@@ -1,0 +1,35 @@
+﻿.amc-cloudlogin {
+  --amc-accentColor: #000;
+}
+.amc-cloudlogin-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 5px;
+  font-size: 0.9rem;
+}
+.amc-cloudlogin-footer-providers {
+  display: flex;
+  gap: 20px;
+}
+.amc-cloudlogin-footer-separator {
+  border-top: 1px solid var(--amc-accentColor);
+  max-width: 20rem;
+  width: 100%;
+  opacity: 0.6;
+}
+.amc-cloudlogin-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 10px;
+}
+.amc-cloudlogin-footer ::deep svg {
+  opacity: 0.5;
+  height: 24px;
+  width: 24px;
+}
+.amc-cloudlogin-footer ::deep svg .amc-svg-fill {
+  fill: var(--amc-accentColor);
+}

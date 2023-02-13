@@ -8,5 +8,4 @@ public record LoginInput
     public string? PhoneNumberCallingCode { get; set; }
     public List<LoginProvider> Providers { get; set; } = new List<LoginProvider>();
     public bool IsPrimary { get; set; } = false;
-    public bool IsValidated { get; set; } = false;
 }

@@ -19,15 +19,10 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 	TitlePrefix = "Cloud Login"
 });
 
+
 CloudLoginConfiguration cloudLoginConfig = new()
 {
     LoginDuration =  new TimeSpan(5 * 30, 0, 0, 0),
-    //Cosmos = new CosmosDatabase()
-    //{
-    //    ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
-    //    DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
-    //    ContainerId = builder.Configuration["Cosmos:ContainerId"]
-    //},
     FooterLinks = new List<Link>()
     {
         new Link()
@@ -74,35 +69,12 @@ CloudLoginConfiguration cloudLoginConfig = new()
     },
     Providers = new List<ProviderConfiguration>()
     {
-        new MicrosoftProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Microsoft:ClientId"],
-            ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
-        },
-        new GoogleProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Google:ClientId"],
-            ClientSecret= builder.Configuration["Google:ClientSecret"]
-        },
-        new FacebookProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Facebook:ClientId"],
-            ClientSecret= builder.Configuration["Facebook:ClientSecret"]
-        },
-        new TwitterProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Twitter:ClientId"],
-            ClientSecret= builder.Configuration["Twitter:ClientSecret"]
-        },
-        new WhatsAppProviderConfiguration()
-        {
-            RequestUri = builder.Configuration["WhatsApp:RequestUri"],
-            Authorization = builder.Configuration["WhatsApp:Authorization"],
-            Template = builder.Configuration["WhatsApp:Template"],
-            Language = builder.Configuration["WhatsApp:Language"]
-        }
+        new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
+        new GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
+        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp"), true)
     }
 };
+
 
 builder.Services.AddCloudLoginServer(cloudLoginConfig);
 

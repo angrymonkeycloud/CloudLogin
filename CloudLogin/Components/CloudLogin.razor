@@ -26,7 +26,7 @@
 
         <div class="amc-cloudlogin-title">
 
-            @if (State != ProcessState.InputValue)
+            @if (State != ProcessState.InputValue && ActionState == "login")
             {
                 <button @onclick="OnBackClicked">
                     <AngryMonkey.Cloud.Components.Icons.Back />
@@ -62,7 +62,14 @@
     </div>
 
     <div class="amc-cloudlogin-body">
-
+        @if (AddInputDiplay)
+        {
+            <div class="amc-cloudlogin-panel">
+                <div class="amc-cloudlogin-inputdisplay">
+                    @PrimaryEmail
+                </div>
+            </div>
+        }
         @if (DisplayInputValue)
         {
             <div class="amc-cloudlogin-panel">
@@ -81,10 +88,13 @@
                     <input @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="email">@InputLabel</label>
                 </div>
-                <div class="amc-cloudlogin-keppsignedin">
-                    <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                    <label for="keepme">Keep me signed in</label>
-                </div>
+                @if (AddInputDiplay == false)
+                {
+                    <div class="amc-cloudlogin-keppsignedin">
+                        <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                        <label for="keepme">Keep me signed in</label>
+                    </div>
+                }
                 <div class="login-form-next ">
                     <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
                         <span>Next</span>
@@ -149,32 +159,38 @@
 
                 <div class="login-form-finish">
                     <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))? "" : "--disable" )" @onclick="OnRegisterClicked">
-                        <span>Register</span>
+                        <span>@ButtonName</span>
                         <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
-
+        }
+        else if (State == ProcessState.ChangePrimary)
+        {
+            <div class="login-form">
+                @foreach (LoginInput input in CurrentUser.Inputs.Where(i => i.Format == InputFormat.EmailAddress))
+                {
+                    <div>
+                        <span>@input.Input</span>
+                        @if (input.IsPrimary)
+                        {
+                            <span> | Primary Email</span>
+                        }
+                        else
+                        {
+                            <button class="amc-cloudlogin-button" @onclick="x=>SetPrimary(x,input.Input)">
+                                <span>Set Primary</span>
+                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
         }
     </div>
 
-    <div class="amc-cloudlogin-footer">
-        <div class="amc-cloudlogin-footer-providers">
-            @foreach (ProviderDefinition provider in cloudLoginClient.Providers)
-            {
-                <AngryMonkey.CloudLogin.Components.ProviderButton Provider="@provider" />
-            }
-        </div>
 
-        <div class="amc-cloudlogin-footer-separator">
-        </div>
+    <AngryMonkey.CloudLogin.Components.Footer Providers="cloudLoginClient.Providers.Where(k=>k.HandlesPhoneNumber == false).ToList()"
+                                              Links="cloudLoginClient.FooterLinks" />
 
-        <div class="amc-cloudlogin-footer-links">
-
-            @foreach (Link link in cloudLoginClient.FooterLinks)
-            {
-                <a target="_blank" href="@link.Url">@link.Title</a>
-            }
-        </div>
-    </div>
 </div>

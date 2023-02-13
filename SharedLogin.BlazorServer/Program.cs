@@ -19,6 +19,7 @@ builder.Services.AddServerSideBlazor();
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
+    RedirectUri = "https://www.google.com/",
     Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
     FooterLinks = new List<Link>()
     {
@@ -67,7 +68,8 @@ CloudLoginConfiguration cloudLoginConfig = new()
     Providers = new List<ProviderConfiguration>()
     {
         new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
-        new GoogleProviderConfiguration(builder.Configuration.GetSection("Google"))
+        new GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
+        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp"), true)
     }
 };
 

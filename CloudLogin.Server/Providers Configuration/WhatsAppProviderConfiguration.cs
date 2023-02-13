@@ -9,7 +9,7 @@ public class WhatsAppProviderConfiguration : ProviderConfiguration
 	public string Template { get; set; }
 	public string Language { get; set; }
 
-	public WhatsAppProviderConfiguration(IConfigurationSection configurationSection)
+	public WhatsAppProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
     {
         RequestUri = configurationSection["RequestUri"];
         Authorization = configurationSection["Authorization"];
@@ -18,7 +18,7 @@ public class WhatsAppProviderConfiguration : ProviderConfiguration
         string label = configurationSection["Label"];
 
         Init("WhatsApp", label);
-
+		HandleUpdateOnly = handleUpdateOnly;
 		HandlesPhoneNumber = true;
 		IsCodeVerification = true;
 	}

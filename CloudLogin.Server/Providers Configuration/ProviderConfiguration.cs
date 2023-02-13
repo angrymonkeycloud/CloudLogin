@@ -15,7 +15,8 @@ public class ProviderConfiguration
 	public bool HandlesEmailAddress { get; init; } = false; // Should Be private
 	public bool HandlesPhoneNumber { get; set; } = false; // Should Be private
 	public bool IsCodeVerification { get; init; } = false; // Should Be private
-
+	public bool HandleUpdateOnly { get; set; }
+	 
 	public string CssClass // Should Be private
 	{
 		get

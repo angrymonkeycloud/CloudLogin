@@ -22,13 +22,7 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-
-    Cosmos = new CosmosDatabase()
-    {
-        ConnectionString = builder.Configuration["Cosmos:ConnectionString"],
-        DatabaseId = builder.Configuration["Cosmos:DatabaseId"],
-        ContainerId = builder.Configuration["Cosmos:ContainerId"]
-    },
+    Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
     FooterLinks = new List<Link>()
         {
             new Link()
@@ -75,37 +69,12 @@ CloudLoginConfiguration cloudLoginConfig = new()
     },
     Providers = new List<ProviderConfiguration>()
     {
-        new MicrosoftProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Microsoft:ClientId"],
-            ClientSecret= builder.Configuration["Microsoft:ClientSecret"],
-        },
-        new GoogleProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Google:ClientId"],
-            ClientSecret= builder.Configuration["Google:ClientSecret"]
-        },
-        new FacebookProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Facebook:ClientId"],
-            ClientSecret= builder.Configuration["Facebook:ClientSecret"]
-        },
-        new TwitterProviderConfiguration()
-        {
-            ClientId = builder.Configuration["Twitter:ClientId"],
-            ClientSecret= builder.Configuration["Twitter:ClientSecret"]
-        },
-        new WhatsAppProviderConfiguration()
-        {
-            RequestUri = builder.Configuration["WhatsApp:RequestUri"],
-            Authorization = builder.Configuration["WhatsApp:Authorization"],
-            Template = builder.Configuration["WhatsApp:Template"],
-            Language = builder.Configuration["WhatsApp:Language"]
-        },
-        new CustomProviderConfiguration()
-        {
-            Label = "Custom Login"
-        }
+        new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
+        new GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
+        new FacebookProviderConfiguration(builder.Configuration.GetSection("Facebook")),
+        new TwitterProviderConfiguration(builder.Configuration.GetSection("Twitter")),
+        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp"), true),
+        new CustomProviderConfiguration(builder.Configuration.GetSection("Custom"))
     }
 };
 

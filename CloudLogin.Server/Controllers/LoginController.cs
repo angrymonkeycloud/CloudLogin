@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
 using AngryMonkey.CloudLogin.DataContract;
+using AngryMonkey.CloudLogin.Models;
 
 namespace AngryMonkey.CloudLogin.Controllers;
 
@@ -21,11 +22,12 @@ public class LoginController : BaseController
     {
         CloudLoginServerClient client = new()
         {
-            Providers = Configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.Label)
+            Providers = Configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.HandleUpdateOnly, key.Label)
             {
                 IsCodeVerification = key.IsCodeVerification,
                 HandlesPhoneNumber = key.HandlesPhoneNumber,
-                HandlesEmailAddress = key.HandlesEmailAddress
+                HandlesEmailAddress = key.HandlesEmailAddress,
+                HandleUpdateOnly = key.HandleUpdateOnly
             }).ToList(),
             FooterLinks = Configuration.FooterLinks,
             RedirectUrl = Configuration.RedirectUri
@@ -35,19 +37,16 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Login/{identity}")]
-    public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn, bool sameSite)
+    public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "")
     {
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
-        if (sameSite)
-        {
-            redirectUri = redirectUri.Replace($"{baseUrl}/", "");
-        }
+
 
         AuthenticationProperties globalProperties = new()
         {
             RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}" +
-            $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}&samesite={HttpUtility.UrlEncode(sameSite.ToString())}",
+            $"&ispersistent={HttpUtility.UrlEncode(keepMeSignedIn.ToString())}&samesite={HttpUtility.UrlEncode(sameSite.ToString())}&actionstate={HttpUtility.UrlEncode(actionState)}&primaryEmail={primaryEmail}",
             ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
             IsPersistent = keepMeSignedIn,
         };
@@ -65,12 +64,13 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Login/CustomLogin")]
-    public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false)
+    public async Task<ActionResult<string>?> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string actionState = "", string primaryEmail = "")
     {
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
         if (sameSite)
         {
             redirectUri = redirectUri.Replace($"{baseUrl}/", "");
+            redirectUri = redirectUri.Replace($"/login", "");
         }
 
 
@@ -104,7 +104,7 @@ public class LoginController : BaseController
                 new Claim(ClaimTypes.Surname, lastName),
                 new Claim(ClaimTypes.Name, displayName)
 
-            }, ".");
+            }, "CloudLogin");
 
         if (userDictionary["Type"].ToLower() == "phonenumber")
             claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
@@ -116,21 +116,16 @@ public class LoginController : BaseController
 
         await HttpContext.SignInAsync(claimsPrincipal, properties);
 
-
-        return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}&ispersistent={keepMeSignedIn}&samesite={HttpUtility.UrlEncode(sameSite.ToString())}");
+        return Redirect($"/cloudlogin/result?redirecturi={HttpUtility.UrlEncode(redirectUri)}&ispersistent={keepMeSignedIn}&samesite={HttpUtility.UrlEncode(sameSite.ToString())}&actionState={HttpUtility.UrlEncode(actionState)}&primaryEmail={primaryEmail}");
     }
 
     [HttpGet("Result")]
-    public async Task<ActionResult<string>> LoginResult(string ispersistent, string sameSite, string? redirectUri = "")
+    public async Task<ActionResult<string>> LoginResult(string ispersistent, string sameSite, string? redirectUri = "", string actionState = "", string primaryEmail = "")
     {
         CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        if (sameSite == "True")
-        {
-            redirectUri = $"{baseUrl}/{HttpUtility.UrlEncode(redirectUri)}";
-        }
 
         if (user == null)
             return Redirect(redirectUri);
@@ -160,14 +155,12 @@ public class LoginController : BaseController
 
         displayName ??= $"{firstName} {lastName}";
         var claimsIdentity = new ClaimsIdentity(new[] {
-
                 new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
                 new Claim(ClaimTypes.GivenName, firstName),
                 new Claim(ClaimTypes.Surname, lastName),
                 new Claim(ClaimTypes.Name, displayName),
                 new Claim(ClaimTypes.Hash, "Cloud Login")
-
-            }, ".");
+            }, "CloudLogin");
 
         if (user.EmailAddresses.FirstOrDefault() == null)
             if (user.PhoneNumbers.FirstOrDefault() != null)
@@ -184,9 +177,52 @@ public class LoginController : BaseController
 
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
+        if (actionState == "AddInput")
+        {
+            LoginInput input = user.Inputs.FirstOrDefault();
+            string userInfo = JsonConvert.SerializeObject(input);
+            return Redirect($"Actions/AddInput?domainName={HttpUtility.UrlEncode(redirectUri)}&userInfo={HttpUtility.UrlEncode(userInfo)}&primaryEmail={primaryEmail}");
+        }
+
         await HttpContext.SignInAsync(claimsPrincipal, newProperties);
 
-        return Redirect(redirectUri);
+        if(sameSite == "True")
+            return Redirect($"{redirectUri}");
+        else
+            return Redirect($"{redirectUri}/login");
+    }
+
+    [HttpGet("Update")]
+    public async Task<ActionResult> Logout(string? redirectUrl, string userInfo)
+    {
+        if (string.IsNullOrEmpty(userInfo))
+            return Redirect(redirectUrl);
+        
+        await HttpContext.SignOutAsync();
+
+        Response.Cookies.Delete("CloudUser");
+        Request.Cookies.TryGetValue("LoggedInUser", out string LoggedInUserValue);
+        Response.Cookies.Delete("LoggedInUser");
+
+
+        CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(userInfo);
+        UserModel? loggedInValue = JsonConvert.DeserializeObject<UserModel>(LoggedInUserValue);
+
+        loggedInValue.FirstName = user.FirstName;
+        loggedInValue.LastName = user.LastName;
+        loggedInValue.DisplayName = user.DisplayName;
+        loggedInValue.IsLocked = user.IsLocked;
+        loggedInValue.ID = user.ID;
+
+        string loggedIn = JsonConvert.SerializeObject(loggedInValue);
+
+        Response.Cookies.Append("LoggedInUser", loggedIn);
+        Response.Cookies.Append("CloudUser", userInfo);
+
+        if (redirectUrl == null)
+            return Redirect("/");
+
+        return Redirect(redirectUrl);
     }
 
     [HttpGet("Logout")]

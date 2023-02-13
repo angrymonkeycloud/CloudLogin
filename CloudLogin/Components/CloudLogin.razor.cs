@@ -1,45 +1,37 @@
-﻿using AngryMonkey.Cloud.Geography;
+﻿using AngryMonkey.Cloud;
+using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Newtonsoft.Json;
+using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
+using System.Windows.Markup;
 
 namespace AngryMonkey.CloudLogin
 {
     public partial class CloudLogin
     {
-        public bool checkError { get; set; } = false;
-        public bool IsLoading { get; set; } = false;
-        protected string Title { get; set; } = string.Empty;
-        protected string Subtitle { get; set; } = string.Empty;
-        protected bool Next { get; set; } = false;
-        protected bool Preview { get; set; } = false;
-        protected List<string> Errors { get; set; } = new List<string>();
-        public ProviderDefinition? SelectedProvider { get; set; }
-        public Action OnInput { get; set; }
+        //GENERAL VARIABLES--------------------------------------
+        [Parameter] public string Logo { get; set; }
+        [Parameter] public string? ActionState { get; set; }
+        [Parameter] public CloudUser? CurrentUser { get; set; }
+        [Parameter] public string? DomainName { get; set; }
         public Guid UserId { get; set; } = Guid.NewGuid();
         public string RedirectUrl => cloudLoginClient.RedirectUrl ??= navigationManager.Uri;
+
+
+        //INPUT VARIABLES----------------------------------------
+        public string PrimaryEmail { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string DisplayName { get; set; }
+        public bool KeepMeSignedIn { get; set; }
+        public bool DisplayInputValue { get; set; } = false;
+        public bool AddInputDiplay { get; set; } = false;
         private string _inputValue;
-
-        private AnimateBodyStep AnimateStep = AnimateBodyStep.None;
-        private AnimateBodyDirection AnimateDirection = AnimateBodyDirection.None;
-
-        private enum AnimateBodyStep
-        {
-            None,
-            Out,
-            In
-        }
-        private enum AnimateBodyDirection
-        {
-            None,
-            Forward,
-            Backward
-        }
-
-        [Parameter]
         public string InputValue
         {
             get => _inputValue;
@@ -53,7 +45,37 @@ namespace AngryMonkey.CloudLogin
                 OnInput.Invoke();
             }
         }
+        List<InputFormat> AvailableFormats
+        {
+            get
+            {
+                List<InputFormat> formats = new();
 
+                if (EmailAddressEnabled)
+                    formats.Add(InputFormat.EmailAddress);
+
+                if (PhoneNumberEnabled)
+                    formats.Add(InputFormat.PhoneNumber);
+
+                return formats;
+            }
+        }
+        protected InputFormat InputValueFormat => cloudLoginClient.GetInputFormat(InputValue);
+
+
+        //PROVIDERS VARIABLES------------------------------------
+        List<ProviderDefinition> Providers { get; set; } = new();
+        public bool EmailAddressEnabled => cloudLoginClient.Providers.Any(key => key.HandlesEmailAddress);
+        public bool PhoneNumberEnabled => cloudLoginClient.Providers.Any(key => key.HandlesPhoneNumber);
+        public ProviderDefinition? SelectedProvider { get; set; }
+        public Action OnInput { get; set; }
+
+
+        //VISUAL VARIABLES---------------------------------------
+        protected ProcessState State { get; set; } = ProcessState.InputValue;
+        protected string ButtonName { get; set; } = string.Empty;
+        protected string Title { get; set; } = string.Empty;
+        protected string Subtitle { get; set; } = string.Empty;
         protected string CssClass
         {
             get
@@ -78,50 +100,78 @@ namespace AngryMonkey.CloudLogin
                 return string.Join(" ", classes);
             }
         }
+        public bool IsLoading { get; set; } = false;
+        protected bool Next { get; set; } = false;
+        protected bool Preview { get; set; } = false;
+        protected List<string> Errors { get; set; } = new List<string>();
 
-        [Parameter] public string Logo { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string DisplayName { get; set; }
+        private AnimateBodyStep AnimateStep = AnimateBodyStep.None;
+
+        private AnimateBodyDirection AnimateDirection = AnimateBodyDirection.None;
+
+        //VERIFICATION VARIABLES---------------------------------
         public string VerificationValue { get; set; }
-        public bool KeepMeSignedIn { get; set; }
         public bool ExpiredCode { get; set; } = false;
-        List<ProviderDefinition> Providers { get; set; } = new();
-        public bool DisplayInputValue { get; set; } = false;
+        public string? VerificationCode { get; set; }
+        public DateTimeOffset? VerificationCodeExpiry { get; set; }
 
 
-        public bool EmailAddressEnabled => cloudLoginClient.Providers.Any(key => key.HandlesEmailAddress);
-        public bool PhoneNumberEnabled => cloudLoginClient.Providers.Any(key => key.HandlesPhoneNumber);
-
-        List<InputFormat> AvailableFormats
-        {
-            get
-            {
-                List<InputFormat> formats = new();
-
-                if (EmailAddressEnabled)
-                    formats.Add(InputFormat.EmailAddress);
-
-                if (PhoneNumberEnabled)
-                    formats.Add(InputFormat.PhoneNumber);
-
-                return formats;
-            }
-        }
-
+        //START FUNCTIONS----------------------------------------
         protected override async Task OnInitializedAsync()
         {
 
             HttpClient NewClient = new HttpClient();
             NewClient.BaseAddress = new Uri(navigationManager.BaseUri);
 
+            if (string.IsNullOrEmpty(ActionState))
+                ActionState = "login";
+
+            if (string.IsNullOrEmpty(DomainName))
+                DomainName = RedirectUrl;
+
             cloudLoginClient.HttpServer = NewClient;
 
+            if (!string.IsNullOrEmpty(ActionState))
+            {
+                switch (ActionState)
+                {
+                    case "UpdateInput":
 
+                        StartLoading();
+
+                        if (CurrentUser == null)
+                            return;
+
+                        _inputValue = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+                        FirstName = CurrentUser.FirstName;
+                        LastName = CurrentUser.LastName;
+                        DisplayName = CurrentUser.DisplayName;
+                        UserId = CurrentUser.ID;
+
+                        await SwitchState(ProcessState.Registration);
+
+
+                        break;
+                    case "AddInput":
+
+                        PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+
+                        break;
+                    case "ChangePrimary":
+
+                        PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+
+                        await SwitchState(ProcessState.ChangePrimary);
+
+                        break;
+                    default:
+
+                        break;
+                }
+            }
 
             await base.OnInitializedAsync();
         }
-
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -135,6 +185,188 @@ namespace AngryMonkey.CloudLogin
             }
         }
 
+
+        //BUTTONS CLICKED FUNCTIONS------------------------------
+        private async Task OnInputNextClicked()
+        {
+            Errors.Clear();
+
+            List<ProviderDefinition> handlePhoneNumberProviders = cloudLoginClient.Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false).ToList();
+
+            if (ActionState == "AddInput")
+                handlePhoneNumberProviders = cloudLoginClient.Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true).ToList();
+
+
+
+            if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count() == 0)
+            {
+                Errors.Add("Unable to log you in. only emails are allowed.");
+                return;
+            }
+
+            if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress)
+            {
+                Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(InputValue))
+                return;
+
+
+            IsLoading = true;
+
+            InputValue = InputValue.ToLower();
+
+            CloudUser? user = await cloudLoginClient.GetUserByInput(InputValue);
+
+
+            Providers = new List<ProviderDefinition>();
+
+            bool addAllProviders = true;
+
+            if (user != null)
+            {
+                if (user.Providers.Any())
+                {
+                    string tempInputValue = InputValue;
+                    if (InputValueFormat == InputFormat.PhoneNumber)
+                    {
+                        PhoneNumber phoneNumber = cloudLoginClient.CloudGeography.PhoneNumbers.Get(InputValue);
+                        tempInputValue = phoneNumber.Number;
+                    }
+                    string inputProviderCode = user.Inputs.First(p => p.Input == tempInputValue).Providers.First().Code;
+
+                    List<ProviderDefinition> userProviders = user.Providers.Select(key => new ProviderDefinition(key)).ToList();
+
+                    Providers.AddRange(cloudLoginClient.Providers.Where(p => p.Code == inputProviderCode));
+
+                    addAllProviders = false;
+                }
+                UserId = user.ID;
+            }
+            else if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
+            {
+                Errors.Add("The (+) sign followed by your country code must precede your phone number.");
+                EndLoading();
+
+                return;
+            }
+
+            if (addAllProviders)
+                Providers.AddRange(cloudLoginClient.Providers
+                    .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress & key.HandleUpdateOnly == false)
+                                || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber & key.HandleUpdateOnly == false)));
+
+            if (ActionState == "AddInput")
+            {
+                Providers.AddRange(cloudLoginClient.Providers.Where(key => key.HandleUpdateOnly == true));
+                foreach (ProviderDefinition providerInside in cloudLoginClient.Providers)
+                {
+                    List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
+                    if (count.Count() > 1)
+                    {
+                        Providers.Remove(providerInside);
+                    }
+
+                }
+            }
+
+
+            if (Providers.Count == 1)
+                if (Providers.First().HandlesEmailAddress)
+                {
+                    SelectedProvider = Providers.First();
+                    ProviderSignInChallenge(SelectedProvider.Code);
+                }
+
+            await SwitchState(ProcessState.Providers);
+
+        }
+        private async Task OnProviderClickedAsync(ProviderDefinition provider)
+        {
+            StartLoading();
+            VerificationValue = "";
+            SelectedProvider = provider;
+
+            if (provider.IsCodeVerification)
+            {
+                await RefreshVerificationCode();
+                await SwitchState(ProcessState.CodeVerification);
+
+            }
+            else ProviderSignInChallenge(provider.Code);
+        }
+        private async Task OnVerifyClicked()
+        {
+            StartLoading();
+
+
+            switch (GetVerificationCodeResult(VerificationValue))
+            {
+                case VerificationCodeResult.NotValid:
+                    Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
+                    EndLoading();
+                    return;
+
+                case VerificationCodeResult.Expired:
+                    Errors.Add("The code validity has expired, please send another one.");
+                    EndLoading();
+                    return;
+
+                default: break;
+            }
+
+            CloudUser? checkUser = null;
+
+            if (string.IsNullOrEmpty(SelectedProvider?.Code) && InputValueFormat == InputFormat.EmailAddress)
+                checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
+            else if (SelectedProvider?.Code.ToLower() == "whatsapp")
+                checkUser = await cloudLoginClient.GetUserByPhoneNumber(InputValue);
+            else if (SelectedProvider?.Code.ToLower() == "custom")
+                checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
+
+            if (ActionState == "AddInput")
+            {
+                CustomSignInChallenge(CurrentUser);
+                return;
+            }
+
+            if (checkUser != null)
+                CustomSignInChallenge(checkUser);
+            else await SwitchState(ProcessState.Registration);
+        }
+        private Task OnRegisterClicked()
+        {
+            CloudUser userValues = new CloudUser()
+            {
+                ID = UserId,
+                FirstName = FirstName,
+                LastName = LastName,
+                DisplayName = DisplayName
+            };
+
+            if (ActionState == "UpdateInput")
+            {
+                UpdateUser(userValues);
+                return Task.CompletedTask;
+            }
+            if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName))
+            {
+                Errors.Add("Unable to log you in. Please check that your first name, last name and your display name are correct.");
+                return Task.CompletedTask;
+            }
+
+
+            StartLoading();
+
+            CustomSignInChallenge(userValues);
+            return Task.CompletedTask;
+        }
+        private async Task SetPrimary(MouseEventArgs x, string input)
+        {
+            navigationManager.NavigateTo($"/CloudLogin/Actions/SetPrimary?input={HttpUtility.UrlEncode(input)}&domainName={HttpUtility.UrlEncode(DomainName)}", true);
+        }
         protected async Task OnInputKeyPressed(KeyboardEventArgs args)
         {
             if (IsLoading)
@@ -175,61 +407,41 @@ namespace AngryMonkey.CloudLogin
                 default: break;
             }
         }
-
-        public string InputLabel
+        private async Task OnBackClicked(MouseEventArgs e)
         {
-            get
-            {
-                if (InputValueFormat == InputFormat.EmailAddress)
-                    return "Email";
+            if (State == ProcessState.InputValue)
+                return;
 
-                if (InputValueFormat == InputFormat.PhoneNumber)
-                    return "Phone";
+            Errors.Clear();
 
-                List<string> label = new();
+            await SwitchState(ProcessState.InputValue);
 
-                if (AvailableFormats.Contains(InputFormat.EmailAddress))
-                    label.Add("Email");
-
-                if (AvailableFormats.Contains(InputFormat.PhoneNumber))
-                    label.Add("Phone");
-
-                return string.Join(" or ", label);
-            }
         }
 
-        public string? VerificationCode { get; set; }
-        public DateTimeOffset? VerificationCodeExpiry { get; set; }
 
-        private VerificationCodeResult GetVerificationCodeResult(string code)
+        //SIGN IN FUNCTIONS-------------------------------------
+        private void ProviderSignInChallenge(string provider)
         {
-            if (VerificationCode != code.Trim())
-                return VerificationCodeResult.NotValid;
-
-            if (VerificationCodeExpiry.HasValue && DateTimeOffset.UtcNow >= VerificationCodeExpiry.Value)
-                return VerificationCodeResult.Expired;
-
-            return VerificationCodeResult.Valid;
+            if (DomainName == RedirectUrl)
+                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={DomainName}&keepMeSignedIn={KeepMeSignedIn}&samesite=true&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
+            else
+                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={DomainName}&keepMeSignedIn={KeepMeSignedIn}&samesite=false&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
         }
-
-        private enum VerificationCodeResult
-        {
-            Valid,
-            NotValid,
-            Expired
-        }
-
-        protected InputFormat InputValueFormat => cloudLoginClient.GetInputFormat(InputValue);
-
-        protected ProcessState State { get; set; } = ProcessState.InputValue;
-
         private async Task SwitchState(ProcessState state)
         {
             if (state == State)
             {
                 Title = "Sign in";
-                Subtitle = String.Empty;
+                Subtitle = string.Empty;
                 DisplayInputValue = false;
+
+                if (ActionState=="AddInput")
+                {
+                    AddInputDiplay = true;
+                    Title = "Add Input";
+                    Subtitle = "Add another input for your account";
+                }
+
                 StateHasChanged();
                 return;
             }
@@ -253,7 +465,6 @@ namespace AngryMonkey.CloudLogin
                         toNext = false;
 
                     break;
-
                 default: break;
             }
 
@@ -276,12 +487,23 @@ namespace AngryMonkey.CloudLogin
                     Subtitle = String.Empty;
                     DisplayInputValue = false;
 
+                    if (ActionState=="AddInput")
+                    {
+                        AddInputDiplay = true;
+                        Title = "Add Input";
+                        Subtitle = "Add another input for your account";
+                    }
+
                     break;
 
                 case ProcessState.Providers:
                     Title = "Continue signing in";
                     Subtitle = "Sign In with";
                     DisplayInputValue = true;
+
+                    if (ActionState=="AddInput")
+                        Title = "Continue adding input";
+
                     break;
 
                 case ProcessState.CodeVerification:
@@ -296,11 +518,30 @@ namespace AngryMonkey.CloudLogin
                     break;
 
                 case ProcessState.Registration:
-                    Title = "Register";
-                    Subtitle = "Add your credentials.";
-                    DisplayInputValue = true;
+                    if (ActionState == "UpdateInput")
+                    {
+                        Title = "Update";
+                        Subtitle = "Change your credentials.";
+                        DisplayInputValue = true;
+                        ButtonName = "Update";
+                    }
+                    else
+                    {
+                        Title = "Register";
+                        Subtitle = "Add your credentials.";
+                        DisplayInputValue = true;
+                        ButtonName = "Register";
+                    }
                     break;
 
+
+                case ProcessState.ChangePrimary:
+
+                    Title = "Set Primary";
+                    Subtitle = "Choose which email to put as primary.";
+                    DisplayInputValue = true;
+
+                    break;
                 default:
                     Title = "Untitled!!!";
                     Subtitle = string.Empty;
@@ -317,119 +558,71 @@ namespace AngryMonkey.CloudLogin
             StateHasChanged();
         }
 
-        protected enum ProcessState
+
+        //ACTIONS FUNCTIONS--------------------------------------
+        private void UpdateUser(CloudUser user)
         {
-            InputValue,
-            Providers,
-            Registration,
-            CodeVerification
-        }
-
-        private async void StartLoading()
-        {
-            IsLoading = true;
-            Errors.Clear();
-            await Task.Delay(3000);
-        }
-
-        private void EndLoading()
-        {
-            IsLoading = false;
-            StateHasChanged();
-        }
-
-        private async Task OnInputNextClicked()
-        {
-            Errors.Clear();
-
-            var test = Providers.Select(s => s.HandlesPhoneNumber);
-
-            if (InputValueFormat == InputFormat.PhoneNumber && test.Count() == 0)
+            Dictionary<string, object> userInfo = new()
             {
-                Errors.Add("Unable to log you in. only emails are allowed.");
-                return;
-            }
+                { "UserId", user.ID },
+                { "FirstName", user.FirstName },
+                { "LastName", user.LastName },
+                { "DisplayName", user.DisplayName }
+            };
+            string userInfoJSON = JsonConvert.SerializeObject(userInfo);
 
-            if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress)
-            {
-                Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
-                return;
-            }
-
-            if (string.IsNullOrEmpty(InputValue))
-                return;
-
-
-            IsLoading = true;
-
-            InputValue = InputValue.ToLower();
-
-            try
-            {
-                CloudUser? user = await cloudLoginClient.GetUserByInput(InputValue);
-
-                Providers = new List<ProviderDefinition>();
-
-                bool addAllProviders = true;
-
-                if (user != null)
-                {
-                    if (user.Providers.Any())
-                    {
-                        List<ProviderDefinition> userProviders = user.Providers.Select(key => new ProviderDefinition(key)).ToList();
-
-                        Providers.AddRange(cloudLoginClient.Providers.Where(p => p.Code == userProviders.FirstOrDefault().Code));
-
-                        addAllProviders = false;
-                    }
-
-                    UserId = user.ID;
-                }
-                else if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
-                {
-                    Errors.Add("The (+) sign followed by your country code must precede your phone number.");
-                    EndLoading();
-
-                    return;
-                }
-
-                if (addAllProviders)
-                    Providers.AddRange(cloudLoginClient.Providers
-                        .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
-                                    || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
-
-
-            }
-            catch (Exception e)
-            {
-                Providers.AddRange(cloudLoginClient.Providers
-                        .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress)
-                                    || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber)));
-
-            }
-
-            if (Providers.Count == 1)
-                if (Providers.First().HandlesEmailAddress)
-                {
-                    SelectedProvider = Providers.First();
-                    ProviderSignInChallenge(SelectedProvider.Code);
-                }
-
-            await SwitchState(ProcessState.Providers);
-
+            navigationManager.NavigateTo($"/CloudLogin/Actions/Update?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&domainName={HttpUtility.UrlEncode(DomainName)}", true);
         }
 
-        private async Task OnBackClicked(MouseEventArgs e)
+        //CUSTOM SIGN IN FUNCTIONS-------------------------------
+        private void CustomSignInChallenge(CloudUser user)
         {
-            if (State == ProcessState.InputValue)
-                return;
+            Dictionary<string, object> userInfo = new()
+            {
+                { "UserId", user.ID },
+                { "FirstName", user.FirstName },
+                { "LastName", user.LastName },
+                { "DisplayName", user.DisplayName },
+                { "Input", InputValue },
+                { "Type", InputValueFormat },
+            };
 
-            Errors.Clear();
+            string userInfoJSON = JsonConvert.SerializeObject(userInfo);
 
-            await SwitchState(ProcessState.InputValue);
+            if (RedirectUrl == navigationManager.Uri)
+                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(DomainName)}&samesite=true&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
+            else
+                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(DomainName)}&samesite=false&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
+        }
+        private static string CreateRandomCode(int length)
+        {
+            StringBuilder builder = new();
 
+            for (int i = 0; i < length; i++)
+                builder.Append(new Random().Next(0, 9));
+
+            return builder.ToString();
         }
 
+        public async Task SendEmailCode(string receiver, string code)
+        {
+            await cloudLoginClient.SendEmailCode(receiver, code);
+        }
+
+        public async Task SendWhatsAppCode(string receiver, string code)
+        {
+            await cloudLoginClient.SendWhatsAppCode(receiver, code);
+        }
+        private VerificationCodeResult GetVerificationCodeResult(string code)
+        {
+            if (VerificationCode != code.Trim())
+                return VerificationCodeResult.NotValid;
+
+            if (VerificationCodeExpiry.HasValue && DateTimeOffset.UtcNow >= VerificationCodeExpiry.Value)
+                return VerificationCodeResult.Expired;
+
+            return VerificationCodeResult.Valid;
+        }
         private async Task RefreshVerificationCode()
         {
             StartLoading();
@@ -453,7 +646,6 @@ namespace AngryMonkey.CloudLogin
                     break;
             }
         }
-
         private async Task OnNewCodeClicked()
         {
             StartLoading();
@@ -472,99 +664,20 @@ namespace AngryMonkey.CloudLogin
 
         }
 
-        private async Task OnProviderClickedAsync(ProviderDefinition provider)
+
+        //VISUAL FUNCTIONS---------------------------------------
+
+        private async void StartLoading()
         {
-            StartLoading();
-            VerificationValue = "";
-            SelectedProvider = provider;
-
-            if (provider.IsCodeVerification)
-            {
-                await RefreshVerificationCode();
-                await SwitchState(ProcessState.CodeVerification);
-
-            }
-            else ProviderSignInChallenge(provider.Code);
+            IsLoading = true;
+            Errors.Clear();
+            await Task.Delay(3000);
         }
-
-        private string GetPhoneNumberWithoutCode(string phoneNumber)
+        private void EndLoading()
         {
-            Country? country = cloudLoginClient.CloudGeography.Countries.GuessCountryByPhoneNumber(InputValue);
-
-            if (country == null)
-                return phoneNumber;
-
-            return phoneNumber[$"+{country.CallingCode}".Length..];
+            IsLoading = false;
+            StateHasChanged();
         }
-
-        private void ProviderSignInChallenge(string provider)
-        {
-            if (RedirectUrl == navigationManager.Uri)
-            {
-                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUrl}&keepMeSignedIn={KeepMeSignedIn}&samesite=true", true);
-            }
-            else
-            {
-                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUrl}&keepMeSignedIn={KeepMeSignedIn}&samesite=false", true);
-            }
-        }
-        private void CustomSignInChallenge(CloudUser user)
-        {
-            Dictionary<string, object> userInfo = new()
-            {
-                { "UserId", user.ID },
-                { "FirstName", user.FirstName },
-                { "LastName", user.LastName },
-                { "DisplayName", user.DisplayName },
-                { "Input", InputValue },
-                { "Type", InputValueFormat },
-            };
-
-            string userInfoJSON = JsonConvert.SerializeObject(userInfo);
-            if (RedirectUrl == navigationManager.Uri)
-            {
-                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={RedirectUrl}&samesite=true", true);
-            }
-            else
-            {
-                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={RedirectUrl}&samesite=false", true);
-            }
-        }
-
-        private async Task OnVerifyClicked()
-        {
-            StartLoading();
-
-
-            switch (GetVerificationCodeResult(VerificationValue))
-            {
-                case VerificationCodeResult.NotValid:
-                    Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
-                    EndLoading();
-                    return;
-
-                case VerificationCodeResult.Expired:
-                    Errors.Add("The code validity has expired, please send another one.");
-                    EndLoading();
-                    return;
-
-                default: break;
-            }
-
-            CloudUser? checkUser = null;
-
-            if (string.IsNullOrEmpty(SelectedProvider?.Code) && InputValueFormat == InputFormat.EmailAddress)
-                checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
-            else if (SelectedProvider?.Code.ToLower() == "whatsapp")
-                checkUser = await cloudLoginClient.GetUserByPhoneNumber(InputValue);
-            else if (SelectedProvider?.Code.ToLower() == "custom")
-                checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
-
-            if (checkUser != null)
-                CustomSignInChallenge(checkUser);
-            else await SwitchState(ProcessState.Registration);
-        }
-
         protected void OnDisplayNameFocus()
         {
             if (!string.IsNullOrEmpty(DisplayName) || string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
@@ -572,45 +685,26 @@ namespace AngryMonkey.CloudLogin
 
             DisplayName = $"{FirstName} {LastName}";
         }
-
-        private async Task OnRegisterClicked()
+        public string InputLabel
         {
-            if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName))
+            get
             {
-                Errors.Add("Unable to log you in. Please check that your first name, last name and your display name are correct.");
-                return;
+                if (InputValueFormat == InputFormat.EmailAddress)
+                    return "Email";
+
+                if (InputValueFormat == InputFormat.PhoneNumber)
+                    return "Phone";
+
+                List<string> label = new();
+
+                if (AvailableFormats.Contains(InputFormat.EmailAddress))
+                    label.Add("Email");
+
+                if (AvailableFormats.Contains(InputFormat.PhoneNumber))
+                    label.Add("Phone");
+
+                return string.Join(" or ", label);
             }
-
-
-            StartLoading();
-
-            CustomSignInChallenge(new CloudUser()
-            {
-                ID = UserId,
-                FirstName = FirstName,
-                LastName = LastName,
-                DisplayName = DisplayName
-            });
-        }
-
-        private static string CreateRandomCode(int length)
-        {
-            StringBuilder builder = new();
-
-            for (int i = 0; i < length; i++)
-                builder.Append(new Random().Next(0, 9));
-
-            return builder.ToString();
-        }
-
-        public async Task SendEmailCode(string receiver, string code)
-        {
-            await cloudLoginClient.SendEmailCode(receiver, code);
-        }
-
-        public async Task SendWhatsAppCode(string receiver, string code)
-        {
-            await cloudLoginClient.SendWhatsAppCode(receiver, code);
         }
     }
 }

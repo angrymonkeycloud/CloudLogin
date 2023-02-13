@@ -12,13 +12,14 @@ public class MicrosoftProviderConfiguration : ProviderConfiguration
 	//	HandlesEmailAddress = true;
 	//}
 
-	public MicrosoftProviderConfiguration(IConfigurationSection configurationSection)
+	public MicrosoftProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
 	{
         ClientId = configurationSection["ClientId"];
         ClientSecret = configurationSection["ClientSecret"];
         string label = configurationSection["Label"];
 
         Init("Microsoft", label);
+		HandleUpdateOnly = handleUpdateOnly;
 		HandlesEmailAddress = true;
 	}
 }

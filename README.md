@@ -1,260 +1,36 @@
 # Cloud Login
 
-An MVC project that shows how to add AngryMonkey Cloud Login to your website with your own sign in/out page, and lets you connect to different social identity providers.
+Cloud Login is a login system designed to provide a simple and secure way for users to log in to your .NET project website. With a range of popular social media platforms to choose from, including **Google**, **Microsoft**, **Facebook**, **Twitter**, and **WhatsApp**, users can easily access their accounts with the provider of their choice.
 
-## Initialization
+## Features
 
-### Blazor Server-Side Application Configuration
+- Easy integration with .NET project websites
+- Support for a range of social media platforms
+- Customizable login options to meet your specific website needs
 
-Program.cs:
-```csharp 
+## About
 
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+Cloud Login is created by **Angry Monkey Agency**, a leading provider of cloud-based software solutions for businesses. With a focus on delivering innovative and effective products, Angry Monkey Agency is committed to helping businesses grow and succeed in the digital age. For more information on Angry Monkey Agency and their products, please visit their website at [angrymonkeycloud.com](https://angrymonkeycloud.com/).
 
-CloudLoginConfiguration cloudLoginConfig = new()
-{
-    ..<CONFIGURATION HERE>..
-}
+## Getting Started
 
+To start using Cloud Login in your .NET project website:
 
-builder.Services.AddCloudLoginServer(cloudLoginConfig);
+1. Install Cloud Login
+2. Configure the login system to your preferences
+3. Add the Cloud Login login page to your website
+4. Allow users to log in with their preferred provider!
 
-builder.Services.AddAuthentication(opt =>
-{
-    opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-});
+For more detailed information on integrating Cloud Login into your .NET project website, please see the [Cloud Login Integration Guide](integration.md).
 
-await builder.Services.AddCloudLogin();
+## License
 
-
-builder.Services.AddHttpContextAccessor();
+Cloud Login is available under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
 
-builder.Services.AddOptions();
-builder.Services.AddAuthenticationCore();
+## Recommendation
 
-builder.Services.AddScoped<CustomAuthenticationStateProvider>();
-builder.Services.AddScoped(key => new UserController());
-
-builder.Services.AddScoped<CustomAuthenticationStateProvider>();
-builder.Services.AddScoped(key => new UserController());
-
-.
-.CODE BELOW IN THE WebApplication  configuration
-.
-
-app.UseCloudLogin();
-app.UseAuthentication();
-app.UseAuthorization();
-
-```
-
-index.razor.cs
-```csharp
-CloudUser CurrentUser { get; set; } = new();
-bool IsAuthorized { get; set; } = false;
-protected override async Task OnInitializedAsync()
-{
-    CurrentUser = await cloudLogin.CurrentUser(HttpContextAccessor);
-    IsAuthorized = await cloudLogin.IsAuthenticated(HttpContextAccessor);
-}
-```
-
-
-### Blazor Server-Client-Side Application Configuration
-
-Program.cs Server-side:
-```csharp
-
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-CloudLoginConfiguration cloudLoginConfig = new()
-{
-    ..<CONFIGURATION HERE>..
-}
-
-builder.Services.AddCloudLoginServer(cloudLoginConfig);
-
-builder.Services.AddAuthentication(opt =>
-{
-    opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-});
-
-builder.Services.AddOptions();
-builder.Services.AddAuthenticationCore();
-
-builder.Services.AddScoped<CustomAuthenticationStateProvider>();
-builder.Services.AddScoped(key => new UserController());
-
-.
-.CODE BELOW IN THE WebApplication  configuration
-.
-
-app.UseCloudLogin();
-app.UseAuthentication();
-app.UseAuthorization();
-```
-Program.cs Client-side:
-```csharp
-builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-
-await builder.Services.AddCloudLogin(new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-
-
-builder.Services.AddApiAuthorization();
-
-builder.Services.AddHttpContextAccessor();
-```
-index.razor.cs
-```csharp
-        CloudUser CurrentUser { get; set; } = new();
-        bool IsAuthorized { get; set; } = false;
-        
-
-        protected override async Task OnInitializedAsync()
-        {
-            IsAuthorized = await cloudLogin.IsAuthenticated();
-            CurrentUser = await cloudLogin.CurrentUser();
-        }
-```
-
-### For the Configation code inside cloudLoginConfig
-
-#### For Cloud Login with online database and user handling, you should subscribe to Azure Cosmos and create a database and a container:
-
-```csharp
- Cosmos = new CosmosDatabase()
-    {
-        ConnectionString = /*Connection String here*/,
-        DatabaseId = /*Create a database and but the ID here*/,
-        ContainerId = /*Create a Container and put its ID here*/
-    },
-``` 
-
-#### Adding your own footer links:
-
-```csharp
-    FooterLinks = new List<Link>()
-    {
-        new Link()
-        {
-            Title = /*Title for your link*/,
-            Url = /*Link URL*/
-        }
-    }
-```
-
-#### For Email verification you should have an Email SMTP setup, ex from google:
- https://www.gmass.co/blog/gmail-smtp/
-
-```csharp
-    EmailSendCodeRequest = async (sendCode) =>
-    {
-        SmtpClient smtpClient = new(/*Your Email Host*/, int.Parse(/*Your Email Port*/))
-        {
-            EnableSsl = true,
-            DeliveryMethod = SmtpDeliveryMethod.Network,
-            UseDefaultCredentials = false,
-            Credentials = new NetworkCredential(/*Your Email*/, /*Your Password*/)
-        };
-
-        StringBuilder mailBody = new();
-        /*Any paragraph you want to write example below*/
-        mailBody.AppendLine("<h3>Hello,</h3>");
-        mailBody.AppendLine($"Your Code: <b style=\"color:#202124;text-decoration:none\">{sendCode.Code}</b> <br />");
-
-        MailMessage mailMessage = new()
-        {
-            From = new MailAddress(/*Your Email*/, "Cloud Login"),
-            Subject = /*Email Subject*/,
-            IsBodyHtml = true,
-            Body = mailBody.ToString()
-        };
-
-        mailMessage.To.Add(sendCode.Address);
-
-        await smtpClient.SendMailAsync(mailMessage);
-    }
-```
-
-#### For adding multiple providers
-For each provider there is a different procedur to get client id and secret, use this link for help
-https://learn.microsoft.com/en-us/azure/active-directory-b2c/add-identity-provider
-
-```csharp
-Providers = new List<ProviderConfiguration>()
-    {
-        //Microsoft Setup
-        new MicrosoftProviderConfiguration()
-        {
-            ClientId = /*Client ID*/,
-            ClientSecret= /*Client Secret*/,
-        },
-        //Google Setup
-        new GoogleProviderConfiguration()
-        {
-            ClientId = /*Client ID*/,
-            ClientSecret= /*Client Secret*/,
-        },
-        //Facebook Setup
-        new FacebookProviderConfiguration()
-        {
-            ClientId = /*Client ID*/,
-            ClientSecret= /*Client Secret*/,
-        },
-        //Twitter Setup
-        new TwitterProviderConfiguration()
-        {
-            ClientId = /*Client ID*/,
-            ClientSecret= /*Client Secret*/,
-        },
-        //WhatsApp Setup
-        new WhatsAppProviderConfiguration()
-        {
-            RequestUri = /*Whatsapp Request URI*/,
-            Authorization = /*Whatsapp Authorization Bearer*/,
-            Template = /*Whatsapp Template*/,
-            Language = /*Whatsapp Template Language*/
-        }
-    }
-```
-
-#### Redirect URL if you want when the login finish to redirect to a custom link/page
-Leave empty to stay on the same page
-```csharp
-redirectUri  = /*Redirect Link*/
-```
-
-### lastly you have to make an authorized and not authorized state and get the signed in user id , display name etc..
-index.razor
-```csharp
-@inject AngryMonkey.Cloud.Login.CloudLoginClient cloudLogin
-@inject IHttpContextAccessor HttpContextAccessor
-//Injection at the top of the page
-
-
-@if (IsAuthorized == false)
-{
-    //NOT authorized
-
-    <AngryMonkey.Cloud.Login.CloudLogin Logo="<YOUR LOGO LINK>" />
-}
-else
-{
-    //Authorized
-    @CurrentUser.ID
-    @CurrentUser.DisplayName
-    @CurrentUser.Inputs.Where(key => key.IsPrimary == true).FirstOrDefault().Input
-    etc..
-}
-```
-
-
-### Recommendation
-
-All IDs, Secrets, Passwords, etc.. to be kept in a secrets file to not make your website vulnerable.
+Befor you continue please consider all IDs, Secrets, Passwords, etc.. to be kept in a secrets file to not make your website vulnerable.
 
 ## Contribution
 

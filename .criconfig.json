@@ -1,0 +1,25 @@
+{
+    "Tabs":
+    [
+        {
+            "Title": "Cloud Login",
+            "Path": ["/README.md"]
+        },
+        {
+            "Title": "Integration",
+            "Path": ["/Integration.md"]
+        },
+        {
+            "Title": "Custom Email Integration",
+            "Path": ["/customemail.md"]
+        },
+        {
+            "Title": "Providers Integration",
+            "Path": ["/providers.md"]
+        },
+        {
+            "Title": "Cosmos Database Integration",
+            "Path": ["/cosmosdatabase.md"]
+        }
+    ]
+}

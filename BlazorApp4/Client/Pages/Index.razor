@@ -1,8 +1,5 @@
 ﻿@page "/"
-@using Microsoft.AspNetCore.Http
-@using Newtonsoft.Json
 @inject CloudLoginServerClient cloudLogin
-@inject IHttpContextAccessor HttpContextAccessor
 
 @if (IsAuthorized == false)
 {

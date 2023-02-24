@@ -10,7 +10,7 @@ Cloud Login is a login system designed to provide a simple and secure way for us
 
 ## About
 
-Cloud Login is created by **Angry Monkey Agency**, a leading provider of cloud-based software solutions for businesses. With a focus on delivering innovative and effective products, Angry Monkey Agency is committed to helping businesses grow and succeed in the digital age. For more information on Angry Monkey Agency and their products, please visit their website at [angrymonkeycloud.com](https://angrymonkeycloud.com/).
+Cloud Login is created by **Angry Monkey Cloud**, a leading provider of cloud-based software solutions for businesses. With a focus on delivering innovative and effective products, Angry Monkey Agency is committed to helping businesses grow and succeed in the digital age. For more information on Angry Monkey Agency and their products, please visit their website at [angrymonkeycloud.com](https://angrymonkeycloud.com/).
 
 ## Getting Started
 

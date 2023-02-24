@@ -22,7 +22,7 @@ Inside ProviderConfiguration, you can use the following for each of the provider
     
 3. Facebook:
     ```csharp
-    new ProviderConfiguration(builder.Configuration.GetSection("Facebook"))
+    new FacebookProviderConfiguration(builder.Configuration.GetSection("Facebook"))
     ```
     
 4. Twitter:
@@ -89,15 +89,18 @@ For each provider added above you should add the configuration of it inside the 
         "Label": "<Label Name>",
     }
     ```
-
-For each provider there is a different procedur to get client id and secret, please see the [Add Identity Provider Guide](https://learn.microsoft.com/en-us/azure/active-directory-b2c/add-identity-provider)
+For each provider there is a different procedure to get client id and secret, please see the [Add Identity Provider Guide](https://learn.microsoft.com/en-us/azure/active-directory-b2c/add-identity-provider)
 
 ## Shared login update and new functionalities
-Recently, we added shared login configuration that lets you connect multiple website into a single login system, and we added the ability to allow user editing profile, adding multiple emails to a single account and ability to switch between primary emails.
+
+Recently, we added a shared login configuration that lets you connect multiple websites into a single login system, and we added the ability to allow users to edit their profiles, adding multiple emails to a single account and the ability to switch between primary emails.
 
 If you want any of the providers to be used only for the purpose of adding it to an already existing account, and not the ability to let it be the primary email of the account, you can make True the HandleUpdateOnly inside the provider configuration, for example:
+
 ```csharp
 new CustomProviderConfiguration(builder.Configuration.GetSection("Custom"), true)
 ```
+
 ## Upcoming functionality we're working on
-For future functions we will be working on a controller that can handle all user updates, user data and user interaction in cloud login.
+
+For future functions, we will be working on a controller that can handle all user updates, user data and user interaction in cloud login.

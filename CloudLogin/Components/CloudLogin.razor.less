@@ -54,7 +54,7 @@
 	}
 
 	input[type="text"] {
-		width: 100%;
+		width: -webkit-fill-available;
 		height: 100%;
 		color: #000;
 		background-color: transparent;
@@ -146,8 +146,7 @@
 			list-style: none;
 			font-size: .8rem;
 			color: @--colorError;
-			padding-left:0;
-			
+			padding-left: 0;
 		}
 	}
 
@@ -156,7 +155,7 @@
 		flex-direction: row;
 		flex-wrap: wrap;
 		gap: 10px;
-		justify-content: center;
+		justify-content: center; 
 		align-items: center;
 		margin-top: 20px;
 		margin-bottom: 50px;
@@ -241,7 +240,7 @@
 			&-form {
 				display: flex;
 				flex-direction: column;
-				width: 80%;
+				width: 100%;
 				margin: 0 auto;
 				min-height: 20rem;
 
@@ -270,7 +269,7 @@
 				&-next {
 					margin-top: 15px;
 					text-align: center;
-				} 
+				}
 
 				&-verify, &-finish {
 					text-align: right;

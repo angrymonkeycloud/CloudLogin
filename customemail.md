@@ -2,7 +2,8 @@
 
 ## Main configuration, inside the CloudLoginConfiguration
 
-To add a custom email login, a SMTP Email is required to be used for sending Email Codes for verification.<br/>
+To add a custom email login, an SMTP Email is required to be used for sending Email Codes for verification.
+
 To add the SMTP Email, you should add the following code:
 ```csharp
 EmailSendCodeRequest = async (sendCode) =>
@@ -43,8 +44,7 @@ await smtpClient.SendMailAsync(mailMessage);
 ```
 All these should be added inside the EmailSendCodeRequest mentioned above.
 ## Configuration inside the app secret:
-
-For each part added above you should add the configuration of it inside the secret, For example:
+For each part added above, you should add the configuration of it inside the secret, For example:
 ```csharp
     "SMTP": {
         "Email": "<Email that's configured for SMTP>",
@@ -53,5 +53,4 @@ For each part added above you should add the configuration of it inside the secr
         "Port": "<SMTP Email Port>"
     }
 ```
-
-For adding an SMTP Google Email, please see the [Gmail SMTP Settings](https://www.gmass.co/blog/gmail-smtp/).
+In addition to adding an SMTP Google Email, please see the [Gmail SMTP Settings](https://www.gmass.co/blog/gmail-smtp/).

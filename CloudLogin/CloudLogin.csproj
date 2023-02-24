@@ -26,12 +26,6 @@
 	  <Content Remove="compilerconfig.json" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <EmbeddedResource Remove="C:\Users\USER\.nuget\packages\angrymonkey.cloud.components\2.0.4\contentFiles\any\net6.0\CloudWeb\css\cloud.css" />
-	  <EmbeddedResource Remove="C:\Users\USER\.nuget\packages\angrymonkey.cloud.components\2.0.4\contentFiles\any\net6.0\CloudWeb\css\cloud.min.css" />
-	  <EmbeddedResource Remove="C:\Users\USER\.nuget\packages\angrymonkey.cloud.components\2.0.4\contentFiles\any\net6.0\CloudWeb\js\cloud.js" />
-	  <EmbeddedResource Remove="C:\Users\USER\.nuget\packages\angrymonkey.cloud.components\2.0.4\contentFiles\any\net6.0\CloudWeb\js\cloud.min.js" />
-	</ItemGroup>
 
 	<ItemGroup>
 	  <None Include="compilerconfig.json" />

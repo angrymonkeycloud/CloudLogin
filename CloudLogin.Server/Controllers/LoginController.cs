@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
 using AngryMonkey.CloudLogin.DataContract;
 using AngryMonkey.CloudLogin.Models;
+using System.Linq.Expressions;
 
 namespace AngryMonkey.CloudLogin.Controllers;
 
@@ -186,7 +187,7 @@ public class LoginController : BaseController
 
         await HttpContext.SignInAsync(claimsPrincipal, newProperties);
 
-        if(sameSite == "True")
+        if (sameSite == "True")
             return Redirect($"{redirectUri}");
         else
             return Redirect($"{redirectUri}/login");
@@ -197,26 +198,31 @@ public class LoginController : BaseController
     {
         if (string.IsNullOrEmpty(userInfo))
             return Redirect(redirectUrl);
-        
-        await HttpContext.SignOutAsync();
 
         Response.Cookies.Delete("CloudUser");
-        Request.Cookies.TryGetValue("LoggedInUser", out string LoggedInUserValue);
-        Response.Cookies.Delete("LoggedInUser");
+
+        Request.Cookies.TryGetValue("LoggedInUser", out string? LoggedInUserValue);
 
 
-        CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(userInfo);
-        UserModel? loggedInValue = JsonConvert.DeserializeObject<UserModel>(LoggedInUserValue);
+        if (!string.IsNullOrEmpty(LoggedInUserValue))
+        {
+            Console.WriteLine("going in");
+            CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(userInfo);
 
-        loggedInValue.FirstName = user.FirstName;
-        loggedInValue.LastName = user.LastName;
-        loggedInValue.DisplayName = user.DisplayName;
-        loggedInValue.IsLocked = user.IsLocked;
-        loggedInValue.ID = user.ID;
+            Response.Cookies.Delete("LoggedInUser");
 
-        string loggedIn = JsonConvert.SerializeObject(loggedInValue);
+            UserModel? loggedInValue = JsonConvert.DeserializeObject<UserModel>(LoggedInUserValue);
 
-        Response.Cookies.Append("LoggedInUser", loggedIn);
+            loggedInValue.FirstName = user.FirstName;
+            loggedInValue.LastName = user.LastName;
+            loggedInValue.DisplayName = user.DisplayName;
+            loggedInValue.IsLocked = user.IsLocked;
+            loggedInValue.ID = user.ID;
+            string loggedIn = JsonConvert.SerializeObject(loggedInValue);
+
+            Response.Cookies.Append("LoggedInUser", loggedIn);
+        }
+
         Response.Cookies.Append("CloudUser", userInfo);
 
         if (redirectUrl == null)

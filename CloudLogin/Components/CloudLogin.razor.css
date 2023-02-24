@@ -70,7 +70,7 @@
   margin-top: 10px;
 }
 .amc-cloudlogin input[type="text"] {
-  width: 100%;
+  width: -webkit-fill-available;
   height: 100%;
   color: #000;
   background-color: transparent;
@@ -224,7 +224,7 @@
 .amc-cloudlogin-body .login-form {
   display: flex;
   flex-direction: column;
-  width: 80%;
+  width: 100%;
   margin: 0 auto;
   min-height: 20rem;
 }

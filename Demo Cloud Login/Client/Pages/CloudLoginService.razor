@@ -1,0 +1,14 @@
+﻿@page "/cloudlogin"
+@inject CloudLoginServerClient cloudLogin
+@inject NavigationManager nav
+
+@if (IsAuthorized)
+{
+    @if (Show)
+    {
+        <AngryMonkey.CloudLogin.CloudLogin Logo="./img/LazyBananaLogo.svg"
+                                   ActionState="@actionState"
+                                   CurrentUser="@CurrentUser"
+                                   DomainName="@domainName" />
+    }
+}

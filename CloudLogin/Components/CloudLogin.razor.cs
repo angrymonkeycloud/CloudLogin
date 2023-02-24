@@ -153,9 +153,7 @@ namespace AngryMonkey.CloudLogin
 
                         break;
                     case "AddInput":
-
                         PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
-
                         break;
                     case "ChangePrimary":
 
@@ -163,6 +161,12 @@ namespace AngryMonkey.CloudLogin
 
                         await SwitchState(ProcessState.ChangePrimary);
 
+                        break;
+                    case "AddNumber":
+                        PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+                        break;
+                    case "AddEmail":
+                        PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
                         break;
                     default:
 
@@ -198,7 +202,7 @@ namespace AngryMonkey.CloudLogin
 
 
 
-            if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count() == 0)
+            if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count() == 0 && ActionState != "AddNumber")
             {
                 Errors.Add("Unable to log you in. only emails are allowed.");
                 return;
@@ -255,8 +259,9 @@ namespace AngryMonkey.CloudLogin
 
             if (addAllProviders)
                 Providers.AddRange(cloudLoginClient.Providers
-                    .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress & key.HandleUpdateOnly == false)
-                                || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber & key.HandleUpdateOnly == false)));
+                    .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress && key.HandleUpdateOnly == false)
+                                || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber && key.HandleUpdateOnly == false)));
+
 
             if (ActionState == "AddInput")
             {
@@ -271,6 +276,30 @@ namespace AngryMonkey.CloudLogin
 
                 }
             }
+            if (ActionState == "AddNumber")
+            {
+                Providers.AddRange(cloudLoginClient.Providers.Where(key => key.HandlesPhoneNumber == true));
+                foreach (ProviderDefinition providerInside in cloudLoginClient.Providers)
+                {
+                    List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
+                    if (count.Count() > 1)
+                    {
+                        Providers.Remove(providerInside);
+                    }
+                }
+            }
+            if (ActionState == "AddEmail")
+            {
+                Providers.AddRange(cloudLoginClient.Providers.Where(key => key.HandlesEmailAddress == true));
+                foreach (ProviderDefinition providerInside in cloudLoginClient.Providers)
+                {
+                    List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
+                    if (count.Count() > 1)
+                    {
+                        Providers.Remove(providerInside);
+                    }
+                }
+            }
 
 
             if (Providers.Count == 1)
@@ -278,6 +307,7 @@ namespace AngryMonkey.CloudLogin
                 {
                     SelectedProvider = Providers.First();
                     ProviderSignInChallenge(SelectedProvider.Code);
+                    return;
                 }
 
             await SwitchState(ProcessState.Providers);
@@ -306,25 +336,31 @@ namespace AngryMonkey.CloudLogin
             {
                 case VerificationCodeResult.NotValid:
                     Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
-                    EndLoading();
                     return;
 
                 case VerificationCodeResult.Expired:
                     Errors.Add("The code validity has expired, please send another one.");
-                    EndLoading();
                     return;
 
                 default: break;
             }
 
+            EndLoading();
             CloudUser? checkUser = null;
 
-            if (string.IsNullOrEmpty(SelectedProvider?.Code) && InputValueFormat == InputFormat.EmailAddress)
-                checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
-            else if (SelectedProvider?.Code.ToLower() == "whatsapp")
-                checkUser = await cloudLoginClient.GetUserByPhoneNumber(InputValue);
-            else if (SelectedProvider?.Code.ToLower() == "custom")
-                checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
+
+            switch (SelectedProvider?.Code?.ToLower())
+            {
+                case "whatsapp":
+                    checkUser = await cloudLoginClient.GetUserByPhoneNumber(InputValue);
+                    break;
+                case "custom":
+                    checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
+                    break;
+                default:
+                    checkUser = await cloudLoginClient.GetUserByEmailAddress(InputValue);
+                    break;
+            }
 
             if (ActionState == "AddInput")
             {
@@ -422,10 +458,12 @@ namespace AngryMonkey.CloudLogin
         //SIGN IN FUNCTIONS-------------------------------------
         private void ProviderSignInChallenge(string provider)
         {
+            string redirectUri = $"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={DomainName}&keepMeSignedIn={KeepMeSignedIn}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
+
             if (DomainName == RedirectUrl)
-                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={DomainName}&keepMeSignedIn={KeepMeSignedIn}&samesite=true&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
+                navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
             else
-                navigationManager.NavigateTo($"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={DomainName}&keepMeSignedIn={KeepMeSignedIn}&samesite=false&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
+                navigationManager.NavigateTo(redirectUri + "&samesite=false", true);
         }
         private async Task SwitchState(ProcessState state)
         {
@@ -589,10 +627,13 @@ namespace AngryMonkey.CloudLogin
 
             string userInfoJSON = JsonConvert.SerializeObject(userInfo);
 
+            string redirectUri = $"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(DomainName)}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
+
             if (RedirectUrl == navigationManager.Uri)
-                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(DomainName)}&samesite=true&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
+                navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
             else
-                navigationManager.NavigateTo($"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(DomainName)}&samesite=false&actionState={ActionState}&primaryEmail={PrimaryEmail}", true);
+                navigationManager.NavigateTo(redirectUri + "&samesite=false", true);
+
         }
         private static string CreateRandomCode(int length)
         {
@@ -632,11 +673,12 @@ namespace AngryMonkey.CloudLogin
 
             Errors.Clear();
 
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new Uri(navigationManager.BaseUri);
+
             switch (SelectedProvider?.Code.ToLower())
             {
                 case "whatsapp":
-                    HttpClient client = new HttpClient();
-                    client.BaseAddress = new Uri(navigationManager.BaseUri);
                     await SendWhatsAppCode(InputValue, VerificationCode);
                     break;
 

@@ -11,8 +11,7 @@ builder.Services.AddCloudWeb(new CloudWebOptions()
     DefaultTitle = "Cloud Login Demo",
     SiteBundles = new List<CloudBundle>()
     {
-        new CloudBundle(){ Source = "css/app.css",MinOnRelease=false},
-        new CloudBundle(){ Source = "css/site.min.css",MinOnRelease=false},
+        new CloudBundle(){ Source = "css/site.css",MinOnRelease=false},
     }
 });
 

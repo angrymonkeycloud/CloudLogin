@@ -1,5 +1,4 @@
 using AngryMonkey.Cloud.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Http;
 using SharedLogin.WebAssembly;

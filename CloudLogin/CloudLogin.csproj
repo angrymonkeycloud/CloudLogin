@@ -47,8 +47,5 @@
 	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
 	</ItemGroup>
 
-	<!--<ItemGroup>
-	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
-	</ItemGroup>-->
 
 </Project>

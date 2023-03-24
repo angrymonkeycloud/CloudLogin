@@ -36,6 +36,26 @@ public class CloudLoginClient : CloudLoginClientBase
             throw;
         }
 
+    }    
+    public async Task<List<UserModel>?> GetAllUsers()
+    {
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetAllUsers");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
+
+            List<CloudUser>? selectedUser = await message.Content.ReadFromJsonAsync<List<CloudUser>?>();
+
+            if (selectedUser == null) return null;
+
+            return Parse(selectedUser);
+        }
+        catch
+        {
+            throw;
+        }
+
     }
     public async Task<List<UserModel>?> GetUsersByDisplayName(string displayName)
     {

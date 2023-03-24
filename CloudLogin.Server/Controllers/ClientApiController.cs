@@ -19,6 +19,19 @@ public class ClientApiController : BaseController
         {
             return Problem();
         }
+    }    
+    [HttpGet("GetAllUsers")]
+    public async Task<ActionResult<List<CloudUser>>> GetAllUsers()
+    {
+        try
+        {
+            List<CloudUser> user = await CosmosMethods.GetUsers();
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
     }
 
     [HttpGet("GetUsersByDisplayName")]

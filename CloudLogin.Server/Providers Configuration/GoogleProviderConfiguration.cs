@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace AngryMonkey.CloudLogin.Providers;
-
+namespace AngryMonkey.CloudLogin;
 public class GoogleProviderConfiguration : ProviderConfiguration
 {
 	public string ClientId { get; init; } = string.Empty;

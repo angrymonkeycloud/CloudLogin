@@ -1,14 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Headers;
-using AngryMonkey.CloudLogin.Providers;
-using AngryMonkey.CloudLogin.DataContract;
-using Microsoft.Azure.Cosmos;
-using Microsoft.AspNetCore.Authentication;
 using System.Web;
-using System.Security.Claims;
 
-namespace AngryMonkey.CloudLogin.Controllers;
+namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/Actions")]
 [ApiController]
 public class ActionsController : BaseController
@@ -22,8 +16,8 @@ public class ActionsController : BaseController
 
         input.IsPrimary = false;
 
-        CloudUser user = await CosmosMethods.GetUserByEmailAddress(primaryEmail);
-        CloudUser oldUser = await CosmosMethods.GetUserByEmailAddress(input.Input);
+        User user = await CosmosMethods.GetUserByEmailAddress(primaryEmail);
+        User oldUser = await CosmosMethods.GetUserByEmailAddress(input.Input);
 
         if (oldUser != null)
             return Redirect($"{baseUrl}/CloudLogin/Update?redirectUrl={domainName}");
@@ -56,7 +50,7 @@ public class ActionsController : BaseController
         string displayName = userDictionary["DisplayName"];
         string userID = userDictionary["UserId"];
 
-        CloudUser user = await CosmosMethods.GetUserById(new Guid(userID));
+        User user = await CosmosMethods.GetUserById(new Guid(userID));
 
         user.FirstName = firstName;
         user.LastName = lastName;
@@ -74,7 +68,7 @@ public class ActionsController : BaseController
     {
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        CloudUser? user = await CosmosMethods.GetUserByEmailAddress(input);
+        User? user = await CosmosMethods.GetUserByEmailAddress(input);
 
         if(user == null)
             return Redirect($"{baseUrl}/CloudLogin/Update?redirectUrl={domainName}");

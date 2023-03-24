@@ -7,7 +7,7 @@ public partial class CloudLoginService
 {
     public string domainName { get; set; }
     public string actionState { get; set; }
-    public CloudUser CurrentUser { get; set; } = new();
+    public User CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool Show { get; set; } = false;
 

@@ -1,6 +1,5 @@
 ﻿using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
-using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
@@ -72,27 +71,38 @@ public class CosmosMethods
 
     public Container Container { get; set; }
 
-    public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
+    public async Task<User?> GetUserByEmailAddress(string emailAddress)
     {
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container, user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+        IQueryable<User> usersQueryable = Queryable<User>("User", Container, user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
         var users = await ToListAsync(usersQueryable);
 
         return users.FirstOrDefault();
+    }    
+    public async Task<User?> GetUserByInput(string input)
+    {
+        var user = await GetUserByEmailAddress(input);
+        if (user == null)
+        {
+            CloudGeographyClient geographyClient = new();
+
+            return await GetUserByPhoneNumber(geographyClient.PhoneNumbers.Get(input));
+        }
+        return user;
     }
 
-    public async Task<CloudUser?> GetUserByPhoneNumber(string number)
+    public async Task<User?> GetUserByPhoneNumber(string number)
     {
         CloudGeographyClient geographyClient = new();
 
         return await GetUserByPhoneNumber(geographyClient.PhoneNumbers.Get(number));
     }
 
-    public async Task<CloudUser?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
+    public async Task<User?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
     {
         CloudGeographyClient cloudGeography = new();
 
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container, user
+        IQueryable<User> usersQueryable = Queryable<User>("User", Container, user
             => user.Inputs.Any(key => key.Format == InputFormat.PhoneNumber &&
             key.Input.Equals(phoneNumber.Number)
                 && (string.IsNullOrEmpty(phoneNumber.CountryCode)
@@ -103,7 +113,7 @@ public class CosmosMethods
         return users.FirstOrDefault();
     }
 
-    public async Task<CloudUser?> GetUserByRequestId(Guid requestId)
+    public async Task<User?> GetUserByRequestId(Guid requestId)
     {
         CloudRequest request = new() { ID = requestId };
 
@@ -118,32 +128,32 @@ public class CosmosMethods
         return await GetUserById(selectedRequest.UserId.Value);
     }
 
-    public async Task<List<CloudUser>> GetUsersByDisplayName(string displayName)
+    public async Task<List<User>> GetUsersByDisplayName(string displayName)
     {
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+        IQueryable<User> usersQueryable = Queryable<User>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
 
         var users = await ToListAsync(usersQueryable);
 
         return users;
     }
-    public async Task<CloudUser> GetUserById(Guid id)
+    public async Task<User> GetUserById(Guid id)
     {
-        CloudUser user = new() { ID = id };
-        ItemResponse<CloudUser> response = await Container.ReadItemAsync<CloudUser>(GetCosmosId(user), GetPartitionKey(user));
+        User user = new() { ID = id };
+        ItemResponse<User> response = await Container.ReadItemAsync<User>(GetCosmosId(user), GetPartitionKey(user));
 
         return response.Resource;
     }
 
-    public async Task<List<CloudUser>> GetUsers()
+    public async Task<List<User>> GetUsers()
     {
-        IQueryable<CloudUser> usersQueryable = Queryable<CloudUser>("CloudUser", Container);
+        IQueryable<User> usersQueryable = Queryable<User>("User", Container);
 
         return await ToListAsync(usersQueryable);
     }
 
     public async Task AddInput(Guid userId, LoginInput Input)
     {
-        CloudUser user = await GetUserById(userId);
+        User user = await GetUserById(userId);
 
         user.Inputs.Add(Input);
 
@@ -151,7 +161,7 @@ public class CosmosMethods
     }
     public async Task DeleteUser(Guid userId)
     {
-        CloudUser user = new() { ID = userId };
+        User user = new() { ID = userId };
         await Container.DeleteItemStreamAsync(GetCosmosId(user), GetPartitionKey(user));
     }
 }

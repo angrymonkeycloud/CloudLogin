@@ -2,7 +2,6 @@
 using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
-using AngryMonkey.CloudLogin.DataContract;
 using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
@@ -50,7 +49,7 @@ public static class MvcServiceCollectionExtensions
 
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
 
-                    CloudUser? user;
+                    User? user;
                     InputFormat FormatValue = InputFormat.EmailAddress;
 
                     string? providerCode = context.Principal?.Identity?.AuthenticationType;
@@ -116,7 +115,7 @@ public static class MvcServiceCollectionExtensions
                                     countryCode = phoneNumber.CountryCode;
                                     callingCode = phoneNumber.CountryCallingCode;
                                 }
-                                user = new CloudUser()
+                                user = new User()
                                 {
                                     ID = Guid.NewGuid(),
                                     FirstName = firstName,
@@ -152,7 +151,7 @@ public static class MvcServiceCollectionExtensions
                             callingCode = phoneNumber.CountryCallingCode;
                         }
 
-                        user = new CloudUser()
+                        user = new User()
                         {
                             ID = Guid.NewGuid(),
                             FirstName = firstName,
@@ -178,11 +177,11 @@ public static class MvcServiceCollectionExtensions
 
                     user.LastSignedIn = currentDateTime;
 
-                    string alreadySignedIn = context.HttpContext.Request.Cookies["CloudUser"];
+                    string alreadySignedIn = context.HttpContext.Request.Cookies["User"];
 
                     if (!string.IsNullOrEmpty(alreadySignedIn))
                     {
-                        context.HttpContext.Response.Cookies.Append("CloudUser",
+                        context.HttpContext.Response.Cookies.Append("User",
                             JsonConvert.SerializeObject(user), new CookieOptions()
                             {
                                 HttpOnly = true,
@@ -198,7 +197,7 @@ public static class MvcServiceCollectionExtensions
                     else
                         await cloudLogin.CreateUser(user);
 
-                    context.HttpContext.Response.Cookies.Append("CloudUser",
+                    context.HttpContext.Response.Cookies.Append("User",
                         JsonConvert.SerializeObject(user), new CookieOptions()
                         {
                             HttpOnly = true,

@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace AngryMonkey.CloudLogin.DataContract;
+namespace AngryMonkey.CloudLogin;
 
 public record BaseRecord
 {

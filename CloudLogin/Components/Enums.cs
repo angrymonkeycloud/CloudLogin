@@ -1,5 +1,5 @@
 ﻿namespace AngryMonkey.CloudLogin;
-public partial class CloudLogin
+public partial class CloudLoginComponent
 {
     private enum VerificationCodeResult
     {

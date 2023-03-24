@@ -1,5 +1,4 @@
 ﻿using AngryMonkey.Cloud;
-using AngryMonkey.CloudLogin.DataContract;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
@@ -38,7 +37,7 @@ namespace AngryMonkey.CloudLogin
 
             return client;
         }
-        public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
+        public async Task<User?> GetUserByEmailAddress(string emailAddress)
         {
             try
             {
@@ -47,14 +46,14 @@ namespace AngryMonkey.CloudLogin
                 if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                     return null;
 
-                return await message.Content.ReadFromJsonAsync<CloudUser?>();
+                return await message.Content.ReadFromJsonAsync<User?>();
             }
             catch
             {
                 throw;
             }
         }
-        public async Task<CloudUser?> GetUserByPhoneNumber(string phoneNumber)
+        public async Task<User?> GetUserByPhoneNumber(string phoneNumber)
         {
             try
             {
@@ -64,7 +63,7 @@ namespace AngryMonkey.CloudLogin
                 if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                     return null;
 
-                return await message.Content.ReadFromJsonAsync<CloudUser?>();
+                return await message.Content.ReadFromJsonAsync<User?>();
             }
             catch
             {
@@ -103,7 +102,7 @@ namespace AngryMonkey.CloudLogin
 
 			return InputFormat.Other;
 		}
-        public async Task<CloudUser?> GetUserByInput(string input) => GetInputFormat(input) switch
+        public async Task<User?> GetUserByInput(string input) => GetInputFormat(input) switch
         {
             InputFormat.EmailAddress => await GetUserByEmailAddress(input),
             InputFormat.PhoneNumber => await GetUserByPhoneNumber(input),
@@ -111,15 +110,15 @@ namespace AngryMonkey.CloudLogin
         };
         public bool IsInputValidEmailAddress(string input) => Regex.IsMatch(input, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
         public bool IsInputValidPhoneNumber(string input) => CloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
-        public async Task UpdateUser(CloudUser user)
+        public async Task UpdateUser(User user)
 		{
-			HttpContent content = JsonContent.Create<CloudUser>(user);
+			HttpContent content = JsonContent.Create<User>(user);
 
 			await HttpServer.PostAsync("CloudLogin/User/Update", content);
 		}
-		public async Task CreateUser(CloudUser user)
+		public async Task CreateUser(User user)
 		{
-			HttpContent content = JsonContent.Create<CloudUser>(user);
+			HttpContent content = JsonContent.Create<User>(user);
 
 			await HttpServer.PostAsync("CloudLogin/User/Create", content);
 		}
@@ -140,7 +139,7 @@ namespace AngryMonkey.CloudLogin
             string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
             return userCookie != null;
         }
-        public async Task<CloudUser?> CurrentUser(IHttpContextAccessor? accessor = null)
+        public async Task<User?> CurrentUser(IHttpContextAccessor? accessor = null)
         {
             if (accessor == null)
                 try
@@ -150,18 +149,18 @@ namespace AngryMonkey.CloudLogin
                     if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                         return null;
 
-                    return await message.Content.ReadFromJsonAsync<CloudUser>();
+                    return await message.Content.ReadFromJsonAsync<User>();
                 }
                 catch { throw; }
 
-            string? userCookie = accessor.HttpContext.Request.Cookies["CloudUser"];
+            string? userCookie = accessor.HttpContext.Request.Cookies["User"];
 
             if (userCookie == null)
                 return null;
 
-            return JsonConvert.DeserializeObject<CloudUser>(userCookie);
+            return JsonConvert.DeserializeObject<User>(userCookie);
         }
-        public async Task<CloudUser?> GetUserFromRequest(Guid requestId)
+        public async Task<User?> GetUserFromRequest(Guid requestId)
         {
             try
             {
@@ -170,7 +169,7 @@ namespace AngryMonkey.CloudLogin
                 if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                     return null;
 
-                return await message.Content.ReadFromJsonAsync<CloudUser?>();
+                return await message.Content.ReadFromJsonAsync<User?>();
             }
             catch
             {
@@ -178,15 +177,15 @@ namespace AngryMonkey.CloudLogin
             }
 
         }
-        public async Task<List<CloudUser>?> GetUsersByDisplayName(string DisplayName)
+        public async Task<List<User>?> GetUsersByDisplayName(string DisplayName)
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUsersByDisplayName?displayname={HttpUtility.UrlEncode(DisplayName)}");
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                 return null;
-            return await message.Content.ReadFromJsonAsync<List<CloudUser>?>();
+            return await message.Content.ReadFromJsonAsync<List<User>?>();
         }
-        public async Task<CloudUser?> GetUserById(Guid userId)
+        public async Task<User?> GetUserById(Guid userId)
         {
             try
             {
@@ -195,7 +194,7 @@ namespace AngryMonkey.CloudLogin
                 if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                     return null;
 
-                return await message.Content.ReadFromJsonAsync<CloudUser?>();
+                return await message.Content.ReadFromJsonAsync<User?>();
             }
             catch
             {
@@ -203,13 +202,13 @@ namespace AngryMonkey.CloudLogin
             }
 
         }
-        public async Task<CloudUser?> GetUserByDisplayName(string input)
+        public async Task<User?> GetUserByDisplayName(string input)
         {
             return await GetUserByDisplayName(input);
         }
-        public async Task<List<CloudUser>> GetAllUsers()
+        public async Task<List<User>> GetAllUsers()
         {
-            return await HttpServer.GetFromJsonAsync<List<CloudUser>>("CloudLogin/User/All");
+            return await HttpServer.GetFromJsonAsync<List<User>>("CloudLogin/User/All");
         }
         public async Task<Guid> CreateUserRequest(Guid userId)
         {

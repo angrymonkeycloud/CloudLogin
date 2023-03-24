@@ -1,20 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Azure.Cosmos.Serialization.HybridRow;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Mvc;
-using AngryMonkey.CloudLogin.Controllers;
-using Microsoft.Extensions.Options;
-using AngryMonkey.CloudLogin;
+﻿using AngryMonkey.CloudLogin;
 
 namespace Microsoft.AspNetCore.Builder
 {
-	public static class CloudLoginBuilderExtensions
+    public static class CloudLoginBuilderExtensions
 	{
 		public static IApplicationBuilder UseCloudLogin(this IApplicationBuilder app)
 		{

@@ -1,17 +1,13 @@
-﻿using AngryMonkey.CloudLogin.DataContract;
-using AngryMonkey.CloudLogin;
-using AngryMonkey.CloudLogin.Models;
-using Microsoft.AspNetCore.Components;
+﻿using AngryMonkey.CloudLogin;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace CoverboxApp.Main.Controllers
 {
-[Route("")]
+    [Route("")]
 public class HomeController : Controller
 {
     CloudLoginClient CloudLogin;
@@ -31,62 +27,10 @@ public class HomeController : Controller
 
         string cookieContent = record.Value;
 
-        UserModel? user = JsonConvert.DeserializeObject<UserModel>(cookieContent);
+        User? user = JsonConvert.DeserializeObject<User>(cookieContent);
 
         return View(user);
     }
-
-    //[Route("logout")]
-    //public async Task<IResult> logout()
-    //{
-    //    var baseUri = $"{Request.Scheme}://{Request.Host}";
-
-    //    return Results.Redirect($"{CloudLogin.LoginUrl}CloudLogin/Logout?redirectUrl={HttpUtility.UrlEncode(baseUri)}");
-    //}
-
-    //[Route("login")]
-    //public async Task<IResult> Login(Guid requestId)
-    //{
-    //    var baseUri = $"{Request.Scheme}://{Request.Host}";
-
-    //    if (requestId == Guid.Empty)
-    //        return Results.Redirect($"{CloudLogin.LoginUrl}?domainName={HttpUtility.UrlEncode(baseUri)}&actionState=login");
-
-    //    UserModel? user = await CloudLogin.GetUserByRequestId(requestId, 1);
-
-    //    if (user == null)
-    //        return await Login(Guid.Empty);
-
-    //    Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(user));
-
-    //    return Results.Redirect(baseUri);
-    //}
-
-    //[Route("changeprimary")]
-    //public async Task<IResult> ChangePrimary()
-    //{
-    //    var baseUri = $"{Request.Scheme}://{Request.Host}";
-
-    //    return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/ChangePrimary");
-
-    //}
-    //[Route("addinput")]
-    //public async Task<IResult> AddInput()
-    //{
-    //    var baseUri = $"{Request.Scheme}://{Request.Host}";
-
-    //    return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/AddInput");
-
-    //}
-
-    //[Route("update")]
-    //public async Task<IResult> Update()
-    //{
-    //    var baseUri = $"{Request.Scheme}://{Request.Host}";
-
-    //    return Results.Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/UpdateInput");
-
-    //}
 
     public static string Decrypt(string data)
     {

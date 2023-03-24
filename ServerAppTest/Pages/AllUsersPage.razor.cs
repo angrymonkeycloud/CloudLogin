@@ -28,8 +28,8 @@ namespace ServerAppTest.Pages
 
         public bool Authorized { get; set; }
         public CloudLoginServerClient CloudClient { get; set; }
-        public CloudUser User { get; set; }
-        public List<CloudUser> Users { get; set; } = new();
+        public User User { get; set; }
+        public List<User> Users { get; set; } = new();
         protected override async Task OnInitializedAsync()
         {
             

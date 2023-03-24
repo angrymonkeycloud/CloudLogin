@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using AngryMonkey.CloudLogin.DataContract;
 
 namespace AngryMonkey.CloudLogin.Components
 {

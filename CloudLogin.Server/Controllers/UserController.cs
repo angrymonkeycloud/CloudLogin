@@ -1,21 +1,18 @@
 ﻿using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
-using AngryMonkey.CloudLogin.Providers;
-using AngryMonkey.CloudLogin.DataContract;
-using Microsoft.Azure.Cosmos;
 
-namespace AngryMonkey.CloudLogin.Controllers;
+namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/User")]
 [ApiController]
 public class UserController : BaseController
 {
     [HttpGet("GetUsers")]
-    public async Task<ActionResult<List<CloudUser>>> GetUsers()
+    public async Task<ActionResult<List<User>>> GetUsers()
     {
         try
         {
-            List<CloudUser> user = await CosmosMethods.GetUsers();
+            List<User> user = await CosmosMethods.GetUsers();
             return Ok(user);
         }
         catch
@@ -25,11 +22,11 @@ public class UserController : BaseController
     }
 
     [HttpGet("GetUsersByDisplayName")]
-    public async Task<ActionResult<List<CloudUser>>> GetUserByDisplayName(string displayname)
+    public async Task<ActionResult<List<User>>> GetUserByDisplayName(string displayname)
     {
         try
         {
-            List<CloudUser> user = await CosmosMethods.GetUsersByDisplayName(displayname);
+            List<User> user = await CosmosMethods.GetUsersByDisplayName(displayname);
             return Ok(user);
         }
         catch
@@ -38,11 +35,11 @@ public class UserController : BaseController
         }
     }
     [HttpGet("GetById")]
-    public async Task<ActionResult<CloudUser>> GetById(Guid id)
+    public async Task<ActionResult<User>> GetById(Guid id)
     {
         try
         {
-            CloudUser user = await CosmosMethods.GetUserById(id);
+            User user = await CosmosMethods.GetUserById(id);
             return Ok(user);
         }
         catch
@@ -52,12 +49,12 @@ public class UserController : BaseController
     }
 
     [HttpGet("GetByEmailAddress")]
-    public async Task<ActionResult<CloudUser>?> GetByEmailAddress(string emailAddress)
+    public async Task<ActionResult<User>?> GetByEmailAddress(string emailAddress)
     {
         try
         {
 
-            CloudUser? user = await CosmosMethods.GetUserByEmailAddress(emailAddress);
+            User? user = await CosmosMethods.GetUserByEmailAddress(emailAddress);
 
             return Ok(user);
         }
@@ -68,11 +65,11 @@ public class UserController : BaseController
     }
 
     [HttpGet("GetByPhoneNumber")]
-    public async Task<ActionResult<CloudUser>?> GetByPhoneNumber(string phoneNumber)
+    public async Task<ActionResult<User>?> GetByPhoneNumber(string phoneNumber)
     {
         try
         {
-            CloudUser? user = await CosmosMethods.GetUserByPhoneNumber(phoneNumber);
+            User? user = await CosmosMethods.GetUserByPhoneNumber(phoneNumber);
             return Ok(user);
         }
         catch
@@ -133,7 +130,7 @@ public class UserController : BaseController
     }
 
     [HttpPost("Update")]
-    public async Task<ActionResult> Update([FromBody] CloudUser user)
+    public async Task<ActionResult> Update([FromBody] User user)
     {
         try
         {
@@ -147,7 +144,7 @@ public class UserController : BaseController
     }
 
     [HttpPost("Create")]
-    public async Task<ActionResult> Create([FromBody] CloudUser user)
+    public async Task<ActionResult> Create([FromBody] User user)
     {
         try
         {
@@ -189,11 +186,11 @@ public class UserController : BaseController
     }
 
     [HttpGet("All")]
-    public async Task<ActionResult<List<CloudUser>>> All()
+    public async Task<ActionResult<List<User>>> All()
     {
         try
         {
-            List<CloudUser> users = await CosmosMethods.GetUsers();
+            List<User> users = await CosmosMethods.GetUsers();
             return Ok(users);
         }
         catch
@@ -217,16 +214,16 @@ public class UserController : BaseController
     }
 
     [HttpGet("CurrentUser")]
-    public async Task<ActionResult<CloudUser?>> CurrentUser()
+    public async Task<ActionResult<User?>> CurrentUser()
     {
         try
         {
-            string? userCookie = Request.Cookies["CloudUser"];
+            string? userCookie = Request.Cookies["User"];
 
             if (userCookie == null)
                 return Ok(null);
 
-            CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(userCookie);
+            User? user = JsonConvert.DeserializeObject<User>(userCookie);
 
             if (user == null)
                 return Ok(null);

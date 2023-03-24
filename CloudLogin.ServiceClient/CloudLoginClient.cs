@@ -1,8 +1,5 @@
 ﻿using System.Net.Http.Json;
 using System.Web;
-using AngryMonkey.Cloud;
-using AngryMonkey.CloudLogin.DataContract;
-using AngryMonkey.CloudLogin.Models;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -17,7 +14,7 @@ public class CloudLoginClient : CloudLoginClientBase
         HttpServer = new() { BaseAddress = new(baseAddress) };
     }
 
-    public async Task<UserModel?> GetUserById(Guid userId)
+    public async Task<User?> GetUserById(Guid userId)
     {
         try
         {
@@ -25,19 +22,19 @@ public class CloudLoginClient : CloudLoginClientBase
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            CloudUser? selectedUser = await message.Content.ReadFromJsonAsync<CloudUser?>();
+            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
 
             if (selectedUser == null) return null;
 
-            return Parse(selectedUser);
+            return selectedUser;
         }
         catch
         {
             throw;
         }
 
-    }    
-    public async Task<List<UserModel>?> GetAllUsers()
+    }
+    public async Task<List<User>?> GetAllUsers()
     {
         try
         {
@@ -45,11 +42,11 @@ public class CloudLoginClient : CloudLoginClientBase
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            List<CloudUser>? selectedUser = await message.Content.ReadFromJsonAsync<List<CloudUser>?>();
+            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>();
 
             if (selectedUser == null) return null;
 
-            return Parse(selectedUser);
+            return selectedUser;
         }
         catch
         {
@@ -57,7 +54,67 @@ public class CloudLoginClient : CloudLoginClientBase
         }
 
     }
-    public async Task<List<UserModel>?> GetUsersByDisplayName(string displayName)
+    public async Task<List<User>?> GetUserByInput()
+    {
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByInput");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
+
+            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>();
+
+            if (selectedUser == null) return null;
+
+            return selectedUser;
+        }
+        catch
+        {
+            throw;
+        }
+
+    }
+    public async Task<List<User>?> GetUserByPhoneNumber()
+    {
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByPhoneNumber");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
+
+            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>();
+
+            if (selectedUser == null) return null;
+
+            return selectedUser;
+        }
+        catch
+        {
+            throw;
+        }
+
+    }
+    public async Task<List<User>?> GetUserByEmailAdress()
+    {
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByEmailAdress");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
+
+            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>();
+
+            if (selectedUser == null) return null;
+
+            return selectedUser;
+        }
+        catch
+        {
+            throw;
+        }
+
+    }
+    public async Task<List<User>?> GetUsersByDisplayName(string displayName)
     {
         try
         {
@@ -65,11 +122,11 @@ public class CloudLoginClient : CloudLoginClientBase
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            List<CloudUser>? selectedUser = await message.Content.ReadFromJsonAsync<List<CloudUser>?>();
+            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>();
 
             if (selectedUser == null) return null;
 
-            return Parse(selectedUser);
+            return selectedUser;
         }
         catch
         {
@@ -77,7 +134,7 @@ public class CloudLoginClient : CloudLoginClientBase
         }
 
     }
-    public async Task<UserModel> GetUserByRequestId(Guid requestId, int minutesToExpiry)
+    public async Task<User> GetUserByRequestId(Guid requestId, int minutesToExpiry)
     {
         try
         {
@@ -85,11 +142,11 @@ public class CloudLoginClient : CloudLoginClientBase
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            CloudUser? selectedUser = await message.Content.ReadFromJsonAsync<CloudUser>();
+            User? selectedUser = await message.Content.ReadFromJsonAsync<User>();
 
             if (selectedUser == null) return null;
 
-            return Parse(selectedUser);
+            return selectedUser;
         }
         catch
         {

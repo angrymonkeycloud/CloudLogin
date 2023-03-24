@@ -1,4 +1,4 @@
-﻿   using System.Web;
+﻿using System.Web;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -8,11 +8,8 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using AngryMonkey.CloudLogin.DataContract;
-using AngryMonkey.CloudLogin.Models;
-using System.Linq.Expressions;
 
-namespace AngryMonkey.CloudLogin.Controllers;
+namespace AngryMonkey.CloudLogin;
 
 [Route("CloudLogin")]
 [ApiController]
@@ -123,7 +120,7 @@ public class LoginController : BaseController
     [HttpGet("Result")]
     public async Task<ActionResult<string>> LoginResult(string ispersistent, string sameSite, string? redirectUri = "", string actionState = "", string primaryEmail = "")
     {
-        CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(HttpContext.Request.Cookies["CloudUser"]);
+        User? user = JsonConvert.DeserializeObject<User>(HttpContext.Request.Cookies["User"]);
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
@@ -199,7 +196,7 @@ public class LoginController : BaseController
         if (string.IsNullOrEmpty(userInfo))
             return Redirect(redirectUrl);
 
-        Response.Cookies.Delete("CloudUser");
+        Response.Cookies.Delete("User");
 
         Request.Cookies.TryGetValue("LoggedInUser", out string? LoggedInUserValue);
 
@@ -207,11 +204,11 @@ public class LoginController : BaseController
         if (!string.IsNullOrEmpty(LoggedInUserValue))
         {
             Console.WriteLine("going in");
-            CloudUser? user = JsonConvert.DeserializeObject<CloudUser>(userInfo);
+            User? user = JsonConvert.DeserializeObject<User>(userInfo);
 
             Response.Cookies.Delete("LoggedInUser");
 
-            UserModel? loggedInValue = JsonConvert.DeserializeObject<UserModel>(LoggedInUserValue);
+            User? loggedInValue = JsonConvert.DeserializeObject<User>(LoggedInUserValue);
 
             loggedInValue.FirstName = user.FirstName;
             loggedInValue.LastName = user.LastName;
@@ -223,7 +220,7 @@ public class LoginController : BaseController
             Response.Cookies.Append("LoggedInUser", loggedIn);
         }
 
-        Response.Cookies.Append("CloudUser", userInfo);
+        Response.Cookies.Append("User", userInfo);
 
         if (redirectUrl == null)
             return Redirect("/");
@@ -236,7 +233,7 @@ public class LoginController : BaseController
     {
         await HttpContext.SignOutAsync();
 
-        Response.Cookies.Delete("CloudUser");
+        Response.Cookies.Delete("User");
         Response.Cookies.Delete("LoggedInUser");
 
         if (!string.IsNullOrEmpty(redirectUrl))

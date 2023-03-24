@@ -27,7 +27,7 @@ namespace ServerAppTest.Pages
 	{
 		private async Task DeleteButton() => Console.WriteLine("DELETE");
 
-        CloudUser CurrentUser { get; set; } = new();
+        User CurrentUser { get; set; } = new();
         bool IsAuthorized { get; set; } = false;
 
         protected override async Task OnInitializedAsync()

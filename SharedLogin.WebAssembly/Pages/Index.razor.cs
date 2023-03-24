@@ -1,4 +1,4 @@
-using AngryMonkey.CloudLogin.DataContract;
+using AngryMonkey.CloudLogin;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 
@@ -8,7 +8,7 @@ public partial class Index
 {
     public string domainName { get; set; }
     public string actionState { get; set; }
-    public CloudUser CurrentUser { get; set; } = new();
+    public User CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool Show { get; set; } = false;
 

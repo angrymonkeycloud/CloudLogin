@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace AngryMonkey.CloudLogin.Providers;
+namespace AngryMonkey.CloudLogin;
 
 public class WhatsAppProviderConfiguration : ProviderConfiguration
 {

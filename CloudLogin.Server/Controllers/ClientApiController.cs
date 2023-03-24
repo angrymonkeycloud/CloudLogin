@@ -1,18 +1,17 @@
-﻿using AngryMonkey.CloudLogin.DataContract;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
-namespace AngryMonkey.CloudLogin.Controllers;
+namespace AngryMonkey.CloudLogin;
 
 [Route("Api/Client")]
 [ApiController]
 public class ClientApiController : BaseController
 {
     [HttpGet("GetUserById")]
-    public async Task<ActionResult<CloudUser>> GetUserById(Guid id)
+    public async Task<ActionResult<User>> GetUserById(Guid id)
     {
         try
         {
-            CloudUser user = await CosmosMethods.GetUserById(id);
+            User user = await CosmosMethods.GetUserById(id);
             return Ok(user);
         }
         catch
@@ -21,11 +20,50 @@ public class ClientApiController : BaseController
         }
     }    
     [HttpGet("GetAllUsers")]
-    public async Task<ActionResult<List<CloudUser>>> GetAllUsers()
+    public async Task<ActionResult<List<User>>> GetAllUsers()
     {
         try
         {
-            List<CloudUser> user = await CosmosMethods.GetUsers();
+            List<User> user = await CosmosMethods.GetUsers();
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUserByInput")]
+    public async Task<ActionResult<User>> GetUserByInput(string input)
+    {
+        try
+        {
+            User? user = await CosmosMethods.GetUserByInput(input);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUserByPhoneNumber")]
+    public async Task<ActionResult<User>> GetUsersByPhoneNumber(string input)
+    {
+        try
+        {
+            User? user = await CosmosMethods.GetUserByPhoneNumber(input);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUserByEmailAdress")]
+    public async Task<ActionResult<User>> GetUserByEmailAdress(string input)
+    {
+        try
+        {
+            User? user = await CosmosMethods.GetUserByEmailAddress(input);
             return Ok(user);
         }
         catch
@@ -35,11 +73,11 @@ public class ClientApiController : BaseController
     }
 
     [HttpGet("GetUsersByDisplayName")]
-    public async Task<ActionResult<List<CloudUser>>> GetUsersByDisplayName(string displayname)
+    public async Task<ActionResult<List<User>>> GetUsersByDisplayName(string displayname)
     {
         try
         {
-            List<CloudUser> user = await CosmosMethods.GetUsersByDisplayName(displayname);
+            List<User> user = await CosmosMethods.GetUsersByDisplayName(displayname);
             return Ok(user);
         }
         catch
@@ -53,7 +91,7 @@ public class ClientApiController : BaseController
     {
         try
         {
-            CloudUser User = await CosmosMethods.GetUserByRequestId(requestId);
+            User User = await CosmosMethods.GetUserByRequestId(requestId);
 
             return Ok(User);
         }

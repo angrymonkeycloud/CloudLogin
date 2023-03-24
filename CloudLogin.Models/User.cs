@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json;
 
-namespace AngryMonkey.CloudLogin.DataContract;
+namespace AngryMonkey.CloudLogin;
 
-public record CloudUser : BaseRecord
+public record User
 {
-    public CloudUser() : base("CloudUser", "CloudUser") { }
-
+    public Guid ID { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string? DisplayName { get; set; }
@@ -14,12 +13,7 @@ public record CloudUser : BaseRecord
     public DateOnly? DateOfBirth { get; set; }
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;
     public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
-
-    // Lists
-
-    public List<LoginInput> Inputs { get; set; } = new List<LoginInput>();
-
-    [JsonIgnore]
+    public List<LoginInput> Inputs { get; set; } = new List<LoginInput>(); [JsonIgnore]
     public List<LoginInput> EmailAddresses => Inputs.Where(key => key.Format == InputFormat.EmailAddress).ToList();
 
     [JsonIgnore]

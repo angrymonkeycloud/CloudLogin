@@ -9,7 +9,7 @@ namespace ServerClientDemo.Client.Pages
 {
     public partial class Index
     {
-        public CloudUser CurrentUser { get; set; } = new();
+        public User CurrentUser { get; set; } = new();
         public bool IsAuthorized { get; set; } = false;
         private async Task DeleteButton() => await cloudLogin.DeleteUser(CurrentUser.ID);
         private async Task CheckUsername()

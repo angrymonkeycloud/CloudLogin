@@ -38,8 +38,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo Cloud Login.Client", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.MVC", "CloudLogin.MVC\CloudLogin.MVC.csproj", "{8384DDED-4465-4168-B175-F5C3EBD118D2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.DataContract", "CloudLogin.DataContract\CloudLogin.DataContract.csproj", "{1DBC09C8-0829-4E83-8DAA-94E9DB90DF5B}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Models", "CloudLogin.Models\CloudLogin.Models.csproj", "{7D15B4CC-065C-42E3-9279-15003ADFB2C1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.ServiceClient", "CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj", "{3E0B71D4-238C-4E79-BB42-71E47158AF96}"
@@ -123,12 +121,6 @@ Global
 		{8384DDED-4465-4168-B175-F5C3EBD118D2}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{8384DDED-4465-4168-B175-F5C3EBD118D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8384DDED-4465-4168-B175-F5C3EBD118D2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1DBC09C8-0829-4E83-8DAA-94E9DB90DF5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1DBC09C8-0829-4E83-8DAA-94E9DB90DF5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1DBC09C8-0829-4E83-8DAA-94E9DB90DF5B}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
-		{1DBC09C8-0829-4E83-8DAA-94E9DB90DF5B}.Release_Server|Any CPU.Build.0 = Release|Any CPU
-		{1DBC09C8-0829-4E83-8DAA-94E9DB90DF5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1DBC09C8-0829-4E83-8DAA-94E9DB90DF5B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7D15B4CC-065C-42E3-9279-15003ADFB2C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7D15B4CC-065C-42E3-9279-15003ADFB2C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D15B4CC-065C-42E3-9279-15003ADFB2C1}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU

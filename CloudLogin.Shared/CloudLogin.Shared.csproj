@@ -27,12 +27,11 @@
     
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.4.2" />
   </ItemGroup>
     
   <ItemGroup>
-    <ProjectReference Include="..\CloudLogin.DataContract\CloudLogin.DataContract.csproj" />
     <ProjectReference Include="..\CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj" />
     <!--<ProjectReference Include="..\LoginRequestLibrary\CloudLoginLibrary.csproj" />-->
   </ItemGroup>

@@ -1,31 +1,27 @@
-﻿using AngryMonkey.CloudLogin.DataContract;
-using AngryMonkey.CloudLogin.Models;
-using System.Collections.Generic;
-
-namespace AngryMonkey.CloudLogin;
+﻿namespace AngryMonkey.CloudLogin;
 
 public class CloudLoginClientBase
 {
 
-    internal UserModel? Parse(CloudUser cloudUser)
-    {
-        UserModel userInformation = new()
-        {
-            ID = cloudUser.ID,
-            DisplayName= cloudUser.DisplayName,
-            FirstName= cloudUser.FirstName,
-            IsLocked= cloudUser.IsLocked,
-            LastName= cloudUser.LastName
-        };
+    //internal UserModel? Parse(User User)
+    //{
+    //    UserModel userInformation = new()
+    //    {
+    //        ID = User.ID,
+    //        DisplayName= User.DisplayName,
+    //        FirstName= User.FirstName,
+    //        IsLocked= User.IsLocked,
+    //        LastName= User.LastName
+    //    };
 
-        return userInformation;
-    }
+    //    return userInformation;
+    //}
 
-    internal List<UserModel>? Parse(List<CloudUser> cloudUsers)
-    {
-        if (cloudUsers == null)
-            return null;
+    //internal List<UserModel>? Parse(List<User> Users)
+    //{
+    //    if (Users == null)
+    //        return null;
 
-        return cloudUsers.Select(Parse).ToList();
-    }
+    //    return Users.Select(Parse).ToList();
+    //}
 }

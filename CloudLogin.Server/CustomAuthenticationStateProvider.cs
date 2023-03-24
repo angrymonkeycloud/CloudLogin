@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 
-namespace AngryMonkey.CloudLogin.Controllers
+namespace AngryMonkey.CloudLogin;
+public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 {
-    public class CustomAuthenticationStateProvider : AuthenticationStateProvider
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            throw new NotImplementedException();
-        }
+        throw new NotImplementedException();
     }
 }

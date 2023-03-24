@@ -27,11 +27,10 @@
   
   <ItemGroup>
     <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.4.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\CloudLogin.DataContract\CloudLogin.DataContract.csproj" />
     <ProjectReference Include="..\CloudLogin.Models\CloudLogin.Models.csproj" />
   </ItemGroup>
 

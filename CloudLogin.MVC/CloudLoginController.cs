@@ -1,4 +1,5 @@
-﻿using System.Web;
+﻿using AngryMonkey.CloudLogin.Models;
+using System.Web;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -6,9 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace AngryMonkey.CloudLogin;
+
 public class CloudLoginController : ControllerBase
 {
-    CloudLoginClient CloudLogin;
+    CloudLoginClient CloudLogin { get; set; }
+
     public CloudLoginController(CloudLoginClient cloudLogin) => CloudLogin = cloudLogin;
 
     [Route("login")]
@@ -19,18 +22,19 @@ public class CloudLoginController : ControllerBase
         if (requestId == Guid.Empty)
             return Redirect($"{CloudLogin.LoginUrl}?domainName={HttpUtility.UrlEncode(baseUri)}&actionState=login");
 
-        User? User = await CloudLogin.GetUserByRequestId(requestId, 1);
+        UserModel? cloudUser = await CloudLogin.GetUserByRequestId(requestId, 1);
 
-        if (User == null)
+        if (cloudUser == null)
             return await Login(Guid.Empty);
 
-        Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(User));
+        //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
 
         ClaimsIdentity claimsIdentity = new(new[] {
-            new Claim(ClaimTypes.NameIdentifier, User.ID.ToString()),
-            new Claim(ClaimTypes.GivenName, User.FirstName),
-            new Claim(ClaimTypes.Surname, User.LastName),
-            new Claim(ClaimTypes.Name, User.DisplayName)
+            new Claim(ClaimTypes.NameIdentifier, cloudUser.ID.ToString()),
+            new Claim(ClaimTypes.GivenName, cloudUser.FirstName),
+            new Claim(ClaimTypes.Surname, cloudUser.LastName),
+            new Claim(ClaimTypes.Name, cloudUser.DisplayName),
+            new Claim(ClaimTypes.Email, cloudUser.)
         }, "CloudLogin");
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
@@ -65,7 +69,6 @@ public class CloudLoginController : ControllerBase
         return Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/AddInput");
 
     }
-
     [Route("update")]
     public IActionResult Update()
     {

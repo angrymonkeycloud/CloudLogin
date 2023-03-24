@@ -7,36 +7,36 @@
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 		<AssemblyName>AngryMonkey.CloudLogin</AssemblyName>
 		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-    <Product>Cloud Login</Product>
-    <Authors>Angry Monkey</Authors>
-    <Company>Angry Monkey</Company>
-    <Description />
-    <PackageLicenseExpression></PackageLicenseExpression>
-    <PackageProjectUrl>https://www.angrymonkeycloud.com/</PackageProjectUrl>
-    <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
-    <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>0.0.16</Version>
-    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
-    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
+		<Product>Cloud Login</Product>
+		<Authors>Angry Monkey</Authors>
+		<Company>Angry Monkey</Company>
+		<Description />
+		<PackageLicenseExpression></PackageLicenseExpression>
+		<PackageProjectUrl>https://www.angrymonkeycloud.com/</PackageProjectUrl>
+		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+		<FileVersion>$(PackageVersion)</FileVersion>
+		<Version>0.0.16</Version>
+		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+		<PackageOutputPath>..\NugetPackage\</PackageOutputPath>
 
-    <Configurations>Debug;Release</Configurations>
+		<Configurations>Debug;Release</Configurations>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Content Remove="compilerconfig.json" />
+		<Content Remove="compilerconfig.json" />
 	</ItemGroup>
 
 
 	<ItemGroup>
-	  <None Include="compilerconfig.json" />
+		<None Include="compilerconfig.json" />
 	</ItemGroup>
-  
-  <ItemGroup>
-    <None Update="AngryMonkeyCloudLogo-64x64.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
+
+	<ItemGroup>
+		<None Update="AngryMonkeyCloudLogo-64x64.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.2.0" />
@@ -44,8 +44,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
+		<ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
 	</ItemGroup>
-
 
 </Project>

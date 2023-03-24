@@ -1,9 +1,10 @@
-﻿@model UserModel?
+﻿@using System.Security.Claims;
+@model UserModel?
 @{
     ViewData["Title"] = "Home Page";
 }
 
-@if (Model == null)
+@if (!User.Identity.IsAuthenticated)
 {
     <a href="~/login">Login</a>
 }
@@ -11,12 +12,17 @@ else
 {
     <h1>User Signed In</h1>
     <div>
-        Display Name: @Model.DisplayName
+        ID: @User.FindFirst(ClaimTypes.NameIdentifier).Value
         <br />
-        First Name: @Model.FirstName
+        Display Name: @User.FindFirst(ClaimTypes.Name).Value
         <br />
-        Last Name: @Model.LastName
+        First Name: @User.FindFirst(ClaimTypes.GivenName).Value
         <br />
+        Last Name: @User.FindFirst(ClaimTypes.Surname).Value
+        <br />
+        Email: @User.FindFirst(ClaimTypes.Email).Value
+        <br />
+        Number: @User.FindFirst(ClaimTypes.UserData).Value
     </div>
 
     <a href="~/update">Update</a>

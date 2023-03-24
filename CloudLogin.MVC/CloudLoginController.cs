@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace AngryMonkey.CloudLogin;
+
 public class CloudLoginController : ControllerBase
 {
-    CloudLoginClient CloudLogin;
+    CloudLoginClient CloudLogin { get; set; }
+
     public CloudLoginController(CloudLoginClient cloudLogin) => CloudLogin = cloudLogin;
 
     [Route("login")]
@@ -25,13 +27,14 @@ public class CloudLoginController : ControllerBase
         if (cloudUser == null)
             return await Login(Guid.Empty);
 
-        Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
+        //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
 
         ClaimsIdentity claimsIdentity = new(new[] {
             new Claim(ClaimTypes.NameIdentifier, cloudUser.ID.ToString()),
             new Claim(ClaimTypes.GivenName, cloudUser.FirstName),
             new Claim(ClaimTypes.Surname, cloudUser.LastName),
-            new Claim(ClaimTypes.Name, cloudUser.DisplayName)
+            new Claim(ClaimTypes.Name, cloudUser.DisplayName),
+            new Claim(ClaimTypes.Email, cloudUser.)
         }, "CloudLogin");
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
@@ -66,7 +69,6 @@ public class CloudLoginController : ControllerBase
         return Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/AddInput");
 
     }
-
     [Route("update")]
     public IActionResult Update()
     {

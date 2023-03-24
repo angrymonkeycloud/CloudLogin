@@ -4,7 +4,7 @@ namespace AngryMonkey.CloudLogin.DataContract;
 
 public record CloudUser : BaseRecord
 {
-    public CloudUser() : base("CloudUser", "CloudUser") { }
+    public CloudUser() : base("User", "User") { }
 
     public string FirstName { get; set; }
     public string LastName { get; set; }

@@ -4,10 +4,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-var cloudLoginClient = new CloudLoginClient("https://localhost:7061/");
 
-builder.Services.AddSingleton(new CloudLoginClient("https://localhost:7061/"));
-builder.Services.AddSingleton(new CloudLoginController(cloudLoginClient));
+builder.Services.AddCloudLoginMVC("https://localhost:7061/");
 
 var app = builder.Build();
 

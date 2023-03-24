@@ -1,10 +1,8 @@
-﻿using AngryMonkey.CloudLogin.Models;
-using System.Web;
+﻿using System.Web;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -22,7 +20,7 @@ public class CloudLoginController : ControllerBase
         if (requestId == Guid.Empty)
             return Redirect($"{CloudLogin.LoginUrl}?domainName={HttpUtility.UrlEncode(baseUri)}&actionState=login");
 
-        UserModel? cloudUser = await CloudLogin.GetUserByRequestId(requestId, 1);
+        User? cloudUser = await CloudLogin.GetUserByRequestId(requestId, 1);
 
         if (cloudUser == null)
             return await Login(Guid.Empty);
@@ -34,7 +32,8 @@ public class CloudLoginController : ControllerBase
             new Claim(ClaimTypes.GivenName, cloudUser.FirstName),
             new Claim(ClaimTypes.Surname, cloudUser.LastName),
             new Claim(ClaimTypes.Name, cloudUser.DisplayName),
-            new Claim(ClaimTypes.Email, cloudUser.)
+            new Claim(ClaimTypes.Email, cloudUser.PrimaryEmailAddress.Input),
+            new Claim(ClaimTypes.UserData, cloudUser.ToString())
         }, "CloudLogin");
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);

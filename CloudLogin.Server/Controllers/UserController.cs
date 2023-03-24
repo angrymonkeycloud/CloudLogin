@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
+using Microsoft.Azure.Cosmos;
 
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/User")]
@@ -134,7 +135,7 @@ public class UserController : BaseController
     {
         try
         {
-            await CosmosMethods.Container.UpsertItemAsync(user);
+            await CosmosMethods.Update(user);
             return Ok();
         }
         catch
@@ -148,7 +149,7 @@ public class UserController : BaseController
     {
         try
         {
-            await CosmosMethods.Container.CreateItemAsync(user);
+            await CosmosMethods.Create(user);
             return Ok();
         }
         catch
@@ -237,18 +238,11 @@ public class UserController : BaseController
     }
 
     [HttpPost("CreateRequest")]
-    public async Task<ActionResult> CreateRequest(Guid userID, Guid requestId)
+    public async Task<ActionResult> CreateRequest(Guid userId, Guid requestId)
     {
         try
         {
-            CloudRequest request = new()
-            {
-                ID = requestId,
-                UserId = userID
-            };
-
-            await CosmosMethods.Container.CreateItemAsync(request);
-
+            CosmosMethods.CreateRequest(userId, requestId);
             return Ok();
         }
         catch

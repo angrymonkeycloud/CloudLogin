@@ -3,10 +3,10 @@ using System.Web;
 
 namespace AngryMonkey.CloudLogin;
 
-public class CloudLoginClient : CloudLoginClientBase
+public class CloudLoginClient
 {
     public HttpClient? HttpServer { get; set; }
-    public String? LoginUrl { get; set; }
+    public string? LoginUrl { get; set; }
 
     public CloudLoginClient(string baseAddress)
     {
@@ -32,7 +32,6 @@ public class CloudLoginClient : CloudLoginClientBase
         {
             throw;
         }
-
     }
     public async Task<List<User>?> GetAllUsers()
     {
@@ -54,11 +53,11 @@ public class CloudLoginClient : CloudLoginClientBase
         }
 
     }
-    public async Task<List<User>?> GetUserByInput()
+    public async Task<List<User>?> GetUserByInput(string input)
     {
         try
         {
-            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByInput");
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByInput?input={HttpUtility.UrlEncode(input)}");
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
@@ -74,11 +73,11 @@ public class CloudLoginClient : CloudLoginClientBase
         }
 
     }
-    public async Task<List<User>?> GetUserByPhoneNumber()
+    public async Task<List<User>?> GetUserByPhoneNumber(string number)
     {
         try
         {
-            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByPhoneNumber");
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByPhoneNumber?number={HttpUtility.UrlEncode(number)}");
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
@@ -94,11 +93,11 @@ public class CloudLoginClient : CloudLoginClientBase
         }
 
     }
-    public async Task<List<User>?> GetUserByEmailAdress()
+    public async Task<List<User>?> GetUserByEmailAdress(string email)
     {
         try
         {
-            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByEmailAdress");
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByEmailAdress?email={HttpUtility.UrlEncode(email)}");
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
@@ -138,7 +137,7 @@ public class CloudLoginClient : CloudLoginClientBase
     {
         try
         {
-            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByRequestId?requestId={HttpUtility.UrlEncode(requestId.ToString())}&minutesToExpiry={minutesToExpiry}");
+            HttpResponseMessage message = await HttpServer.GetAsync($"Api/Client/GetUserByRequestId?requestId={HttpUtility.UrlEncode(requestId.ToString())}");
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 

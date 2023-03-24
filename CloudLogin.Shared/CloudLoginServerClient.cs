@@ -112,13 +112,13 @@ namespace AngryMonkey.CloudLogin
         public bool IsInputValidPhoneNumber(string input) => CloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
         public async Task UpdateUser(User user)
 		{
-			HttpContent content = JsonContent.Create<User>(user);
+			HttpContent content = JsonContent.Create(user);
 
 			await HttpServer.PostAsync("CloudLogin/User/Update", content);
 		}
 		public async Task CreateUser(User user)
 		{
-			HttpContent content = JsonContent.Create<User>(user);
+			HttpContent content = JsonContent.Create(user);
 
 			await HttpServer.PostAsync("CloudLogin/User/Create", content);
 		}

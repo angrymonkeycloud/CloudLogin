@@ -46,11 +46,11 @@ public class ClientApiController : BaseController
         }
     }
     [HttpGet("GetUserByPhoneNumber")]
-    public async Task<ActionResult<User>> GetUsersByPhoneNumber(string input)
+    public async Task<ActionResult<User>> GetUsersByPhoneNumber(string number)
     {
         try
         {
-            User? user = await CosmosMethods.GetUserByPhoneNumber(input);
+            User? user = await CosmosMethods.GetUserByPhoneNumber(number);
             return Ok(user);
         }
         catch
@@ -59,11 +59,11 @@ public class ClientApiController : BaseController
         }
     }
     [HttpGet("GetUserByEmailAdress")]
-    public async Task<ActionResult<User>> GetUserByEmailAdress(string input)
+    public async Task<ActionResult<User>> GetUserByEmailAdress(string email)
     {
         try
         {
-            User? user = await CosmosMethods.GetUserByEmailAddress(input);
+            User? user = await CosmosMethods.GetUserByEmailAddress(email);
             return Ok(user);
         }
         catch
@@ -87,7 +87,7 @@ public class ClientApiController : BaseController
     }
 
     [HttpGet("GetUserByRequestId")]
-    public async Task<ActionResult> GetUserByRequestId(Guid requestId, int minutesToExpiry)
+    public async Task<ActionResult> GetUserByRequestId(Guid requestId)
     {
         try
         {

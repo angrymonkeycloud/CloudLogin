@@ -30,4 +30,12 @@ public record User
 
     [JsonIgnore]
     public List<string> Providers => Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct().ToList();
+
+    public static User? Parse(string? decoded)
+    {
+        if (string.IsNullOrEmpty(decoded))
+            return null;
+
+        return JsonConvert.DeserializeObject<User>(decoded);
+    }
 }

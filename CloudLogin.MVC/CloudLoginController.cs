@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -33,7 +34,7 @@ public class CloudLoginController : ControllerBase
             new Claim(ClaimTypes.Surname, cloudUser.LastName),
             new Claim(ClaimTypes.Name, cloudUser.DisplayName),
             new Claim(ClaimTypes.Email, cloudUser.PrimaryEmailAddress.Input),
-            new Claim(ClaimTypes.UserData, cloudUser.ToString())
+            new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(cloudUser))
         }, "CloudLogin");
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);

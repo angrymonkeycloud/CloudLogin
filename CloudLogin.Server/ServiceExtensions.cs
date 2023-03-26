@@ -32,7 +32,7 @@ public static class MvcServiceCollectionExtensions
 
         CloudGeographyClient cloudGeography = new();
 
-        var service = services.AddAuthentication("Cookies").AddCookie((option =>
+        var service = services.AddAuthentication("Cookies").AddCookie((Action<CookieAuthenticationOptions>)(option =>
         {
             option.Cookie.Name = "CloudLogin";
             option.Events = new CookieAuthenticationEvents()
@@ -100,8 +100,8 @@ public static class MvcServiceCollectionExtensions
                         {
                             try
                             {
-                                LoginInput existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
-                                if (!existingInput.Providers.Select(key => key.Code.ToLower()).Contains(provider.Code.ToLower()))
+                                LoginInput existingInput = user.Inputs.First<LoginInput>(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
+                                if (!existingInput.Providers.Select<LoginProvider, string>(key => key.Code.ToLower()).Contains<string>(provider.Code.ToLower()))
                                     existingInput.Providers.Add(provider);
                             }
                             catch (Exception)
@@ -172,7 +172,7 @@ public static class MvcServiceCollectionExtensions
                         };
 
                         if (provider != null)
-                            user.Inputs.First().Providers.Add(provider);
+                            user.Inputs.First<LoginInput>().Providers.Add(provider);
                     }
 
                     user.LastSignedIn = currentDateTime;

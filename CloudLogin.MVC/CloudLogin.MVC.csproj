@@ -1,10 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>AngryMonkey.CloudLogin.MVC</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
+		<UserSecretsId>16b89c4e-cbd8-4756-8ed2-cb7b829d7de2</UserSecretsId>
+    <Product>Cloud Login</Product>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+    <FileVersion>$(PackageVersion)</FileVersion>
+    <Version>0.0.17</Version>
+    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
+    <Description />
+    <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
@@ -13,6 +35,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
   </ItemGroup>
 
 </Project>

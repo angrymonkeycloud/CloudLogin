@@ -3,7 +3,7 @@
     ViewData["Title"] = "Home Page";
     AngryMonkey.CloudLogin.User? user = AngryMonkey.CloudLogin.User.Parse(User.FindFirst(ClaimTypes.UserData)?.Value);
 }
-
+    
 @if (user == null)
 {
     <a href="~/login">Login</a>

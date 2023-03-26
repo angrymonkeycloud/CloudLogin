@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
 
-namespace AngryMonkey.CloudLogin;
+namespace AngryMonkey.CloudLogin.Data;
 
-public record DbUser : BaseRecord
+public record User : BaseRecord
 {
-    public DbUser() : base("User", "User") { }
+    public User() : base("User", "User") { }
 
     public string FirstName { get; set; }
     public string LastName { get; set; }

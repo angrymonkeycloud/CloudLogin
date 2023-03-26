@@ -1,11 +1,11 @@
 ﻿namespace AngryMonkey.CloudLogin;
 public class DataParse
 {
-    public static DbUser? Parse(User? User)
+    public static Data.User? Parse(User? User)
     {
         if (User == null)
             return null;
-        DbUser userInformation = new()
+        Data.User userInformation = new()
         {
             ID = User.ID,
             DisplayName = User.DisplayName,
@@ -16,20 +16,18 @@ public class DataParse
             DateOfBirth = User.DateOfBirth,
             LastSignedIn = User.LastSignedIn,
             Inputs = User.Inputs,
-            Username = User.Username,
-            Discriminator = "User",
-            PartitionKey = "User",
+            Username = User.Username
         };
         return userInformation;
     }
-    public List<DbUser>? Parse(List<User> Users)
+    public List<Data.User>? Parse(List<User> Users)
     {
         if (Users == null)
             return null;
 
         return Users.Select(Parse).ToList();
     }
-    public static User? Parse(DbUser? dbUser)
+    public static User? Parse(Data.User? dbUser)
     {
         if (dbUser == null)
             return null;
@@ -48,7 +46,7 @@ public class DataParse
         };
         return userInformation;
     }
-    public List<User>? Parse(List<DbUser> Users)
+    public List<User>? Parse(List<Data.User> Users)
     {
         if (Users == null)
             return null;

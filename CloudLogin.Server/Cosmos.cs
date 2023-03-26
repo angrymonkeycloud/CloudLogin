@@ -74,9 +74,9 @@ public class CosmosMethods : DataParse
 
     public async Task<User?> GetUserByEmailAddress(string emailAddress)
     {
-        IQueryable<DbUser> usersQueryable = Queryable<DbUser>("User", Container, user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container, user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
 
-        var users = await ToListAsync(usersQueryable);
+        List<Data.User> users = await ToListAsync(usersQueryable);
 
         return Parse(users.FirstOrDefault());
     }
@@ -104,26 +104,26 @@ public class CosmosMethods : DataParse
     {
         CloudGeographyClient cloudGeography = new();
 
-        IQueryable<DbUser> usersQueryable = Queryable<DbUser>("User", Container, user
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container, user
             => user.Inputs.Any(key => key.Format == InputFormat.PhoneNumber &&
             key.Input.Equals(phoneNumber.Number)
                 && (string.IsNullOrEmpty(phoneNumber.CountryCode)
                 || key.PhoneNumberCountryCode.Equals(phoneNumber.CountryCode, StringComparison.OrdinalIgnoreCase))));
 
-        var users = await ToListAsync(usersQueryable);
+        List<Data.User> users = await ToListAsync(usersQueryable);
 
         return Parse(users.FirstOrDefault());
     }
 
     public async Task<User?> GetUserByRequestId(Guid requestId)
     {
-        DbRequest request = new() { ID = requestId };
+        Data.Request request = new() { ID = requestId };
 
-        ItemResponse<DbRequest> response = await Container.ReadItemAsync<DbRequest>(GetCosmosId(request), GetPartitionKey(request));
+        ItemResponse<Data.Request> response = await Container.ReadItemAsync<Data.Request>(GetCosmosId(request), GetPartitionKey(request));
 
-        await Container.DeleteItemAsync<DbRequest>(GetCosmosId(request), GetPartitionKey(request));
+        await Container.DeleteItemAsync<Request>(GetCosmosId(request), GetPartitionKey(request));
 
-        DbRequest selectedRequest = response.Resource;
+        Data.Request selectedRequest = response.Resource;
 
         if (selectedRequest.UserId == null) return null;
 
@@ -132,30 +132,30 @@ public class CosmosMethods : DataParse
 
     public async Task<List<User>> GetUsersByDisplayName(string displayName)
     {
-        IQueryable<DbUser> usersQueryable = Queryable<DbUser>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
 
-        var users = await ToListAsync(usersQueryable);
+        List<Data.User> users = await ToListAsync(usersQueryable);
 
         return Parse(users);
     }
     public async Task<User> GetUserById(Guid id)
     {
-        DbUser user = new() { ID = id };
-        ItemResponse<DbUser> response = await Container.ReadItemAsync<DbUser>(GetCosmosId(user), GetPartitionKey(user));
+        Data.User user = new() { ID = id };
+        ItemResponse<Data.User> response = await Container.ReadItemAsync<Data.User>(GetCosmosId(user), GetPartitionKey(user));
 
         return Parse(response.Resource);
     }
 
     public async Task<List<User>> GetUsers()
     {
-        IQueryable<DbUser> usersQueryable = Queryable<DbUser>("User", Container);
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container);
 
         return Parse(await ToListAsync(usersQueryable));
     }
 
     public async Task CreateRequest(Guid userId, Guid requestId)
     {
-        DbRequest request = new()
+        Data.Request request = new()
         {
             ID = requestId,
             UserId = userId
@@ -166,12 +166,24 @@ public class CosmosMethods : DataParse
     }
     public async Task Update(User user)
     {
-        DbUser dbUser = Parse(user);
+        Data.User dbUser = Parse(user);
         await Container.UpsertItemAsync(dbUser);
     }
     public async Task Create(User user)
     {
-        DbUser dbUser = Parse(user);
+        Data.User dbUser = new()
+        {
+            ID = user.ID,
+            DisplayName = user.DisplayName,
+            FirstName = user.FirstName,
+            IsLocked = user.IsLocked,
+            LastName = user.LastName,
+            CreatedOn = user.CreatedOn,
+            DateOfBirth = user.DateOfBirth,
+            LastSignedIn = user.LastSignedIn,
+            Inputs = user.Inputs,
+            Username = user.Username
+        };
         await Container.CreateItemAsync(dbUser);
     }
     public async Task AddInput(Guid userId, LoginInput Input)
@@ -184,7 +196,7 @@ public class CosmosMethods : DataParse
     }
     public async Task DeleteUser(Guid userId)
     {
-        DbUser user = new() { ID = userId };
+        Data.User user = new() { ID = userId };
         await Container.DeleteItemStreamAsync(GetCosmosId(user), GetPartitionKey(user));
     }
 }

@@ -16,20 +16,19 @@ namespace AngryMonkey.CloudLogin;
 public class LoginController : BaseController
 {
     [HttpGet("GetClient")]
-    public ActionResult<CloudLoginServerClient> GetClient()
+    public ActionResult<CloudLoginClient> GetClient()
     {
-        CloudLoginServerClient client = new()
+        CloudLoginClient client = CloudLoginClient.InitializeForServer();
+
+        client.Providers = Configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.HandleUpdateOnly, key.Label)
         {
-            Providers = Configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.HandleUpdateOnly, key.Label)
-            {
-                IsCodeVerification = key.IsCodeVerification,
-                HandlesPhoneNumber = key.HandlesPhoneNumber,
-                HandlesEmailAddress = key.HandlesEmailAddress,
-                HandleUpdateOnly = key.HandleUpdateOnly
-            }).ToList(),
-            FooterLinks = Configuration.FooterLinks,
-            RedirectUrl = Configuration.RedirectUri
-        };
+            IsCodeVerification = key.IsCodeVerification,
+            HandlesPhoneNumber = key.HandlesPhoneNumber,
+            HandlesEmailAddress = key.HandlesEmailAddress,
+            HandleUpdateOnly = key.HandleUpdateOnly
+        }).ToList();
+        client.FooterLinks = Configuration.FooterLinks;
+        client.RedirectUrl = Configuration.RedirectUri;
 
         return client;
     }

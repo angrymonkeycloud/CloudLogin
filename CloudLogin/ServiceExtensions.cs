@@ -14,10 +14,7 @@ public static class MvcServiceCollectionExtensions
 {
     public static async Task<CloudLoginService> AddCloudLogin(this IServiceCollection services, HttpClient? httpServer = null)
     {
-        CloudLoginServerClient cloudLoginClient = new()
-        {
-            HttpServer = httpServer
-        };
+        CloudLoginClient cloudLoginClient = CloudLoginClient.InitializeForClient(httpServer.BaseAddress.AbsoluteUri);
 
         if (httpServer != null)
         {

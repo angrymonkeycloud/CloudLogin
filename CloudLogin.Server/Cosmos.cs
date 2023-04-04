@@ -130,6 +130,14 @@ public class CosmosMethods : DataParse
         return await GetUserById(selectedRequest.UserId.Value);
     }
 
+    public async Task<User> GetUserByDisplayName(string displayName)
+    {
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+
+        List<Data.User> users = await ToListAsync(usersQueryable);
+
+        return Parse(users.FirstOrDefault());
+    }
     public async Task<List<User>> GetUsersByDisplayName(string displayName)
     {
         IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));

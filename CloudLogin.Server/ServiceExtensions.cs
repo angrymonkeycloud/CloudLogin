@@ -28,11 +28,11 @@ public static class MvcServiceCollectionExtensions
 
         services.AddSingleton(new CloudLoginServerService());
         services.AddSingleton(configuration);
-        services.AddSingleton(new CloudLoginServerClient());
+        services.AddSingleton(CloudLoginClient.InitializeForServer());
 
         CloudGeographyClient cloudGeography = new();
 
-        var service = services.AddAuthentication("Cookies").AddCookie((Action<CookieAuthenticationOptions>)(option =>
+        var service = services.AddAuthentication("Cookies").AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
             option.Events = new CookieAuthenticationEvents()
@@ -42,10 +42,7 @@ public static class MvcServiceCollectionExtensions
 
                     string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
-                    CloudLoginServerClient cloudLogin = new()
-                    {
-                        HttpServer = new HttpClient() { BaseAddress = new Uri(baseUrl) }
-                    };
+                    CloudLoginClient cloudLogin = CloudLoginClient.InitializeForClient(baseUrl);
 
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
 
@@ -57,7 +54,7 @@ public static class MvcServiceCollectionExtensions
                     string? providerUserID = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     string? input = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
                     string? hash = context.Principal?.FindFirst(ClaimTypes.Hash)?.Value;
-                    
+
 
                     if (hash == "Cloud Login")
                         return;
@@ -206,7 +203,7 @@ public static class MvcServiceCollectionExtensions
                         });
                 }
             };
-        }));
+        });
 
         foreach (ProviderConfiguration provider in configuration.Providers)
         {

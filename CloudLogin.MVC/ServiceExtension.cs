@@ -22,7 +22,7 @@ public static class MvcServiceCollectionExtensions
             //};
         });
 
-        CloudLoginClient cloudLoginClient = new(loginServerUrl);
+        CloudLoginClient cloudLoginClient = CloudLoginClient.InitializeForClient(loginServerUrl);
 
         services.AddSingleton(cloudLoginClient);
         //services.AddSingleton(new CloudLoginController(cloudLoginClient));

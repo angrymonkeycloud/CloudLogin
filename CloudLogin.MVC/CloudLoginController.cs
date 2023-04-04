@@ -21,7 +21,7 @@ public class CloudLoginController : ControllerBase
         if (requestId == Guid.Empty)
             return Redirect($"{CloudLogin.LoginUrl}?domainName={HttpUtility.UrlEncode(baseUri)}&actionState=login");
 
-        User? cloudUser = await CloudLogin.GetUserByRequestId(requestId, 1);
+        User? cloudUser = await CloudLogin.GetUserByRequestId(requestId);
 
         if (cloudUser == null)
             return await Login(Guid.Empty);

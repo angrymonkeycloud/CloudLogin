@@ -11,13 +11,13 @@ namespace Microsoft.AspNetCore.Builder
 
 			app.Use(async (context, next) =>
 			{
-				if (app.ApplicationServices.GetService(typeof(CloudLoginServerClient)) is CloudLoginServerClient cloudLoginClient && cloudLoginClient.HttpServer == null)
+				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient && cloudLoginClient.HttpServer == null)
 				{
 					string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
 					cloudLoginClient.HttpServer = new HttpClient() { BaseAddress = new Uri(baseUrl) };
 
-					CloudLoginServerClient serverClient = await cloudLoginClient.InitFromServer();
+					CloudLoginClient serverClient = await cloudLoginClient.InitFromServer();
 					cloudLoginClient.Providers = serverClient.Providers;
 					cloudLoginClient.FooterLinks = serverClient.FooterLinks;
 					cloudLoginClient.RedirectUrl = serverClient.RedirectUrl;

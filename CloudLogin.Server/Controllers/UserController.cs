@@ -8,77 +8,6 @@ namespace AngryMonkey.CloudLogin;
 [ApiController]
 public class UserController : BaseController
 {
-    [HttpGet("GetUsers")]
-    public async Task<ActionResult<List<User>>> GetUsers()
-    {
-        try
-        {
-            List<User> user = await CosmosMethods.GetUsers();
-            return Ok(user);
-        }
-        catch
-        {
-            return Problem();
-        }
-    }
-
-    [HttpGet("GetUsersByDisplayName")]
-    public async Task<ActionResult<List<User>>> GetUserByDisplayName(string displayname)
-    {
-        try
-        {
-            List<User> user = await CosmosMethods.GetUsersByDisplayName(displayname);
-            return Ok(user);
-        }
-        catch
-        {
-            return Problem();
-        }
-    }
-    [HttpGet("GetById")]
-    public async Task<ActionResult<User>> GetById(Guid id)
-    {
-        try
-        {
-            User user = await CosmosMethods.GetUserById(id);
-            return Ok(user);
-        }
-        catch
-        {
-            return Problem();
-        }
-    }
-
-    [HttpGet("GetByEmailAddress")]
-    public async Task<ActionResult<User>?> GetByEmailAddress(string emailAddress)
-    {
-        try
-        {
-
-            User? user = await CosmosMethods.GetUserByEmailAddress(emailAddress);
-
-            return Ok(user);
-        }
-        catch (Exception e)
-        {
-            return Problem();
-        }
-    }
-
-    [HttpGet("GetByPhoneNumber")]
-    public async Task<ActionResult<User>?> GetByPhoneNumber(string phoneNumber)
-    {
-        try
-        {
-            User? user = await CosmosMethods.GetUserByPhoneNumber(phoneNumber);
-            return Ok(user);
-        }
-        catch
-        {
-            return Problem();
-        }
-    }
-
     [HttpPost("SendWhatsAppCode")]
     public async Task<ActionResult> SendWhatsAppCode(string receiver, string code)
     {
@@ -158,7 +87,7 @@ public class UserController : BaseController
         }
     }
 
-    [HttpPost("AddInput")]
+    [HttpPost("AddUserInput")]
     public async Task<ActionResult> AddInput(Guid userId, [FromBody] LoginInput Input)
     {
         try
@@ -200,20 +129,99 @@ public class UserController : BaseController
         }
     }
 
-    [HttpGet("IsAuthenticated")]
-    public async Task<ActionResult<bool>> IsAuthenticated()
+
+
+    [HttpGet("GetAllUsers")]
+    public async Task<ActionResult<List<User>>> GetAllUsers()
     {
         try
         {
-            string? userCookie = Request.Cookies["CloudLogin"];
-            return Ok(userCookie != null);
+            List<User> user = await CosmosMethods.GetUsers();
+            return Ok(user);
         }
         catch
         {
             return Problem();
         }
     }
-
+    [HttpGet("GetUserById")]
+    public async Task<ActionResult<User>> GetUserById(Guid id)
+    {
+        try
+        {
+            User user = await CosmosMethods.GetUserById(id);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUsersByDisplayName")]
+    public async Task<ActionResult<List<User>>> GetUsersByDisplayName(string displayname)
+    {
+        try
+        {
+            List<User> user = await CosmosMethods.GetUsersByDisplayName(displayname);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUserByDisplayName")]
+    public async Task<ActionResult<User>> GetUserByDisplayName(string displayname)
+    {
+        try
+        {
+            User user = await CosmosMethods.GetUserByDisplayName(displayname);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUserByInput")]
+    public async Task<ActionResult<User>> GetUserByInput(string input)
+    {
+        try
+        {
+            User? user = await CosmosMethods.GetUserByInput(input);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUserByEmailAdress")]
+    public async Task<ActionResult<User>> GetUserByEmailAdress(string email)
+    {
+        try
+        {
+            User? user = await CosmosMethods.GetUserByEmailAddress(email);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+    [HttpGet("GetUserByPhoneNumber")]
+    public async Task<ActionResult<User>> GetUsersByPhoneNumber(string number)
+    {
+        try
+        {
+            User? user = await CosmosMethods.GetUserByPhoneNumber(number);
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
     [HttpGet("CurrentUser")]
     public async Task<ActionResult<User?>> CurrentUser()
     {
@@ -236,19 +244,17 @@ public class UserController : BaseController
             return Problem();
         }
     }
-
-    [HttpPost("CreateRequest")]
-    public async Task<ActionResult> CreateRequest(Guid userId, Guid requestId)
+    [HttpGet("IsAuthenticated")]
+    public async Task<ActionResult<bool>> IsAuthenticated()
     {
         try
         {
-            CosmosMethods.CreateRequest(userId, requestId);
-            return Ok();
+            string? userCookie = Request.Cookies["CloudLogin"];
+            return Ok(userCookie != null);
         }
         catch
         {
             return Problem();
         }
     }
-
 }

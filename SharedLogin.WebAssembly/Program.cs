@@ -1,4 +1,5 @@
 using AngryMonkey.Cloud.Components;
+using AngryMonkey.CloudWeb;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Http;
 using SharedLogin.WebAssembly;
@@ -8,14 +9,21 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-builder.Services.AddCloudWeb(new CloudWebOptions()
+builder.Services.AddCloudWeb(new()
 {
-    DefaultTitle = "Shared Login", // Your app main title
+    PageDefaults = new()
+    {
+        Title = "Shared Login", // Your app main title
+        CallingAssemblyName = "SharedLogin.WebAssembly",
+        AutoAppendBlazorStyles = true,
+        FollowPage = false,
+        IndexPage = false,
+        Bundles = new List<CloudBundle>() // Bundles that should be added to the layout
+            {
+                new CloudBundle(){ Source = "css/app.css", MinOnRelease = false},
+            }
+    },
     TitleSuffix = " - Shared Login", // Your app suffix that would be added to a page title if exists
-    SiteBundles = new List<CloudBundle>() // Bundles that should be added to the layout
-     {
-      new CloudBundle(){ Source = "css/app.css", MinOnRelease = false},
-     }
 });
 
 builder.RootComponents.Add<CloudHeadInit>("head::after");

@@ -38,6 +38,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Models", "CloudL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.ServiceClient", "CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj", "{3E0B71D4-238C-4E79-BB42-71E47158AF96}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.MVC", "CloudLogin.MVC\CloudLogin.MVC.csproj", "{296A98B3-B131-4610-A895-2C9991D3B0DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +119,12 @@ Global
 		{3E0B71D4-238C-4E79-BB42-71E47158AF96}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{3E0B71D4-238C-4E79-BB42-71E47158AF96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E0B71D4-238C-4E79-BB42-71E47158AF96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{296A98B3-B131-4610-A895-2C9991D3B0DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{296A98B3-B131-4610-A895-2C9991D3B0DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{296A98B3-B131-4610-A895-2C9991D3B0DE}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{296A98B3-B131-4610-A895-2C9991D3B0DE}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{296A98B3-B131-4610-A895-2C9991D3B0DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{296A98B3-B131-4610-A895-2C9991D3B0DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

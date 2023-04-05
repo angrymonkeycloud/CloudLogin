@@ -19,7 +19,7 @@ builder.Services.AddCloudWeb(new()
         IndexPage = false,
         Bundles = new List<CloudBundle>() // Bundles that should be added to the layout
             {
-                new CloudBundle(){ Source = "css/app.css", MinOnRelease = false},
+                new CloudBundle(){ Source = "css/site.css", MinOnRelease = false},
             }
     },
     TitleSuffix = " - Shared Login", // Your app suffix that would be added to a page title if exists

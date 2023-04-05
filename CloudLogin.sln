@@ -38,10 +38,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Models", "CloudL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.ServiceClient", "CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj", "{3E0B71D4-238C-4E79-BB42-71E47158AF96}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "temp", "temp", "{60058F3C-69BB-4D99-A4F5-28107AA75E0F}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudWeb", "..\CloudWeb\CloudWeb\CloudWeb.csproj", "{821E0FDE-95D7-46E9-A3E7-B79277319E99}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,12 +117,6 @@ Global
 		{3E0B71D4-238C-4E79-BB42-71E47158AF96}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{3E0B71D4-238C-4E79-BB42-71E47158AF96}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E0B71D4-238C-4E79-BB42-71E47158AF96}.Release|Any CPU.Build.0 = Release|Any CPU
-		{821E0FDE-95D7-46E9-A3E7-B79277319E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{821E0FDE-95D7-46E9-A3E7-B79277319E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{821E0FDE-95D7-46E9-A3E7-B79277319E99}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
-		{821E0FDE-95D7-46E9-A3E7-B79277319E99}.Release_Server|Any CPU.Build.0 = Release|Any CPU
-		{821E0FDE-95D7-46E9-A3E7-B79277319E99}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{821E0FDE-95D7-46E9-A3E7-B79277319E99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -141,7 +131,6 @@ Global
 		{893CDE09-BF78-4370-BC08-FA4F714EC29E} = {2FCCF6F3-5430-4B15-884F-F8DAE6C07C16}
 		{8F7327BE-A995-415C-860E-3437918926A2} = {2FCCF6F3-5430-4B15-884F-F8DAE6C07C16}
 		{19D3C90A-D8EF-40A9-9F21-2022C2B47005} = {2FCCF6F3-5430-4B15-884F-F8DAE6C07C16}
-		{821E0FDE-95D7-46E9-A3E7-B79277319E99} = {60058F3C-69BB-4D99-A4F5-28107AA75E0F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4F149D60-85D2-4D27-A307-7201B420B208}

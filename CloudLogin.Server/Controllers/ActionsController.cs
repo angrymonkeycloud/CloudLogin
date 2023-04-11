@@ -20,12 +20,12 @@ public class ActionsController : BaseController
         User oldUser = await CosmosMethods.GetUserByEmailAddress(input.Input);
 
         if (oldUser != null)
-            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUrl={domainName}");
+            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}");
 
         oldUser = await CosmosMethods.GetUserByPhoneNumber(input.Input);
 
         if (oldUser != null)
-            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUrl={domainName}");
+            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}");
 
         user.Inputs.Add(input);
 
@@ -35,7 +35,7 @@ public class ActionsController : BaseController
 
         string userSerialized = JsonConvert.SerializeObject(user);
 
-        return Redirect($"{domainName}CloudLogin/Update?redirectUrl={redirectTo}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
+        return Redirect($"{domainName}CloudLogin/Update?redirectUri={redirectTo}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
     }
 
     [HttpGet("Update")]
@@ -60,7 +60,7 @@ public class ActionsController : BaseController
 
         string userSerialized = JsonConvert.SerializeObject(user);
 
-        return Redirect($"{baseUrl}/CloudLogin/Update?redirectUrl={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
+        return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
     }
 
     [HttpGet("SetPrimary")]
@@ -71,7 +71,7 @@ public class ActionsController : BaseController
         User? user = await CosmosMethods.GetUserByEmailAddress(input);
 
         if(user == null)
-            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUrl={domainName}");
+            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}");
 
         user.Inputs.First(i => i.IsPrimary).IsPrimary = false;
         user.Inputs.First(i => i.Input == input).IsPrimary = true;
@@ -80,6 +80,6 @@ public class ActionsController : BaseController
 
         string userSerialized = JsonConvert.SerializeObject(user);
 
-        return Redirect($"{baseUrl}/CloudLogin/Update?redirectUrl={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
+        return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
     }
 }

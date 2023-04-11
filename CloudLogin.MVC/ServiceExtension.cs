@@ -15,8 +15,8 @@ public static class MvcServiceCollectionExtensions
         services.AddAuthentication("Cookies").AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
-            option.LoginPath = "/Login";
-            option.LogoutPath = "/Logout";
+            option.LoginPath = "/account/login";
+            option.LogoutPath = "/account/logout";
             //option.Events = new CookieAuthenticationEvents()
             //{
             //    OnSignedIn = async context =>

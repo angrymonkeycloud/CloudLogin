@@ -80,11 +80,9 @@
 
         @if (State == ProcessState.InputValue)
         {
-
-
             <div class="login-form _center ">
                 <div class="amc-cloudlogin-input">
-                    <input @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
+                    <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                     <label for="email">@InputLabel</label>
                 </div>
                 @if (AddInputDiplay == false)

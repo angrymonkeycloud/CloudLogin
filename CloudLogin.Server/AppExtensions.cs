@@ -20,7 +20,7 @@ namespace Microsoft.AspNetCore.Builder
 					CloudLoginClient serverClient = await cloudLoginClient.InitFromServer();
 					cloudLoginClient.Providers = serverClient.Providers;
 					cloudLoginClient.FooterLinks = serverClient.FooterLinks;
-					cloudLoginClient.RedirectUrl = serverClient.RedirectUrl;
+					cloudLoginClient.RedirectUri = serverClient.RedirectUri;
 					cloudLoginClient.UsingDatabase = serverClient.UsingDatabase;
 				}
 

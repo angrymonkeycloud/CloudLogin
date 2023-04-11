@@ -24,7 +24,7 @@ public class CloudLoginClient
 
     public static CloudLoginClient InitializeForServer() => new();
 
-    public string? RedirectUrl { get; set; }
+    public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }
     public List<ProviderDefinition> Providers { get; set; }
     public bool UsingDatabase { get; set; } = false;
@@ -210,10 +210,10 @@ public class CloudLoginClient
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Request/GetUserByRequestId?requestId={HttpUtility.UrlEncode(requestId.ToString())}");
 
-            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
-                return null;
+            if (message.IsSuccessStatusCode)
+                return await message.Content.ReadFromJsonAsync<User?>();
 
-            return await message.Content.ReadFromJsonAsync<User?>();
+            return null;
         }
         catch
         {

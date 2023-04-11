@@ -28,7 +28,7 @@ public class LoginController : BaseController
             HandleUpdateOnly = key.HandleUpdateOnly
         }).ToList();
         client.FooterLinks = Configuration.FooterLinks;
-        client.RedirectUrl = Configuration.RedirectUri;
+        client.RedirectUri = Configuration.RedirectUri;
 
         return client;
     }
@@ -190,10 +190,10 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Update")]
-    public async Task<ActionResult> Logout(string? redirectUrl, string userInfo)
+    public async Task<ActionResult> Logout(string? redirectUri, string userInfo)
     {
         if (string.IsNullOrEmpty(userInfo))
-            return Redirect(redirectUrl);
+            return Redirect(redirectUri);
 
         Response.Cookies.Delete("User");
 
@@ -221,22 +221,22 @@ public class LoginController : BaseController
 
         Response.Cookies.Append("User", userInfo);
 
-        if (redirectUrl == null)
+        if (redirectUri == null)
             return Redirect("/");
 
-        return Redirect(redirectUrl);
+        return Redirect(redirectUri);
     }
 
     [HttpGet("Logout")]
-    public async Task<ActionResult> Logout(string? redirectUrl)
+    public async Task<ActionResult> Logout(string? redirectUri)
     {
         await HttpContext.SignOutAsync();
 
         Response.Cookies.Delete("User");
         Response.Cookies.Delete("LoggedInUser");
 
-        if (!string.IsNullOrEmpty(redirectUrl))
-            return Redirect(redirectUrl);
+        if (!string.IsNullOrEmpty(redirectUri))
+            return Redirect(redirectUri);
 
         return Redirect("/");
     }

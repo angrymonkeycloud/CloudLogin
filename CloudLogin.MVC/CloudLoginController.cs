@@ -4,22 +4,26 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Http.Extensions;
 
 namespace AngryMonkey.CloudLogin;
 
+[Route("Account")]
 public class CloudLoginController : ControllerBase
 {
     CloudLoginClient CloudLogin { get; set; }
 
     public CloudLoginController(CloudLoginClient cloudLogin) => CloudLogin = cloudLogin;
 
-    [Route("login")]
+    [Route("Login")]
     public async Task<IActionResult> Login(Guid requestId)
     {
         var baseUri = $"{Request.Scheme}://{Request.Host}";
+        
+        string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
         if (requestId == Guid.Empty)
-            return Redirect($"{CloudLogin.LoginUrl}?domainName={HttpUtility.UrlEncode(baseUri)}&actionState=login");
+            return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={Request.GetEncodedUrl()}&actionState=login");
 
         User? cloudUser = await CloudLogin.GetUserByRequestId(requestId);
 
@@ -46,14 +50,18 @@ public class CloudLoginController : ControllerBase
 
         return Redirect(baseUri);
     }
-    [Route("logout")]
-    public IActionResult logout()
+
+    [Route("Logout")]
+    public IActionResult Logout()
     {
         var baseUri = $"{Request.Scheme}://{Request.Host}";
 
-        return Redirect($"{CloudLogin.LoginUrl}CloudLogin/Logout?redirectUrl={HttpUtility.UrlEncode(baseUri)}");
+        string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
+
+        return Redirect($"{CloudLogin.LoginUrl}CloudLogin/Logout{seperator}redirectUri={HttpUtility.UrlEncode(baseUri)}");
     }
-    [Route("changeprimary")]
+
+    [Route("ChangePrimary")]
     public IActionResult ChangePrimary()
     {
         var baseUri = $"{Request.Scheme}://{Request.Host}";
@@ -61,7 +69,8 @@ public class CloudLoginController : ControllerBase
         return Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/ChangePrimary");
 
     }
-    [Route("addinput")]
+
+    [Route("AddInput")]
     public IActionResult AddInput()
     {
         var baseUri = $"{Request.Scheme}://{Request.Host}";
@@ -69,7 +78,8 @@ public class CloudLoginController : ControllerBase
         return Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/AddInput");
 
     }
-    [Route("update")]
+
+    [Route("Update")]
     public IActionResult Update()
     {
         var baseUri = $"{Request.Scheme}://{Request.Host}";

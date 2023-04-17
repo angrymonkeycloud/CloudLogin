@@ -164,19 +164,16 @@ public partial class CloudLoginComponent
 
         await base.OnInitializedAsync();
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            OnInput = () =>
-            {
-                StateHasChanged();
-            };
+            OnInput = StateHasChanged;
 
             await SwitchState(ProcessState.InputValue);
         }
     }
-
 
     //BUTTONS CLICKED FUNCTIONS------------------------------
     private async Task OnInputNextClicked()

@@ -74,7 +74,7 @@ public class CosmosMethods : DataParse
 
     public async Task<User?> GetUserByEmailAddress(string emailAddress)
     {
-        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container, user => user.Inputs.Where(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)).Any());
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container, user => user.Inputs.Any(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)));
 
         List<Data.User> users = await ToListAsync(usersQueryable);
 
@@ -179,19 +179,7 @@ public class CosmosMethods : DataParse
     }
     public async Task Create(User user)
     {
-        Data.User dbUser = new()
-        {
-            ID = user.ID,
-            DisplayName = user.DisplayName,
-            FirstName = user.FirstName,
-            IsLocked = user.IsLocked,
-            LastName = user.LastName,
-            CreatedOn = user.CreatedOn,
-            DateOfBirth = user.DateOfBirth,
-            LastSignedIn = user.LastSignedIn,
-            Inputs = user.Inputs,
-            Username = user.Username
-        };
+        Data.User dbUser = Parse(user);
         await Container.CreateItemAsync(dbUser);
     }
     public async Task AddInput(Guid userId, LoginInput Input)

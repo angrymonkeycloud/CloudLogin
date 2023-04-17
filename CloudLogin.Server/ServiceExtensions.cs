@@ -32,51 +32,36 @@ public static class MvcServiceCollectionExtensions
 
         CloudGeographyClient cloudGeography = new();
 
-        var service = services.AddAuthentication("Cookies").AddCookie(option =>
+        var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
             option.Events = new CookieAuthenticationEvents()
             {
                 OnSignedIn = async context =>
                 {
+                    HttpRequest request = context.Request;
+                    ClaimsPrincipal principal = context.Principal!;
 
-                    string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
+                    // Do not continue on second sign in, in the future we should implemented in another way.
+                    if (principal.FindFirst(ClaimTypes.Hash)?.Value?.Equals("CloudLogin") ?? false)
+                        return;
 
-                    CloudLoginClient cloudLogin = CloudLoginClient.InitializeForClient(baseUrl);
+                    CloudLoginClient cloudLogin = CloudLoginClient.InitializeForClient($"{request.Scheme}://{request.Host.Value}");
 
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
 
-                    User? user;
-                    InputFormat FormatValue = InputFormat.EmailAddress;
+                    InputFormat formatValue = principal.HasClaim(claim => claim.Type == ClaimTypes.Email) ? InputFormat.EmailAddress : InputFormat.PhoneNumber;
 
-                    string? providerCode = context.Principal?.Identity?.AuthenticationType;
+                    string providerCode = principal.Identity!.AuthenticationType!;
+                    string? providerUserID = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                    string? providerUserID = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    string? input = context.Principal?.FindFirst(ClaimTypes.Email)?.Value;
-                    string? hash = context.Principal?.FindFirst(ClaimTypes.Hash)?.Value;
+                    string input = (formatValue == InputFormat.EmailAddress ? principal.FindFirst(ClaimTypes.Email)?.Value : principal.FindFirst(ClaimTypes.MobilePhone)?.Value)!;
+                    User? user = formatValue == InputFormat.EmailAddress ? await cloudLogin.GetUserByEmailAddress(input) : await cloudLogin.GetUserByPhoneNumber(input);
 
-
-                    if (hash == "Cloud Login")
-                        return;
-
-                    user = await cloudLogin.GetUserByPhoneNumber(input);
-
-                    if (string.IsNullOrEmpty(input))
-                    {
-                        input = context.Principal?.FindFirst(ClaimTypes.MobilePhone)?.Value;
-                        user = await cloudLogin.GetUserByPhoneNumber(input);
-                        FormatValue = InputFormat.PhoneNumber;
-                    }
-                    else user = await cloudLogin.GetUserByEmailAddress(input);
-
-                    string firstName = context.Principal?.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
-                    string lastName = context.Principal?.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
-
-                    LoginProvider? provider = null;
+                    LoginProvider provider = new() { Code = providerCode, Identifier = providerUserID };
 
                     if (providerCode.Equals("CloudLogin"))
-                    {
-                        switch (FormatValue)
+                        switch (formatValue)
                         {
                             case InputFormat.EmailAddress:
                                 provider = new() { Code = "CloudLogin", Identifier = providerUserID };
@@ -87,59 +72,60 @@ public static class MvcServiceCollectionExtensions
                             default:
                                 break;
                         }
-                    }
-                    else
-                        provider = new() { Code = providerCode, Identifier = providerUserID };
 
-                    if (user != null)
+                    bool existingUser = user != null;
+
+                    if (existingUser)
+                    //try
                     {
-                        if (provider != null)
-                        {
-                            try
-                            {
-                                LoginInput existingInput = user.Inputs.First<LoginInput>(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
-                                if (!existingInput.Providers.Select<LoginProvider, string>(key => key.Code.ToLower()).Contains<string>(provider.Code.ToLower()))
-                                    existingInput.Providers.Add(provider);
-                            }
-                            catch (Exception)
-                            {
-                                string countryCode = "", callingCode = "";
-                                if (FormatValue == InputFormat.PhoneNumber)
-                                {
-                                    PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(input);
+                        user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value  ?? "--";
+                        user.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
+                        user.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}";
 
-                                    input = phoneNumber.Number;
-                                    countryCode = phoneNumber.CountryCode;
-                                    callingCode = phoneNumber.CountryCallingCode;
-                                }
-                                user = new User()
-                                {
-                                    ID = Guid.NewGuid(),
-                                    FirstName = firstName,
-                                    LastName = lastName,
-                                    DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}",
-                                    CreatedOn = currentDateTime,
-                                    Inputs = new()
-                                    {
-                                        new LoginInput()
-                                        {
-                                            Input = input,
-                                            Format = FormatValue,
-                                            IsPrimary = true,
-                                            PhoneNumberCountryCode = countryCode,
-                                            PhoneNumberCallingCode = callingCode
-                                        }
-                                    }
-                                };
-                            }
-                        }
+                        LoginInput existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
+
+                        if (!existingInput.Providers.Any(key => key.Code.Equals(provider.Code, StringComparison.OrdinalIgnoreCase)))
+                            existingInput.Providers.Add(provider);
                     }
+                    //catch (Exception)
+                    //{
+                    //    string countryCode = "", callingCode = "";
+
+                    //    if (formatValue == InputFormat.PhoneNumber)
+                    //    {
+                    //        PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(input);
+
+                    //        input = phoneNumber.Number;
+                    //        countryCode = phoneNumber.CountryCode;
+                    //        callingCode = phoneNumber.CountryCallingCode;
+                    //    }
+
+                    //    user = new User()
+                    //    {
+                    //        ID = Guid.NewGuid(),
+                    //        FirstName = firstName,
+                    //        LastName = lastName,
+                    //        DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}",
+                    //        CreatedOn = currentDateTime,
+                    //        Inputs = new()
+                    //            {
+                    //                new LoginInput()
+                    //                {
+                    //                    Input = input,
+                    //                    Format = formatValue,
+                    //                    IsPrimary = true,
+                    //                    PhoneNumberCountryCode = countryCode,
+                    //                    PhoneNumberCallingCode = callingCode
+                    //                }
+                    //            }
+                    //    };
+                    //}
                     else
                     {
                         string? countryCode = null;
                         string? callingCode = null;
 
-                        if (FormatValue == InputFormat.PhoneNumber)
+                        if (formatValue == InputFormat.PhoneNumber)
                         {
                             PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(input);
 
@@ -148,36 +134,39 @@ public static class MvcServiceCollectionExtensions
                             callingCode = phoneNumber.CountryCallingCode;
                         }
 
+                        string firstName = context.Principal?.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
+                        string lastName = context.Principal?.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
+
                         user = new User()
                         {
                             ID = Guid.NewGuid(),
                             FirstName = firstName,
                             LastName = lastName,
-                            DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}",
+                            DisplayName = principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}",
                             CreatedOn = currentDateTime,
                             Inputs = new()
                             {
                                 new LoginInput()
                                 {
                                     Input = input,
-                                    Format = FormatValue,
+                                    Format = formatValue,
                                     IsPrimary = true,
                                     PhoneNumberCountryCode = countryCode,
-                                    PhoneNumberCallingCode = callingCode
+                                    PhoneNumberCallingCode = callingCode,
+                                    Providers = provider != null? new() { provider } : new()
                                 }
                             }
                         };
-
-                        if (provider != null)
-                            user.Inputs.First<LoginInput>().Providers.Add(provider);
                     }
 
                     user.LastSignedIn = currentDateTime;
 
-                    string alreadySignedIn = context.HttpContext.Request.Cookies["User"];
+                    if (existingUser)
+                        await cloudLogin.UpdateUser(user);
+                    else
+                        await cloudLogin.CreateUser(user);
 
-                    if (!string.IsNullOrEmpty(alreadySignedIn))
-                    {
+                    if (string.IsNullOrEmpty(context.HttpContext.Request.Cookies["User"]))
                         context.HttpContext.Response.Cookies.Append("User",
                            JsonConvert.SerializeObject(user), new CookieOptions()
                            {
@@ -186,21 +175,9 @@ public static class MvcServiceCollectionExtensions
                                Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
                            });
 
-                        return;
-                    }
-
-                    if (user != null)
-                        await cloudLogin.UpdateUser(user);
-                    else
-                        await cloudLogin.CreateUser(user);
-
-                    context.HttpContext.Response.Cookies.Append("User",
-                        JsonConvert.SerializeObject(user), new CookieOptions()
-                        {
-                            HttpOnly = true,
-                            Secure = true,
-                            Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
-                        });
+                    // ----------------------------------------
+                    // END ON Sign In
+                    // -----------------------------------------
                 }
             };
         });

@@ -19,7 +19,7 @@ public class CloudLoginController : ControllerBase
     public async Task<IActionResult> Login(Guid requestId)
     {
         var baseUri = $"{Request.Scheme}://{Request.Host}";
-        
+
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
         if (requestId == Guid.Empty)
@@ -34,9 +34,9 @@ public class CloudLoginController : ControllerBase
 
         ClaimsIdentity claimsIdentity = new(new[] {
             new Claim(ClaimTypes.NameIdentifier, cloudUser.ID.ToString()),
-            new Claim(ClaimTypes.GivenName, cloudUser.FirstName),
-            new Claim(ClaimTypes.Surname, cloudUser.LastName),
-            new Claim(ClaimTypes.Name, cloudUser.DisplayName),
+            new Claim(ClaimTypes.GivenName, cloudUser.FirstName ?? string.Empty),
+            new Claim(ClaimTypes.Surname, cloudUser.LastName ?? string.Empty),
+            new Claim(ClaimTypes.Name, cloudUser.DisplayName ?? string.Empty),
             new Claim(ClaimTypes.Email, cloudUser.PrimaryEmailAddress.Input),
             new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(cloudUser))
         }, "CloudLogin");
@@ -52,8 +52,14 @@ public class CloudLoginController : ControllerBase
     }
 
     [Route("Logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
+        await HttpContext.SignOutAsync();
+
+        Response.Cookies.Delete("User");
+        Response.Cookies.Delete("LoggedInUser");
+        Response.Cookies.Delete("CloudLogin");
+
         var baseUri = $"{Request.Scheme}://{Request.Host}";
 
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";

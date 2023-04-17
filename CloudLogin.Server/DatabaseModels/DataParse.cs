@@ -5,6 +5,7 @@ public class DataParse
     {
         if (User == null)
             return null;
+
         Data.User userInformation = new()
         {
             ID = User.ID,
@@ -18,8 +19,10 @@ public class DataParse
             Inputs = User.Inputs,
             Username = User.Username
         };
+
         return userInformation;
     }
+
     public List<Data.User>? Parse(List<User> Users)
     {
         if (Users == null)
@@ -27,6 +30,7 @@ public class DataParse
 
         return Users.Select(Parse).ToList();
     }
+
     public static User? Parse(Data.User? dbUser)
     {
         if (dbUser == null)

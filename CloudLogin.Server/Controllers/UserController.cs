@@ -65,6 +65,7 @@ public class UserController : BaseController
         try
         {
             await CosmosMethods.Update(user);
+         
             return Ok();
         }
         catch
@@ -79,6 +80,7 @@ public class UserController : BaseController
         try
         {
             await CosmosMethods.Create(user);
+
             return Ok();
         }
         catch

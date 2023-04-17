@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
+using Microsoft.AspNetCore.Http.Extensions;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -36,10 +37,6 @@ public class LoginController : BaseController
     [HttpGet("Login/{identity}")]
     public async Task<ActionResult?> Login(string identity, string input, string redirectUri, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "")
     {
-
-        string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
-
-
         AuthenticationProperties globalProperties = new()
         {
             RedirectUri = $"/cloudlogin/result?redirectUri={HttpUtility.UrlEncode(redirectUri)}" +
@@ -121,8 +118,7 @@ public class LoginController : BaseController
     {
         User? user = JsonConvert.DeserializeObject<User>(HttpContext.Request.Cookies["User"]);
 
-        string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
-
+        //string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
         if (user == null)
             return Redirect(redirectUri);
@@ -133,14 +129,12 @@ public class LoginController : BaseController
             ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null
         };
 
-        string firstName = user.FirstName;
-        string lastName = user.LastName;
+        string firstName = user.FirstName ??= "Guest";
+        string lastName = user.LastName ??= "User";
         string? displayName = user.DisplayName;
 
         if (Configuration.Cosmos == null)
         {
-            firstName ??= "Guest";
-            lastName ??= "User";
             user = new()
             {
                 DisplayName = $"{firstName} {lastName}",
@@ -156,18 +150,18 @@ public class LoginController : BaseController
                 new Claim(ClaimTypes.GivenName, firstName),
                 new Claim(ClaimTypes.Surname, lastName),
                 new Claim(ClaimTypes.Name, displayName),
-                new Claim(ClaimTypes.Hash, "Cloud Login")
+                new Claim(ClaimTypes.Hash, "CloudLogin")
             }, "CloudLogin");
 
-        if (user.EmailAddresses.FirstOrDefault() == null)
-            if (user.PhoneNumbers.FirstOrDefault() != null)
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+        if (!user.EmailAddresses.Any())
+            if (user.PhoneNumbers.Any())
+                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.First(key => key.IsPrimary == true).Input));
             else
                 claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, displayName));
 
         else
-            if (user.EmailAddresses.FirstOrDefault() != null)
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.Where(key => key.IsPrimary == true).FirstOrDefault().Input));
+            if (user.EmailAddresses.Any())
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.First(key => key.IsPrimary == true).Input));
         else
             claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, displayName));
 
@@ -176,7 +170,7 @@ public class LoginController : BaseController
 
         if (actionState == "AddInput")
         {
-            LoginInput input = user.Inputs.FirstOrDefault();
+            LoginInput input = user.Inputs.First();
             string userInfo = JsonConvert.SerializeObject(input);
             return Redirect($"Actions/AddInput?domainName={HttpUtility.UrlEncode(redirectUri)}&userInfo={HttpUtility.UrlEncode(userInfo)}&primaryEmail={primaryEmail}");
         }
@@ -190,7 +184,7 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Update")]
-    public async Task<ActionResult> Logout(string? redirectUri, string userInfo)
+    public async Task<ActionResult> Update(string? redirectUri, string userInfo)
     {
         if (string.IsNullOrEmpty(userInfo))
             return Redirect(redirectUri);

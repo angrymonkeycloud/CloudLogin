@@ -6,7 +6,7 @@
     
 @if (user == null)
 {
-    <a href="~/login">Login</a>
+    <a href="~/Account/Login">Login</a>
 }
 else
 {
@@ -23,11 +23,11 @@ else
         Email: @user.PrimaryEmailAddress?.Input
     </div>
 
-    <a href="~/update">Update</a>
+    <a href="~/Account/Update">Update</a>
 
-    <a href="~/addinput">Add Input</a>
+    <a href="~/Account/AddInput">Add Input</a>
 
-    <a href="~/changeprimary">Change Primary</a>
+    <a href="~/Account/ChangePrimary">Change Primary</a>
 
-    <a href="~/logout">Logout</a>
+    <a href="~/Account/Logout">Logout</a>
 }

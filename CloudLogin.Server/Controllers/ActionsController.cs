@@ -7,8 +7,8 @@ namespace AngryMonkey.CloudLogin;
 [ApiController]
 public class ActionsController : BaseController
 {
-    [HttpGet("AddInput")] 
-    public async Task<ActionResult> AddInput(string domainName, string userInfo, string primaryEmail)
+    [HttpGet("AddInput")]
+    public async Task<ActionResult> AddInput(string redirectUrl, string userInfo, string primaryEmail)
     {
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
@@ -20,22 +20,22 @@ public class ActionsController : BaseController
         User oldUser = await CosmosMethods.GetUserByEmailAddress(input.Input);
 
         if (oldUser != null)
-            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}");
+            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={redirectUrl}");
 
         oldUser = await CosmosMethods.GetUserByPhoneNumber(input.Input);
 
         if (oldUser != null)
-            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}");
+            return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={redirectUrl}");
 
         user.Inputs.Add(input);
 
         await CosmosMethods.AddInput(user.ID, input);
-        string redirectTo = domainName.Split("/").Last().Replace("AddInput", "");
-        domainName = domainName.Replace(domainName.Split("/").Last(), "");
+        string redirectTo = redirectUrl.Split("/").Last().Replace("AddInput", "");
+        redirectUrl = redirectUrl.Replace(redirectUrl.Split("/").Last(), "");
 
         string userSerialized = JsonConvert.SerializeObject(user);
 
-        return Redirect($"{domainName}CloudLogin/Update?redirectUri={redirectTo}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
+        return Redirect($"{redirectUrl}CloudLogin/Update?redirectUri={redirectTo}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
     }
 
     [HttpGet("Update")]
@@ -70,7 +70,7 @@ public class ActionsController : BaseController
 
         User? user = await CosmosMethods.GetUserByEmailAddress(input);
 
-        if(user == null)
+        if (user == null)
             return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}");
 
         user.Inputs.First(i => i.IsPrimary).IsPrimary = false;

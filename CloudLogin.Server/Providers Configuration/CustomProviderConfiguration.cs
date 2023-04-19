@@ -11,6 +11,7 @@ public class CustomProviderConfiguration : ProviderConfiguration
 
         HandleUpdateOnly = handleUpdateOnly;
         HandlesEmailAddress = true;
+        InputRequired = true;
         IsCodeVerification = true;
     }
 }

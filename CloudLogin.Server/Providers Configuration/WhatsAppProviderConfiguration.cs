@@ -20,6 +20,7 @@ public class WhatsAppProviderConfiguration : ProviderConfiguration
         Init("WhatsApp", label);
 		HandleUpdateOnly = handleUpdateOnly;
 		HandlesPhoneNumber = true;
+		InputRequired = true;
 		IsCodeVerification = true;
 	}
 }

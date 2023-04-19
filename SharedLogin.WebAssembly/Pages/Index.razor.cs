@@ -6,7 +6,7 @@ namespace SharedLogin.WebAssembly.Pages;
 
 public partial class Index
 {
-    public string domainName { get; set; }
+    public string redirectUri { get; set; }
     public string actionState { get; set; }
     public User CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
@@ -17,10 +17,10 @@ public partial class Index
         if (firstRender)
         {
             Uri uri = nav.ToAbsoluteUri(nav.Uri);
-            QueryHelpers.ParseQuery(uri.Query).TryGetValue("domainName", out StringValues domainNameValue);
+            QueryHelpers.ParseQuery(uri.Query).TryGetValue("redirectUri", out StringValues redirectUriValue);
             QueryHelpers.ParseQuery(uri.Query).TryGetValue("actionState", out StringValues actionStateValue);
 
-            domainName = domainNameValue;
+            redirectUri = redirectUriValue;
             actionState = actionStateValue;
             StateHasChanged();
         }
@@ -36,10 +36,10 @@ public partial class Index
             Guid requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
             if (CurrentUser != null)
             {
-                if (string.IsNullOrEmpty(domainName))
+                if (string.IsNullOrEmpty(redirectUri))
                     return;
                 else
-                    nav.NavigateTo($"{domainName}/login?requestId={requestID}");
+                    nav.NavigateTo($"{redirectUri}?requestId={requestID}");
             }
         }
         Show = true;

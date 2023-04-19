@@ -1,4 +1,4 @@
-/*@import url('http://fonts.cdnfonts.com/css/helvetica-neue-9');*/
+﻿/*@import url('http://fonts.cdnfonts.com/css/helvetica-neue-9');*/
 @font-face {
   font-family: 'Tajawal';
   font-style: normal;
@@ -159,8 +159,8 @@
   gap: 10px;
   justify-content: center;
   align-items: center;
-  margin-top: 20px;
-  margin-bottom: 50px;
+  margin-top: 50px;
+  margin-bottom: 30px;
 }
 .amc-cloudlogin-provider {
   --currentColor: var(--amc-accentColor);
@@ -226,7 +226,7 @@
   flex-direction: column;
   width: 100%;
   margin: 0 auto;
-  min-height: 20rem;
+  /*min-height: 20rem;*/
 }
 .amc-cloudlogin-body .login-form-resend button {
   border: none;
@@ -246,7 +246,7 @@
   gap: 10px;
 }
 .amc-cloudlogin-body .login-form-next {
-  margin-top: 15px;
+  margin-top: 10px;
   text-align: center;
 }
 .amc-cloudlogin-body .login-form-verify,
@@ -275,6 +275,7 @@
   opacity: 0.7;
   margin-top: 10px;
   margin-left: 5px;
+  margin: 5px auto;
 }
 .amc-cloudlogin-keppsignedin label,
 .amc-cloudlogin-keppsignedin input {

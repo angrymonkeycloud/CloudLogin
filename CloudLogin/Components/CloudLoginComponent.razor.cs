@@ -12,6 +12,8 @@ public partial class CloudLoginComponent
     [Parameter] public string Logo { get; set; }
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public User? CurrentUser { get; set; }
+
+    public Methods Methods = new Methods();
     public Guid UserId { get; set; } = Guid.NewGuid();
     [Parameter] public string? RedirectUri { get; set; }
     private string RedirectUriValue => RedirectUri ?? cloudLoginClient.RedirectUri ?? navigationManager.Uri;
@@ -161,6 +163,8 @@ public partial class CloudLoginComponent
                     break;
             }
         }
+
+        Providers = cloudLoginClient.Providers.Where(p=>p.InputRequired == false).ToList();
 
         await base.OnInitializedAsync();
     }
@@ -386,7 +390,9 @@ public partial class CloudLoginComponent
     }
     private async Task SetPrimary(MouseEventArgs x, string input)
     {
-        navigationManager.NavigateTo($"/CloudLogin/Actions/SetPrimary?input={HttpUtility.UrlEncode(input)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
+        //navigationManager.NavigateTo($"/CloudLogin/Actions/SetPrimary?input={HttpUtility.UrlEncode(input)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
+
+        navigationManager.NavigateTo(Methods.RedirectString("CloudLogin", "Actions/SetPrimary", inputValue: input, redirectUri: RedirectUri), true);
     }
     protected async Task OnInputKeyPressed(KeyboardEventArgs args)
     {
@@ -443,9 +449,12 @@ public partial class CloudLoginComponent
     //SIGN IN FUNCTIONS-------------------------------------
     private void ProviderSignInChallenge(string provider)
     {
-        string redirectUri = $"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUri}&keepMeSignedIn={KeepMeSignedIn}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
+        //string redirectUri = $"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUri}&keepMeSignedIn={KeepMeSignedIn}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
 
-        navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
+        //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
+
+        string navigateUrl = Methods.RedirectString("cloudlogin", $"login/{provider}", inputValue: InputValue, redirectUri: RedirectUri, keepMeSignedIn: KeepMeSignedIn.ToString(), actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString());
+        navigationManager.NavigateTo(navigateUrl, true); 
     }
 
     private async Task SwitchState(ProcessState state)
@@ -592,7 +601,8 @@ public partial class CloudLoginComponent
             };
         string userInfoJSON = JsonConvert.SerializeObject(userInfo);
 
-        navigationManager.NavigateTo($"/CloudLogin/Actions/Update?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
+        //navigationManager.NavigateTo($"/CloudLogin/Actions/Update?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
+        navigationManager.NavigateTo(Methods.RedirectString("CloudLogin", "Actions", userInfo: userInfoJSON, redirectUri: RedirectUri), true);
     }
 
     //CUSTOM SIGN IN FUNCTIONS-------------------------------
@@ -610,9 +620,12 @@ public partial class CloudLoginComponent
 
         string userInfoJSON = JsonConvert.SerializeObject(userInfo);
 
-        string redirectUri = $"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
+        //string redirectUri = $"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
 
-        navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
+        //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
+
+
+        navigationManager.NavigateTo(Methods.RedirectString("cloudlogin", "login", userInfo: userInfoJSON, keepMeSignedIn: KeepMeSignedIn.ToString(), redirectUri: RedirectUri, actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString()), true);
     }
 
     private static string CreateRandomCode(int length)

@@ -1,50 +1,44 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
+  <PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
-		<AssemblyName>AngryMonkey.CloudLogin</AssemblyName>
-		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-		<Product>Cloud Login</Product>
-		<Authors>Angry Monkey</Authors>
-		<Company>Angry Monkey</Company>
-		<Description />
-		<PackageLicenseExpression></PackageLicenseExpression>
-		<PackageProjectUrl>https://www.angrymonkeycloud.com/</PackageProjectUrl>
-		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
-		<FileVersion>$(PackageVersion)</FileVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>AngryMonkey.CloudLogin</AssemblyName>
+    <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
+    <Product>Cloud Login</Product>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+    <FileVersion>$(PackageVersion)</FileVersion>
 		<Version>0.0.21</Version>
-		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
-		<PackageOutputPath>..\NugetPackage\</PackageOutputPath>
+    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
+    <Description />
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
 
-		<Configurations>Debug;Release</Configurations>
-	</PropertyGroup>
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.5.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\CloudLogin.Models\CloudLogin.Models.csproj" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<Content Remove="compilerconfig.json" />
-	</ItemGroup>
-
-
-	<ItemGroup>
-		<None Include="compilerconfig.json" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="AngryMonkeyCloudLogo-64x64.png">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.3.0" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.5.1" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj" />
-	</ItemGroup>
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
+  </ItemGroup>
 
 </Project>

@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+		<AssemblyName>AngryMonkey.CloudLogin.Components</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
+		<Product>Cloud Login</Product>
+		<Authors>Angry Monkey</Authors>
+		<Company>Angry Monkey</Company>
+		<Description />
+		<PackageLicenseExpression></PackageLicenseExpression>
+		<PackageProjectUrl>https://www.angrymonkeycloud.com/</PackageProjectUrl>
+		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+		<FileVersion>$(PackageVersion)</FileVersion>
+		<Version>0.0.21</Version>
+		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+		<PackageOutputPath>..\NugetPackage\</PackageOutputPath>
+
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Remove="compilerconfig.json" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<None Include="compilerconfig.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="AngryMonkeyCloudLogo-64x64.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.3.0" />
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.5.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
+	</ItemGroup>
+
+</Project>

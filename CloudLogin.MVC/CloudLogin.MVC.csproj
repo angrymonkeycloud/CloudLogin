@@ -30,9 +30,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
   </ItemGroup>
-
+	
   <ItemGroup>
-    <ProjectReference Include="..\CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj" />
+    <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
   </ItemGroup>
 
   <ItemGroup>

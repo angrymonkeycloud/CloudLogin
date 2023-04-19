@@ -44,7 +44,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CloudLogin.ServiceClient\CloudLogin.ServiceClient.csproj" />
+    <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
   </ItemGroup>
 
 

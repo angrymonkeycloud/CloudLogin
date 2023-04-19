@@ -22,7 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
+	  <ProjectReference Include="..\CloudLogin.Components\CloudLogin.Components.csproj" />
 	</ItemGroup>
 
 </Project>

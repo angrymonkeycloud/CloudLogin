@@ -1,23 +1,83 @@
 @namespace AngryMonkey.CloudLogin
 @using AngryMonkey.CloudLogin;
 @using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.WebUtilities;
+@using Microsoft.Extensions.Primitives;
 @using Newtonsoft.Json
 @inject CloudLoginClient cloudLogin
 @inject NavigationManager nav
 @inject IHttpContextAccessor HttpContextAccessor
 
-@if (!IsAuthorized)
+@if (IsAuthorized && StayOnPage)
 {
-    @if (Show)
-    {
-        <AngryMonkey.CloudLogin.CloudLoginComponent Logo="@Logo"
-                                            ActionState="@actionState"
-                                            CurrentUser="@CurrentUser"
-                                            RedirectUri="@redirectUri" />
-    }
+    <section>
+        <article>
+            <h1>@CurrentUser.DisplayName</h1>
+            <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
+            <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
+            <a href="./cloudlogin/logout">Logout</a>
+        </article>
+    </section>
 }
 else
 {
-    <span>You are succefully logged on with @CurrentUser.DisplayName</span>
-    <a href="./cloudlogin/logout">Logout</a>
+    <section>
+        <article>
+            @if (IsAuthorized || IsWorking)
+            {
+                <div>Continue...</div>
+            }
+            else
+            {
+                <AngryMonkey.CloudLogin.CloudLoginComponent Logo="@Logo" ActionState="@actionState" CurrentUser="@CurrentUser" RedirectUri="@RedirectUri" />
+            }
+        </article>
+    </section>
+}
+
+@code {
+
+    [Parameter] public string Logo { get; set; }
+    public string? redirectUri { get; set; }
+    private string? RedirectUri => redirectUri ?? "/";
+    public string actionState { get; set; }
+    public User CurrentUser { get; set; } = new();
+    public bool IsAuthorized { get; set; } = false;
+    public bool StayOnPage { get; set; } = false;
+    public bool IsWorking { get; set; } = true;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Uri uri = nav.ToAbsoluteUri(nav.Uri);
+            QueryHelpers.ParseQuery(uri.Query).TryGetValue("redirectUri", out StringValues redirecUriValue);
+            QueryHelpers.ParseQuery(uri.Query).TryGetValue("actionState", out StringValues actionStateValue);
+            actionState = actionStateValue;
+            redirectUri = redirecUriValue;
+
+            StayOnPage = string.IsNullOrEmpty(redirectUri);
+            StateHasChanged();
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        IsWorking = true;
+
+        IsAuthorized = await cloudLogin.IsAuthenticated();
+
+        if (IsAuthorized)
+            CurrentUser = (await cloudLogin.CurrentUser())!;
+
+        if (IsAuthorized && actionState == "login" && !StayOnPage)
+        {
+            Guid requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
+            string seperator = redirectUri.Contains('?') ? "&" : "?";
+
+            if (CurrentUser != null)
+                nav.NavigateTo($"{redirectUri}{seperator}requestId={requestID}");
+        }
+
+        IsWorking = false;
+    }
 }

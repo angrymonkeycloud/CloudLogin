@@ -43,7 +43,7 @@ public class CloudLoginController : ControllerBase
             redirectUri = $"{Request.Scheme}://{Request.Host}";
 
         if (requestId == Guid.Empty)
-            return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={Request.GetEncodedUrl()}&actionState=login");
+            return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
 
         User? cloudUser = await CloudLogin.GetUserByRequestId(requestId);
 

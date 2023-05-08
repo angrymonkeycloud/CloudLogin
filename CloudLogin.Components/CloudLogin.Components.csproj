@@ -15,7 +15,7 @@
 		<PackageProjectUrl>https://www.angrymonkeycloud.com/</PackageProjectUrl>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>0.0.22</Version>
+		<Version>0.0.23</Version>
 		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
 		<PackageOutputPath>..\NugetPackage\</PackageOutputPath>
 
@@ -41,6 +41,7 @@
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.3.0" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.5.1" />
+		<PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
 	</ItemGroup>
 
 	<ItemGroup>

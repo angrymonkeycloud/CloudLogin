@@ -1,12 +1,13 @@
-using AngryMonkey.CloudLogin;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 using System.Web;
 
-namespace SharedLogin.WebAssembly.Pages;
+namespace AngryMonkey.CloudLogin;
 
-public partial class Index
+public partial class CloudLoginPage
 {
+    [Parameter] public string Logo { get; set; }
     public string redirectUri { get; set; }
     public string actionState { get; set; }
     public User CurrentUser { get; set; } = new();

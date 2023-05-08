@@ -114,14 +114,13 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Result")]
-    public async Task<ActionResult<string>> LoginResult(string ispersistent, string sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
+    public async Task<ActionResult<string>> LoginResult(string ispersistent, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
     {
         User? user = JsonConvert.DeserializeObject<User>(HttpContext.Request.Cookies["User"]);
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        if (redirectUri == null)
-            redirectUri = baseUrl;
+        redirectUri ??= baseUrl;
 
         if (user == null)
             return Redirect(redirectUri);
@@ -137,7 +136,6 @@ public class LoginController : BaseController
         string? displayName = user.DisplayName;
 
         if (Configuration.Cosmos == null)
-        {
             user = new()
             {
                 DisplayName = $"{firstName} {lastName}",
@@ -145,10 +143,10 @@ public class LoginController : BaseController
                 LastName = lastName,
                 ID = Guid.NewGuid()
             };
-        }
 
         displayName ??= $"{firstName} {lastName}";
-        var claimsIdentity = new ClaimsIdentity(new[] {
+
+        ClaimsIdentity claimsIdentity = new(new[] {
                 new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
                 new Claim(ClaimTypes.GivenName, firstName),
                 new Claim(ClaimTypes.Surname, lastName),
@@ -181,7 +179,7 @@ public class LoginController : BaseController
 
         await HttpContext.SignInAsync(claimsPrincipal, newProperties);
 
-        if (sameSite == "True")
+        if (sameSite)
             return Redirect($"{redirectUri}");
         else
             return Redirect($"{redirectUri}/login");

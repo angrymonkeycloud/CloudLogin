@@ -16,23 +16,39 @@ public class CloudLoginController : ControllerBase
     public CloudLoginController(CloudLoginClient cloudLogin) => CloudLogin = cloudLogin;
 
     [Route("Login")]
-    public async Task<IActionResult> Login(Guid requestId, string redirectUrl)
+    public async Task<IActionResult> Login(string? redirectUri)
     {
-        var baseUri = $"{Request.Scheme}://{Request.Host}";
-
+        string baseUrl = $"{Request.Scheme}://{Request.Host}";
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
-        if (string.IsNullOrEmpty(redirectUrl))
-            return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(Request.Headers["referer"])}&loginUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
+        if (string.IsNullOrEmpty(redirectUri))
+        {
+            redirectUri = Request.Headers["referer"];
+
+            if (string.IsNullOrEmpty(redirectUri))
+                redirectUri = baseUrl;
+        }
+
+        redirectUri = $"{baseUrl}/Account/LoginResult?redirectUri={HttpUtility.UrlEncode(redirectUri)}";
+
+        return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(redirectUri)}&actionState=login");
+    }
+
+    [Route("LoginResult")]
+    public async Task<IActionResult> LoginResult(Guid requestId, string? redirectUri)
+    {
+        string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
+
+        if (string.IsNullOrEmpty(redirectUri))
+            redirectUri = $"{Request.Scheme}://{Request.Host}";
 
         if (requestId == Guid.Empty)
-            return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(redirectUrl)}&loginUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
-            //return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(redirectUrl)}&actionState=login");
+            return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={Request.GetEncodedUrl()}&actionState=login");
 
         User? cloudUser = await CloudLogin.GetUserByRequestId(requestId);
 
         if (cloudUser == null)
-            return await Login(Guid.Empty, redirectUrl);
+            return await Login(redirectUri);
 
         //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
 
@@ -52,7 +68,7 @@ public class CloudLoginController : ControllerBase
             IsPersistent = false
         });
 
-        return Redirect(redirectUrl.Split("?")[0]);
+        return Redirect(redirectUri.Split("?")[0]);
     }
 
     [Route("Logout")]

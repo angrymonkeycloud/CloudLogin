@@ -1,12 +1,14 @@
 using AngryMonkey.CloudLogin;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
+using System.Web;
 
 namespace SharedLogin.WebAssembly.Pages;
 
 public partial class Index
 {
     public string redirectUri { get; set; }
+    public string loginUri { get; set; }
     public string actionState { get; set; }
     public User CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
@@ -18,9 +20,11 @@ public partial class Index
         {
             Uri uri = nav.ToAbsoluteUri(nav.Uri);
             QueryHelpers.ParseQuery(uri.Query).TryGetValue("redirectUri", out StringValues redirectUriValue);
+            QueryHelpers.ParseQuery(uri.Query).TryGetValue("loginUri", out StringValues loginUriValue);
             QueryHelpers.ParseQuery(uri.Query).TryGetValue("actionState", out StringValues actionStateValue);
 
             redirectUri = redirectUriValue;
+            loginUri = loginUriValue;
             actionState = actionStateValue;
             StateHasChanged();
         }
@@ -30,6 +34,7 @@ public partial class Index
         IsAuthorized = await cloudLogin.IsAuthenticated();
         CurrentUser = await cloudLogin.CurrentUser();
 
+        redirectUri = $"{loginUri}?redirectUrl={redirectUri}";
 
         if (IsAuthorized && actionState == "login")
         {
@@ -39,7 +44,7 @@ public partial class Index
                 if (string.IsNullOrEmpty(redirectUri))
                     return;
                 else
-                    nav.NavigateTo($"{redirectUri}?requestId={requestID}");
+                    nav.NavigateTo($"{redirectUri}&requestId={requestID}");
             }
         }
         Show = true;

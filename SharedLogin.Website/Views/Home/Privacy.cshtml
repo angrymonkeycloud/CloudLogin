@@ -1,0 +1,33 @@
+﻿@using System.Security.Claims;
+@{
+    ViewData["Title"] = "Privacy Page";
+    AngryMonkey.CloudLogin.User? user = AngryMonkey.CloudLogin.User.Parse(User.FindFirst(ClaimTypes.UserData)?.Value);
+}
+    <h1>Privacy page!</h1>
+@if (user == null)
+{
+    <a href="~/Account/Login">Login</a>
+}
+else
+{
+    <h1>User Signed In</h1>
+    <div>
+        ID: @user.ID
+        <br />
+        Display Name: @user.DisplayName
+        <br />
+        First Name: @user.FirstName
+        <br />
+        Last Name: @user.LastName
+        <br />
+        Email: @user.PrimaryEmailAddress?.Input
+    </div>
+
+    <a href="~/Account/Update">Update</a>
+
+    <a href="~/Account/AddInput">Add Input</a>
+
+    <a href="~/Account/ChangePrimary">Change Primary</a>
+
+    <a href="~/Account/Logout">Logout</a>
+}

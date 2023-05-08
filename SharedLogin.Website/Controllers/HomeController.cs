@@ -17,22 +17,36 @@ public class HomeController : Controller
     public static string PublicKey { get; set; } = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCIjmcG/IMnvFJlUzGqtLpiZHm+nIrGYidkMyLzlor3Lc8uHaJbBNp6JlQGhHK9modpWVKHCBRzM6PH+auwuLRijJv8p2D2fPD8+gvQ4+aMn59eKxIiIbOQvz66VBnJfZCtgJWPpsDMK+KphdEyVbwJvzD9MM9o1GCiZy3IIe+wbQIDAQAB";
     public static UnicodeEncoding Encoder = new();
 
-    [Route("")]
-    public IActionResult Index()
-    {
-        var record = Request.Cookies.FirstOrDefault(c => c.Key == "LoggedInUser");
+        [Route("")]
+        public IActionResult Index()
+        {
+            var record = Request.Cookies.FirstOrDefault(c => c.Key == "LoggedInUser");
 
-        if (record.Value == null)
-            return View();
+            if (record.Value == null)
+                return View();
 
-        string cookieContent = record.Value;
+            string cookieContent = record.Value;
 
-        User? user = JsonConvert.DeserializeObject<User>(cookieContent);
+            User? user = JsonConvert.DeserializeObject<User>(cookieContent);
 
-        return View(user);
-    }
+            return View(user);
+        }
+        [Route("Privacy")]
+        public IActionResult Privacy()
+        {
+            var record = Request.Cookies.FirstOrDefault(c => c.Key == "LoggedInUser");
 
-    public static string Decrypt(string data)
+            if (record.Value == null)
+                return View();
+
+            string cookieContent = record.Value;
+
+            User? user = JsonConvert.DeserializeObject<User>(cookieContent);
+
+            return View(user);
+        }
+
+        public static string Decrypt(string data)
     {
         var rsa = new RSACryptoServiceProvider();
         var dataArray = data.Split(new char[] { ',' });

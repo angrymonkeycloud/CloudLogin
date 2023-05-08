@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http.Extensions;
+using System.Collections.Specialized;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -16,31 +17,31 @@ public class CloudLoginController : ControllerBase
     public CloudLoginController(CloudLoginClient cloudLogin) => CloudLogin = cloudLogin;
 
     [Route("Login")]
-    public async Task<IActionResult> Login(string? redirectUri)
+    public async Task<IActionResult> Login(string? ReturnUrl)
     {
         string baseUrl = $"{Request.Scheme}://{Request.Host}";
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
-        if (string.IsNullOrEmpty(redirectUri))
+        if (string.IsNullOrEmpty(ReturnUrl))
         {
-            redirectUri = Request.Headers["referer"];
+            ReturnUrl = Request.Headers["referer"];
 
-            if (string.IsNullOrEmpty(redirectUri))
-                redirectUri = baseUrl;
+            if (string.IsNullOrEmpty(ReturnUrl))
+                ReturnUrl = baseUrl;
         }
 
-        redirectUri = $"{baseUrl}/Account/LoginResult?redirectUri={HttpUtility.UrlEncode(redirectUri)}";
+        string redirectUri = $"{baseUrl}/Account/LoginResult?ReturnUrl={HttpUtility.UrlEncode(ReturnUrl)}";
 
         return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(redirectUri)}&actionState=login");
     }
 
     [Route("LoginResult")]
-    public async Task<IActionResult> LoginResult(Guid requestId, string? redirectUri)
+    public async Task<IActionResult> LoginResult(Guid requestId, string? ReturnUrl)
     {
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
-        if (string.IsNullOrEmpty(redirectUri))
-            redirectUri = $"{Request.Scheme}://{Request.Host}";
+        if (string.IsNullOrEmpty(ReturnUrl))
+            ReturnUrl = $"{Request.Scheme}://{Request.Host}";
 
         if (requestId == Guid.Empty)
             return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
@@ -48,7 +49,7 @@ public class CloudLoginController : ControllerBase
         User? cloudUser = await CloudLogin.GetUserByRequestId(requestId);
 
         if (cloudUser == null)
-            return await Login(redirectUri);
+            return await Login(ReturnUrl);
 
         //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
 
@@ -68,7 +69,7 @@ public class CloudLoginController : ControllerBase
             IsPersistent = false
         });
 
-        return Redirect(redirectUri.Split("?")[0]);
+        return Redirect(ReturnUrl);
     }
 
     [Route("Logout")]

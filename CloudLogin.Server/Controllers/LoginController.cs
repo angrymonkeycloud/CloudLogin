@@ -39,9 +39,7 @@ public class LoginController : BaseController
     {
         AuthenticationProperties globalProperties = new()
         {
-            RedirectUri = Methods.RedirectString("cloudlogin", "result", redirectUri: redirectUri, keepMeSignedIn: keepMeSignedIn.ToString(), sameSite: sameSite.ToString(), actionState: actionState, primaryEmail: primaryEmail),
-            ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
-            IsPersistent = keepMeSignedIn,
+            RedirectUri = Methods.RedirectString("cloudlogin", "result", keepMeSignedIn: keepMeSignedIn.ToString(), redirectUri: redirectUri, sameSite: sameSite.ToString(), actionState: actionState, primaryEmail: primaryEmail)
         };
 
         if (!string.IsNullOrEmpty(input))
@@ -110,13 +108,15 @@ public class LoginController : BaseController
 
         await HttpContext.SignInAsync(claimsPrincipal, properties);
 
-        return Redirect(Methods.RedirectString("cloudlogin", "result", redirectUri: redirectUri, keepMeSignedIn: keepMeSignedIn.ToString(), sameSite: sameSite.ToString(), actionState: actionState, primaryEmail: primaryEmail));
+        return Redirect(Methods.RedirectString("cloudlogin", "result",  keepMeSignedIn: keepMeSignedIn.ToString(), sameSite: sameSite.ToString(), redirectUri: redirectUri, actionState: actionState, primaryEmail: primaryEmail));
     }
 
     [HttpGet("Result")]
-    public async Task<ActionResult<string>> LoginResult(string ispersistent, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
+    public async Task<ActionResult<string>> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
     {
-        User? user = JsonConvert.DeserializeObject<User>(HttpContext.Request.Cookies["User"]);
+        ClaimsIdentity userIdentity = Request.HttpContext.User.Identities.First();
+
+        User? user = CosmosMethods.GetUserByInput(userIdentity.FindFirst(ClaimTypes.Email)?.Value!).Result;
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
@@ -125,48 +125,50 @@ public class LoginController : BaseController
         if (user == null)
             return Redirect(redirectUri);
 
-        AuthenticationProperties newProperties = new()
+        AuthenticationProperties properties = new()
         {
-            IsPersistent = ispersistent == "True",
-            ExpiresUtc = ispersistent == "True" ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null
+            ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(Configuration.LoginDuration) : null,
+            IsPersistent = keepMeSignedIn
         };
 
         string firstName = user.FirstName ??= "Guest";
         string lastName = user.LastName ??= "User";
         string? displayName = user.DisplayName;
 
+        displayName ??= $"{firstName} {lastName}";
+
         if (Configuration.Cosmos == null)
             user = new()
             {
-                DisplayName = $"{firstName} {lastName}",
+                DisplayName = displayName,
                 FirstName = firstName,
                 LastName = lastName,
                 ID = Guid.NewGuid()
             };
 
-        displayName ??= $"{firstName} {lastName}";
 
         ClaimsIdentity claimsIdentity = new(new[] {
-                new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
-                new Claim(ClaimTypes.GivenName, firstName),
-                new Claim(ClaimTypes.Surname, lastName),
-                new Claim(ClaimTypes.Name, displayName),
-                new Claim(ClaimTypes.Hash, "CloudLogin")
+                //new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+                //new Claim(ClaimTypes.GivenName, firstName),
+                //new Claim(ClaimTypes.Surname, lastName),
+                //new Claim(ClaimTypes.Name, displayName),
+                new Claim(ClaimTypes.Hash, "CloudLogin"),
+                new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
             }, "CloudLogin");
 
-        if (!user.EmailAddresses.Any())
-            if (user.PhoneNumbers.Any())
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.First(key => key.IsPrimary == true).Input));
-            else
-                claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, displayName));
+        //if (!user.EmailAddresses.Any())
+        //    if (user.PhoneNumbers.Any())
+        //        claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.First(key => key.IsPrimary == true).Input));
+        //    else
+        //        claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, displayName));
 
-        else
-            if (user.EmailAddresses.Any())
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.First(key => key.IsPrimary == true).Input));
-        else
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, displayName));
+        //else
+        //    if (user.EmailAddresses.Any())
+        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.First(key => key.IsPrimary == true).Input));
+        //else
+        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, displayName));
 
-
+        
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
         if (actionState == "AddInput")
@@ -177,7 +179,7 @@ public class LoginController : BaseController
             return Redirect(Methods.RedirectString("Actions", "AddInput", redirectUri: redirectUri, userInfo: userInfo, primaryEmail: primaryEmail));
         }
 
-        await HttpContext.SignInAsync(claimsPrincipal, newProperties);
+        await HttpContext.SignInAsync(claimsPrincipal, properties);
 
         if (sameSite)
             return Redirect($"{redirectUri}");
@@ -192,31 +194,31 @@ public class LoginController : BaseController
         if (string.IsNullOrEmpty(userInfo))
             return Redirect(redirectUri);
 
-        Response.Cookies.Delete("User");
+        Response.Cookies.Delete("CloudLogin");
 
-        Request.Cookies.TryGetValue("LoggedInUser", out string? LoggedInUserValue);
+        //Request.Cookies.TryGetValue("LoggedInUser", out string? LoggedInUserValue);
 
 
-        if (!string.IsNullOrEmpty(LoggedInUserValue))
-        {
-            Console.WriteLine("going in");
-            User? user = JsonConvert.DeserializeObject<User>(userInfo);
+        //if (!string.IsNullOrEmpty(LoggedInUserValue))
+        //{
+        //    Console.WriteLine("going in");
+        //    User? user = JsonConvert.DeserializeObject<User>(userInfo);
 
-            Response.Cookies.Delete("LoggedInUser");
+        //    Response.Cookies.Delete("LoggedInUser");
 
-            User? loggedInValue = JsonConvert.DeserializeObject<User>(LoggedInUserValue);
+        //    User? loggedInValue = JsonConvert.DeserializeObject<User>(LoggedInUserValue);
 
-            loggedInValue.FirstName = user.FirstName;
-            loggedInValue.LastName = user.LastName;
-            loggedInValue.DisplayName = user.DisplayName;
-            loggedInValue.IsLocked = user.IsLocked;
-            loggedInValue.ID = user.ID;
-            string loggedIn = JsonConvert.SerializeObject(loggedInValue);
+        //    loggedInValue.FirstName = user.FirstName;
+        //    loggedInValue.LastName = user.LastName;
+        //    loggedInValue.DisplayName = user.DisplayName;
+        //    loggedInValue.IsLocked = user.IsLocked;
+        //    loggedInValue.ID = user.ID;
+        //    string loggedIn = JsonConvert.SerializeObject(loggedInValue);
 
-            Response.Cookies.Append("LoggedInUser", loggedIn);
-        }
+        //    Response.Cookies.Append("LoggedInUser", loggedIn);
+        //}
 
-        Response.Cookies.Append("User", userInfo);
+        Response.Cookies.Append("CloudLogin", userInfo);
 
         if (redirectUri == null)
             return Redirect("/");
@@ -229,8 +231,7 @@ public class LoginController : BaseController
     {
         await HttpContext.SignOutAsync();
 
-        Response.Cookies.Delete("User");
-        Response.Cookies.Delete("LoggedInUser");
+        Response.Cookies.Delete("CloudLogin");
 
         if (!string.IsNullOrEmpty(redirectUri))
             return Redirect(redirectUri);

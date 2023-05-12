@@ -269,14 +269,12 @@ public class CloudLoginClient
 
                 return await message.Content.ReadFromJsonAsync<User>();
             }
-            catch { throw; }
+            catch
+            {
+                return null;
+            }
 
-        string? userCookie = accessor.HttpContext.Request.Cookies["User"];
-
-        if (userCookie == null)
-            return null;
-
-        return JsonConvert.DeserializeObject<User>(userCookie);
+        return null;
     }
     public async Task<bool> IsAuthenticated(IHttpContextAccessor? accessor = null)
     {

@@ -16,7 +16,8 @@ builder.Services.AddServerSideBlazor();
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-    RedirectUri = "https://www.google.com/",
+    BaseAddress = builder.Configuration["BaseAddress"],
+    LoginDuration = new TimeSpan(30, 0, 0, 0),
     Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
     FooterLinks = new List<Link>()
     {

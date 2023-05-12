@@ -77,10 +77,9 @@ public class CloudLoginController : ControllerBase
     {
         await HttpContext.SignOutAsync();
 
-        Response.Cookies.Delete("User");
-        Response.Cookies.Delete("LoggedInUser");
+        //Response.Cookies.Delete("User");
+        //Response.Cookies.Delete("LoggedInUser");
         Response.Cookies.Delete("CloudLogin");
-
         var baseUri = $"{Request.Scheme}://{Request.Host}";
 
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";

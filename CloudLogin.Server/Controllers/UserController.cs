@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
-using Microsoft.Azure.Cosmos;
+using System.Security.Claims;
 
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/User")]
@@ -65,7 +65,7 @@ public class UserController : BaseController
         try
         {
             await CosmosMethods.Update(user);
-         
+
             return Ok();
         }
         catch
@@ -229,12 +229,14 @@ public class UserController : BaseController
     {
         try
         {
-            string? userCookie = Request.Cookies["User"];
+            string? userCookie = Request.Cookies["CloudLogin"];
 
             if (userCookie == null)
                 return Ok(null);
 
-            User? user = JsonConvert.DeserializeObject<User>(userCookie);
+            ClaimsIdentity userIdentity = Request.HttpContext.User.Identities.First();
+
+            User user = JsonConvert.DeserializeObject<User>(userIdentity.FindFirst(ClaimTypes.UserData)?.Value);
 
             if (user == null)
                 return Ok(null);

@@ -11,7 +11,7 @@ public class Methods
             redirectParams.Add($"redirecturi={HttpUtility.UrlEncode(redirectUri)}");
 
         if (keepMeSignedIn != null)
-            redirectParams.Add($"ispersistent={HttpUtility.UrlEncode(keepMeSignedIn)}");
+            redirectParams.Add($"keepMeSignedIn={HttpUtility.UrlEncode(keepMeSignedIn)}");
 
         if (sameSite != null)
             redirectParams.Add($"samesite={HttpUtility.UrlEncode(sameSite)}");

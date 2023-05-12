@@ -4,8 +4,11 @@ using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -26,27 +29,31 @@ public static class MvcServiceCollectionExtensions
             Title = "Info"
         });
 
+        CloudLoginClient CloudLoginServer = CloudLoginClient.InitializeForServer();
+
         services.AddSingleton(new CloudLoginServerService());
         services.AddSingleton(configuration);
-        services.AddSingleton(CloudLoginClient.InitializeForServer());
+            services.AddSingleton(CloudLoginServer);
 
+            
         CloudGeographyClient cloudGeography = new();
 
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
+            option.Cookie.Domain = $".{configuration.BaseAddress}";
             option.Events = new CookieAuthenticationEvents()
             {
                 OnSignedIn = async context =>
                 {
-                    HttpRequest request = context.Request;
-                    ClaimsPrincipal principal = context.Principal!;
+                    HttpRequest? request = context.Request;
+                    ClaimsPrincipal? principal = context.Principal!;
 
                     // Do not continue on second sign in, in the future we should implemented in another way.
                     if (principal.FindFirst(ClaimTypes.Hash)?.Value?.Equals("CloudLogin") ?? false)
                         return;
 
-                    CloudLoginClient cloudLogin = CloudLoginClient.InitializeForClient($"{request.Scheme}://{request.Host.Value}");
+                    CloudLoginClient? cloudLogin = CloudLoginClient.InitializeForClient($"{request.Scheme}://{request.Host.Value}");
 
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
 
@@ -78,9 +85,9 @@ public static class MvcServiceCollectionExtensions
                     if (existingUser)
                     //try
                     {
-                        user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value  ?? "--";
-                        user.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
-                        user.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}";
+                        user!.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value  ?? "--";
+                        user!.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
+                        user!.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user!.FirstName} {user!.LastName}";
 
                         LoginInput existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
 
@@ -149,7 +156,7 @@ public static class MvcServiceCollectionExtensions
                                 new LoginInput()
                                 {
                                     Input = input,
-                                    Format = formatValue,
+                                    Format = (InputFormat)formatValue,
                                     IsPrimary = true,
                                     PhoneNumberCountryCode = countryCode,
                                     PhoneNumberCallingCode = callingCode,
@@ -166,14 +173,14 @@ public static class MvcServiceCollectionExtensions
                     else
                         await cloudLogin.CreateUser(user);
 
-                    if (string.IsNullOrEmpty(context.HttpContext.Request.Cookies["User"]))
-                        context.HttpContext.Response.Cookies.Append("User",
-                           JsonConvert.SerializeObject(user), new CookieOptions()
-                           {
-                               HttpOnly = true,
-                               Secure = true,
-                               Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
-                           });
+                    //if (string.IsNullOrEmpty(context.HttpContext.Request.Cookies["User"]))
+                    //    context.HttpContext.Response.Cookies.Append("User",
+                    //       JsonConvert.SerializeObject(user), new CookieOptions()
+                    //       {
+                    //           HttpOnly = true,l
+                    //           Secure = true,
+                    //           Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
+                    //       });
 
                     // ----------------------------------------
                     // END ON Sign In

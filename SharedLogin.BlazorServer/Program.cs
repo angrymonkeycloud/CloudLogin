@@ -18,7 +18,6 @@ CloudLoginConfiguration cloudLoginConfig = new()
 {
     BaseAddress = builder.Configuration["BaseAddress"],
     LoginDuration = new TimeSpan(30, 0, 0, 0),
-    Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
     FooterLinks = new List<Link>()
     {
         new Link()

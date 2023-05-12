@@ -89,44 +89,15 @@ public static class MvcServiceCollectionExtensions
                         user!.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
                         user!.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user!.FirstName} {user!.LastName}";
 
-                        LoginInput existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
+                        LoginInput? existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
 
                         if (!existingInput.Providers.Any(key => key.Code.Equals(provider.Code, StringComparison.OrdinalIgnoreCase)))
                             existingInput.Providers.Add(provider);
+
+                        user.LastSignedIn = currentDateTime;
+
+                        await cloudLogin.UpdateUser(user);
                     }
-                    //catch (Exception)
-                    //{
-                    //    string countryCode = "", callingCode = "";
-
-                    //    if (formatValue == InputFormat.PhoneNumber)
-                    //    {
-                    //        PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(input);
-
-                    //        input = phoneNumber.Number;
-                    //        countryCode = phoneNumber.CountryCode;
-                    //        callingCode = phoneNumber.CountryCallingCode;
-                    //    }
-
-                    //    user = new User()
-                    //    {
-                    //        ID = Guid.NewGuid(),
-                    //        FirstName = firstName,
-                    //        LastName = lastName,
-                    //        DisplayName = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}",
-                    //        CreatedOn = currentDateTime,
-                    //        Inputs = new()
-                    //            {
-                    //                new LoginInput()
-                    //                {
-                    //                    Input = input,
-                    //                    Format = formatValue,
-                    //                    IsPrimary = true,
-                    //                    PhoneNumberCountryCode = countryCode,
-                    //                    PhoneNumberCallingCode = callingCode
-                    //                }
-                    //            }
-                    //    };
-                    //}
                     else
                     {
                         string? countryCode = null;
@@ -164,14 +135,10 @@ public static class MvcServiceCollectionExtensions
                                 }
                             }
                         };
-                    }
+                        user.LastSignedIn = currentDateTime;
 
-                    user.LastSignedIn = currentDateTime;
-
-                    if (existingUser)
-                        await cloudLogin.UpdateUser(user);
-                    else
                         await cloudLogin.CreateUser(user);
+                    }
 
                     //if (string.IsNullOrEmpty(context.HttpContext.Request.Cookies["User"]))
                     //    context.HttpContext.Response.Cookies.Append("User",

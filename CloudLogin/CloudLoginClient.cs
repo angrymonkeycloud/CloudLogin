@@ -168,7 +168,7 @@ public class CloudLoginClient
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUserByEmailAdress?email={HttpUtility.UrlEncode(email)}");
 
-            if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent || message.StatusCode == System.Net.HttpStatusCode.InternalServerError) return null;
 
             User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
 
@@ -188,7 +188,7 @@ public class CloudLoginClient
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUserByPhoneNumber?number={HttpUtility.UrlEncode(number)}");
 
-            if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent || message.StatusCode == System.Net.HttpStatusCode.InternalServerError) return null;
 
             User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
 
@@ -221,11 +221,15 @@ public class CloudLoginClient
         }
 
     }
-    public async Task<Guid> CreateUserRequest(Guid userId)
+    public async Task<Guid?> CreateUserRequest(Guid userId)
     {
+
         Guid requestId = Guid.NewGuid();
 
-        await HttpServer.PostAsync($"CloudLogin/Request/CreateRequest?userID={userId}&requestId={requestId}", null);
+        HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Request/CreateRequest?userID={userId}&requestId={requestId}", null);
+
+        if (message.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            return null;
 
         return requestId;
     }

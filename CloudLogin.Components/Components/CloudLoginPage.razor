@@ -66,16 +66,22 @@ else
 
         IsAuthorized = await cloudLogin.IsAuthenticated();
 
-       if (IsAuthorized)
+        if (IsAuthorized)
             CurrentUser = (await cloudLogin.CurrentUser())!;
 
         if (IsAuthorized && actionState == "login" && !StayOnPage)
         {
-            Guid requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
+            Guid? requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
+
             string seperator = redirectUri.Contains('?') ? "&" : "?";
 
             if (CurrentUser != null)
-                nav.NavigateTo($"{redirectUri}{seperator}requestId={requestID}");
+            {
+                if (requestID == null)
+                    nav.NavigateTo($"{redirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonConvert.SerializeObject(CurrentUser))}");
+                else
+                    nav.NavigateTo($"{redirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
+            }
         }
 
         IsWorking = false;

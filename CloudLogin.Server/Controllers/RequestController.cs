@@ -1,5 +1,8 @@
 ﻿
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Azure.Cosmos.Linq;
 
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/Request")]
@@ -7,31 +10,34 @@ namespace AngryMonkey.CloudLogin;
 public class RequestController : BaseController
 {
     [HttpPost("CreateRequest")]
-    public async Task<ActionResult> CreateRequest(Guid userId, Guid requestId)
+    public async Task<IResult> CreateRequest(Guid userId, Guid requestId)
     {
         try
         {
+            if (Configuration.Cosmos == null)
+                return Results.BadRequest();
+
             CosmosMethods.CreateRequest(userId, requestId);
-            return Ok();
+            return Results.Ok();
         }
         catch
         {
-            return Problem();
+            return Results.Problem();
         }
     }
 
     [HttpGet("GetUserByRequestId")]
-    public async Task<ActionResult> GetUserByRequestId(Guid requestId)
+    public async Task<IResult> GetUserByRequestId(Guid requestId)
     {
         try
         {
             User User = await CosmosMethods.GetUserByRequestId(requestId);
 
-            return Ok(User);
+            return Results.Ok(User);
         }
         catch
         {
-            return Problem();
+            return Results.Problem();
         }
     }
 }

@@ -36,20 +36,29 @@ public class CloudLoginController : ControllerBase
     }
 
     [Route("LoginResult")]
-    public async Task<IActionResult> LoginResult(Guid requestId, string? ReturnUrl)
+    public async Task<IActionResult> LoginResult(Guid requestId, string currentUser, string? ReturnUrl)
     {
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
         if (string.IsNullOrEmpty(ReturnUrl))
             ReturnUrl = $"{Request.Scheme}://{Request.Host}";
 
-        if (requestId == Guid.Empty)
-            return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
+        User? cloudUser = null;
 
-        User? cloudUser = await CloudLogin.GetUserByRequestId(requestId);
+        if (requestId == Guid.Empty)
+        {
+            if (currentUser != null)
+                cloudUser = JsonConvert.DeserializeObject<User>(currentUser);
+            else
+                return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
+        }
 
         if (cloudUser == null)
-            return await Login(ReturnUrl);
+            cloudUser = await CloudLogin.GetUserByRequestId(requestId);
+
+        if (cloudUser == null)
+        return await Login(ReturnUrl);
+
 
         //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
 
@@ -58,9 +67,13 @@ public class CloudLoginController : ControllerBase
             new Claim(ClaimTypes.GivenName, cloudUser.FirstName ?? string.Empty),
             new Claim(ClaimTypes.Surname, cloudUser.LastName ?? string.Empty),
             new Claim(ClaimTypes.Name, cloudUser.DisplayName ?? string.Empty),
-            new Claim(ClaimTypes.Email, cloudUser.PrimaryEmailAddress.Input),
             new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(cloudUser))
         }, "CloudLogin");
+
+        if (cloudUser.PrimaryEmailAddress != null)
+            claimsIdentity.AddClaim(new(ClaimTypes.Email, cloudUser.PrimaryEmailAddress.Input));
+        else
+            claimsIdentity.AddClaim(new(ClaimTypes.Email, cloudUser.Inputs.First().Input));
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties()

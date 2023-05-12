@@ -83,7 +83,7 @@ public class CosmosMethods : DataParse
 
     public async Task<User?> GetUserByInput(string input)
     {
-        var user = await GetUserByEmailAddress(input);
+        User? user = await GetUserByEmailAddress(input);
         if (user == null)
         {
             CloudGeographyClient geographyClient = new();

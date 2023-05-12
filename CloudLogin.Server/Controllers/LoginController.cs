@@ -116,14 +116,14 @@ public class LoginController : BaseController
     {
         ClaimsIdentity userIdentity = Request.HttpContext.User.Identities.First();
 
-        User? user = CosmosMethods.GetUserByInput(userIdentity.FindFirst(ClaimTypes.Email)?.Value!).Result;
+        User? user = new();
+
+        if (Configuration.Cosmos != null)
+             user = CosmosMethods.GetUserByInput(userIdentity.FindFirst(ClaimTypes.Email)?.Value!).Result;
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
         redirectUri ??= baseUrl;
-
-        if (user == null)
-            return Redirect(redirectUri);
 
         AuthenticationProperties properties = new()
         {
@@ -131,11 +131,11 @@ public class LoginController : BaseController
             IsPersistent = keepMeSignedIn
         };
 
-        string firstName = user.FirstName ??= "Guest";
-        string lastName = user.LastName ??= "User";
-        string? displayName = user.DisplayName;
 
-        displayName ??= $"{firstName} {lastName}";
+        string firstName = user.FirstName ??= userIdentity.FindFirst(ClaimTypes.GivenName)?.Value;
+        string lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value; ;
+        string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value;
+        string  displayName = user.DisplayName ??= $"{firstName} {lastName}";
 
         if (Configuration.Cosmos == null)
             user = new()
@@ -143,8 +143,24 @@ public class LoginController : BaseController
                 DisplayName = displayName,
                 FirstName = firstName,
                 LastName = lastName,
-                ID = Guid.NewGuid()
+                ID = Guid.NewGuid(),
+                Inputs = new()
+                {
+                    new()
+                    {
+                        Format = InputFormat.EmailAddress,
+                        Input = emailaddress,
+                        IsPrimary = true
+                    }
+                }
             };
+
+
+        if (user == null)
+            return Redirect(redirectUri);
+
+
+
 
 
         ClaimsIdentity claimsIdentity = new(new[] {

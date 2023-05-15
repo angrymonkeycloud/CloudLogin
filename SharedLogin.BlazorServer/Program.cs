@@ -16,7 +16,6 @@ builder.Services.AddServerSideBlazor();
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-    BaseAddress = builder.Configuration["BaseAddress"],
     LoginDuration = new TimeSpan(30, 0, 0, 0),
     FooterLinks = new List<Link>()
     {

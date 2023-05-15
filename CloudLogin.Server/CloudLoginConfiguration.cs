@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin;
 public class CloudLoginConfiguration
 {
 	public List<ProviderConfiguration> Providers { get; set; } = new();
-	public required string BaseAddress { get; set; }
+	public string? BaseAddress { get; set; }
 	public TimeSpan LoginDuration { get; set; } = new TimeSpan(6*30, 0,0,0); //10 months
 	public List<Link> FooterLinks { get; set; } = new();
 	public string? RedirectUri { get; set; }

@@ -41,7 +41,8 @@ public static class MvcServiceCollectionExtensions
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
-            option.Cookie.Domain = $".{configuration.BaseAddress}";
+            if(!string.IsNullOrEmpty(configuration.BaseAddress) && configuration.BaseAddress != "localhost")
+                option.Cookie.Domain = $".{configuration.BaseAddress}";
             option.Events = new CookieAuthenticationEvents()
             {
                 OnSignedIn = async context =>

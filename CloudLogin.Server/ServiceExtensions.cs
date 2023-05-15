@@ -144,7 +144,7 @@ public static class MvcServiceCollectionExtensions
                     //    context.HttpContext.Response.Cookies.Append("User",
                     //       JsonConvert.SerializeObject(user), new CookieOptions()
                     //       {
-                    //           HttpOnly = true,l
+                    //           HttpOnly = true,
                     //           Secure = true,
                     //           Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
                     //       });

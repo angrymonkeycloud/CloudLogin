@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
+using System.Linq.Expressions;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -133,7 +134,7 @@ public class LoginController : BaseController
 
 
         string firstName = user.FirstName ??= userIdentity.FindFirst(ClaimTypes.GivenName)?.Value;
-        string lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value; ;
+        string lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value;
         string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value;
         string  displayName = user.DisplayName ??= $"{firstName} {lastName}";
 
@@ -245,12 +246,12 @@ public class LoginController : BaseController
     [HttpGet("Logout")]
     public async Task<ActionResult> Logout(string? redirectUri)
     {
-        await HttpContext.SignOutAsync();
+            await HttpContext.SignOutAsync();
 
-        Response.Cookies.Delete("CloudLogin");
 
         if (!string.IsNullOrEmpty(redirectUri))
             return Redirect(redirectUri);
+
         return Redirect("/");
     }
 

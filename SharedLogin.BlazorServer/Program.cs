@@ -18,7 +18,7 @@ builder.Services.AddCors(cors =>
     cors.AddPolicy("AllowAll", policy =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
-
+//cloud login -----------
 CloudLoginConfiguration cloudLoginConfig = new()
 {
     LoginDuration = new TimeSpan(30, 0, 0, 0),
@@ -86,6 +86,9 @@ builder.Services.AddAuthenticationCore();
 
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped(key => new UserController());
+
+//----------
+
 
 var app = builder.Build();
 

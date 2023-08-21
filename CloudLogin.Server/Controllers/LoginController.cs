@@ -123,7 +123,7 @@ public class LoginController : BaseController
              user = CosmosMethods.GetUserByInput(userIdentity.FindFirst(ClaimTypes.Email)?.Value!).Result;
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
-
+            
         redirectUri ??= baseUrl;
 
         AuthenticationProperties properties = new()

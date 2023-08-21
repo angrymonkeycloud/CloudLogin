@@ -13,6 +13,11 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
+builder.Services.AddCors(cors =>
+{
+    cors.AddPolicy("AllowAll", policy =>
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+});
 
 CloudLoginConfiguration cloudLoginConfig = new()
 {
@@ -84,6 +89,7 @@ builder.Services.AddScoped(key => new UserController());
 
 var app = builder.Build();
 
+app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
     app.UseWebAssemblyDebugging();
 else

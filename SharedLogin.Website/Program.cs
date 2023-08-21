@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddCloudLoginMVC("https://localhost:7061/");
+builder.Services.AddCloudLoginMVC("https://login.coverbox.app/");
 
 var app = builder.Build();
 

@@ -236,7 +236,12 @@ public class UserController : BaseController
 
             ClaimsIdentity userIdentity = Request.HttpContext.User.Identities.First();
 
-            User user = JsonConvert.DeserializeObject<User>(userIdentity.FindFirst(ClaimTypes.UserData)?.Value);
+            string? loginIdentity = userIdentity.FindFirst(ClaimTypes.UserData)?.Value;
+
+            if (string.IsNullOrEmpty(loginIdentity))
+                return Ok(null);
+
+            User? user = JsonConvert.DeserializeObject<User?>(loginIdentity);
 
             if (user == null)
                 return Ok(null);

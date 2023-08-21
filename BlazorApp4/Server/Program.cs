@@ -1,6 +1,4 @@
 using AngryMonkey.CloudLogin;
-using AngryMonkey.CloudLogin.Controllers;
-using AngryMonkey.CloudLogin.DataContract;
 using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Net;
@@ -14,12 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-
-builder.Services.AddCloudWeb(new CloudWebOptions()
-{
-    TitlePrefix = "Cloud Login"
-});
-
 CloudLoginConfiguration cloudLoginConfig = new()
 {
     Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),

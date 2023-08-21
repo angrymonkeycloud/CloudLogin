@@ -88,11 +88,11 @@ public class CloudLoginController : ControllerBase
     [Route("Logout")]
     public async Task<IActionResult> Logout()
     {
-        //await HttpContext.SignOutAsync();
+        await HttpContext.SignOutAsync();
 
         //Response.Cookies.Delete("User");
         //Response.Cookies.Delete("LoggedInUser");
-        Response.Cookies.Delete("CloudLogin");
+        //Response.Cookies.Delete("CloudLogin");
         var baseUri = $"{Request.Scheme}://{Request.Host}";
 
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";

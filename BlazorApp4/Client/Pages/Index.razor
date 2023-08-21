@@ -1,9 +1,9 @@
 ﻿@page "/"
-@inject CloudLoginServerClient cloudLogin
+@inject CloudLoginClient cloudLogin
 
 @if (IsAuthorized == false)
 {
-    <AngryMonkey.CloudLogin.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg"/>
+    <AngryMonkey.CloudLogin.CloudLoginPage Logo="https://thehealthbarme.com/img/logo.svg" />
 }
 else
 {

@@ -284,6 +284,7 @@ public class CloudLoginClient
     {
         if (accessor == null)
             try
+
             {
                 HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/IsAuthenticated");
 

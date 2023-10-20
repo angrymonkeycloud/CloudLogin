@@ -1,0 +1,110 @@
+@page "/login"
+@using AngryMonkey.CloudLogin;
+@using System.Timers;
+@using MauiMobileDemo.Data;
+@using Microsoft.AspNetCore.Http;
+@using Newtonsoft.Json;
+@inject AccountService Account
+@inject NavigationManager navigation
+@inject CloudLoginClient cloudLogin
+
+<div>
+    @if (!IsCanceled)
+    {
+        <span>Signing Up ...</span>
+        <br />
+        <button @onclick="CancelSigningUp">Cancel</button>
+    }
+    else
+    {
+        <button @onclick="RetrySigningUp">Retry</button>
+    }
+</div>
+
+@code {
+#nullable enable
+    public Guid LoginID { get; set; } = Guid.NewGuid();
+    public Timer? myTimer { get; set; }
+    public bool IsCanceled { get; set; } = false;
+    public User? CurrentUser { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        string? AccountData = await SecureStorage.GetAsync("Account");
+
+        if (!string.IsNullOrEmpty(AccountData))
+        {
+            AccountService? accountService = JsonConvert.DeserializeObject<AccountService>(AccountData);
+
+            if (accountService == null)
+            {
+                ContinueInitialization();
+                return;
+            }
+
+            Account.CurrentUser = accountService.CurrentUser;
+            navigation.NavigateTo("./Account");
+        }
+        else
+        {
+            ContinueInitialization();
+            return;
+        }
+    }
+
+    private void ContinueInitialization()
+    {
+        navigation.NavigateTo($"https://localhost:7061/?actionState=mobile&redirectUri={LoginID}");
+
+        myTimer = new Timer();
+
+        myTimer.Elapsed += async (sender, e) => await GetUser(sender, e);
+
+        myTimer.Interval = 5000;
+        myTimer.Enabled = true;
+        myTimer.Start();
+    }
+
+    private void RetrySigningUp()
+    {
+        if (myTimer == null)
+            return;
+
+        LoginID = Guid.NewGuid();
+
+        navigation.NavigateTo($"https://localhost:7061/?actionState=mobile&redirectUri={LoginID}");
+
+        myTimer.Start();
+
+        IsCanceled = false;
+        StateHasChanged();
+    }
+    private void CancelSigningUp()
+    {
+        if (myTimer == null)
+            return;
+
+        myTimer.Stop();
+        IsCanceled = true;
+        StateHasChanged();
+    }
+
+    private async Task GetUser(object source, ElapsedEventArgs e)
+    {
+        if (myTimer == null)
+            return;
+
+        CurrentUser = await cloudLogin.GetUserByRequestId(LoginID);
+
+        if (CurrentUser == null)
+            return;
+
+        myTimer.Stop();
+
+        Account.CurrentUser = CurrentUser;
+
+        await SecureStorage.SetAsync("Account", JsonConvert.SerializeObject(Account));
+
+        navigation.NavigateTo("./Account");
+    }
+}

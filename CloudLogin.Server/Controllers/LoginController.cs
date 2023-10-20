@@ -188,6 +188,7 @@ public class LoginController : BaseController
         
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
+
         if (actionState == "AddInput")
         {
             LoginInput input = user.Inputs.First();
@@ -197,6 +198,9 @@ public class LoginController : BaseController
         }
 
         await HttpContext.SignInAsync(claimsPrincipal, properties);
+
+        if (actionState == "mobile")
+            return Redirect($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
 
         if (sameSite)
             return Redirect($"{redirectUri}");

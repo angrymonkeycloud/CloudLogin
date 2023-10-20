@@ -21,6 +21,7 @@ builder.Services.AddCors(cors =>
 //cloud login -----------
 CloudLoginConfiguration cloudLoginConfig = new()
 {
+    Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
     LoginDuration = new TimeSpan(30, 0, 0, 0),
     FooterLinks = new List<Link>()
     {

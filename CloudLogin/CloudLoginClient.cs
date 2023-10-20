@@ -221,6 +221,15 @@ public class CloudLoginClient
         }
 
     }
+    public async Task<Guid?> CreateUserRequestCustom(Guid userId, Guid requestId)
+    {
+        HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Request/CreateRequest?userID={userId}&requestId={requestId}", null);
+
+        if (message.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            return null;
+
+        return requestId;
+    }
     public async Task<Guid?> CreateUserRequest(Guid userId)
     {
 

@@ -139,27 +139,28 @@ public partial class CloudLoginComponent
                     UserId = CurrentUser.ID;
 
                     await SwitchState(ProcessState.Registration);
-
-
                     break;
+
                 case "AddInput":
                     PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
                     break;
+
                 case "ChangePrimary":
 
                     PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
 
                     await SwitchState(ProcessState.ChangePrimary);
-
                     break;
+
                 case "AddNumber":
                     PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
                     break;
+
                 case "AddEmail":
                     PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
                     break;
-                default:
 
+                default:
                     break;
             }
         }

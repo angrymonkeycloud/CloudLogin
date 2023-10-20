@@ -7,15 +7,28 @@
 @inject CloudLoginClient cloudLogin
 @inject NavigationManager nav
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JS
 
 @if (IsAuthorized && StayOnPage)
 {
     <section>
         <article>
-            <h1>@CurrentUser.DisplayName</h1>
-            <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
-            <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
-            <a href="./cloudlogin/logout">Logout</a>
+            @if (!IsWorking)
+            {
+                <h1>Error</h1>
+                <div>An error occured, please <a href="./cloudlogin/logout?redirectUri=@nav.BaseUri?actionState=mobile&redirectUri=@redirectUri">Retry</a>.</div>
+            }
+            else
+            {
+                @if (actionState == "mobile" && CurrentUser != null)
+                {
+                    <h1>Successful @CurrentUser.DisplayName</h1>
+                    <div>Mobile login successful, go to mobile application.</div>
+                    <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
+                    <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
+                    <a href="./cloudlogin/logout@(string.IsNullOrEmpty(redirectUri) ? "" : $"redirectUri={nav.BaseUri}?actionState=mobile&redirectUri={redirectUri}")">Logout</a>
+                }
+            }
         </article>
     </section>
 }
@@ -40,8 +53,8 @@ else
     [Parameter] public string Logo { get; set; }
     public string? redirectUri { get; set; }
     private string? RedirectUri => redirectUri ?? "/";
-    public string actionState { get; set; }
-    public User CurrentUser { get; set; } = new();
+    public string? actionState { get; set; }
+    public User? CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool StayOnPage { get; set; } = false;
     public bool IsWorking { get; set; } = true;
@@ -54,6 +67,9 @@ else
             QueryHelpers.ParseQuery(uri.Query).TryGetValue("redirectUri", out StringValues redirecUriValue);
             QueryHelpers.ParseQuery(uri.Query).TryGetValue("actionState", out StringValues actionStateValue);
             actionState = actionStateValue;
+            if (string.IsNullOrEmpty(actionState))
+                actionState = "login";
+
             redirectUri = redirecUriValue;
 
             StayOnPage = string.IsNullOrEmpty(redirectUri);
@@ -67,10 +83,24 @@ else
         IsAuthorized = await cloudLogin.IsAuthenticated();
 
         if (IsAuthorized)
-            CurrentUser = (await cloudLogin.CurrentUser())!;
+            CurrentUser = await cloudLogin.CurrentUser();
+
+        if (actionState == "mobile" && !string.IsNullOrEmpty(redirectUri))
+        {
+            if (CurrentUser != null && IsAuthorized)
+                await cloudLogin.CreateUserRequestCustom(CurrentUser.ID, new Guid(redirectUri));
+            else
+                IsWorking = false;
+
+            StayOnPage = true;
+            StateHasChanged();
+            return;
+        }
 
         if (IsAuthorized && actionState == "login" && !StayOnPage)
         {
+            //await JS.InvokeVoidAsync("window.parent.postMessage({ a: 'aaa', b: 'bbb' }, '*');");
+
             Guid? requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
 
             string seperator = redirectUri.Contains('?') ? "&" : "?";
@@ -82,8 +112,9 @@ else
                 else
                     nav.NavigateTo($"{redirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
             }
+            return;
         }
-
         IsWorking = false;
+        StateHasChanged();
     }
 }

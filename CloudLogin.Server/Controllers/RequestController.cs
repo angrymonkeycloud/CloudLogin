@@ -17,7 +17,7 @@ public class RequestController : BaseController
             if (Configuration.Cosmos == null)
                 return Results.BadRequest();
 
-            CosmosMethods.CreateRequest(userId, requestId);
+            await CosmosMethods.CreateRequest(userId, requestId);
             return Results.Ok();
         }
         catch

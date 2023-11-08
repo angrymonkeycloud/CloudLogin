@@ -54,7 +54,7 @@
 
     private void ContinueInitialization()
     {
-        navigation.NavigateTo($"https://localhost:7061/?actionState=mobile&redirectUri={LoginID}");
+        navigation.NavigateTo($"https://login.coverbox.app/?actionState=mobile&redirectUri={LoginID}");
 
         myTimer = new Timer();
 
@@ -72,7 +72,7 @@
 
         LoginID = Guid.NewGuid();
 
-        navigation.NavigateTo($"https://localhost:7061/?actionState=mobile&redirectUri={LoginID}");
+        navigation.NavigateTo($"https://login.coverbox.app/?actionState=mobile&redirectUri={LoginID}");
 
         myTimer.Start();
 

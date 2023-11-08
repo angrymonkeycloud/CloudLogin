@@ -24,7 +24,7 @@ namespace MauiMobileDemo
 #endif
             var client = new HttpClient
             {
-                BaseAddress = new Uri("https://localhost:7061/")
+                BaseAddress = new Uri("https://login.coverbox.app/")
             };
             CloudLoginClient cloudLoginClient = CloudLoginClient.InitializeForClient(client.BaseAddress.AbsoluteUri);
 

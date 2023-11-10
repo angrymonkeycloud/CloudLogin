@@ -109,7 +109,7 @@ public class LoginController : BaseController
 
         await HttpContext.SignInAsync(claimsPrincipal, properties);
 
-        return Redirect(Methods.RedirectString("cloudlogin", "result",  keepMeSignedIn: keepMeSignedIn.ToString(), sameSite: sameSite.ToString(), redirectUri: redirectUri, actionState: actionState, primaryEmail: primaryEmail));
+        return Redirect(Methods.RedirectString("cloudlogin", "result", keepMeSignedIn: keepMeSignedIn.ToString(), sameSite: sameSite.ToString(), redirectUri: redirectUri, actionState: actionState, primaryEmail: primaryEmail));
     }
 
     [HttpGet("Result")]
@@ -120,10 +120,10 @@ public class LoginController : BaseController
         User? user = new();
 
         if (Configuration.Cosmos != null)
-             user = CosmosMethods.GetUserByInput(userIdentity.FindFirst(ClaimTypes.Email)?.Value!).Result;
+            user = CosmosMethods.GetUserByInput(userIdentity.FindFirst(ClaimTypes.Email)?.Value!).Result;
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
-            
+
         redirectUri ??= baseUrl;
 
         AuthenticationProperties properties = new()
@@ -136,7 +136,7 @@ public class LoginController : BaseController
         string firstName = user.FirstName ??= userIdentity.FindFirst(ClaimTypes.GivenName)?.Value;
         string lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value;
         string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value;
-        string  displayName = user.DisplayName ??= $"{firstName} {lastName}";
+        string displayName = user.DisplayName ??= $"{firstName} {lastName}";
 
         if (Configuration.Cosmos == null)
             user = new()
@@ -185,7 +185,7 @@ public class LoginController : BaseController
         //else
         //    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, displayName));
 
-        
+
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
 
@@ -250,7 +250,7 @@ public class LoginController : BaseController
     [HttpGet("Logout")]
     public async Task<ActionResult> Logout(string? redirectUri)
     {
-            await HttpContext.SignOutAsync();
+        await HttpContext.SignOutAsync();
 
 
         if (!string.IsNullOrEmpty(redirectUri))

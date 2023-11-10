@@ -2,7 +2,7 @@
 @using AngryMonkey.CloudLogin;
 @inject CloudLoginClient cloudLogin
 
-@if (IsAuthorized == false)
+@if (!IsAuthorized)
 {
     <a href="/Account/Login">Login</a>
 }

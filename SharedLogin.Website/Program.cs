@@ -7,7 +7,7 @@ builder.Services.AddControllersWithViews();
 
 //cloud login -----------
 
-builder.Services.AddCloudLoginMVC("https://login.coverbox.app/");
+builder.Services.AddCloudLoginMVC("https://localhost:7061/");
 
 //----------
 

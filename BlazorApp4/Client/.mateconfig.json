@@ -1,8 +1,0 @@
-{
-  "files": [
-    {
-      "output": "wwwroot/css/index.css",
-      "input": "Pages/Index.razor.less"
-    }
-  ]
-}

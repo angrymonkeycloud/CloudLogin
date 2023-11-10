@@ -7,7 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-builder.Services.AddCloudLoginMVC("https://login.coverbox.app/");
+builder.Services.AddCloudLoginMVC("https://localhost:7061/");
+//builder.Services.AddCloudLoginMVC("https://login.coverbox.app/");
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 

@@ -1,8 +1,5 @@
-﻿
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Azure.Cosmos.Linq;
 
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/Request")]

@@ -23,15 +23,18 @@
                 @if (actionState == "mobile")
                 {
                     <div>Mobile login successful, go back to the mobile application.</div>
-
+                }
+                @if(redirectUri == "/")
+                {
+                    <div>Login successful.</div>
+                    <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
+                    <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
+                    <a href="./cloudlogin/logout?redirectUri=@redirectUri&actionState=@actionState">Logout</a>
                 }
                 else
                 {
-                    <div>Login successful.</div>
+                    <div>Continue..</div>
                 }
-                <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
-                <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
-                <a href="./cloudlogin/logout?@(string.IsNullOrEmpty(redirectUri) ? "" : $"redirectUri={nav.BaseUri}?actionState=mobile&redirectUri={redirectUri}")">Logout</a>
             }
         </article>
     </section>

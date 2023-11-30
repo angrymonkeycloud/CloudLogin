@@ -19,14 +19,13 @@
             }
             else
             {
-                <h1>Successful @CurrentUser.DisplayName</h1>
                 @if (actionState == "mobile")
                 {
                     <div>Mobile login successful, go back to the mobile application.</div>
                 }
                 @if (redirectUri == "/")
                 {
-                    <div>Login successful.</div>
+                    <div>Login successful @CurrentUser.DisplayName.</div>
                     <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
                     <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
                     <a href="./cloudlogin/logout?redirectUri=@redirectUri&actionState=@actionState">Logout</a>

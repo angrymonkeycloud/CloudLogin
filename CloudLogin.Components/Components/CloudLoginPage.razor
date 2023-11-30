@@ -24,7 +24,7 @@
                 {
                     <div>Mobile login successful, go back to the mobile application.</div>
                 }
-                @if(redirectUri == "/")
+                @if (redirectUri == "/")
                 {
                     <div>Login successful.</div>
                     <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
@@ -57,7 +57,6 @@ else
     public string? actionState { get; set; }
     public User? CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
-    public bool StayOnPage { get; set; } = false;
     public bool IsWorking { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
@@ -73,7 +72,6 @@ else
         actionState = actionStateValue;
         redirectUri = redirecUriValue;
 
-        StayOnPage = string.IsNullOrEmpty(redirectUri);
         StateHasChanged();
 
         if (string.IsNullOrEmpty(actionState))
@@ -89,24 +87,27 @@ else
             else
                 IsWorking = false;
 
-            StayOnPage = true;
             StateHasChanged();
             return;
         }
 
-        if (IsAuthorized && (actionState == "login" || actionState == "/") && !string.IsNullOrEmpty(redirectUri) && !StayOnPage && CurrentUser != null)
+        if (IsAuthorized && (actionState == "login" || actionState == "/") && CurrentUser != null)
         {
-            Guid? requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
-
-            string seperator = redirectUri.Contains('?') ? "&" : "?";
-
-            if (CurrentUser != null)
+            if (redirectUri != "/")
             {
-                if (requestID == null)
-                    nav.NavigateTo($"{redirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonConvert.SerializeObject(CurrentUser))}");
-                else
-                    nav.NavigateTo($"{redirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
+                Guid? requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
+
+                string seperator = redirectUri.Contains('?') ? "&" : "?";
+
+                if (CurrentUser != null)
+                {
+                    if (requestID == null)
+                        nav.NavigateTo($"{redirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonConvert.SerializeObject(CurrentUser))}");
+                    else
+                        nav.NavigateTo($"{redirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
+                }
             }
+            StateHasChanged();
             return;
         }
         IsWorking = false;

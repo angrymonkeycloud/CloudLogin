@@ -11,7 +11,7 @@
 @if (IsAuthorized && CurrentUser?.PrimaryEmailAddress != null)
 {
     <section>
-        <article>
+        <article class="center">
             @if (!IsWorking)
             {
                 <h1>Error</h1>
@@ -25,6 +25,7 @@
                 }
                 @if (redirectUri == "/")
                 {
+                    <h1>Login successful</h1>
                     <div>Login successful @CurrentUser.DisplayName.</div>
                     <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
                     <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
@@ -32,7 +33,7 @@
                 }
                 else
                 {
-                    <div>Continue..</div>
+                    <div>Continue...</div>
                 }
             }
         </article>

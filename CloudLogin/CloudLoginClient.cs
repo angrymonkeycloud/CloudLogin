@@ -1,5 +1,4 @@
 ﻿using AngryMonkey.Cloud;
-using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
@@ -270,9 +269,9 @@ public class CloudLoginClient
     {
         await HttpServer.DeleteAsync($"CloudLogin/User/Delete?userId={userId}");
     }
-    public async Task<User?> CurrentUser(IHttpContextAccessor? accessor = null)
+    public async Task<User?> CurrentUser()
     {
-        if (accessor == null)
+        //if (accessor == null)
             try
             {
                 HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
@@ -289,9 +288,9 @@ public class CloudLoginClient
 
         return null;
     }
-    public async Task<bool> IsAuthenticated(IHttpContextAccessor? accessor = null)
+    public async Task<bool> IsAuthenticated()
     {
-        if (accessor == null)
+        //if (accessor == null)
             try
 
             {
@@ -304,8 +303,8 @@ public class CloudLoginClient
             }
             catch { throw; }
 
-        string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
-        return userCookie != null;
+        //string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
+        //return userCookie != null;
     }
     public async Task AddUserInput(Guid userId, LoginInput Input)
     {

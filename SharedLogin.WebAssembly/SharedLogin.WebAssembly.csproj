@@ -1,28 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
-		<Nullable>enable</Nullable>
+		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 		<UserSecretsId>0c4af27d-8bed-45a6-858d-1cf32955144e</UserSecretsId>
 	</PropertyGroup>
 
-	<ItemGroup>
-	  <Content Remove="compilerconfig.json" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0" />
+  </ItemGroup>
 
-	<ItemGroup>
-	  <None Include="compilerconfig.json" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="AngryMonkey.CloudWeb" Version="1.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="7.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
-	</ItemGroup>
-
-	<ItemGroup>
+  <ItemGroup>
 	  <ProjectReference Include="..\CloudLogin.Components\CloudLogin.Components.csproj" />
 	</ItemGroup>
 

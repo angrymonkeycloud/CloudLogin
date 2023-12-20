@@ -156,13 +156,8 @@ public class LoginController : BaseController
                 }
             };
 
-
         if (user == null)
             return Redirect(redirectUri);
-
-
-
-
 
         ClaimsIdentity claimsIdentity = new(new[] {
                 //new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
@@ -203,9 +198,9 @@ public class LoginController : BaseController
             return Redirect($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
 
         if (sameSite)
-            return Redirect($"{redirectUri}");
+            return Redirect($"{redirectUri}&KeepMeSignedIn={keepMeSignedIn}");
         else
-            return Redirect($"{redirectUri}/login");
+            return Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
     }
 
 

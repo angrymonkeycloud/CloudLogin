@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 		<AssemblyName>AngryMonkey.CloudLogin.Server</AssemblyName>
@@ -31,14 +31,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="7.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.32.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="7.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="7.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="7.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="7.0.4" NoWarn="NU1605" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="7.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.0" NoWarn="NU1605" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.0" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.5.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>

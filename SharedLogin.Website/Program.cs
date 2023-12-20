@@ -7,7 +7,7 @@ builder.Services.AddControllersWithViews();
 
 //cloud login -----------
 
-builder.Services.AddCloudLoginMVC("https://localhost:7061/");
+builder.Services.AddCloudLoginMVC("https://localhost:7003/");
 
 //----------
 

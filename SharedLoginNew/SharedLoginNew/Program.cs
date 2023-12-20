@@ -1,6 +1,8 @@
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using SharedLoginNew.Client.Pages;
+using SharedLoginNew.Components;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -8,10 +10,14 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
+    .AddInteractiveWebAssemblyComponents();
 
-builder.Services.AddRazorPages();
+// -------------------- for cloud login
+
+
 builder.Services.AddControllers();
-builder.Services.AddServerSideBlazor();
 
 builder.Services.AddCors(cors =>
 {
@@ -88,35 +94,40 @@ builder.Services.AddAuthenticationCore();
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped(key => new UserController());
 
-//----------
+
+// -------------------- for cloud login
 
 
 var app = builder.Build();
 
-app.UseCors("AllowAll");
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
+{
     app.UseWebAssemblyDebugging();
+}
 else
 {
-    app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-
 app.UseHttpsRedirection();
 
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
-
+// -------------------- for cloud login
 app.UseRouting();
-app.MapControllers();
-
 app.UseCloudLogin();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapControllers();
+// -------------------- for cloud login
 
-app.MapRazorPages();
-app.MapFallbackToFile("index.html");
+app.UseStaticFiles();
+app.UseAntiforgery();
+
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(Counter).Assembly);
 
 app.Run();

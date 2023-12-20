@@ -1,11 +1,11 @@
 @namespace AngryMonkey.CloudLogin
-@using Microsoft.AspNetCore.Http
-@using Microsoft.AspNetCore.WebUtilities;
+@* @using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.WebUtilities; *@
 @using Microsoft.Extensions.Primitives;
 @using Newtonsoft.Json
 @inject CloudLoginClient cloudLogin
 @inject NavigationManager nav
-@inject IHttpContextAccessor HttpContextAccessor
+@* @inject IHttpContextAccessor HttpContextAccessor *@
 @inject IJSRuntime JS
 
 @if (IsAuthorized && CurrentUser?.PrimaryEmailAddress != null)
@@ -15,21 +15,21 @@
             @if (!IsWorking)
             {
                 <h1>Error</h1>
-                <div>An error occured, please <a href="./cloudlogin/logout?redirectUri=@nav.BaseUri?actionState=@actionState&redirectUri=@redirectUri">Retry</a>.</div>
+                <div>An error occured, please <a href="./cloudlogin/logout?redirectUri=@nav.BaseUri?actionState=@ActionState&redirectUri=@RedirectUri">Retry</a>.</div>
             }
             else
             {
-                @if (actionState == "mobile")
+                @if (ActionState == "mobile")
                 {
                     <div>Mobile login successful, go back to the mobile application.</div>
                 }
-                @if (redirectUri == "/")
+                @if (RedirectUri == "/")
                 {
                     <h1>Login successful</h1>
                     <div>Login successful @CurrentUser.DisplayName.</div>
                     <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
                     <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
-                    <a href="./cloudlogin/logout?redirectUri=@redirectUri&actionState=@actionState">Logout</a>
+                    <a href="./cloudlogin/logout?redirectUri=@RedirectUri&actionState=@ActionState">Logout</a>
                 }
                 else
                 {
@@ -44,7 +44,7 @@ else
     <section>
         <article>
 
-            <AngryMonkey.CloudLogin.CloudLoginComponent Logo="@Logo" ActionState="@actionState" CurrentUser="@CurrentUser" RedirectUri="@RedirectUri" />
+            <AngryMonkey.CloudLogin.CloudLoginComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
         </article>
     </section>
 }
@@ -52,9 +52,14 @@ else
 @code {
 
     [Parameter] public string Logo { get; set; }
-    public string? redirectUri { get; set; }
-    private string? RedirectUri => redirectUri ?? "/";
-    public string? actionState { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "redirectUri")]
+    public string? RedirectUri { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "actionState")]
+    public string? ActionState { get; set; }
+
+    private string? _RedirectUri => RedirectUri ?? "/";
     public User? CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool IsWorking { get; set; } = true;
@@ -66,24 +71,16 @@ else
         if (IsAuthorized)
             CurrentUser = await cloudLogin.CurrentUser();
 
-        Uri uri = nav.ToAbsoluteUri(nav.Uri);
-        QueryHelpers.ParseQuery(uri.Query).TryGetValue("redirectUri", out StringValues redirecUriValue);
-        QueryHelpers.ParseQuery(uri.Query).TryGetValue("actionState", out StringValues actionStateValue);
-        actionState = actionStateValue;
-        redirectUri = redirecUriValue;
+        if (string.IsNullOrEmpty(ActionState))
+            ActionState = "login";
 
-        StateHasChanged();
+        if (string.IsNullOrEmpty(RedirectUri))
+            RedirectUri = "/";
 
-        if (string.IsNullOrEmpty(actionState))
-            actionState = "login";
-
-        if (string.IsNullOrEmpty(redirectUri))
-            redirectUri = "/";
-
-        if (actionState == "mobile" && !string.IsNullOrEmpty(redirectUri))
+        if (ActionState == "mobile" && !string.IsNullOrEmpty(RedirectUri))
         {
             if (CurrentUser != null && IsAuthorized)
-                await cloudLogin.CreateUserRequestCustom(CurrentUser.ID, new Guid(redirectUri));
+                await cloudLogin.CreateUserRequestCustom(CurrentUser.ID, new Guid(RedirectUri));
             else
                 IsWorking = false;
 
@@ -91,20 +88,20 @@ else
             return;
         }
 
-        if (IsAuthorized && (actionState == "login" || actionState == "/") && CurrentUser != null)
+        if (IsAuthorized && (ActionState == "login" || ActionState == "/") && CurrentUser != null)
         {
-            if (redirectUri != "/")
+            if (RedirectUri != "/")
             {
                 Guid? requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
 
-                string seperator = redirectUri.Contains('?') ? "&" : "?";
+                string seperator = RedirectUri.Contains('?') ? "&" : "?";
 
                 if (CurrentUser != null)
                 {
                     if (requestID == null)
-                        nav.NavigateTo($"{redirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonConvert.SerializeObject(CurrentUser))}");
+                        nav.NavigateTo($"{RedirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonConvert.SerializeObject(CurrentUser))}");
                     else
-                        nav.NavigateTo($"{redirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
+                        nav.NavigateTo($"{RedirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
                 }
             }
             StateHasChanged();

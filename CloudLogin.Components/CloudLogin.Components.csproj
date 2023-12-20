@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
@@ -31,17 +31,17 @@
 		<None Include="compilerconfig.json" />
 	</ItemGroup>
 
+
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.Components" Version="8.0.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.0" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<None Update="AngryMonkeyCloudLogo-64x64.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="AngryMonkey.Cloud.Components" Version="2.3.0" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.5.1" />
-		<PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
 	</ItemGroup>
 
 	<ItemGroup>

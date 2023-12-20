@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AngryMonkey.CloudLogin</AssemblyName>
@@ -27,7 +27,6 @@
   
   <ItemGroup>
     <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.5.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
   </ItemGroup>
   
   <ItemGroup>

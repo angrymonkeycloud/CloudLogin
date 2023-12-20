@@ -1,16 +1,16 @@
 ﻿using System.Web;
-using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc;
+using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 using Microsoft.AspNetCore.Http.Extensions;
-using System.Collections.Specialized;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace AngryMonkey.CloudLogin;
 
 [Route("Account")]
-public class CloudLoginController : ControllerBase
+public class CloudLoginController : Controller
 {
     CloudLoginClient CloudLogin { get; set; }
 
@@ -24,7 +24,7 @@ public class CloudLoginController : ControllerBase
 
         if (string.IsNullOrEmpty(ReturnUrl))
         {
-            ReturnUrl = Request.Headers["referer"];
+            ReturnUrl = Request.Headers.Referer;
 
             if (string.IsNullOrEmpty(ReturnUrl))
                 ReturnUrl = baseUrl;
@@ -36,7 +36,7 @@ public class CloudLoginController : ControllerBase
     }
 
     [Route("LoginResult")]
-    public async Task<IActionResult> LoginResult(Guid requestId, string currentUser, string? ReturnUrl)
+    public async Task<IActionResult> LoginResult(Guid requestId, string currentUser, string? ReturnUrl, bool KeepMeSignedIn)
     {
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
@@ -76,12 +76,14 @@ public class CloudLoginController : ControllerBase
             claimsIdentity.AddClaim(new(ClaimTypes.Email, cloudUser.Inputs.First().Input));
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties()
-        {
-            ExpiresUtc = null,
-            IsPersistent = false
-        });
 
+        AuthenticationProperties properties = new()
+        {
+            ExpiresUtc = KeepMeSignedIn ? DateTimeOffset.UtcNow.Add(new(360,0,0,0,0)) : null,
+            IsPersistent = KeepMeSignedIn
+        };
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, properties);
         return Redirect(ReturnUrl);
     }
 

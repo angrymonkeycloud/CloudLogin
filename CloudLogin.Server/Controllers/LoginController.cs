@@ -198,10 +198,12 @@ public class LoginController : BaseController
             return Redirect($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
 
         if (sameSite)
-            return Redirect($"{redirectUri}&KeepMeSignedIn={keepMeSignedIn}");
-        else
-            return Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
+            return Redirect(AddQueryString(redirectUri, $"KeepMeSignedIn={keepMeSignedIn}"));
+
+        return Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
     }
+
+    private static string AddQueryString(string url, string queryString) => $"{url}{(url.Contains('?') ? "&" : "?")}{queryString}";
 
 
     [HttpGet("Update")]

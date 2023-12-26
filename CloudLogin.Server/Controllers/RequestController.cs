@@ -11,10 +11,11 @@ public class RequestController : BaseController
     {
         try
         {
-            if (Configuration.Cosmos == null)
+            if (Configuration?.Cosmos == null)
                 return Results.BadRequest();
 
             await CosmosMethods.CreateRequest(userId, requestId);
+
             return Results.Ok();
         }
         catch
@@ -28,7 +29,7 @@ public class RequestController : BaseController
     {
         try
         {
-            User User = await CosmosMethods.GetUserByRequestId(requestId);
+            User? User = await CosmosMethods.GetUserByRequestId(requestId);
 
             return Results.Ok(User);
         }

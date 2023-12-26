@@ -5,7 +5,7 @@ namespace AngryMonkey.CloudLogin;
 
 public class CloudLoginConfiguration
 {
-	public List<ProviderConfiguration> Providers { get; set; } = new();
+	public required List<ProviderConfiguration> Providers { get; set; } = [];
 	public string? BaseAddress { get; set; }
 	public TimeSpan LoginDuration { get; set; } = new TimeSpan(6*30, 0,0,0); //10 months
 	public List<Link> FooterLinks { get; set; } = new();
@@ -15,17 +15,9 @@ public class CloudLoginConfiguration
 	public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; } = null;
 }
 
-public class CosmosDatabase
+public class CosmosDatabase(IConfigurationSection configurationSection)
 {
-	public string? ConnectionString { get; set; }
-	public string? DatabaseId { get; set; }
-	public string? ContainerId { get; set; }
-
-
-    public CosmosDatabase(IConfigurationSection configurationSection)
-    {
-        ConnectionString = configurationSection["ConnectionString"];
-        DatabaseId = configurationSection["DatabaseId"];
-        ContainerId = configurationSection["ContainerId"];
-    }
+    public string ConnectionString { get; set; } = configurationSection["ConnectionString"]!;
+    public string DatabaseId { get; set; } = configurationSection["DatabaseId"]!;
+    public string ContainerId { get; set; } = configurationSection["ContainerId"]!;
 }

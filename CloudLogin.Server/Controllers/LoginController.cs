@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using System.Linq.Expressions;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -15,7 +14,7 @@ namespace AngryMonkey.CloudLogin;
 [ApiController]
 public class LoginController : BaseController
 {
-    public Methods Methods = new Methods();
+    public Methods Methods = new();
     [HttpGet("GetClient")]
     public ActionResult<CloudLoginClient> GetClient()
     {

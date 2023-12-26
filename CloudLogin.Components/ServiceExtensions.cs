@@ -1,6 +1,4 @@
-﻿using AngryMonkey.Cloud;
-using AngryMonkey.CloudLogin;
-using Microsoft.AspNetCore.Components;
+﻿using AngryMonkey.CloudLogin;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

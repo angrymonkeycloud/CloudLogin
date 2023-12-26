@@ -1,10 +1,10 @@
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
+using AngryMonkey.CloudLogin.Services;
+using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using SharedLoginNew.Client.Pages;
 using SharedLoginNew.Components;
-using System.Net;
-using System.Net.Mail;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,13 +24,18 @@ builder.Services.AddCors(cors =>
     cors.AddPolicy("AllowAll", policy =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
+
+builder.Services.Configure<EmailServiceOptions>(builder.Configuration.GetSection("EmailServer"));
+IServiceCollection test = builder.Services.AddScoped<EmailService>();
+
+
 //cloud login -----------
 CloudLoginConfiguration cloudLoginConfig = new()
 {
     Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
     LoginDuration = new TimeSpan(30, 0, 0, 0),
-    FooterLinks = new List<Link>()
-    {
+    FooterLinks =
+    [
         new Link()
         {
             Title = "Link 1",
@@ -41,16 +46,16 @@ CloudLoginConfiguration cloudLoginConfig = new()
             Title = "Link 2",
             Url = "#"
         }
-    },
+    ],
     EmailSendCodeRequest = async (sendCode) =>
     {
-        SmtpClient smtpClient = new(builder.Configuration["SMTP:Host"], int.Parse(builder.Configuration["SMTP:Port"]))
-        {
-            EnableSsl = true,
-            DeliveryMethod = SmtpDeliveryMethod.Network,
-            UseDefaultCredentials = false,
-            Credentials = new NetworkCredential(builder.Configuration["SMTP:Email"], builder.Configuration["SMTP:Password"])
-        };
+        //SmtpClient smtpClient = new(builder.Configuration["SMTP:Host"], int.Parse(builder.Configuration["SMTP:Port"]!))
+        //{
+        //    EnableSsl = true,
+        //    DeliveryMethod = SmtpDeliveryMethod.Network,
+        //    UseDefaultCredentials = false,
+        //    Credentials = new NetworkCredential(builder.Configuration["SMTP:Email"], builder.Configuration["SMTP:Password"])
+        //};
 
         StringBuilder mailBody = new();
         mailBody.AppendLine("<div style=\"width:300px;margin:20px auto;padding: 15px;border:1px dashed  #4569D4;text-align:center\">");
@@ -58,27 +63,22 @@ CloudLoginConfiguration cloudLoginConfig = new()
         mailBody.AppendLine("<p>We recevied a request to login page.</p>");
         mailBody.AppendLine("<p style=\"margin-top: 0;\">Enter the following password login code:</p>");
         mailBody.AppendLine("<div style=\"width:150px;border:1px solid #4569D4;margin: 0 auto;padding: 10px;text-align:center;\">");
-        mailBody.AppendLine($"code: <b style=\"color:#202124;text-decoration:none\">{sendCode.Code}</b> <br />");
+        mailBody.AppendLine($"<b style=\"color:#202124;text-decoration:none\">{sendCode.Code}</b> <br />");
         mailBody.AppendLine("</div></div>");
 
-        MailMessage mailMessage = new()
-        {
-            From = new MailAddress(builder.Configuration["SMTP:Email"], "Cloud Login"),
-            Subject = "Login Code",
-            IsBodyHtml = true,
-            Body = mailBody.ToString()
-        };
 
-        mailMessage.To.Add(sendCode.Address);
+        ServiceProvider serviceProvider = builder.Services.BuildServiceProvider();
+        EmailService emailService = serviceProvider.GetService<EmailService>();
 
-        await smtpClient.SendMailAsync(mailMessage);
+        await emailService.SendEmail("Login Code", mailBody.ToString(), [sendCode.Address]);
     },
-    Providers = new List<ProviderConfiguration>()
-    {
+    Providers =
+    [
         new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
         new GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
-        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp"), true)
-    }
+        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp"), true),
+        new CustomProviderConfiguration(builder.Configuration.GetSection("Custom")),
+    ]
 };
 
 builder.Services.AddCloudLoginServer(cloudLoginConfig);

@@ -1,6 +1,7 @@
 ﻿@page "/All"
+@using AngryMonkey.CloudLogin
 @inject IHttpContextAccessor HttpContextAccessor
-@inject AngryMonkey.CloudLogin.CloudLoginServerClient cloudLogin
+@inject AngryMonkey.CloudLogin.CloudLoginClient cloudLogin
 
 <HeadContent>
     <CloudBundle Source="css/index.css" />
@@ -14,20 +15,20 @@
                     <a href="./" class="--button">Home</a>
                     <div class="amc-authorized-all-desc">
                         <div class="amc-authorized-all-desc-title">All users:</div>
-                        @foreach (User users in Users)
+                        @foreach (User user in Users)
                         {
                             <details>
-                                <summary>@users.DisplayName</summary>
+                                <summary>@user.DisplayName</summary>
                                 <ul>
-                                    <li><b>First Name:</b> @users.FirstName</li>
-                                    <li><b>Last Name:</b> @users.LastName</li>
-                                    <li><b>Display Name:</b> @users.DisplayName</li>
-                                    <li><b>Is Locked:</b> @users.IsLocked</li>
-                                    <li><b>Created On:</b> @users.CreatedOn</li>
-                                    <li><b>Last Signin:</b> @users.LastSignedIn</li>
+                                    <li><b>First Name:</b> @user.FirstName</li>
+                                    <li><b>Last Name:</b> @user.LastName</li>
+                                    <li><b>Display Name:</b> @user.DisplayName</li>
+                                    <li><b>Is Locked:</b> @user.IsLocked</li>
+                                    <li><b>Created On:</b> @user.CreatedOn</li>
+                                    <li><b>Last Signin:</b> @user.LastSignedIn</li>
                                     <li>
                                         <b>Inputs:</b>
-                                        @foreach (LoginInput inputs in users.Inputs)
+                                        @foreach (LoginInput inputs in user.Inputs)
                                         {
                                             <ul>
                                                 <li><b>Input:</b> @inputs.Input</li
@@ -57,5 +58,5 @@
 
 }else{
     <div>Login First:</div>
-    <AngryMonkey.CloudLogin.CloudLogin Logo="https://thehealthbarme.com/img/logo.svg" />
+<AngryMonkey.CloudLogin.CloudLoginPage Logo="https://thehealthbarme.com/img/logo.svg" />
 }

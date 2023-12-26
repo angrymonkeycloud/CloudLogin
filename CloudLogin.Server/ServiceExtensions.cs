@@ -4,24 +4,16 @@ using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public class CloudLoginServerService
-{
-    IServiceCollection AddCloudLoginServer { get; }
-}
 
 public static class MvcServiceCollectionExtensions
 {
 
-    public static CloudLoginServerService? AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configuration)
+    public static void AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configuration)
     {
         configuration.FooterLinks.Add(new()
         {
@@ -31,17 +23,17 @@ public static class MvcServiceCollectionExtensions
 
         CloudLoginClient CloudLoginServer = CloudLoginClient.InitializeForServer();
 
-        services.AddSingleton(new CloudLoginServerService());
-        services.AddSingleton(configuration);
-            services.AddSingleton(CloudLoginServer);
+        //services.AddSingleton(new CloudLoginServerService());
+        services.AddTransient(sp => configuration);
+        services.AddTransient(sp => CloudLoginServer);
 
-            
+
         CloudGeographyClient cloudGeography = new();
 
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
-            if(!string.IsNullOrEmpty(configuration.BaseAddress) && configuration.BaseAddress != "localhost")
+            if (!string.IsNullOrEmpty(configuration.BaseAddress) && configuration.BaseAddress != "localhost")
                 option.Cookie.Domain = $".{configuration.BaseAddress}";
             option.Events = new CookieAuthenticationEvents()
             {
@@ -200,6 +192,6 @@ public static class MvcServiceCollectionExtensions
                 });
         }
 
-        return null;
+        return;
     }
 }

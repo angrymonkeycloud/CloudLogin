@@ -53,20 +53,16 @@ public class CloudLoginClient
     //Configuration
     public async Task<CloudLoginClient> InitFromServer()
     {
-        CloudLoginClient client = null;
-
         try
         {
             HttpResponseMessage response = await HttpServer.GetAsync("CloudLogin/GetClient");
 
-            client = await response.Content.ReadFromJsonAsync<CloudLoginClient>();
+            return await response.Content.ReadFromJsonAsync<CloudLoginClient>();
         }
         catch (Exception e)
         {
             throw e;
         }
-
-        return client;
     }
 
     //Get user(s) information from db
@@ -269,39 +265,42 @@ public class CloudLoginClient
     {
         await HttpServer.DeleteAsync($"CloudLogin/User/Delete?userId={userId}");
     }
+    public async Task<bool> AutomaticLogin()
+    {
+
+        return false;
+    }
     public async Task<User?> CurrentUser()
     {
         //if (accessor == null)
-            try
-            {
-                HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
 
-                if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
-                    return null;
-
-                return await message.Content.ReadFromJsonAsync<User>();
-            }
-            catch
-            {
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                 return null;
-            }
 
-        return null;
+            return await message.Content.ReadFromJsonAsync<User>();
+        }
+        catch
+        {
+            return null;
+        }
     }
     public async Task<bool> IsAuthenticated()
     {
         //if (accessor == null)
-            try
+        try
 
-            {
-                HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/IsAuthenticated");
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/IsAuthenticated");
 
-                if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
-                    return false;
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return false;
 
-                return await message.Content.ReadFromJsonAsync<bool>();
-            }
-            catch { throw; }
+            return await message.Content.ReadFromJsonAsync<bool>();
+        }
+        catch { throw; }
 
         //string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
         //return userCookie != null;

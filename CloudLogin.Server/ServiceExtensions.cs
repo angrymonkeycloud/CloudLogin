@@ -25,8 +25,6 @@ public static class MvcServiceCollectionExtensions
         if (configuration.Cosmos != null)
             services.AddScoped(sp => new CosmosMethods(configuration.Cosmos));
 
-        CloudGeographyClient cloudGeography = new();
-
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
@@ -75,7 +73,6 @@ public static class MvcServiceCollectionExtensions
                     bool existingUser = user != null;
 
                     if (existingUser)
-                    //try
                     {
                         user!.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
                         user!.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
@@ -97,6 +94,7 @@ public static class MvcServiceCollectionExtensions
 
                         if (formatValue == InputFormat.PhoneNumber)
                         {
+                            CloudGeographyClient cloudGeography = new();
                             PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(input);
 
                             input = phoneNumber.Number;
@@ -120,7 +118,7 @@ public static class MvcServiceCollectionExtensions
                                 new LoginInput()
                                 {
                                     Input = input,
-                                    Format = (InputFormat)formatValue,
+                                    Format = formatValue,
                                     IsPrimary = true,
                                     PhoneNumberCountryCode = countryCode,
                                     PhoneNumberCallingCode = callingCode,

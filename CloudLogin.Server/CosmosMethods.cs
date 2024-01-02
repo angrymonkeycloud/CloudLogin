@@ -3,7 +3,9 @@ using AngryMonkey.Cloud.Geography;
 using Azure.Core;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
+using Microsoft.Extensions.Options;
 using System.Linq.Expressions;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace AngryMonkey.CloudLogin;
 public class CosmosMethods : DataParse
@@ -62,12 +64,11 @@ public class CosmosMethods : DataParse
 
     #endregion
 
-    public CosmosMethods(string connectionString, string databaseId, string containerId)
+    public CosmosMethods(CosmosConfiguration cosmosConfiguration)
     {
-        CosmosClient client = new(connectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
+        CosmosClient client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
 
-        Container = client.GetContainer(databaseId, containerId);
-
+        Container = client.GetContainer(cosmosConfiguration.DatabaseId, cosmosConfiguration.ContainerId);
     }
 
     public Container Container { get; set; }

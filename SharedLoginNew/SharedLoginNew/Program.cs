@@ -1,21 +1,14 @@
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using SharedLoginNew.Client.Pages;
-using SharedLoginNew.Components;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
-
-// -------------------- for cloud login
-
 
 builder.Services.AddControllers();
 
@@ -24,10 +17,11 @@ builder.Services.AddCors(cors =>
     cors.AddPolicy("AllowAll", policy =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
+
 //cloud login -----------
 CloudLoginConfiguration cloudLoginConfig = new()
 {
-    Cosmos = new CosmosDatabase(builder.Configuration.GetSection("Cosmos")),
+    Cosmos = new CosmosConfiguration(builder.Configuration.GetSection("Cosmos")),
     LoginDuration = new TimeSpan(30, 0, 0, 0),
     FooterLinks = new List<Link>()
     {
@@ -92,19 +86,13 @@ builder.Services.AddOptions();
 builder.Services.AddAuthenticationCore();
 
 builder.Services.AddScoped<CustomAuthenticationStateProvider>();
-builder.Services.AddScoped(key => new UserController());
-
-
-// -------------------- for cloud login
-
+builder.Services.AddScoped<UserController>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
-{
     app.UseWebAssemblyDebugging();
-}
+
 else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -114,20 +102,15 @@ else
 
 app.UseHttpsRedirection();
 
-// -------------------- for cloud login
 app.UseRouting();
-app.UseCloudLogin();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-// -------------------- for cloud login
 
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(Counter).Assembly);
+app.MapRazorComponents<SharedLoginNew.Client.App>()
+    .AddInteractiveWebAssemblyRenderMode();
 
 app.Run();

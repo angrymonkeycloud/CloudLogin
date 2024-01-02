@@ -3,7 +3,7 @@
 namespace AngryMonkey.CloudLogin;
 public class Methods
 {
-    public string RedirectString(string controller, string function, string? redirectUri = null, string? keepMeSignedIn = null, string? sameSite = null, string? actionState = null, string? primaryEmail = null, string? userInfo = null, string? inputValue = null)
+    public static string RedirectString(string controller, string function, string? redirectUri = null, string? keepMeSignedIn = null, string? sameSite = null, string? actionState = null, string? primaryEmail = null, string? userInfo = null, string? inputValue = null)
     {
         var redirectParams = new List<string>();
 
@@ -27,9 +27,8 @@ public class Methods
 
         if (inputValue != null)
             redirectParams.Add($"input={HttpUtility.UrlEncode(inputValue)}");
-        
 
-        string redirectString = $"/{controller}/{function}/?{string.Join("&", redirectParams)}";
-        return redirectString;
+
+        return $"/{controller}/{function}/?{string.Join("&", redirectParams)}";
     }
 }

@@ -1,37 +1,33 @@
-﻿using AngryMonkey.CloudLogin;
+﻿//using AngryMonkey.CloudLogin;
 
-namespace Microsoft.AspNetCore.Builder
-{
-    public static class CloudLoginBuilderExtensions
-	{
-		public static IApplicationBuilder UseCloudLogin(this IApplicationBuilder app)
-		{
-			if (app == null)
-				throw new ArgumentNullException(nameof(app));
+//namespace Microsoft.AspNetCore.Builder
+//{
+//    public static class CloudLoginBuilderExtensions
+//	{
+//		public static IApplicationBuilder UseCloudLogin(this IApplicationBuilder app)
+//		{
+//			if (app == null)
+//				throw new ArgumentNullException(nameof(app));
 
-			app.Use(async (context, next) =>
-			{
-				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient && cloudLoginClient.HttpServer == null)
-				{
-					string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
+//			app.Use(async (context, next) =>
+//			{
+//				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient && cloudLoginClient.HttpServer == null)
+//				{
+//					string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
-					cloudLoginClient.HttpServer = new HttpClient() { BaseAddress = new Uri(baseUrl) };
+//					cloudLoginClient = new(baseUrl);
 
-					CloudLoginClient serverClient = await cloudLoginClient.InitFromServer();
-					cloudLoginClient.Providers = serverClient.Providers;
-					cloudLoginClient.FooterLinks = serverClient.FooterLinks;
-					cloudLoginClient.RedirectUri = serverClient.RedirectUri;
-					cloudLoginClient.UsingDatabase = serverClient.UsingDatabase;
-				}
+//					CloudLoginClient serverClient = await cloudLoginClient.Init();
+//					cloudLoginClient.Providers = serverClient.Providers;
+//					cloudLoginClient.FooterLinks = serverClient.FooterLinks;
+//					cloudLoginClient.RedirectUri = serverClient.RedirectUri;
+//					cloudLoginClient.UsingDatabase = serverClient.UsingDatabase;
+//				}
 
-				if (BaseController.Configuration == null)
-					if (app.ApplicationServices.GetService(typeof(CloudLoginConfiguration)) is CloudLoginConfiguration cloudLoginConfiguration)
-						BaseController.Configuration = cloudLoginConfiguration;
+//				await next.Invoke();
+//			});
 
-				await next.Invoke();
-			});
-
-			return app;
-		}
-	}
-}
+//			return app;
+//		}
+//	}
+//}

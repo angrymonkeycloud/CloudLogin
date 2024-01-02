@@ -114,12 +114,10 @@ public partial class CloudLoginComponent
     //START FUNCTIONS----------------------------------------
     protected override async Task OnInitializedAsync()
     {
-        HttpClient NewClient = new() { BaseAddress = new Uri(navigationManager.BaseUri) };
-
         if (string.IsNullOrEmpty(ActionState))
             ActionState = "login";
 
-        cloudLoginClient.HttpServer = NewClient;
+        //cloudLoginClient = new(navigationManager.BaseUri);
 
         if (!string.IsNullOrEmpty(ActionState))
         {

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 public static class MvcServiceCollectionExtensions
 {
-    public static void AddCloudLoginMVC(this IServiceCollection services, string loginServerUrl)
+    public static async Task AddCloudLoginMVC(this IServiceCollection services, string loginServerUrl)
     {
         services.AddAuthentication("Cookies").AddCookie(option =>
         {
@@ -25,7 +25,7 @@ public static class MvcServiceCollectionExtensions
             //};
         });
 
-        CloudLoginClient cloudLoginClient = CloudLoginClient.InitializeForClient(loginServerUrl);
+        CloudLoginClient cloudLoginClient = await CloudLoginClient.Build(loginServerUrl);
 
         services.AddSingleton(cloudLoginClient);
         //services.AddSingleton(new CloudLoginController(cloudLoginClient));

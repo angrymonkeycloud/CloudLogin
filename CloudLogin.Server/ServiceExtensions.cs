@@ -4,24 +4,15 @@ using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public class CloudLoginServerService
-{
-    IServiceCollection AddCloudLoginServer { get; }
-}
 
 public static class MvcServiceCollectionExtensions
 {
-
-    public static CloudLoginServerService? AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configuration)
+    public static void AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configuration)
     {
         configuration.FooterLinks.Add(new()
         {
@@ -29,20 +20,20 @@ public static class MvcServiceCollectionExtensions
             Title = "Info"
         });
 
-        CloudLoginClient CloudLoginServer = CloudLoginClient.InitializeForServer();
-
-        services.AddSingleton(new CloudLoginServerService());
         services.AddSingleton(configuration);
-            services.AddSingleton(CloudLoginServer);
 
-            
+        if (configuration.Cosmos != null)
+            services.AddScoped(sp => new CosmosMethods(configuration.Cosmos));
+
         CloudGeographyClient cloudGeography = new();
 
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
-            if(!string.IsNullOrEmpty(configuration.BaseAddress) && configuration.BaseAddress != "localhost")
+
+            if (!string.IsNullOrEmpty(configuration.BaseAddress) && configuration.BaseAddress != "localhost")
                 option.Cookie.Domain = $".{configuration.BaseAddress}";
+
             option.Events = new CookieAuthenticationEvents()
             {
                 OnSignedIn = async context =>
@@ -54,7 +45,7 @@ public static class MvcServiceCollectionExtensions
                     if (principal.FindFirst(ClaimTypes.Hash)?.Value?.Equals("CloudLogin") ?? false)
                         return;
 
-                    CloudLoginClient? cloudLogin = CloudLoginClient.InitializeForClient($"{request.Scheme}://{request.Host.Value}");
+                    CosmosMethods cosmosMethods = context.HttpContext.RequestServices.GetService<CosmosMethods>()!;
 
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
 
@@ -64,7 +55,7 @@ public static class MvcServiceCollectionExtensions
                     string? providerUserID = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                     string input = (formatValue == InputFormat.EmailAddress ? principal.FindFirst(ClaimTypes.Email)?.Value : principal.FindFirst(ClaimTypes.MobilePhone)?.Value)!;
-                    User? user = formatValue == InputFormat.EmailAddress ? await cloudLogin.GetUserByEmailAddress(input) : await cloudLogin.GetUserByPhoneNumber(input);
+                    User? user = formatValue == InputFormat.EmailAddress ? await cosmosMethods.GetUserByEmailAddress(input) : await cosmosMethods.GetUserByPhoneNumber(input);
 
                     LoginProvider provider = new() { Code = providerCode, Identifier = providerUserID };
 
@@ -86,7 +77,7 @@ public static class MvcServiceCollectionExtensions
                     if (existingUser)
                     //try
                     {
-                        user!.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value  ?? "--";
+                        user!.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
                         user!.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
                         user!.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user!.FirstName} {user!.LastName}";
 
@@ -97,7 +88,7 @@ public static class MvcServiceCollectionExtensions
 
                         user.LastSignedIn = currentDateTime;
 
-                        await cloudLogin.UpdateUser(user);
+                        await cosmosMethods.Update(user);
                     }
                     else
                     {
@@ -116,15 +107,16 @@ public static class MvcServiceCollectionExtensions
                         string firstName = context.Principal?.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
                         string lastName = context.Principal?.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
 
-                        user = new User()
+                        user = new()
                         {
                             ID = Guid.NewGuid(),
                             FirstName = firstName,
                             LastName = lastName,
                             DisplayName = principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}",
                             CreatedOn = currentDateTime,
-                            Inputs = new()
-                            {
+                            LastSignedIn = currentDateTime,
+                            Inputs =
+                            [
                                 new LoginInput()
                                 {
                                     Input = input,
@@ -132,13 +124,12 @@ public static class MvcServiceCollectionExtensions
                                     IsPrimary = true,
                                     PhoneNumberCountryCode = countryCode,
                                     PhoneNumberCallingCode = callingCode,
-                                    Providers = provider != null? new() { provider } : new()
+                                    Providers = provider != null ? new() { provider } : new()
                                 }
-                            }
+                            ]
                         };
-                        user.LastSignedIn = currentDateTime;
 
-                        await cloudLogin.CreateUser(user);
+                        await cosmosMethods.Create(user);
                     }
 
                     //if (string.IsNullOrEmpty(context.HttpContext.Request.Cookies["User"]))
@@ -199,7 +190,5 @@ public static class MvcServiceCollectionExtensions
                     Option.ConsumerSecret = ((TwitterProviderConfiguration)provider).ClientSecret;
                 });
         }
-
-        return null;
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/Request")]
 [ApiController]
-public class RequestController : BaseController
+public class RequestController(CloudLoginConfiguration configuration, CosmosMethods cosmosMethods) : BaseController(configuration, cosmosMethods)
 {
     [HttpPost("CreateRequest")]
     public async Task<IResult> CreateRequest(Guid userId, Guid requestId)
@@ -15,6 +15,7 @@ public class RequestController : BaseController
                 return Results.BadRequest();
 
             await CosmosMethods.CreateRequest(userId, requestId);
+
             return Results.Ok();
         }
         catch

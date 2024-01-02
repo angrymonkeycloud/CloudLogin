@@ -7,36 +7,33 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using System.Linq.Expressions;
+using Microsoft.AspNetCore.Http;
 
 namespace AngryMonkey.CloudLogin;
 
 [Route("CloudLogin")]
 [ApiController]
-public class LoginController : BaseController
+public class LoginController(CloudLoginConfiguration configuration, CosmosMethods cosmosMethods) : BaseController(configuration, cosmosMethods)
 {
-    public Methods Methods = new Methods();
     [HttpGet("GetClient")]
-    public ActionResult<CloudLoginClient> GetClient()
+    public ActionResult<CloudLoginClient> GetClient(string serverLoginUrl) => new CloudLoginClient()
     {
-        CloudLoginClient client = CloudLoginClient.InitializeForServer();
-
-        client.Providers = Configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.HandleUpdateOnly, key.Label)
+        HttpServer = new() { BaseAddress = new(serverLoginUrl) },
+        Providers = Configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.HandleUpdateOnly, key.Label)
         {
             IsCodeVerification = key.IsCodeVerification,
             HandlesPhoneNumber = key.HandlesPhoneNumber,
             HandlesEmailAddress = key.HandlesEmailAddress,
             HandleUpdateOnly = key.HandleUpdateOnly,
             InputRequired = key.InputRequired,
-        }).ToList();
-        client.FooterLinks = Configuration.FooterLinks;
-        client.RedirectUri = Configuration.RedirectUri;
+        }).ToList(),
 
-        return client;
-    }
+        FooterLinks = Configuration.FooterLinks,
+        RedirectUri = Configuration.RedirectUri
+    };
 
     [HttpGet("Login/{identity}")]
-    public async Task<ActionResult?> Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "", string? input = null, string? redirectUri = null)
+    public IResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "", string? input = null, string? redirectUri = null)
     {
         AuthenticationProperties globalProperties = new()
         {
@@ -48,11 +45,11 @@ public class LoginController : BaseController
 
         return identity.Trim().ToLower() switch
         {
-            "microsoft" => Challenge(globalProperties, MicrosoftAccountDefaults.AuthenticationScheme),
-            "google" => Challenge(globalProperties, GoogleDefaults.AuthenticationScheme),
-            "facebook" => Challenge(globalProperties, FacebookDefaults.AuthenticationScheme),
-            "twitter" => Challenge(globalProperties, TwitterDefaults.AuthenticationScheme),
-            _ => null,
+            "microsoft" => Results.Challenge(globalProperties, [MicrosoftAccountDefaults.AuthenticationScheme]),
+            "google" => Results.Challenge(globalProperties, [GoogleDefaults.AuthenticationScheme]),
+            "facebook" => Results.Challenge(globalProperties, [FacebookDefaults.AuthenticationScheme]),
+            "twitter" => Results.Challenge(globalProperties, [TwitterDefaults.AuthenticationScheme]),
+            _ => Results.NotFound(),
         };
     }
 
@@ -66,8 +63,7 @@ public class LoginController : BaseController
             redirectUri = redirectUri.Replace($"/login", "");
         }
 
-
-        Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
+        Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo)!;
 
         AuthenticationProperties properties = new()
         {
@@ -99,9 +95,10 @@ public class LoginController : BaseController
 
             }, "CloudLogin");
 
-        if (userDictionary["Type"].ToLower() == "phonenumber")
+        if (userDictionary["Type"].Equals("phonenumber", StringComparison.CurrentCultureIgnoreCase))
             claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
-        if (userDictionary["Type"].ToLower() == "emailaddress")
+
+        if (userDictionary["Type"].Equals("emailaddress", StringComparison.CurrentCultureIgnoreCase))
             claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
 
 
@@ -113,14 +110,13 @@ public class LoginController : BaseController
     }
 
     [HttpGet("Result")]
-    public async Task<ActionResult<string>> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
+    public async Task<IResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
     {
         ClaimsIdentity userIdentity = Request.HttpContext.User.Identities.First();
 
-        User? user = new();
+        string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;
 
-        if (Configuration.Cosmos != null)
-            user = CosmosMethods.GetUserByInput(userIdentity.FindFirst(ClaimTypes.Email)?.Value!).Result;
+        User user = (Configuration.Cosmos != null ? CosmosMethods.GetUserByInput(emailaddress).Result : new()) ?? new();
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
@@ -132,11 +128,9 @@ public class LoginController : BaseController
             IsPersistent = keepMeSignedIn
         };
 
-
-        string firstName = user.FirstName ??= userIdentity.FindFirst(ClaimTypes.GivenName)?.Value;
-        string lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value;
-        string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value;
-        string displayName = user.DisplayName ??= $"{firstName} {lastName}";
+        string? firstName = user.FirstName ??= userIdentity.FindFirst(ClaimTypes.GivenName)?.Value;
+        string? lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value;
+        string? displayName = user.DisplayName ??= $"{firstName} {lastName}";
 
         if (Configuration.Cosmos == null)
             user = new()
@@ -145,115 +139,74 @@ public class LoginController : BaseController
                 FirstName = firstName,
                 LastName = lastName,
                 ID = Guid.NewGuid(),
-                Inputs = new()
-                {
+                Inputs =
+                [
                     new()
                     {
                         Format = InputFormat.EmailAddress,
                         Input = emailaddress,
                         IsPrimary = true
                     }
-                }
+                ]
             };
 
         if (user == null)
-            return Redirect(redirectUri);
+            return Results.Redirect(redirectUri);
 
         ClaimsIdentity claimsIdentity = new(new[] {
-                //new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
-                //new Claim(ClaimTypes.GivenName, firstName),
-                //new Claim(ClaimTypes.Surname, lastName),
-                //new Claim(ClaimTypes.Name, displayName),
                 new Claim(ClaimTypes.Hash, "CloudLogin"),
                 new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
             }, "CloudLogin");
 
-        //if (!user.EmailAddresses.Any())
-        //    if (user.PhoneNumbers.Any())
-        //        claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, user.PhoneNumbers.First(key => key.IsPrimary == true).Input));
-        //    else
-        //        claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, displayName));
-
-        //else
-        //    if (user.EmailAddresses.Any())
-        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, user.EmailAddresses.First(key => key.IsPrimary == true).Input));
-        //else
-        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, displayName));
-
-
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-
 
         if (actionState == "AddInput")
         {
             LoginInput input = user.Inputs.First();
             string userInfo = JsonConvert.SerializeObject(input);
 
-            return Redirect(Methods.RedirectString("Actions", "AddInput", redirectUri: redirectUri, userInfo: userInfo, primaryEmail: primaryEmail));
+            return Results.Redirect(Methods.RedirectString("Actions", "AddInput", redirectUri: redirectUri, userInfo: userInfo, primaryEmail: primaryEmail));
         }
 
         await HttpContext.SignInAsync(claimsPrincipal, properties);
 
         if (actionState == "mobile")
-            return Redirect($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
+            return Results.Redirect($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
 
         if (sameSite)
-            return Redirect(AddQueryString(redirectUri, $"KeepMeSignedIn={keepMeSignedIn}"));
+            return Results.Redirect(AddQueryString(redirectUri, $"KeepMeSignedIn={keepMeSignedIn}"));
 
-        return Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
+        return Results.Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
     }
 
     private static string AddQueryString(string url, string queryString) => $"{url}{(url.Contains('?') ? "&" : "?")}{queryString}";
 
 
     [HttpGet("Update")]
-    public async Task<ActionResult> Update(string? redirectUri, string userInfo)
+    public IResult Update(string redirectUri, string? userInfo)
     {
         if (string.IsNullOrEmpty(userInfo))
-            return Redirect(redirectUri);
+            return Results.Redirect(redirectUri);
 
         Response.Cookies.Delete("CloudLogin");
-
-        //Request.Cookies.TryGetValue("LoggedInUser", out string? LoggedInUserValue);
-
-
-        //if (!string.IsNullOrEmpty(LoggedInUserValue))
-        //{
-        //    Console.WriteLine("going in");
-        //    User? user = JsonConvert.DeserializeObject<User>(userInfo);
-
-        //    Response.Cookies.Delete("LoggedInUser");
-
-        //    User? loggedInValue = JsonConvert.DeserializeObject<User>(LoggedInUserValue);
-
-        //    loggedInValue.FirstName = user.FirstName;
-        //    loggedInValue.LastName = user.LastName;
-        //    loggedInValue.DisplayName = user.DisplayName;
-        //    loggedInValue.IsLocked = user.IsLocked;
-        //    loggedInValue.ID = user.ID;
-        //    string loggedIn = JsonConvert.SerializeObject(loggedInValue);
-
-        //    Response.Cookies.Append("LoggedInUser", loggedIn);
-        //}
 
         Response.Cookies.Append("CloudLogin", userInfo);
 
         if (redirectUri == null)
-            return Redirect("/");
+            return Results.Redirect("/");
 
-        return Redirect(redirectUri);
+        return Results.Redirect(redirectUri);
     }
 
     [HttpGet("Logout")]
-    public async Task<ActionResult> Logout(string? redirectUri)
+    public async Task<IResult> Logout(string? redirectUri)
     {
         await HttpContext.SignOutAsync();
 
-
         if (!string.IsNullOrEmpty(redirectUri))
-            return Redirect(redirectUri);
+            return Results.Redirect(redirectUri);
 
-        return Redirect("/");
+        return Results.Redirect("/");
     }
 
 

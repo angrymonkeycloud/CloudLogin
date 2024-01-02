@@ -9,25 +9,13 @@ namespace AngryMonkey.CloudLogin;
 
 public class CloudLoginClient
 {
-
-    public HttpClient? HttpServer { get; set; }
-    public string? LoginUrl { get; set; }
-
-    public CloudLoginClient() { }
-
-    public static CloudLoginClient InitializeForClient(string baseAddress) => new()
-    {
-        LoginUrl = baseAddress,
-        HttpServer = new() { BaseAddress = new(baseAddress) },
-    };
-
-    public static CloudLoginClient InitializeForServer() => new();
+    public required HttpClient HttpServer { get; init; }
+    public string LoginUrl => HttpServer.BaseAddress.AbsoluteUri;
 
     public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }
     public List<ProviderDefinition> Providers { get; set; }
     public bool UsingDatabase { get; set; } = false;
-
 
     private CloudGeographyClient? _cloudGepgraphy;
     public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();
@@ -46,28 +34,19 @@ public class CloudLoginClient
 
         return InputFormat.Other;
     }
-    public bool IsInputValidEmailAddress(string input) => Regex.IsMatch(input, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
+
+    public static bool IsInputValidEmailAddress(string input) => Regex.IsMatch(input, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
     public bool IsInputValidPhoneNumber(string input) => CloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
 
 
     //Configuration
-    public async Task<CloudLoginClient> InitFromServer()
+    public static async Task<CloudLoginClient> Build(string loginServerUrl)
     {
-        CloudLoginClient client = null;
+        HttpClient httpClient = new() {  BaseAddress = new(loginServerUrl) };
 
-        try
-        {
-            HttpResponseMessage response = await HttpServer.GetAsync("CloudLogin/GetClient");
-
-            client = await response.Content.ReadFromJsonAsync<CloudLoginClient>();
-        }
-        catch (Exception e)
-        {
-            throw e;
-        }
-
-        return client;
+        return (await httpClient.GetFromJsonAsync<CloudLoginClient>($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}"))!;
     }
+
 
     //Get user(s) information from db
     public async Task<List<User>?> GetAllUsers()
@@ -272,36 +251,36 @@ public class CloudLoginClient
     public async Task<User?> CurrentUser()
     {
         //if (accessor == null)
-            try
-            {
-                HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
 
-                if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
-                    return null;
-
-                return await message.Content.ReadFromJsonAsync<User>();
-            }
-            catch
-            {
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                 return null;
-            }
+
+            return await message.Content.ReadFromJsonAsync<User>();
+        }
+        catch
+        {
+            return null;
+        }
 
         return null;
     }
     public async Task<bool> IsAuthenticated()
     {
         //if (accessor == null)
-            try
+        try
 
-            {
-                HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/IsAuthenticated");
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/IsAuthenticated");
 
-                if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
-                    return false;
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return false;
 
-                return await message.Content.ReadFromJsonAsync<bool>();
-            }
-            catch { throw; }
+            return await message.Content.ReadFromJsonAsync<bool>();
+        }
+        catch { throw; }
 
         //string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
         //return userCookie != null;

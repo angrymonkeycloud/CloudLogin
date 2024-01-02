@@ -6,7 +6,7 @@ using System.Security.Claims;
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/User")]
 [ApiController]
-public class UserController : BaseController
+public class UserController(CloudLoginConfiguration configuration, CosmosMethods cosmosMethods) : BaseController(configuration, cosmosMethods)
 {
     [HttpPost("SendWhatsAppCode")]
     public async Task<ActionResult> SendWhatsAppCode(string receiver, string code)

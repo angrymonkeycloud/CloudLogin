@@ -248,6 +248,11 @@ public class CloudLoginClient
     {
         await HttpServer.DeleteAsync($"CloudLogin/User/Delete?userId={userId}");
     }
+    public async Task<bool> AutomaticLogin()
+    {
+
+        return false;
+    }
     public async Task<User?> CurrentUser()
     {
         //if (accessor == null)

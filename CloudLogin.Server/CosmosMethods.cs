@@ -1,6 +1,5 @@
 ﻿using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
-using Azure.Core;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Microsoft.Extensions.Options;
@@ -126,7 +125,8 @@ public class CosmosMethods : DataParse
 
         Data.Request selectedRequest = response.Resource;
 
-        if (selectedRequest.UserId == null) return null;
+        if (selectedRequest.UserId == null)
+            return null;
 
         return await GetUserById(selectedRequest.UserId.Value);
     }

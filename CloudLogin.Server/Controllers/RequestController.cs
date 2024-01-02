@@ -11,7 +11,7 @@ public class RequestController(CloudLoginConfiguration configuration, CosmosMeth
     {
         try
         {
-            if (Configuration.Cosmos == null)
+            if (Configuration?.Cosmos == null)
                 return Results.BadRequest();
 
             await CosmosMethods.CreateRequest(userId, requestId);
@@ -29,7 +29,7 @@ public class RequestController(CloudLoginConfiguration configuration, CosmosMeth
     {
         try
         {
-            User User = await CosmosMethods.GetUserByRequestId(requestId);
+            User? User = await CosmosMethods.GetUserByRequestId(requestId);
 
             return Results.Ok(User);
         }

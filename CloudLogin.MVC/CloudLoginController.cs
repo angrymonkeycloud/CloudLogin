@@ -79,11 +79,15 @@ public class CloudLoginController : Controller
 
         AuthenticationProperties properties = new()
         {
-            ExpiresUtc = KeepMeSignedIn ? DateTimeOffset.UtcNow.Add(new(360,0,0,0,0)) : null,
-            IsPersistent = KeepMeSignedIn
+            ExpiresUtc = null,
+            IsPersistent = false
         };
 
+        await CloudLogin.AutomaticLogin();
+
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, properties);
+        Response.Cookies.Append("AutomaticSignIn", "True", new() { Expires = DateTime.MaxValue });
+
         return Redirect(ReturnUrl);
     }
 

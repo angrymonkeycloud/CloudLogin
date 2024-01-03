@@ -26,7 +26,7 @@ public class DataParse
     public List<Data.User>? Parse(List<User> Users)
     {
         if (Users == null)
-            return null;
+            return [];
 
         return Users.Select(Parse).ToList();
     }
@@ -50,11 +50,12 @@ public class DataParse
         };
         return userInformation;
     }
-    public List<User>? Parse(List<Data.User> Users)
+
+    public List<User> Parse(List<Data.User> Users)
     {
         if (Users == null)
-            return null;
+            return [];
 
-        return Users.Select(Parse).ToList();
+        return Users.Select(Parse).Where(key => key != null).ToList();
     }
 }

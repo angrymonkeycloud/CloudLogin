@@ -1,10 +1,7 @@
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using AngryMonkey.CloudLogin.Services;
-using Azure.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Net;
-using System.Net.Mail;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);

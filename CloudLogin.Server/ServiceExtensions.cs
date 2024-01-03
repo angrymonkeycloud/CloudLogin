@@ -20,10 +20,13 @@ public static class MvcServiceCollectionExtensions
             Title = "Info"
         });
 
+        CloudGeographyClient cloudGeography = new();
+
         services.AddSingleton(configuration);
+        services.AddSingleton(cloudGeography);
 
         if (configuration.Cosmos != null)
-            services.AddScoped(sp => new CosmosMethods(configuration.Cosmos));
+            services.AddScoped(sp => new CosmosMethods(configuration.Cosmos, cloudGeography));
 
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
@@ -37,7 +40,7 @@ public static class MvcServiceCollectionExtensions
                 OnSignedIn = async context =>
                 {
                     HttpRequest? request = context.Request;
-                    ClaimsPrincipal? principal = context.Principal!;
+                    ClaimsPrincipal principal = context.Principal!;
 
                     // Do not continue on second sign in, in the future we should implemented in another way.
                     if (principal.FindFirst(ClaimTypes.Hash)?.Value?.Equals("CloudLogin") ?? false)
@@ -94,7 +97,7 @@ public static class MvcServiceCollectionExtensions
 
                         if (formatValue == InputFormat.PhoneNumber)
                         {
-                            CloudGeographyClient cloudGeography = new();
+                            CloudGeographyClient cloudGeography = context.HttpContext.RequestServices.GetService<CloudGeographyClient>()!;
                             PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(input);
 
                             input = phoneNumber.Number;
@@ -129,19 +132,6 @@ public static class MvcServiceCollectionExtensions
 
                         await cosmosMethods.Create(user);
                     }
-
-                    //if (string.IsNullOrEmpty(context.HttpContext.Request.Cookies["User"]))
-                    //    context.HttpContext.Response.Cookies.Append("User",
-                    //       JsonConvert.SerializeObject(user), new CookieOptions()
-                    //       {
-                    //           HttpOnly = true,
-                    //           Secure = true,
-                    //           Expires = DateTimeOffset.UtcNow.Add(configuration.LoginDuration)//CHANGE
-                    //       });
-
-                    // ----------------------------------------
-                    // END ON Sign In
-                    // -----------------------------------------
                 }
             };
         });

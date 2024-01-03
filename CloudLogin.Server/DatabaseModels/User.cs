@@ -6,8 +6,8 @@ public record User : BaseRecord
 {
     public User() : base("User", "User") { }
 
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
     public string? DisplayName { get; set; }
     public bool IsLocked { get; set; } = false;
     public string? Username { get; set; }

@@ -56,7 +56,7 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
         user.LastName = lastName;
         user.DisplayName = displayName;
 
-        await CosmosMethods.Container.UpsertItemAsync(user);
+        await CosmosMethods.Update(user);
 
         string userSerialized = JsonConvert.SerializeObject(user);
 
@@ -76,7 +76,7 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
         user.Inputs.First(i => i.IsPrimary).IsPrimary = false;
         user.Inputs.First(i => i.Input == input).IsPrimary = true;
 
-        await CosmosMethods.Container.UpsertItemAsync(user);
+        await CosmosMethods.Update(user);
 
         string userSerialized = JsonConvert.SerializeObject(user);
 

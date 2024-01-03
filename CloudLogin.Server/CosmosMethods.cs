@@ -9,6 +9,18 @@ using static System.Formats.Asn1.AsnWriter;
 namespace AngryMonkey.CloudLogin;
 public class CosmosMethods : DataParse
 {
+    private readonly Container Container;
+    private readonly CloudGeographyClient CloudGeography;
+
+    public CosmosMethods(CosmosConfiguration cosmosConfiguration, CloudGeographyClient cloudGeography)
+    {
+        CloudGeography = cloudGeography;
+
+        CosmosClient client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
+
+        Container = client.GetContainer(cosmosConfiguration.DatabaseId, cosmosConfiguration.ContainerId);
+    }
+
     #region Internal
 
     internal IQueryable<T> Queryable<T>(string partitionKey, Container selectedContainer) where T : BaseRecord
@@ -42,7 +54,7 @@ public class CosmosMethods : DataParse
     {
         try
         {
-            List<T> list = new();
+            List<T> list = [];
 
             using FeedIterator<T> setIterator = query.ToFeedIterator();
 
@@ -51,7 +63,7 @@ public class CosmosMethods : DataParse
                     list.Add(item);
             return list;
         }
-        catch (Exception e)
+        catch
         {
             throw;
         }
@@ -62,15 +74,6 @@ public class CosmosMethods : DataParse
     internal static string GetCosmosId<T>(T record) where T : BaseRecord => $"{record.Discriminator}|{record.ID}";
 
     #endregion
-
-    public CosmosMethods(CosmosConfiguration cosmosConfiguration)
-    {
-        CosmosClient client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
-
-        Container = client.GetContainer(cosmosConfiguration.DatabaseId, cosmosConfiguration.ContainerId);
-    }
-
-    public Container Container { get; set; }
 
     public async Task<User?> GetUserByEmailAddress(string emailAddress)
     {
@@ -84,26 +87,20 @@ public class CosmosMethods : DataParse
     public async Task<User?> GetUserByInput(string input)
     {
         User? user = await GetUserByEmailAddress(input);
-        if (user == null)
-        {
-            CloudGeographyClient geographyClient = new();
 
-            return await GetUserByPhoneNumber(geographyClient.PhoneNumbers.Get(input));
-        }
+        if (user == null)
+            return await GetUserByPhoneNumber(CloudGeography.PhoneNumbers.Get(input));
+
         return user;
     }
 
     public async Task<User?> GetUserByPhoneNumber(string number)
     {
-        CloudGeographyClient geographyClient = new();
-
-        return await GetUserByPhoneNumber(geographyClient.PhoneNumbers.Get(number));
+        return await GetUserByPhoneNumber(CloudGeography.PhoneNumbers.Get(number));
     }
 
     public async Task<User?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
     {
-        CloudGeographyClient cloudGeography = new();
-
         IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container, user
             => user.Inputs.Any(key => key.Format == InputFormat.PhoneNumber &&
             key.Input.Equals(phoneNumber.Number)
@@ -131,7 +128,7 @@ public class CosmosMethods : DataParse
         return await GetUserById(selectedRequest.UserId.Value);
     }
 
-    public async Task<User> GetUserByDisplayName(string displayName)
+    public async Task<User?> GetUserByDisplayName(string displayName)
     {
         IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
 
@@ -147,7 +144,7 @@ public class CosmosMethods : DataParse
 
         return Parse(users);
     }
-    public async Task<User> GetUserById(Guid id)
+    public async Task<User?> GetUserById(Guid id)
     {
         Data.User user = new() { ID = id };
         ItemResponse<Data.User> response = await Container.ReadItemAsync<Data.User>(GetCosmosId(user), GetPartitionKey(user));
@@ -175,17 +172,19 @@ public class CosmosMethods : DataParse
     }
     public async Task Update(User user)
     {
-        Data.User dbUser = Parse(user);
+        Data.User dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
+
         await Container.UpsertItemAsync(dbUser);
     }
     public async Task Create(User user)
     {
-        Data.User dbUser = Parse(user);
+        Data.User dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
+
         await Container.CreateItemAsync(dbUser);
     }
     public async Task AddInput(Guid userId, LoginInput Input)
     {
-        User user = await GetUserById(userId);
+        User user = await GetUserById(userId) ?? throw new Exception("User not found.");
 
         user.Inputs.Add(Input);
 

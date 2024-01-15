@@ -10,25 +10,19 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 namespace AngryMonkey.CloudLogin;
 
 [Route("Account")]
-public class CloudLoginController : Controller
+public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
 {
-    CloudLoginClient CloudLogin { get; set; }
-
-    public CloudLoginController(CloudLoginClient cloudLogin) => CloudLogin = cloudLogin;
+    CloudLoginClient CloudLogin { get; set; } = cloudLogin;
 
     [Route("Login")]
     public async Task<IActionResult> Login(string? ReturnUrl)
     {
+        Response.Cookies.Append("LoggingIn", "True", new() { Expires = DateTime.MaxValue });
         string baseUrl = $"{Request.Scheme}://{Request.Host}";
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
         if (string.IsNullOrEmpty(ReturnUrl))
-        {
-            ReturnUrl = Request.Headers.Referer;
-
-            if (string.IsNullOrEmpty(ReturnUrl))
-                ReturnUrl = baseUrl;
-        }
+            ReturnUrl = baseUrl;
 
         string redirectUri = $"{baseUrl}/Account/LoginResult?ReturnUrl={HttpUtility.UrlEncode(ReturnUrl)}";
 
@@ -57,7 +51,7 @@ public class CloudLoginController : Controller
             cloudUser = await CloudLogin.GetUserByRequestId(requestId);
 
         if (cloudUser == null)
-        return await Login(ReturnUrl);
+            return await Login(ReturnUrl);
 
 
         //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
@@ -83,10 +77,12 @@ public class CloudLoginController : Controller
             IsPersistent = false
         };
 
-        await CloudLogin.AutomaticLogin();
-
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, properties);
-        Response.Cookies.Append("AutomaticSignIn", "True", new() { Expires = DateTime.MaxValue });
+
+        Response.Cookies.Delete("LoggingIn");
+
+        if (KeepMeSignedIn)
+            Response.Cookies.Append("AutomaticSignIn", "True", new() { Expires = DateTime.MaxValue });
 
         return Redirect(ReturnUrl);
     }
@@ -98,7 +94,7 @@ public class CloudLoginController : Controller
 
         //Response.Cookies.Delete("User");
         //Response.Cookies.Delete("LoggedInUser");
-        //Response.Cookies.Delete("CloudLogin");
+        Response.Cookies.Delete("AutomaticSignIn");
         var baseUri = $"{Request.Scheme}://{Request.Host}";
 
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
@@ -131,5 +127,70 @@ public class CloudLoginController : Controller
 
         return Redirect($"{CloudLogin.LoginUrl}{HttpUtility.UrlEncode(baseUri)}/UpdateInput");
 
+    }
+
+    [HttpGet("CurrentUser")]
+    public ActionResult<User?> CurrentUser()
+    {
+        try
+        {
+            string? userCookie = Request.Cookies["CloudLogin"];
+
+            if (userCookie == null)
+                return Ok(null);
+
+            ClaimsIdentity userIdentity = Request.HttpContext.User.Identities.First();
+
+            string? loginIdentity = userIdentity.FindFirst(ClaimTypes.UserData)?.Value;
+
+            if (string.IsNullOrEmpty(loginIdentity))
+                return Ok(null);
+
+            User? user = JsonConvert.DeserializeObject<User?>(loginIdentity);
+
+            if (user == null)
+                return Ok(null);
+
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+
+    [HttpGet("IsAuthenticated")]
+    public ActionResult<bool> IsAuthenticated()
+    {
+        try
+        {
+            string? userCookie = Request.Cookies["CloudLogin"];
+            return Ok(userCookie != null);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+
+    [HttpGet("AutomaticLogin")]
+    public ActionResult<bool> AutomaticLogin()
+    {
+        try
+        {
+            string baseUrl = $"{Request.Scheme}://{Request.Host}";
+            string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
+
+            string? userCookie = Request.Cookies["AutomaticSignIn"];
+
+            if (userCookie == null)
+                return false;
+            else
+                return Redirect($"{CloudLogin.LoginUrl}{seperator}Account/Login");
+        }
+        catch
+        {
+            return Problem();
+        }
     }
 }

@@ -1,31 +1,32 @@
 ﻿using AngryMonkey.CloudLogin;
 using Microsoft.AspNetCore.Components;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.AspNetCore.Builder
 {
     public static class MvcBuilderExtensions
     {
-		public static IApplicationBuilder UseCloudLoginHandler(this IApplicationBuilder app)
-		{
-			if (app == null)
-				throw new ArgumentNullException(nameof(app));
+        public static IApplicationBuilder UseCloudLoginHandler(this IApplicationBuilder app)
+        {
+            ArgumentNullException.ThrowIfNull(nameof(app));
 
-			app.Use(async (context, next) =>
-			{
-				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient)
-				{
-					string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
+            app.Use(async (context, next) =>
+            {
+                string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
-                    if (app.ApplicationServices.GetService(typeof(NavigationManager)) is NavigationManager nav)
-                        if (await cloudLoginClient.AutomaticLogin())
-                            nav.NavigateTo($"{baseUrl}Account/login");
-                }
+                string? isLoggedIn = context.Request.Cookies["AutomaticSignIn"];
+                string? hasData = context.Request.Cookies["CloudLogin"];
+                string? isLogginIn = context.Request.Cookies["LoggingIn"];
 
+                if (isLogginIn == null && hasData == null && (isLoggedIn != null || hasData != null))
+                    context.Response.Redirect($"{baseUrl}/Account/Login");
 
-				await next.Invoke();
-			});
+                context.Response.Cookies.Delete("LoggingIn");
 
-			return app;
-		}
-	}
+                await next.Invoke();
+            });
+
+            return app;
+        }
+    }
 }

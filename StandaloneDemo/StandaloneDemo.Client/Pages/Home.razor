@@ -1,0 +1,46 @@
+﻿@page "/"
+@using AngryMonkey.CloudLogin
+@inject CloudLoginStandaloneClient cloudLogin
+@inject NavigationManager nav
+
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+@if (IsAuthorized && CurrentUser != null)
+{
+    <div>
+        <h1>Login successful</h1>
+        <div>Login successful @CurrentUser.DisplayName.</div>
+        <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
+        <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
+        <a href="./cloudlogin/logout">Logout</a>
+    </div>
+}
+else
+{
+    <a href="Account/Login">Login</a>
+}
+
+@code {
+    public User? CurrentUser { get; set; } = new();
+    public bool IsAuthorized { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // if (await cloudLogin.IsAutomaticLogin())
+        // {
+        //     nav.NavigateTo("Account/Login");
+        // }
+
+        IsAuthorized = await cloudLogin.IsAuthenticated();
+
+        if (IsAuthorized)
+            CurrentUser = await cloudLogin.CurrentUser();
+
+        StateHasChanged();
+    }
+}

@@ -3,7 +3,7 @@
 namespace AngryMonkey.CloudLogin;
 [Route("Request/{key}")]
 [ApiController]
-public class AppController(CloudLoginConfiguration configuration, CosmosMethods cosmosMethods) : BaseController(configuration, cosmosMethods)
+public class AppController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
 {
     [HttpGet]
     public IActionResult Get(string key)

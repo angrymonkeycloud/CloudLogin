@@ -2,16 +2,18 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/User")]
 [ApiController]
-public class UserController(CloudLoginConfiguration configuration, CosmosMethods cosmosMethods) : BaseController(configuration, cosmosMethods)
+public class UserController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
 {
     [HttpPost("SendWhatsAppCode")]
     public async Task<ActionResult> SendWhatsAppCode(string receiver, string code)
     {
-        WhatsAppProviderConfiguration whatsAppProvider = Configuration.Providers.First(key => key is WhatsAppProviderConfiguration) as WhatsAppProviderConfiguration;
+        if (Configuration.Providers.First(key => key is WhatsAppProviderConfiguration) is not WhatsAppProviderConfiguration whatsAppProvider)
+            throw new ArgumentNullException(nameof(whatsAppProvider));
 
         string serialize = "{\"messaging_product\": \"whatsapp\",\"recipient_type\": \"individual\",\"to\": \"" + receiver.Replace("+", "") + "\",\"type\": \"template\",\"template\": {\"name\": \"" + whatsAppProvider.Template + "\",\"language\": {\"code\": \"" + whatsAppProvider.Language + "\"},\"components\": [{\"type\": \"body\",\"parameters\": [{\"type\": \"text\",\"text\": \"" + code + "\"}]}]}}";
 
@@ -38,30 +40,43 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
         }
         catch (Exception e)
         {
-            return Problem();
+            return Problem(e.ToString());
         }
     }
 
     [HttpPost("SendEmailCode")]
-    public async Task<ActionResult> SendEmailCode(string receiver, string code)
+    public async Task<IResult> SendEmailCode(string receiver, string code)
     {
-        if (Configuration.EmailSendCodeRequest == null)
-            return Problem("Email Code is not configured.");
+        if (Configuration.EmailSendCodeRequest == null && Configuration.EmailConfiguration == null)
+            return Results.Problem("Email is not configured.");
 
         try
         {
-            await Configuration.EmailSendCodeRequest.Invoke(new SendCodeValue(code, receiver));
-            return Ok();
+            if (Configuration.EmailSendCodeRequest != null)
+                await Configuration.EmailSendCodeRequest.Invoke(new SendCodeValue(code, receiver));
+
+            if (Configuration.EmailConfiguration != null)
+            {
+                string subject = Configuration.EmailConfiguration.DefaultSubject;
+                string body = Configuration.EmailConfiguration.DefaultBody.Replace(CloudLoginEmailConfiguration.VerificationCodePlaceHolder, code);
+
+                await Configuration.EmailConfiguration.EmailService.SendEmail(subject, body, [receiver]);
+            }
+
+            return Results.Ok();
         }
         catch (Exception e)
         {
-            return Problem(e.Message);
+            return Results.Problem(e.Message);
         }
     }
 
     [HttpPost("Update")]
     public async Task<ActionResult> Update([FromBody] User user)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             await CosmosMethods.Update(user);
@@ -77,6 +92,9 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpPost("Create")]
     public async Task<ActionResult> Create([FromBody] User user)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             await CosmosMethods.Create(user);
@@ -92,6 +110,9 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpPost("AddUserInput")]
     public async Task<ActionResult> AddInput(Guid userId, [FromBody] LoginInput Input)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             await CosmosMethods.AddInput(userId, Input);
@@ -106,6 +127,9 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpDelete("Delete")]
     public async Task<ActionResult> Delete(Guid userId)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             await CosmosMethods.DeleteUser(userId);
@@ -120,6 +144,9 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpGet("All")]
     public async Task<ActionResult<List<User>>> All()
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             List<User> users = await CosmosMethods.GetUsers();
@@ -136,9 +163,13 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpGet("GetAllUsers")]
     public async Task<ActionResult<List<User>>> GetAllUsers()
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             List<User> user = await CosmosMethods.GetUsers();
+
             return Ok(user);
         }
         catch
@@ -147,11 +178,15 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
         }
     }
     [HttpGet("GetUserById")]
-    public async Task<ActionResult<User>> GetUserById(Guid id)
+    public async Task<ActionResult<User?>> GetUserById(Guid id)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
-            User user = await CosmosMethods.GetUserById(id);
+            User? user = await CosmosMethods.GetUserById(id);
+
             return Ok(user);
         }
         catch
@@ -162,6 +197,9 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpGet("GetUsersByDisplayName")]
     public async Task<ActionResult<List<User>>> GetUsersByDisplayName(string displayname)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             List<User> user = await CosmosMethods.GetUsersByDisplayName(displayname);
@@ -173,11 +211,14 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
         }
     }
     [HttpGet("GetUserByDisplayName")]
-    public async Task<ActionResult<User>> GetUserByDisplayName(string displayname)
+    public async Task<ActionResult<User?>> GetUserByDisplayName(string displayname)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
-            User user = await CosmosMethods.GetUserByDisplayName(displayname);
+            User? user = await CosmosMethods.GetUserByDisplayName(displayname);
             return Ok(user);
         }
         catch
@@ -188,9 +229,13 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpGet("GetUserByInput")]
     public async Task<ActionResult<User>> GetUserByInput(string input)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             User? user = await CosmosMethods.GetUserByInput(input);
+
             return Ok(user);
         }
         catch
@@ -201,6 +246,9 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpGet("GetUserByEmailAdress")]
     public async Task<ActionResult<User>> GetUserByEmailAdress(string email)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             User? user = await CosmosMethods.GetUserByEmailAddress(email);
@@ -214,6 +262,9 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     [HttpGet("GetUserByPhoneNumber")]
     public async Task<ActionResult<User>> GetUsersByPhoneNumber(string number)
     {
+        if (CosmosMethods == null)
+            throw new NullReferenceException(nameof(CosmosMethods));
+
         try
         {
             User? user = await CosmosMethods.GetUserByPhoneNumber(number);
@@ -225,7 +276,7 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
         }
     }
     [HttpGet("CurrentUser")]
-    public async Task<ActionResult<User?>> CurrentUser()
+    public ActionResult<User?> CurrentUser()
     {
         try
         {
@@ -253,12 +304,14 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
             return Problem();
         }
     }
+
     [HttpGet("IsAuthenticated")]
-    public async Task<ActionResult<bool>> IsAuthenticated()
+    public ActionResult<bool> IsAuthenticated()
     {
         try
         {
             string? userCookie = Request.Cookies["CloudLogin"];
+
             return Ok(userCookie != null);
         }
         catch

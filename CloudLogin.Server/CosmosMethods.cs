@@ -7,25 +7,29 @@ using System.Linq.Expressions;
 using static System.Formats.Asn1.AsnWriter;
 
 namespace AngryMonkey.CloudLogin;
-public class CosmosMethods : DataParse
+
+public class CosmosMethods : DataParse, IDisposable
 {
-    private readonly Container Container;
     private readonly CloudGeographyClient CloudGeography;
+
+    private readonly CosmosClient _client;
+    private readonly Container _container;
 
     public CosmosMethods(CosmosConfiguration cosmosConfiguration, CloudGeographyClient cloudGeography)
     {
         CloudGeography = cloudGeography;
 
-        CosmosClient client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
-
-        Container = client.GetContainer(cosmosConfiguration.DatabaseId, cosmosConfiguration.ContainerId);
+        _client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
+        _container = _client.GetContainer(cosmosConfiguration.DatabaseId, cosmosConfiguration.ContainerId);
     }
+
+    public void Dispose() => _client.Dispose();
 
     #region Internal
 
-    internal IQueryable<T> Queryable<T>(string partitionKey, Container selectedContainer) where T : BaseRecord
+    internal IQueryable<T> Queryable<T>(string partitionKey) where T : BaseRecord
     {
-        return Queryable<T>(partitionKey, selectedContainer, null);
+        return Queryable<T>(partitionKey, null);
     }
 
     internal static PartitionKey GetPartitionKey<T>(string partitionKey)
@@ -36,9 +40,9 @@ public class CosmosMethods : DataParse
         return new PartitionKey(typeof(T).Name);
     }
 
-    internal IQueryable<T> Queryable<T>(string partitionKey, Container selectedContainer, Expression<Func<T, bool>>? predicate) where T : BaseRecord
+    internal IQueryable<T> Queryable<T>(string partitionKey, Expression<Func<T, bool>>? predicate) where T : BaseRecord
     {
-        var container = selectedContainer.GetItemLinqQueryable<T>(requestOptions: new QueryRequestOptions())
+        var container = _container.GetItemLinqQueryable<T>(requestOptions: new QueryRequestOptions())
                                  .Where(key => key.Discriminator == typeof(T).Name);
 
         if (!string.IsNullOrEmpty(partitionKey))
@@ -61,6 +65,7 @@ public class CosmosMethods : DataParse
             while (setIterator.HasMoreResults)
                 foreach (var item in await setIterator.ReadNextAsync())
                     list.Add(item);
+
             return list;
         }
         catch
@@ -69,7 +74,7 @@ public class CosmosMethods : DataParse
         }
     }
 
-    internal static PartitionKey GetPartitionKey<T>(T record) where T : BaseRecord => new PartitionKey(record.PartitionKey);
+    internal static PartitionKey GetPartitionKey<T>(T record) where T : BaseRecord => new(record.PartitionKey);
 
     internal static string GetCosmosId<T>(T record) where T : BaseRecord => $"{record.Discriminator}|{record.ID}";
 
@@ -77,7 +82,7 @@ public class CosmosMethods : DataParse
 
     public async Task<User?> GetUserByEmailAddress(string emailAddress)
     {
-        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container, user => user.Inputs.Any(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)));
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", user => user.Inputs.Any(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)));
 
         List<Data.User> users = await ToListAsync(usersQueryable);
 
@@ -101,7 +106,7 @@ public class CosmosMethods : DataParse
 
     public async Task<User?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
     {
-        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container, user
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", user
             => user.Inputs.Any(key => key.Format == InputFormat.PhoneNumber &&
             key.Input.Equals(phoneNumber.Number)
                 && (string.IsNullOrEmpty(phoneNumber.CountryCode)
@@ -116,9 +121,9 @@ public class CosmosMethods : DataParse
     {
         Data.Request request = new() { ID = requestId };
 
-        ItemResponse<Data.Request> response = await Container.ReadItemAsync<Data.Request>(GetCosmosId(request), GetPartitionKey(request));
+        ItemResponse<Data.Request> response = await _container.ReadItemAsync<Data.Request>(GetCosmosId(request), GetPartitionKey(request));
 
-        await Container.DeleteItemAsync<Request>(GetCosmosId(request), GetPartitionKey(request));
+        await _container.DeleteItemAsync<Request>(GetCosmosId(request), GetPartitionKey(request));
 
         Data.Request selectedRequest = response.Resource;
 
@@ -130,31 +135,33 @@ public class CosmosMethods : DataParse
 
     public async Task<User?> GetUserByDisplayName(string displayName)
     {
-        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User").Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
 
         List<Data.User> users = await ToListAsync(usersQueryable);
 
         return Parse(users.FirstOrDefault());
     }
+
     public async Task<List<User>> GetUsersByDisplayName(string displayName)
     {
-        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container).Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User").Where(key => key.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
 
         List<Data.User> users = await ToListAsync(usersQueryable);
 
         return Parse(users);
     }
+
     public async Task<User?> GetUserById(Guid id)
     {
         Data.User user = new() { ID = id };
-        ItemResponse<Data.User> response = await Container.ReadItemAsync<Data.User>(GetCosmosId(user), GetPartitionKey(user));
+        ItemResponse<Data.User> response = await _container.ReadItemAsync<Data.User>(GetCosmosId(user), GetPartitionKey(user));
 
         return Parse(response.Resource);
     }
 
     public async Task<List<User>> GetUsers()
     {
-        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User", Container);
+        IQueryable<Data.User> usersQueryable = Queryable<Data.User>("User");
 
         return Parse(await ToListAsync(usersQueryable));
     }
@@ -167,32 +174,36 @@ public class CosmosMethods : DataParse
             UserId = userId
         };
 
-        await Container.CreateItemAsync(request);
+        await _container.CreateItemAsync(request);
 
     }
+
     public async Task Update(User user)
     {
         Data.User dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
 
-        await Container.UpsertItemAsync(dbUser);
+        await _container.UpsertItemAsync(dbUser);
     }
+
     public async Task Create(User user)
     {
         Data.User dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
 
-        await Container.CreateItemAsync(dbUser);
+        await _container.CreateItemAsync(dbUser);
     }
+
     public async Task AddInput(Guid userId, LoginInput Input)
     {
         User user = await GetUserById(userId) ?? throw new Exception("User not found.");
 
         user.Inputs.Add(Input);
 
-        await Container.UpsertItemAsync(user);
+        await _container.UpsertItemAsync(user);
     }
+
     public async Task DeleteUser(Guid userId)
     {
         Data.User user = new() { ID = userId };
-        await Container.DeleteItemStreamAsync(GetCosmosId(user), GetPartitionKey(user));
+        await _container.DeleteItemStreamAsync(GetCosmosId(user), GetPartitionKey(user));
     }
 }

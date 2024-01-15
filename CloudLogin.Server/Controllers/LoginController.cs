@@ -8,12 +8,13 @@ using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
 using Microsoft.AspNetCore.Http;
+using AngryMonkey.CloudLogin.Services;
 
 namespace AngryMonkey.CloudLogin;
 
 [Route("CloudLogin")]
 [ApiController]
-public class LoginController(CloudLoginConfiguration configuration, CosmosMethods cosmosMethods) : BaseController(configuration, cosmosMethods)
+public class LoginController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
 {
     [HttpGet("GetClient")]
     public ActionResult<CloudLoginClient> GetClient(string serverLoginUrl) => new CloudLoginClient()
@@ -112,6 +113,11 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
     [HttpGet("Result")]
     public async Task<IResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
     {
+        if (CosmosMethods == null)
+            throw new ArgumentNullException(nameof(CosmosMethods));
+
+        //try
+        //{
         ClaimsIdentity userIdentity = Request.HttpContext.User.Identities.First();
 
         string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;
@@ -177,6 +183,13 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
             return Results.Redirect(AddQueryString(redirectUri, $"KeepMeSignedIn={keepMeSignedIn}"));
 
         return Results.Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
+        //}
+        //catch (Exception ex)
+        //{
+        //    await EmailService.SendEmail("Exception from Result (LoginController)", ex.ToString(), ["elietebchrani@live.com"]);
+
+        //    return Results.Problem(ex.ToString());
+        //}
     }
 
     private static string AddQueryString(string url, string queryString) => $"{url}{(url.Contains('?') ? "&" : "?")}{queryString}";

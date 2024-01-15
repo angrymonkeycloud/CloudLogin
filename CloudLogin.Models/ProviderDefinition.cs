@@ -21,10 +21,10 @@ public class ProviderDefinition
     {
         get
         {
-            List<string> classes = new()
-            {
+            List<string> classes =
+            [
                 $"_{Code.ToLower()}"
-            };
+            ];
 
             return string.Join(" ", classes);
         }

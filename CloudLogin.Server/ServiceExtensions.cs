@@ -3,8 +3,10 @@ using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
+using AngryMonkey.CloudLogin.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using System.Security.Claims;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -12,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class MvcServiceCollectionExtensions
 {
-    public static void AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configuration)
+    public static void AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configuration, IConfiguration builderConfiguration)
     {
         configuration.FooterLinks.Add(new()
         {
@@ -26,7 +28,7 @@ public static class MvcServiceCollectionExtensions
         services.AddSingleton(cloudGeography);
 
         if (configuration.Cosmos != null)
-            services.AddScoped(sp => new CosmosMethods(configuration.Cosmos, cloudGeography));
+            services.AddSingleton(sp => new CosmosMethods(configuration.Cosmos, cloudGeography));
 
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
@@ -39,6 +41,8 @@ public static class MvcServiceCollectionExtensions
             {
                 OnSignedIn = async context =>
                 {
+                    //try
+                    //{
                     HttpRequest? request = context.Request;
                     ClaimsPrincipal principal = context.Principal!;
 
@@ -46,7 +50,10 @@ public static class MvcServiceCollectionExtensions
                     if (principal.FindFirst(ClaimTypes.Hash)?.Value?.Equals("CloudLogin") ?? false)
                         return;
 
-                    CosmosMethods cosmosMethods = context.HttpContext.RequestServices.GetService<CosmosMethods>()!;
+                    CosmosMethods? cosmosMethods = context.HttpContext.RequestServices.GetService<CosmosMethods>();
+
+                    if (cosmosMethods == null)
+                        return;
 
                     DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
 
@@ -132,6 +139,13 @@ public static class MvcServiceCollectionExtensions
 
                         await cosmosMethods.Create(user);
                     }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    EmailService emailService = context.HttpContext.RequestServices.GetService<EmailService>()!;
+
+                    //    await emailService.SendEmail("Exception from OnSignedIn (Builder)", ex.ToString(), ["elietebchrani@live.com"]);
+                    //}
                 }
             };
         });

@@ -26,6 +26,10 @@ CloudLoginConfiguration cloudLoginConfig = new()
 {
     Cosmos = new CosmosConfiguration(builder.Configuration.GetSection("Cosmos")),
     LoginDuration = new TimeSpan(30, 0, 0, 0),
+    EmailConfiguration = new()
+    {
+        EmailService = builder.Services.BuildServiceProvider().GetRequiredService<EmailService>()
+    },
     FooterLinks =
     [
         new Link()
@@ -39,31 +43,23 @@ CloudLoginConfiguration cloudLoginConfig = new()
             Url = "#"
         }
     ],
-    EmailSendCodeRequest = async (sendCode) =>
-    {
-        //SmtpClient smtpClient = new(builder.Configuration["SMTP:Host"], int.Parse(builder.Configuration["SMTP:Port"]!))
-        //{
-        //    EnableSsl = true,
-        //    DeliveryMethod = SmtpDeliveryMethod.Network,
-        //    UseDefaultCredentials = false,
-        //    Credentials = new NetworkCredential(builder.Configuration["SMTP:Email"], builder.Configuration["SMTP:Password"])
-        //};
-
-        StringBuilder mailBody = new();
-        mailBody.AppendLine("<div style=\"width:300px;margin:20px auto;padding: 15px;border:1px dashed  #4569D4;text-align:center\">");
-        mailBody.AppendLine("<h3>Hello,</h3>");
-        mailBody.AppendLine("<p>We recevied a request to login page.</p>");
-        mailBody.AppendLine("<p style=\"margin-top: 0;\">Enter the following password login code:</p>");
-        mailBody.AppendLine("<div style=\"width:150px;border:1px solid #4569D4;margin: 0 auto;padding: 10px;text-align:center;\">");
-        mailBody.AppendLine($"<b style=\"color:#202124;text-decoration:none\">{sendCode.Code}</b> <br />");
-        mailBody.AppendLine("</div></div>");
+    //EmailSendCodeRequest = async (sendCode) =>
+    //{
+    //    StringBuilder mailBody = new();
+    //    mailBody.AppendLine("");
+    //    mailBody.AppendLine("");
+    //    mailBody.AppendLine("");
+    //    mailBody.AppendLine("");
+    //    mailBody.AppendLine("");
+    //    mailBody.AppendLine($"");
+    //    mailBody.AppendLine("");
 
 
-        ServiceProvider serviceProvider = builder.Services.BuildServiceProvider();
-        EmailService emailService = serviceProvider.GetService<EmailService>();
+    //    ServiceProvider serviceProvider = builder.Services.BuildServiceProvider();
+    //    EmailService? emailService = serviceProvider.GetService<EmailService>();
 
-        await emailService.SendEmail("Login Code", mailBody.ToString(), [sendCode.Address]);
-    },
+    //    await emailService.SendEmail("Login Code", mailBody.ToString(), [sendCode.Address]);
+    //},
     Providers =
     [
         new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
@@ -73,7 +69,7 @@ CloudLoginConfiguration cloudLoginConfig = new()
     ]
 };
 
-builder.Services.AddCloudLoginServer(cloudLoginConfig);
+builder.Services.AddCloudLoginServer(cloudLoginConfig, builder.Configuration);
 
 builder.Services.AddAuthentication(opt =>
 {

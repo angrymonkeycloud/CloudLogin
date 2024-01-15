@@ -5,19 +5,22 @@ using System.Web;
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/Actions")]
 [ApiController]
-public class ActionsController(CloudLoginConfiguration configuration, CosmosMethods cosmosMethods) : BaseController(configuration, cosmosMethods)
+public class ActionsController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
 {
     [HttpGet("AddInput")]
     public async Task<ActionResult> AddInput(string redirectUrl, string userInfo, string primaryEmail)
     {
+        if (CosmosMethods == null)
+            throw new ArgumentNullException(nameof(CosmosMethods));
+
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        LoginInput input = JsonConvert.DeserializeObject<LoginInput>(userInfo);
+        LoginInput? input = JsonConvert.DeserializeObject<LoginInput>(userInfo);
 
         input.IsPrimary = false;
 
-        User user = await CosmosMethods.GetUserByEmailAddress(primaryEmail);
-        User oldUser = await CosmosMethods.GetUserByEmailAddress(input.Input);
+        User? user = await CosmosMethods.GetUserByEmailAddress(primaryEmail);
+        User? oldUser = await CosmosMethods.GetUserByEmailAddress(input.Input);
 
         if (oldUser != null)
             return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={redirectUrl}");
@@ -41,16 +44,19 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
     [HttpGet("Update")]
     public async Task<ActionResult> Update(string userInfo, string domainName)
     {
+        if (CosmosMethods == null)
+            throw new ArgumentNullException(nameof(CosmosMethods));
+
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
+        Dictionary<string, string>? userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
 
-        string firstName = userDictionary["FirstName"];
-        string lastName = userDictionary["LastName"];
-        string displayName = userDictionary["DisplayName"];
-        string userID = userDictionary["UserId"];
+        string? firstName = userDictionary?["FirstName"];
+        string? lastName = userDictionary?["LastName"];
+        string? displayName = userDictionary?["DisplayName"];
+        string? userID = userDictionary?["UserId"];
 
-        User user = await CosmosMethods.GetUserById(new Guid(userID));
+        User? user = await CosmosMethods.GetUserById(new Guid(userID));
 
         user.FirstName = firstName;
         user.LastName = lastName;
@@ -66,6 +72,9 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
     [HttpGet("SetPrimary")]
     public async Task<ActionResult> SetPrimary(string input, string domainName)
     {
+        if (CosmosMethods == null)
+            throw new ArgumentNullException(nameof(CosmosMethods));
+
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
         User? user = await CosmosMethods.GetUserByEmailAddress(input);

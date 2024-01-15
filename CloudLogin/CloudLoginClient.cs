@@ -15,7 +15,7 @@ public class CloudLoginClient
     public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }
     public List<ProviderDefinition> Providers { get; set; }
-    public bool UsingDatabase { get; set; } = false;
+    public bool UsingDatabase { get; set; } = true;
 
     private CloudGeographyClient? _cloudGepgraphy;
     public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();
@@ -110,6 +110,9 @@ public class CloudLoginClient
     }
     public async Task<User?> GetUserByDisplayName(string displayName)
     {
+        if (!UsingDatabase)
+            return null;
+
         HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUserByDisplayName?displayname={HttpUtility.UrlEncode(displayName)}");
 
         if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
@@ -122,6 +125,9 @@ public class CloudLoginClient
     }
     public async Task<User?> GetUserByInput(string input)
     {
+        if (!UsingDatabase)
+            return null;
+
         try
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUserByInput?input={HttpUtility.UrlEncode(input)}");
@@ -142,6 +148,9 @@ public class CloudLoginClient
     }
     public async Task<User?> GetUserByEmailAddress(string email)
     {
+        if (!UsingDatabase)
+            return null;
+
         try
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUserByEmailAdress?email={HttpUtility.UrlEncode(email)}");
@@ -162,6 +171,9 @@ public class CloudLoginClient
     }
     public async Task<User?> GetUserByPhoneNumber(string number)
     {
+        if (!UsingDatabase)
+            return null;
+
         try
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/User/GetUserByPhoneNumber?number={HttpUtility.UrlEncode(number)}");
@@ -184,6 +196,9 @@ public class CloudLoginClient
     //Request based functions
     public async Task<User?> GetUserByRequestId(Guid requestId)
     {
+        if (!UsingDatabase)
+            return null;
+
         try
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Request/GetUserByRequestId?requestId={HttpUtility.UrlEncode(requestId.ToString())}");
@@ -201,6 +216,9 @@ public class CloudLoginClient
     }
     public async Task<Guid?> CreateUserRequestCustom(Guid userId, Guid requestId)
     {
+        if (!UsingDatabase)
+            return null;
+
         HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Request/CreateRequest?userID={userId}&requestId={requestId}", null);
 
         if (message.StatusCode == System.Net.HttpStatusCode.BadRequest)
@@ -210,6 +228,8 @@ public class CloudLoginClient
     }
     public async Task<Guid?> CreateUserRequest(Guid userId)
     {
+        if (!UsingDatabase)
+            return null;
 
         Guid requestId = Guid.NewGuid();
 
@@ -234,18 +254,27 @@ public class CloudLoginClient
     //User configuration
     public async Task UpdateUser(User user)
     {
+        if (!UsingDatabase)
+            return;
+
         HttpContent content = JsonContent.Create(user);
 
         await HttpServer.PostAsync("CloudLogin/User/Update", content);
     }
     public async Task CreateUser(User user)
     {
+        if (!UsingDatabase)
+            return;
+
         HttpContent content = JsonContent.Create(user);
 
         await HttpServer.PostAsync("CloudLogin/User/Create", content);
     }
     public async Task DeleteUser(Guid userId)
     {
+        if (!UsingDatabase)
+            return;
+
         await HttpServer.DeleteAsync($"CloudLogin/User/Delete?userId={userId}");
     }
     public async Task<bool> AutomaticLogin()
@@ -255,7 +284,6 @@ public class CloudLoginClient
     }
     public async Task<User?> CurrentUser()
     {
-        //if (accessor == null)
         try
         {
             HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/User/CurrentUser");
@@ -269,12 +297,9 @@ public class CloudLoginClient
         {
             return null;
         }
-
-        return null;
     }
     public async Task<bool> IsAuthenticated()
     {
-        //if (accessor == null)
         try
 
         {
@@ -286,12 +311,12 @@ public class CloudLoginClient
             return await message.Content.ReadFromJsonAsync<bool>();
         }
         catch { throw; }
-
-        //string? userCookie = accessor.HttpContext.Request.Cookies["CloudLogin"];
-        //return userCookie != null;
     }
     public async Task AddUserInput(Guid userId, LoginInput Input)
     {
+        if (!UsingDatabase)
+            return;
+
         try
         {
             HttpContent content = JsonContent.Create(Input);

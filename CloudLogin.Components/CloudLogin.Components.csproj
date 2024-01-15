@@ -15,7 +15,7 @@
 		<PackageProjectUrl>https://www.angrymonkeycloud.com/</PackageProjectUrl>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.1.3</Version>
+    <Version>1.1.6</Version>
 		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
 		<PackageOutputPath>..\NugetPackage\</PackageOutputPath>
 

@@ -41,5 +41,6 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(StandaloneDemo.Client._Imports).Assembly);
 
 app.UseCloudLoginHandler();
+//app.CloudLoginAutomatically();
 
 app.Run();

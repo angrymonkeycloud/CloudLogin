@@ -15,9 +15,8 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
     CloudLoginClient CloudLogin { get; set; } = cloudLogin;
 
     [Route("Login")]
-    public async Task<IActionResult> Login(string? ReturnUrl)
+    public IActionResult Login(string? ReturnUrl)
     {
-        Response.Cookies.Append("LoggingIn", "True", new() { Expires = DateTime.MaxValue });
         string baseUrl = $"{Request.Scheme}://{Request.Host}";
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
@@ -51,7 +50,7 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
             cloudUser = await CloudLogin.GetUserByRequestId(requestId);
 
         if (cloudUser == null)
-            return await Login(ReturnUrl);
+            return Login(ReturnUrl);
 
 
         //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));

@@ -1,10 +1,30 @@
 ﻿@page "/weather"
+@using AngryMonkey.CloudLogin
+@using Microsoft.AspNetCore.Authorization
+@inject CloudLoginStandaloneClient cloudLogin
+@inject NavigationManager nav
+
 
 <PageTitle>Weather</PageTitle>
 
 <h1>Weather</h1>
 
 <p>This component demonstrates showing data.</p>
+
+@if (IsAuthorized && CurrentUser != null)
+{
+    <div>
+        <h1>Login successful</h1>
+        <div>Login successful @CurrentUser.DisplayName.</div>
+        <div>First Name: @CurrentUser.FirstName | Last Name: @CurrentUser.LastName</div>
+        <div>Email Address: @CurrentUser.PrimaryEmailAddress.Input</div>
+        <a href="./Account/Logout">Logout</a>
+    </div>
+}
+else
+{
+    <a href="Account/Login?ReturnUrl=@nav.Uri">Login</a>
+}
 
 @if (forecasts == null)
 {
@@ -37,9 +57,18 @@ else
 
 @code {
     private WeatherForecast[]? forecasts;
+    public User? CurrentUser { get; set; } = new();
+    public bool IsAuthorized { get; set; } = false;
 
     protected override async Task OnInitializedAsync()
     {
+
+        IsAuthorized = await cloudLogin.IsAuthenticated();
+
+        if (IsAuthorized)
+            CurrentUser = await cloudLogin.CurrentUser();
+
+        StateHasChanged();
         // Simulate asynchronous loading to demonstrate a loading indicator
         await Task.Delay(500);
 

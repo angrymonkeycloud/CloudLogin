@@ -11,7 +11,7 @@
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.1.9</Version>
+		<Version>1.1.10</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />
@@ -26,7 +26,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.0" />
+    <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.1" />
   </ItemGroup>
   
   <ItemGroup>

@@ -18,7 +18,7 @@ public class CloudLoginClient
     public List<ProviderDefinition> Providers { get; set; }
     public bool UsingDatabase { get; set; } = true;
 
-    private CloudGeographyClient? _cloudGepgraphy;
+    private static CloudGeographyClient? _cloudGepgraphy;
     public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();
 
     //Misc

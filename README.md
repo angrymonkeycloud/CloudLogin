@@ -23,6 +23,9 @@ To start using Cloud Login in your .NET project website:
 
 For more detailed information on integrating Cloud Login into your .NET project website, please see the [Cloud Login Integration Guide](integration.md).
 
+
+For integrating Cloud Login Standalone into your .NET project website, please see the [Cloud Login Integration with Standalone Website Guide](integrationcbx.md).
+
 ## License
 
 Cloud Login is available under the MIT License. See the [LICENSE](LICENSE) file for more information.

@@ -12,7 +12,7 @@
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.1.11</Version>
+    <Version>1.1.12</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />
@@ -41,7 +41,6 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.3" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.2" />
 		<PackageReference Include="Microsoft.Graph" Version="5.46.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,11 +1,11 @@
 ﻿using System.Web;
 using System.Security.Claims;
-using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using RouteAttribute = Microsoft.AspNetCore.Mvc.RouteAttribute;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -41,7 +41,7 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
         if (requestId == Guid.Empty)
         {
             if (currentUser != null)
-                cloudUser = JsonConvert.DeserializeObject<User>(currentUser);
+                cloudUser = JsonSerializer.Deserialize<User>(currentUser);
             else
                 return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
         }
@@ -60,7 +60,7 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
             new Claim(ClaimTypes.GivenName, cloudUser.FirstName ?? string.Empty),
             new Claim(ClaimTypes.Surname, cloudUser.LastName ?? string.Empty),
             new Claim(ClaimTypes.Name, cloudUser.DisplayName ?? string.Empty),
-            new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(cloudUser))
+            new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(cloudUser))
         }, "CloudLogin");
 
         if (cloudUser.PrimaryEmailAddress != null)
@@ -145,7 +145,7 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
             if (string.IsNullOrEmpty(loginIdentity))
                 return Ok(null);
 
-            User? user = JsonConvert.DeserializeObject<User?>(loginIdentity);
+            User? user = JsonSerializer.Deserialize<User?>(loginIdentity);
 
             if (user == null)
                 return Ok(null);

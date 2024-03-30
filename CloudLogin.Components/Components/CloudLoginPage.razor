@@ -2,7 +2,6 @@
 @* @using Microsoft.AspNetCore.Http
 @using Microsoft.AspNetCore.WebUtilities; *@
 @using Microsoft.Extensions.Primitives;
-@using Newtonsoft.Json
 @inject CloudLoginClient cloudLogin
 @inject NavigationManager nav
 
@@ -97,7 +96,7 @@ else
                 if (CurrentUser != null)
                 {
                     if (requestID == null)
-                        nav.NavigateTo($"{RedirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonConvert.SerializeObject(CurrentUser))}");
+                        nav.NavigateTo($"{RedirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonSerializer.Serialize(CurrentUser))}");
                     else
                         nav.NavigateTo($"{RedirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
                 }

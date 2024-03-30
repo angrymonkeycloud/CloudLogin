@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace AngryMonkey.CloudLogin.Data;
+﻿namespace AngryMonkey.CloudLogin.Data;
 
 public record User : BaseRecord
 {

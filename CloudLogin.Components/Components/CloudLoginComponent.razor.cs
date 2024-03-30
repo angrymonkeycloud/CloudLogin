@@ -1,9 +1,8 @@
 ﻿using AngryMonkey.Cloud.Geography;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Newtonsoft.Json;
 using System.Text;
-using System.Web;
+using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin;
 public partial class CloudLoginComponent
@@ -598,7 +597,8 @@ public partial class CloudLoginComponent
                 { "LastName", user.LastName },
                 { "DisplayName", user.DisplayName }
             };
-        string userInfoJSON = JsonConvert.SerializeObject(userInfo);
+
+        string userInfoJSON = JsonSerializer.Serialize(userInfo);
 
         //navigationManager.NavigateTo($"/CloudLogin/Actions/Update?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
         navigationManager.NavigateTo(Methods.RedirectString("CloudLogin", "Actions", userInfo: userInfoJSON, redirectUri: RedirectUri), true);
@@ -617,7 +617,7 @@ public partial class CloudLoginComponent
                 { "Type", InputValueFormat },
             };
 
-        string userInfoJSON = JsonConvert.SerializeObject(userInfo);
+        string userInfoJSON = JsonSerializer.Serialize(userInfo);
 
         //string redirectUri = $"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
 

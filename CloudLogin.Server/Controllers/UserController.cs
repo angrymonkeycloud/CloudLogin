@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/User")]
@@ -292,7 +292,7 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
             if (string.IsNullOrEmpty(loginIdentity))
                 return Ok(null);
 
-            User? user = JsonConvert.DeserializeObject<User?>(loginIdentity);
+            User? user = JsonSerializer.Deserialize<User?>(loginIdentity);
 
             if (user == null)
                 return Ok(null);

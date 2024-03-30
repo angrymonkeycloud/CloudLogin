@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using System.Web;
 
 namespace AngryMonkey.CloudLogin;
@@ -15,7 +15,7 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        LoginInput? input = JsonConvert.DeserializeObject<LoginInput>(userInfo);
+        LoginInput? input = JsonSerializer.Deserialize<LoginInput>(userInfo);
 
         input.IsPrimary = false;
 
@@ -36,7 +36,7 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
         string redirectTo = redirectUrl.Split("/").Last().Replace("AddInput", "");
         redirectUrl = redirectUrl.Replace(redirectUrl.Split("/").Last(), "");
 
-        string userSerialized = JsonConvert.SerializeObject(user);
+        string userSerialized = JsonSerializer.Serialize(user);
 
         return Redirect($"{redirectUrl}CloudLogin/Update?redirectUri={redirectTo}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
     }
@@ -49,7 +49,7 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
 
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        Dictionary<string, string>? userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo);
+        Dictionary<string, string>? userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo);
 
         string? firstName = userDictionary?["FirstName"];
         string? lastName = userDictionary?["LastName"];
@@ -64,7 +64,7 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
 
         await CosmosMethods.Update(user);
 
-        string userSerialized = JsonConvert.SerializeObject(user);
+        string userSerialized = JsonSerializer.Serialize(user);
 
         return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
     }
@@ -87,7 +87,7 @@ public class ActionsController(CloudLoginConfiguration configuration, CosmosMeth
 
         await CosmosMethods.Update(user);
 
-        string userSerialized = JsonConvert.SerializeObject(user);
+        string userSerialized = JsonSerializer.Serialize(user);
 
         return Redirect($"{baseUrl}/CloudLogin/Update?redirectUri={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}");
     }

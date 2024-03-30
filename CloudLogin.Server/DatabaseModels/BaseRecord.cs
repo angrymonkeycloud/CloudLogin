@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -10,10 +10,10 @@ public record BaseRecord
         Discriminator = discriminator;
     }
 
-    [JsonProperty("id")]
+    [JsonPropertyName("id")]
     internal string CosmosId => $"{Discriminator}|{ID}";
 
-    [JsonProperty("ID")]
+    [JsonPropertyName("ID")]
     public Guid ID { get; set; }
     public string PartitionKey { get; internal set; }
     public string Discriminator { get; internal set; }

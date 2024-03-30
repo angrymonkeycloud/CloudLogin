@@ -4,7 +4,7 @@ using AngryMonkey.CloudLogin.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+    var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveWebAssemblyComponents();

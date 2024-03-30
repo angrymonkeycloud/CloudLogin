@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Facebook;
@@ -8,7 +7,7 @@ using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Authentication.Twitter;
 using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
 using Microsoft.AspNetCore.Http;
-using AngryMonkey.CloudLogin.Services;
+using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -64,7 +63,7 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
             redirectUri = redirectUri.Replace($"/login", "");
         }
 
-        Dictionary<string, string> userDictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfo)!;
+        Dictionary<string, string> userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo)!;
 
         AuthenticationProperties properties = new()
         {
@@ -87,14 +86,14 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
         displayName ??= $"{firstName} {lastName}";
 
         //create claimsIdentity
-        var claimsIdentity = new ClaimsIdentity(new[] {
+        var claimsIdentity = new ClaimsIdentity([
 
                 new Claim(ClaimTypes.NameIdentifier, userDictionary["UserId"]),
                 new Claim(ClaimTypes.GivenName, firstName),
                 new Claim(ClaimTypes.Surname, lastName),
                 new Claim(ClaimTypes.Name, displayName)
 
-            }, "CloudLogin");
+            ], "CloudLogin");
 
         if (userDictionary["Type"].Equals("phonenumber", StringComparison.CurrentCultureIgnoreCase))
             claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
@@ -161,7 +160,7 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
 
         ClaimsIdentity claimsIdentity = new(new[] {
                 new Claim(ClaimTypes.Hash, "CloudLogin"),
-                new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(user))
+                new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(user))
             }, "CloudLogin");
 
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
@@ -169,7 +168,7 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
         if (actionState == "AddInput")
         {
             LoginInput input = user.Inputs.First();
-            string userInfo = JsonConvert.SerializeObject(input);
+            string userInfo = JsonSerializer.Serialize(input);
 
             return Results.Redirect(Methods.RedirectString("Actions", "AddInput", redirectUri: redirectUri, userInfo: userInfo, primaryEmail: primaryEmail));
         }

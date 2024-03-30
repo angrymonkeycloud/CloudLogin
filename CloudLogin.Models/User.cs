@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -38,6 +39,6 @@ public record User
         if (string.IsNullOrEmpty(decoded))
             return null;
 
-        return JsonConvert.DeserializeObject<User>(decoded);
+        return JsonSerializer.Deserialize<User>(decoded);
     }
 }

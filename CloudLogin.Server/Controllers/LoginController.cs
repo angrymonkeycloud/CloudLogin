@@ -13,7 +13,7 @@ namespace AngryMonkey.CloudLogin;
 
 [Route("CloudLogin")]
 [ApiController]
-public class LoginController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
+public class LoginController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : CloudLoginBaseController(configuration, cosmosMethods)
 {
     [HttpGet("GetClient")]
     public ActionResult<CloudLoginClient> GetClient(string serverLoginUrl) => new CloudLoginClient()
@@ -33,7 +33,7 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
     };
 
     [HttpGet("Login/{identity}")]
-    public IResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "", string? input = null, string? redirectUri = null)
+    public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "", string? input = null, string? redirectUri = null)
     {
         AuthenticationProperties globalProperties = new()
         {
@@ -45,11 +45,11 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
 
         return identity.Trim().ToLower() switch
         {
-            "microsoft" => Results.Challenge(globalProperties, [MicrosoftAccountDefaults.AuthenticationScheme]),
-            "google" => Results.Challenge(globalProperties, [GoogleDefaults.AuthenticationScheme]),
-            "facebook" => Results.Challenge(globalProperties, [FacebookDefaults.AuthenticationScheme]),
-            "twitter" => Results.Challenge(globalProperties, [TwitterDefaults.AuthenticationScheme]),
-            _ => Results.NotFound(),
+            "microsoft" => Challenge(globalProperties, [MicrosoftAccountDefaults.AuthenticationScheme]),
+            "google" => Challenge(globalProperties, [GoogleDefaults.AuthenticationScheme]),
+            "facebook" => Challenge(globalProperties, [FacebookDefaults.AuthenticationScheme]),
+            "twitter" => Challenge(globalProperties, [TwitterDefaults.AuthenticationScheme]),
+            _ => NotFound(),
         };
     }
 
@@ -63,7 +63,7 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
             redirectUri = redirectUri.Replace($"/login", "");
         }
 
-        Dictionary<string, string> userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo)!;
+        Dictionary<string, string> userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo, CloudLoginSerialization.Options)!;
 
         AuthenticationProperties properties = new()
         {
@@ -110,7 +110,7 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
     }
 
     [HttpGet("Result")]
-    public async Task<IResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
+    public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
     {
         if (CosmosMethods == null)
             throw new ArgumentNullException(nameof(CosmosMethods));
@@ -156,32 +156,32 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
             };
 
         if (user == null)
-            return Results.Redirect(redirectUri);
+            return Redirect(redirectUri);
 
-        ClaimsIdentity claimsIdentity = new(new[] {
+        ClaimsIdentity claimsIdentity = new([
                 new Claim(ClaimTypes.Hash, "CloudLogin"),
-                new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(user))
-            }, "CloudLogin");
+                new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+            ], "CloudLogin");
 
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
         if (actionState == "AddInput")
         {
             LoginInput input = user.Inputs.First();
-            string userInfo = JsonSerializer.Serialize(input);
+            string userInfo = JsonSerializer.Serialize(input, CloudLoginSerialization.Options);
 
-            return Results.Redirect(Methods.RedirectString("Actions", "AddInput", redirectUri: redirectUri, userInfo: userInfo, primaryEmail: primaryEmail));
+            return Redirect(Methods.RedirectString("Actions", "AddInput", redirectUri: redirectUri, userInfo: userInfo, primaryEmail: primaryEmail));
         }
 
         await HttpContext.SignInAsync(claimsPrincipal, properties);
 
         if (actionState == "mobile")
-            return Results.Redirect($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
+            return Redirect($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
 
         if (sameSite)
-            return Results.Redirect(AddQueryString(redirectUri, $"KeepMeSignedIn={keepMeSignedIn}"));
+            return Redirect(AddQueryString(redirectUri, $"KeepMeSignedIn={keepMeSignedIn}"));
 
-        return Results.Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
+        return Redirect($"{redirectUri}/login?KeepMeSignedIn={keepMeSignedIn}");
         //}
         //catch (Exception ex)
         //{
@@ -195,30 +195,30 @@ public class LoginController(CloudLoginConfiguration configuration, CosmosMethod
 
 
     [HttpGet("Update")]
-    public IResult Update(string redirectUri, string? userInfo)
+    public IActionResult Update(string redirectUri, string? userInfo)
     {
         if (string.IsNullOrEmpty(userInfo))
-            return Results.Redirect(redirectUri);
+            return Redirect(redirectUri);
 
         Response.Cookies.Delete("CloudLogin");
 
         Response.Cookies.Append("CloudLogin", userInfo);
 
         if (redirectUri == null)
-            return Results.Redirect("/");
+            return Redirect("/");
 
-        return Results.Redirect(redirectUri);
+        return Redirect(redirectUri);
     }
 
     [HttpGet("Logout")]
-    public async Task<IResult> Logout(string? redirectUri)
+    public async Task<IActionResult> Logout(string? redirectUri)
     {
         await HttpContext.SignOutAsync();
 
         if (!string.IsNullOrEmpty(redirectUri))
-            return Results.Redirect(redirectUri);
+            return Redirect(redirectUri);
 
-        return Results.Redirect("/");
+        return Redirect("/");
     }
 
 

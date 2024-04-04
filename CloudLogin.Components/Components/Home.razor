@@ -4,6 +4,7 @@
 @using Microsoft.Extensions.Primitives;
 @inject CloudLoginClient cloudLogin
 @inject NavigationManager nav
+@page "/"
 
 @if (IsAuthorized && CurrentUser?.PrimaryEmailAddress != null)
 {
@@ -40,15 +41,13 @@ else
 {
     <section>
         <article>
-
             <AngryMonkey.CloudLogin.CloudLoginComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
         </article>
     </section>
 }
 
 @code {
-
-    [Parameter] public string Logo { get; set; }
+    [Parameter] public string Logo { get; set; } = "/logo.svg";
 
     [Parameter, SupplyParameterFromQuery(Name = "redirectUri")]
     public string? RedirectUri { get; set; }
@@ -96,7 +95,7 @@ else
                 if (CurrentUser != null)
                 {
                     if (requestID == null)
-                        nav.NavigateTo($"{RedirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonSerializer.Serialize(CurrentUser))}");
+                        nav.NavigateTo($"{RedirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonSerializer.Serialize(CurrentUser, CloudLoginSerialization.Options))}");
                     else
                         nav.NavigateTo($"{RedirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
                 }

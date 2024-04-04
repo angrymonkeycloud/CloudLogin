@@ -8,9 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
-    <ProjectReference Include="..\SharedLoginNew.Client\SharedLoginNew.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
   </ItemGroup>
 
 </Project>

@@ -38,15 +38,15 @@ public class CloudLoginClient
     public static bool IsInputValidEmailAddress(string input) => Regex.IsMatch(input, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
     public bool IsInputValidPhoneNumber(string input) => CloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
 
-
     //Configuration
     public static async Task<CloudLoginClient> Build(string loginServerUrl)
     {
         HttpClient httpClient = new() { BaseAddress = new(loginServerUrl) };
 
-        return (await httpClient.GetFromJsonAsync<CloudLoginClient>($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}"))!;
-    }
+        Console.WriteLine(await httpClient.GetStringAsync($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}"));
 
+        return (await httpClient.GetFromJsonAsync<CloudLoginClient>($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}", CloudLoginSerialization.Options))!;
+    }
 
     //Get user(s) information from db
     public async Task<List<User>?> GetAllUsers()
@@ -57,7 +57,7 @@ public class CloudLoginClient
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>();
+            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -77,7 +77,7 @@ public class CloudLoginClient
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
+            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -96,7 +96,7 @@ public class CloudLoginClient
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            List<User>? selectedUsers = await message.Content.ReadFromJsonAsync<List<User>?>();
+            List<User>? selectedUsers = await message.Content.ReadFromJsonAsync<List<User>?>(CloudLoginSerialization.Options);
 
             if (selectedUsers == null) return null;
 
@@ -117,7 +117,7 @@ public class CloudLoginClient
 
         if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-        User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
+        User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
 
         if (selectedUser == null) return null;
 
@@ -134,7 +134,7 @@ public class CloudLoginClient
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
+            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -157,7 +157,7 @@ public class CloudLoginClient
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent || message.StatusCode == System.Net.HttpStatusCode.InternalServerError) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
+            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -180,7 +180,7 @@ public class CloudLoginClient
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent || message.StatusCode == System.Net.HttpStatusCode.InternalServerError) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>();
+            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -204,7 +204,7 @@ public class CloudLoginClient
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Request/GetUserByRequestId?requestId={HttpUtility.UrlEncode(requestId.ToString())}");
 
             if (message.IsSuccessStatusCode)
-                return await message.Content.ReadFromJsonAsync<User?>();
+                return await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
 
             return null;
         }
@@ -286,7 +286,7 @@ public class CloudLoginClient
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                 return null;
 
-            return await message.Content.ReadFromJsonAsync<User>();
+            return await message.Content.ReadFromJsonAsync<User>(CloudLoginSerialization.Options);
         }
         catch
         {
@@ -302,7 +302,7 @@ public class CloudLoginClient
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                 return false;
 
-            return await message.Content.ReadFromJsonAsync<bool>();
+            return await message.Content.ReadFromJsonAsync<bool>(CloudLoginSerialization.Options);
         }
         catch { throw; }
     }

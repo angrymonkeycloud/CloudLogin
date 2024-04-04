@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace AngryMonkey.CloudLogin
+namespace AngryMonkey.CloudLogin;
+
+public class CloudLoginBaseController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : Controller
 {
-    public class BaseController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : Controller
-    {
-        internal CloudLoginConfiguration Configuration = configuration;
-        internal CosmosMethods? CosmosMethods = cosmosMethods;
-    }
+    internal CloudLoginConfiguration Configuration = configuration;
+    internal CosmosMethods? CosmosMethods = cosmosMethods;
 }

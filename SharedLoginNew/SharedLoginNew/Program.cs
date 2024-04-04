@@ -2,20 +2,14 @@ using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using AngryMonkey.CloudLogin.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Text;
 
-    var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveWebAssemblyComponents();
-
-builder.Services.AddControllers();
-
-builder.Services.AddCors(cors =>
-{
-    cors.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-});
+//builder.Services.AddCors(cors =>
+//{
+//    cors.AddPolicy("AllowAll", policy =>
+//        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+//});
 
 builder.Services.Configure<EmailServiceOptions>(builder.Configuration.GetSection("EmailServer"));
 IServiceCollection test = builder.Services.AddScoped<EmailService>();
@@ -24,6 +18,10 @@ IServiceCollection test = builder.Services.AddScoped<EmailService>();
 //cloud login -----------
 CloudLoginConfiguration cloudLoginConfig = new()
 {
+    WebConfig = config =>
+    {
+        config.PageDefaults.SetTitle("Test login");
+    },
     Cosmos = new CosmosConfiguration(builder.Configuration.GetSection("Cosmos")),
     LoginDuration = new TimeSpan(30, 0, 0, 0),
     EmailConfiguration = new()
@@ -71,40 +69,4 @@ CloudLoginConfiguration cloudLoginConfig = new()
 
 builder.Services.AddCloudLoginServer(cloudLoginConfig, builder.Configuration);
 
-builder.Services.AddAuthentication(opt =>
-{
-    opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-});
-
-builder.Services.AddOptions();
-builder.Services.AddAuthenticationCore();
-
-builder.Services.AddScoped<CustomAuthenticationStateProvider>();
-builder.Services.AddScoped<UserController>();
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-    app.UseWebAssemblyDebugging();
-
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-
-app.UseRouting();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-
-app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapRazorComponents<SharedLoginNew.Client.App>()
-    .AddInteractiveWebAssemblyRenderMode();
-
-app.Run();
+await CloudLoginServer.InitApp(builder);

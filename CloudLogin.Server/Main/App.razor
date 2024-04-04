@@ -1,0 +1,29 @@
+﻿@using AngryMonkey.CloudWeb
+@using Microsoft.AspNetCore.Components.Web
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <base href="/" />
+    <Microsoft.AspNetCore.Components.Sections.SectionOutlet SectionName="CloudWeb" />
+</head>
+
+<body>
+
+    <CloudHeadContent />
+
+    <div class="pageloading">
+        <div class="pageloading-logo">
+            <img src="/logo.svg" />
+        </div>
+        <div class="pageloading-progress">
+            <span></span>
+        </div>
+    </div>
+
+    <Routes @rendermode="@(new InteractiveWebAssemblyRenderMode(false))" />
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>

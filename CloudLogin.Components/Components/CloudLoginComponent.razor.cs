@@ -598,7 +598,7 @@ public partial class CloudLoginComponent
                 { "DisplayName", user.DisplayName }
             };
 
-        string userInfoJSON = JsonSerializer.Serialize(userInfo);
+        string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
 
         //navigationManager.NavigateTo($"/CloudLogin/Actions/Update?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
         navigationManager.NavigateTo(Methods.RedirectString("CloudLogin", "Actions", userInfo: userInfoJSON, redirectUri: RedirectUri), true);
@@ -617,7 +617,7 @@ public partial class CloudLoginComponent
                 { "Type", InputValueFormat },
             };
 
-        string userInfoJSON = JsonSerializer.Serialize(userInfo);
+        string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
 
         //string redirectUri = $"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
 

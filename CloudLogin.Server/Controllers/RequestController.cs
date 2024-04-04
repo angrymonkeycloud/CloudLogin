@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/Request")]
 [ApiController]
-public class RequestController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
+public class RequestController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : CloudLoginBaseController(configuration, cosmosMethods)
 {
     [HttpPost("CreateRequest")]
-    public async Task<IResult> CreateRequest(Guid userId, Guid requestId)
+    public async Task<IActionResult> CreateRequest(Guid userId, Guid requestId)
     {
         if (CosmosMethods == null)
             throw new ArgumentNullException(nameof(CosmosMethods));
@@ -15,20 +15,20 @@ public class RequestController(CloudLoginConfiguration configuration, CosmosMeth
         try
         {
             if (Configuration?.Cosmos == null)
-                return Results.BadRequest();
+                return BadRequest();
 
             await CosmosMethods.CreateRequest(userId, requestId);
 
-            return Results.Ok();
+            return Ok();
         }
         catch
         {
-            return Results.Problem();
+            return Problem();
         }
     }
 
     [HttpGet("GetUserByRequestId")]
-    public async Task<IResult> GetUserByRequestId(Guid requestId)
+    public async Task<IActionResult> GetUserByRequestId(Guid requestId)
     {
         if (CosmosMethods == null)
             throw new ArgumentNullException(nameof(CosmosMethods));
@@ -37,11 +37,11 @@ public class RequestController(CloudLoginConfiguration configuration, CosmosMeth
         {
             User? User = await CosmosMethods.GetUserByRequestId(requestId);
 
-            return Results.Ok(User);
+            return Ok(User);
         }
         catch
         {
-            return Results.Problem();
+            return Problem();
         }
     }
 }

@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/User")]
 [ApiController]
-public class UserController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
+public class UserController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : CloudLoginBaseController(configuration, cosmosMethods)
 {
     [HttpPost("SendWhatsAppCode")]
     public async Task<ActionResult> SendWhatsAppCode(string receiver, string code)
@@ -45,10 +45,10 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
     }
 
     [HttpPost("SendEmailCode")]
-    public async Task<IResult> SendEmailCode(string receiver, string code)
+    public async Task<IActionResult> SendEmailCode(string receiver, string code)
     {
         if (Configuration.EmailSendCodeRequest == null && Configuration.EmailConfiguration == null)
-            return Results.Problem("Email is not configured.");
+            return Problem("Email is not configured.");
 
         try
         {
@@ -63,11 +63,11 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
                 await Configuration.EmailConfiguration.EmailService.SendEmail(subject, body, [receiver]);
             }
 
-            return Results.Ok();
+            return Ok();
         }
         catch (Exception e)
         {
-            return Results.Problem(e.Message);
+            return Problem(e.Message);
         }
     }
 
@@ -157,8 +157,6 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
             return Problem();
         }
     }
-
-
 
     [HttpGet("GetAllUsers")]
     public async Task<ActionResult<List<User>>> GetAllUsers()
@@ -292,7 +290,7 @@ public class UserController(CloudLoginConfiguration configuration, CosmosMethods
             if (string.IsNullOrEmpty(loginIdentity))
                 return Ok(null);
 
-            User? user = JsonSerializer.Deserialize<User?>(loginIdentity);
+            User? user = JsonSerializer.Deserialize<User?>(loginIdentity, CloudLoginSerialization.Options);
 
             if (user == null)
                 return Ok(null);

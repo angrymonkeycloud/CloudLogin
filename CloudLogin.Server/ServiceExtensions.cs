@@ -1,22 +1,60 @@
-﻿//using Microsoft.Extensions.DependencyInjection;
-using AngryMonkey.Cloud;
+﻿using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
-using AngryMonkey.CloudLogin.Services;
+using AngryMonkey.CloudWeb;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-
 public static class MvcServiceCollectionExtensions
 {
-    public static void AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configuration, IConfiguration builderConfiguration)
+    public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
     {
-        configuration.FooterLinks.Add(new()
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.AddRazorComponents()
+            .AddInteractiveServerComponents()
+            .AddInteractiveWebAssemblyComponents();
+
+        services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            options.JsonSerializerOptions.PropertyNamingPolicy = null;
+
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
+
+        //CloudWebConfig? webConfig = builderConfiguration.Get<CloudWebConfig>();
+
+        services.AddAuthentication(opt => { opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme; });
+
+        services.AddOptions();
+        services.AddAuthenticationCore();
+
+        services.AddScoped<CustomAuthenticationStateProvider>();
+        services.AddScoped<UserController>();
+        services.AddScoped<CloudPage>();
+        //services.AddScoped<CloudWebConfig>();
+        services.AddHttpContextAccessor();
+
+        services.AddCloudWeb(config =>
+        {
+            loginConfig.WebConfig(config);
+
+            if (string.IsNullOrEmpty(config.PageDefaults.Title))
+                config.PageDefaults.SetTitle("Login");
+
+            config.PageDefaults.AppendBundle(new CloudBundle() { Source = "AngryMonkey.CloudLogin.Components.styles.css", MinOnRelease = false });
+        });
+
+        loginConfig.FooterLinks.Add(new()
         {
             Url = "https://angrymonkeycloud.com/",
             Title = "Info"
@@ -24,18 +62,18 @@ public static class MvcServiceCollectionExtensions
 
         CloudGeographyClient cloudGeography = new();
 
-        services.AddSingleton(configuration);
+        services.AddSingleton(loginConfig);
         services.AddSingleton(cloudGeography);
 
-        if (configuration.Cosmos != null)
-            services.AddSingleton(sp => new CosmosMethods(configuration.Cosmos, cloudGeography));
+        if (loginConfig.Cosmos != null)
+            services.AddSingleton(sp => new CosmosMethods(loginConfig.Cosmos, cloudGeography));
 
         var service = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(option =>
         {
             option.Cookie.Name = "CloudLogin";
 
-            if (!string.IsNullOrEmpty(configuration.BaseAddress) && configuration.BaseAddress != "localhost")
-                option.Cookie.Domain = $".{configuration.BaseAddress}";
+            if (!string.IsNullOrEmpty(loginConfig.BaseAddress) && loginConfig.BaseAddress != "localhost")
+                option.Cookie.Domain = $".{loginConfig.BaseAddress}";
 
             option.Events = new CookieAuthenticationEvents()
             {
@@ -150,7 +188,7 @@ public static class MvcServiceCollectionExtensions
             };
         });
 
-        foreach (ProviderConfiguration provider in configuration.Providers)
+        foreach (ProviderConfiguration provider in loginConfig.Providers)
         {
             // Microsoft
 
@@ -192,5 +230,41 @@ public static class MvcServiceCollectionExtensions
                     Option.ConsumerSecret = ((TwitterProviderConfiguration)provider).ClientSecret;
                 });
         }
+
+        return services;
+    }
+}
+public class CloudLoginServer
+{
+    public static async Task InitApp(WebApplicationBuilder builder)
+    {
+        var app = builder.Build();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseWebAssemblyDebugging();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Error", createScopeForErrors: true);
+            app.UseHsts();
+        }
+
+        app.UseHttpsRedirection();
+
+        app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.UseStaticFiles();
+        app.UseAntiforgery();
+
+        app.MapRazorComponents<AngryMonkey.CloudLogin.Main.App>()
+            .AddInteractiveWebAssemblyRenderMode()
+            .AddAdditionalAssemblies(typeof(AngryMonkey.CloudLogin._Imports).Assembly);
+
+        app.MapControllers();
+
+        await app.RunAsync();
     }
 }

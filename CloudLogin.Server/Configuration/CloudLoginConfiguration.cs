@@ -1,4 +1,6 @@
-﻿namespace AngryMonkey.CloudLogin;
+﻿using AngryMonkey.CloudWeb;
+
+namespace AngryMonkey.CloudLogin;
 
 public class CloudLoginConfiguration
 {
@@ -11,4 +13,5 @@ public class CloudLoginConfiguration
     internal string? EmailMessageBody { get; set; }
     public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; }
     public CloudLoginEmailConfiguration? EmailConfiguration { get; set; }
+    public required Action<CloudWebConfig> WebConfig { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -41,11 +41,16 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.3" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.2" />
 		<PackageReference Include="Microsoft.Graph" Version="5.46.0" />
+    <PackageReference Include="AngryMonkey.CloudWeb" Version="2.2.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CloudLogin.Components\CloudLogin.Components.csproj" />
     <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
 
 </Project>

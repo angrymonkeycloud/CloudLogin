@@ -5,7 +5,7 @@ using System.Web;
 namespace AngryMonkey.CloudLogin;
 [Route("CloudLogin/Actions")]
 [ApiController]
-public class ActionsController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : BaseController(configuration, cosmosMethods)
+public class ActionsController(CloudLoginConfiguration configuration, CosmosMethods? cosmosMethods = null) : CloudLoginBaseController(configuration, cosmosMethods)
 {
     [HttpGet("AddInput")]
     public async Task<ActionResult> AddInput(string redirectUrl, string userInfo, string primaryEmail)

@@ -2,9 +2,7 @@
 using AngryMonkey.Cloud.Geography;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
-using Microsoft.Extensions.Options;
 using System.Linq.Expressions;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace AngryMonkey.CloudLogin;
 

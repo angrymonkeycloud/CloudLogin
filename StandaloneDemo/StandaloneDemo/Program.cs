@@ -3,16 +3,8 @@ using StandaloneDemo.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents();
-
-builder.Services.AddControllersWithViews();
-
 //await builder.Services.AddCloudLoginMVC("https://login.coverbox.app/");
 await builder.Services.AddCloudLoginMVC("https://localhost:7003/");
-builder.Services.AddScoped<CloudLoginStandaloneClient>();
 
 var app = builder.Build();
 

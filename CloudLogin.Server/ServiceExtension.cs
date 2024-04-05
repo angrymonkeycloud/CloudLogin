@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 public static class MvcServiceCollectionExtensions
 {
-    public static async Task AddCloudLoginMVC(this IServiceCollection services, string loginServerUrl)
+    public static async Task AddCloudLogin(this IServiceCollection services, string loginServerUrl)
     {
         services.AddAuthentication("Cookies").AddCookie(option =>
         {
@@ -12,6 +12,6 @@ public static class MvcServiceCollectionExtensions
             option.LogoutPath = "/account/logout";
         });
 
-        services.AddSingleton(await CloudLoginClient.Build(loginServerUrl));
+        services.AddSingleton(await CloudLoginClient.Build(loginServerUrl, true));
     }
 }

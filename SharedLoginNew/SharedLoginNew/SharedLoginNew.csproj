@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
+    <ProjectReference Include="..\..\CloudLogin\CloudLogin.csproj" />
   </ItemGroup>
 
 </Project>

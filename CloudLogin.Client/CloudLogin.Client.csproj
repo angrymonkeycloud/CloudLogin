@@ -4,14 +4,14 @@
 		<TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>AngryMonkey.CloudLogin.Models</AssemblyName>
+    <AssemblyName>AngryMonkey.CloudLogin.Client</AssemblyName>
     <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-    <Product>Cloud Login</Product>
+    <Product>Cloud Login Client</Product>
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.1.12</Version>
+		<Version>1.1.12</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />
@@ -25,4 +25,19 @@
     </None>
   </ItemGroup>
   
+  <ItemGroup>
+    <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.2" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\CloudLogin.DataContract\CloudLogin.DataContract.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
+  </ItemGroup>
+
 </Project>

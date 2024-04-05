@@ -9,9 +9,10 @@ namespace AngryMonkey.CloudLogin;
 public class CloudLoginClient
 {
     public required HttpClient HttpServer { get; init; }
+    public bool LightVersion { get; set; } = false;
     public string LoginUrl => HttpServer.BaseAddress.AbsoluteUri;
 
-    public string UserRoute = "CloudLogin/User";
+    public string UserRoute => LightVersion ? "Account" : "CloudLogin/User";
     public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }
     public List<ProviderDefinition> Providers { get; set; }
@@ -39,13 +40,31 @@ public class CloudLoginClient
     public bool IsInputValidPhoneNumber(string input) => CloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
 
     //Configuration
-    public static async Task<CloudLoginClient> Build(string loginServerUrl)
+    public static async Task<CloudLoginClient> Build(string loginServerUrl, bool lightVersion = false)
     {
         HttpClient httpClient = new() { BaseAddress = new(loginServerUrl) };
+
+        if (lightVersion)
+            return new CloudLoginClient() { HttpServer = httpClient, LightVersion = true };
 
         Console.WriteLine(await httpClient.GetStringAsync($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}"));
 
         return (await httpClient.GetFromJsonAsync<CloudLoginClient>($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}", CloudLoginSerialization.Options))!;
+    }
+    
+    // Was in StandAlone, which is Light Version now.
+    public async Task<bool> AutomaticLogin()
+    {
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/AutomaticLogin");
+
+            if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return false;
+
+            return await message.Content.ReadFromJsonAsync<bool>(CloudLoginSerialization.Options);
+        }
+        catch { throw; }
     }
 
     //Get user(s) information from db

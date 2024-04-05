@@ -5,7 +5,15 @@ VisualStudioVersion = 17.4.32804.182
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerAppTest", "ServerAppTest\ServerAppTest.csproj", "{15C64DEE-F521-421B-9392-CAE139CC3731}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Server", "CloudLogin.Server\CloudLogin.Server.csproj", "{4C7820DB-2118-4317-9C0B-4C969955B7A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin", "CloudLogin\CloudLogin.csproj", "{4C7820DB-2118-4317-9C0B-4C969955B7A1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.DataContract", "CloudLogin.DataContract\CloudLogin.DataContract.csproj", "{7D15B4CC-065C-42E3-9279-15003ADFB2C1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Server", "CloudLogin.Server\CloudLogin.Server.csproj", "{296A98B3-B131-4610-A895-2C9991D3B0DE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Components", "CloudLogin.Components\CloudLogin.Components.csproj", "{4B3C5EB9-041A-48D7-AA19-845F37FCBC50}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Client", "CloudLogin.Client\CloudLogin.Client.csproj", "{DF322387-3D0C-449D-AC3F-590749FB4518}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server Demo", "Server Demo", "{7A8108AE-9E6B-4A75-BA05-713ED6E6240C}"
 EndProject
@@ -20,14 +28,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLogin.BlazorServer", "SharedLogin.BlazorServer\SharedLogin.BlazorServer.csproj", "{8F7327BE-A995-415C-860E-3437918926A2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLogin.Website", "SharedLogin.Website\SharedLogin.Website.csproj", "{19D3C90A-D8EF-40A9-9F21-2022C2B47005}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Models", "CloudLogin.Models\CloudLogin.Models.csproj", "{7D15B4CC-065C-42E3-9279-15003ADFB2C1}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.MVC", "CloudLogin.MVC\CloudLogin.MVC.csproj", "{296A98B3-B131-4610-A895-2C9991D3B0DE}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Components", "CloudLogin.Components\CloudLogin.Components.csproj", "{4B3C5EB9-041A-48D7-AA19-845F37FCBC50}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin", "CloudLogin\CloudLogin.csproj", "{DF322387-3D0C-449D-AC3F-590749FB4518}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Share Login WebAssembly", "Share Login WebAssembly", "{6272CC92-90A8-49FD-94A3-C4B680A67770}"
 EndProject

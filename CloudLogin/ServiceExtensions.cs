@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System.Security.Claims;
-using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -23,14 +22,6 @@ public static class MvcServiceCollectionExtensions
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
 
-        services.AddControllers().AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-            options.JsonSerializerOptions.PropertyNamingPolicy = null;
-
-            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        });
-
         //CloudWebConfig? webConfig = builderConfiguration.Get<CloudWebConfig>();
 
         services.AddAuthentication(opt => { opt.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme; });
@@ -40,9 +31,6 @@ public static class MvcServiceCollectionExtensions
 
         services.AddScoped<CustomAuthenticationStateProvider>();
         services.AddScoped<UserController>();
-        services.AddScoped<CloudPage>();
-        //services.AddScoped<CloudWebConfig>();
-        services.AddHttpContextAccessor();
 
         services.AddCloudWeb(config =>
         {
@@ -255,6 +243,7 @@ public class CloudLoginServer
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.MapControllers();
 
         app.UseStaticFiles();
         app.UseAntiforgery();
@@ -262,8 +251,6 @@ public class CloudLoginServer
         app.MapRazorComponents<AngryMonkey.CloudLogin.Main.App>()
             .AddInteractiveWebAssemblyRenderMode()
             .AddAdditionalAssemblies(typeof(AngryMonkey.CloudLogin._Imports).Assembly);
-
-        app.MapControllers();
 
         await app.RunAsync();
     }

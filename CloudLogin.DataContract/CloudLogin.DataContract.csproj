@@ -4,9 +4,9 @@
 		<TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>AngryMonkey.CloudLogin.MVC</AssemblyName>
-		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-    <Product>Cloud Login</Product>
+    <AssemblyName>AngryMonkey.CloudLogin.DataContract</AssemblyName>
+    <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
+    <Product>Cloud Login Data Contract</Product>
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
@@ -19,26 +19,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components" Version="8.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="AngryMonkeyCloudLogo-64x64.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
-	
-  <ItemGroup>
-    <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="AngryMonkeyCloudLogo-64x64.png">
-      <PackagePath>\</PackagePath>
-      <Pack>True</Pack>
-    </None>
-  </ItemGroup>
-
+  
 </Project>

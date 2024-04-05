@@ -7,7 +7,7 @@
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 		<AssemblyName>AngryMonkey.CloudLogin.Components</AssemblyName>
 		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-		<Product>Cloud Login</Product>
+		<Product>Cloud Login Components</Product>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<Description />
@@ -41,15 +41,16 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.3" PrivateAssets="all" />
 </ItemGroup>
 
+
+	<ItemGroup>
+	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<None Update="AngryMonkeyCloudLogo-64x64.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

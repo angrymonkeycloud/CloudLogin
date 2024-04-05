@@ -10,6 +10,7 @@ using System.Text.Json;
 namespace AngryMonkey.CloudLogin;
 
 [Route("Account")]
+[ApiController]
 public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
 {
     CloudLoginClient CloudLogin { get; set; } = cloudLogin;
@@ -29,7 +30,7 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
     }
 
     [Route("LoginResult")]
-    public async Task<IActionResult> LoginResult(Guid requestId, string currentUser, string? ReturnUrl, bool KeepMeSignedIn)
+    public async Task<IActionResult> LoginResult(Guid requestId, string? currentUser, string? ReturnUrl, bool KeepMeSignedIn)
     {
         string seperator = CloudLogin.LoginUrl.Contains('?') ? "&" : "?";
 
@@ -40,8 +41,8 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
 
         if (requestId == Guid.Empty)
         {
-            if (currentUser != null)
-                cloudUser = JsonSerializer.Deserialize<User>(currentUser);
+            if (!string.IsNullOrEmpty(currentUser))
+                cloudUser = JsonSerializer.Deserialize<User>(currentUser, CloudLoginSerialization.Options);
             else
                 return Redirect($"{CloudLogin.LoginUrl}{seperator}redirectUri={HttpUtility.UrlEncode(Request.GetEncodedUrl())}&actionState=login");
         }
@@ -55,13 +56,13 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
 
         //Response.Cookies.Append("LoggedInUser", JsonConvert.SerializeObject(cloudUser));
 
-        ClaimsIdentity claimsIdentity = new(new[] {
+        ClaimsIdentity claimsIdentity = new([
             new Claim(ClaimTypes.NameIdentifier, cloudUser.ID.ToString()),
             new Claim(ClaimTypes.GivenName, cloudUser.FirstName ?? string.Empty),
             new Claim(ClaimTypes.Surname, cloudUser.LastName ?? string.Empty),
             new Claim(ClaimTypes.Name, cloudUser.DisplayName ?? string.Empty),
-            new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(cloudUser))
-        }, "CloudLogin");
+            new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(cloudUser, CloudLoginSerialization.Options))
+        ], "CloudLogin");
 
         if (cloudUser.PrimaryEmailAddress != null)
             claimsIdentity.AddClaim(new(ClaimTypes.Email, cloudUser.PrimaryEmailAddress.Input));
@@ -145,7 +146,7 @@ public class CloudLoginController(CloudLoginClient cloudLogin) : Controller
             if (string.IsNullOrEmpty(loginIdentity))
                 return Ok(null);
 
-            User? user = JsonSerializer.Deserialize<User?>(loginIdentity);
+            User? user = JsonSerializer.Deserialize<User?>(loginIdentity, CloudLoginSerialization.Options);
 
             if (user == null)
                 return Ok(null);

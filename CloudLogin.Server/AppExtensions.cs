@@ -1,33 +1,28 @@
-﻿//using AngryMonkey.CloudLogin;
+﻿namespace Microsoft.AspNetCore.Builder;
 
-//namespace Microsoft.AspNetCore.Builder
-//{
-//    public static class CloudLoginBuilderExtensions
-//	{
-//		public static IApplicationBuilder UseCloudLogin(this IApplicationBuilder app)
-//		{
-//			if (app == null)
-//				throw new ArgumentNullException(nameof(app));
+public static class MvcBuilderExtensions
+{
+    public static IApplicationBuilder UseCloudLoginHandler(this IApplicationBuilder app)
+    {
+        ArgumentNullException.ThrowIfNull(nameof(app));
 
-//			app.Use(async (context, next) =>
-//			{
-//				if (app.ApplicationServices.GetService(typeof(CloudLoginClient)) is CloudLoginClient cloudLoginClient && cloudLoginClient.HttpServer == null)
-//				{
-//					string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
+        app.Use(async (context, next) =>
+        {
+            string baseUrl = $"http{(context.Request.IsHttps ? "s" : string.Empty)}://{context.Request.Host.Value}";
 
-//					cloudLoginClient = new(baseUrl);
+            string? isLoggedIn = context.Request.Cookies["AutomaticSignIn"];
+            string? hasData = context.Request.Cookies["CloudLogin"];
+            string? isLogginIn = context.Request.Cookies["LoggingIn"];
 
-//					CloudLoginClient serverClient = await cloudLoginClient.Init();
-//					cloudLoginClient.Providers = serverClient.Providers;
-//					cloudLoginClient.FooterLinks = serverClient.FooterLinks;
-//					cloudLoginClient.RedirectUri = serverClient.RedirectUri;
-//					cloudLoginClient.UsingDatabase = serverClient.UsingDatabase;
-//				}
+            if (isLogginIn == null && hasData == null && (isLoggedIn != null || hasData != null))
+                context.Response.Redirect($"{baseUrl}/Account/Login");
 
-//				await next.Invoke();
-//			});
+            await next.Invoke();
+        });
 
-//			return app;
-//		}
-//	}
-//}
+        app.UseAuthorization();
+
+        return app;
+    }
+
+}

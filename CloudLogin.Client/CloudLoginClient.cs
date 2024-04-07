@@ -47,8 +47,6 @@ public class CloudLoginClient
         if (lightVersion)
             return new CloudLoginClient() { HttpServer = httpClient, LightVersion = true };
 
-        Console.WriteLine(await httpClient.GetStringAsync($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}"));
-
         return (await httpClient.GetFromJsonAsync<CloudLoginClient>($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}", CloudLoginSerialization.Options))!;
     }
     

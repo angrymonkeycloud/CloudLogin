@@ -8,7 +8,7 @@ namespace AngryMonkey.CloudLogin;
 
 public class CloudLoginClient
 {
-    public required HttpClient HttpServer { get; init; }
+    public HttpClient HttpServer { get; init; }
     public bool LightVersion { get; set; } = false;
     public string LoginUrl => HttpServer.BaseAddress.AbsoluteUri;
 
@@ -49,7 +49,7 @@ public class CloudLoginClient
 
         return (await httpClient.GetFromJsonAsync<CloudLoginClient>($"CloudLogin/GetClient?serverLoginUrl={HttpUtility.UrlEncode(loginServerUrl)}", CloudLoginSerialization.Options))!;
     }
-    
+
     // Was in StandAlone, which is Light Version now.
     public async Task<bool> AutomaticLogin()
     {

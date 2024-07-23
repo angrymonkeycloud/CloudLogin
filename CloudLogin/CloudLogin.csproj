@@ -45,15 +45,15 @@
   <ItemGroup>
     <PackageReference Include="AngryMonkey.CloudWeb.Server" Version="2.2.5" />
     <PackageReference Include="Azure.Identity" Version="1.12.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.4" />
-		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.39.1" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.4" NoWarn="NU1605" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.4" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.4" />
-		<PackageReference Include="Microsoft.Graph" Version="5.50.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.7" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.41.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.7" NoWarn="NU1605" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.7" />
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
+		<PackageReference Include="Microsoft.Graph" Version="5.56.0" />
   </ItemGroup>
 
   <ItemGroup>

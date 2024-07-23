@@ -26,7 +26,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.4" />
+    <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
   </ItemGroup>
   
   <ItemGroup>

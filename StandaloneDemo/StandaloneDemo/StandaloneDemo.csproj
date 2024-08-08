@@ -9,7 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
     <ProjectReference Include="..\StandaloneDemo.Client\StandaloneDemo.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.7" />
   </ItemGroup>
 
 </Project>

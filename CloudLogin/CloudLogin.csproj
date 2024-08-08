@@ -26,7 +26,7 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-    
+
   <ItemGroup>
     <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.4\contentFiles\any\net8.0\BrowserDebugHost.dll" />
     <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.4\contentFiles\any\net8.0\BrowserDebugHost.runtimeconfig.json" />
@@ -43,10 +43,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngryMonkey.CloudWeb.Server" Version="2.2.5" />
+    <PackageReference Include="AngryMonkey.CloudWeb.Server" Version="2.2.8" />
     <PackageReference Include="Azure.Identity" Version="1.12.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.7" />
-		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.41.0" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.42.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.7" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.7" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.7" />

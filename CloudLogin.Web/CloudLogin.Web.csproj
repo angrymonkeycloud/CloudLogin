@@ -4,7 +4,7 @@
 		<TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-		<AssemblyName>AngryMonkey.CloudLogin</AssemblyName>
+		<AssemblyName>AngryMonkey.CloudLogin.Web</AssemblyName>
 		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
 		<UserSecretsId>16b89c4e-cbd8-4756-8ed2-cb7b829d7de2</UserSecretsId>
     <Product>Cloud Login</Product>
@@ -13,7 +13,7 @@
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.1.15</Version>
+    <Version>1.2.0</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />
@@ -58,7 +58,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
-    <ProjectReference Include="..\CloudLogin.Components\CloudLogin.Components.csproj" />
+    <ProjectReference Include="..\CloudLogin.Web.Components\CloudLogin.Web.Components.csproj" />
   </ItemGroup>
 
   <ItemGroup>

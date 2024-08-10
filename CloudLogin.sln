@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.32804.182
@@ -49,6 +48,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StandaloneDemo", "Standalon
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StandaloneDemo.Client", "StandaloneDemo\StandaloneDemo.Client\StandaloneDemo.Client.csproj", "{05019AB5-0ADD-4330-8679-E9E0CB6CCAB5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Nuget", "CloudLogin.Nuget\CloudLogin.Nuget.csproj", "{B8E4B7D0-FC56-4959-857D-26E9950E37A7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +87,12 @@ Global
 		{4B3C5EB9-041A-48D7-AA19-845F37FCBC50}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{4B3C5EB9-041A-48D7-AA19-845F37FCBC50}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4B3C5EB9-041A-48D7-AA19-845F37FCBC50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8E4B7D0-FC56-4959-857D-26E9950E37A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8E4B7D0-FC56-4959-857D-26E9950E37A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8E4B7D0-FC56-4959-857D-26E9950E37A7}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{B8E4B7D0-FC56-4959-857D-26E9950E37A7}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{B8E4B7D0-FC56-4959-857D-26E9950E37A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8E4B7D0-FC56-4959-857D-26E9950E37A7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DF322387-3D0C-449D-AC3F-590749FB4518}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF322387-3D0C-449D-AC3F-590749FB4518}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF322387-3D0C-449D-AC3F-590749FB4518}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU

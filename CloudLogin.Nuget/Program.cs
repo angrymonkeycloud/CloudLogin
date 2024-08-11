@@ -1,4 +1,4 @@
-﻿using CloudLogin.Nuget;
+﻿using AngryMonkey.CloudMate;
 using Microsoft.Extensions.Configuration;
 
 var builder = new ConfigurationBuilder()
@@ -9,13 +9,12 @@ var builder = new ConfigurationBuilder()
 IConfigurationRoot configuration = builder.Build();
 string apiKey = configuration["NuGetApiKey"];
 
-await new NugetPacking(apiKey)
+await new CloudMate(new CloudMateConfig() { NugetApiKey = apiKey })
 {
     MetadataProperies =
     [
         "PropertyGroup/Authors",
         "PropertyGroup/Company",
-        "PropertyGroup/Version",
         "PropertyGroup/AssemblyVersion",
         "PropertyGroup/FileVersion",
         "PropertyGroup/PackageIcon"
@@ -25,7 +24,7 @@ await new NugetPacking(apiKey)
         new Project("CloudLogin.DataContract"),
         new Project("CloudLogin.Client"),
         new Project("CloudLogin.Server"),
-        new Project("CloudLogin.Web.Components"){ PackAndPublish = false },
+        new Project("CloudLogin.Web.Components"){ PackAndPublish = false, UpdateMetadata = false },
         new Project("CloudLogin.Web"),
     ]
 }.Pack();

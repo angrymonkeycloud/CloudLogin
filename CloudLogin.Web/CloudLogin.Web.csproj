@@ -13,7 +13,7 @@
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <Description />
     <Configurations>Debug;Release</Configurations>
@@ -57,7 +57,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
-    <ProjectReference Include="..\CloudLogin.Web.Components\CloudLogin.Web.Components.csproj" />
+    <ProjectReference Include="..\CloudLogin.Web.Components\CloudLogin.Web.Components.csproj">
+      <PrivateAssets>all</PrivateAssets>
+      <ExcludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\CloudLogin.Web.Components\bin\Release\$(TargetFramework)\AngryMonkey.CloudLogin.Components.dll" Pack="true" PackagePath="lib\$(TargetFramework)\" />
   </ItemGroup>
 
   <ItemGroup>

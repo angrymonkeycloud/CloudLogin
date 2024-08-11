@@ -9,10 +9,7 @@
     <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.2.0</Version>
-    <Authors>Angry Monkey</Authors>
-    <Company>Angry Monkey</Company>
-    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+    <Version>1.2.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,13 +34,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="AngryMonkeyCloudLogo-64x64.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
   </ItemGroup>
 
   <ItemGroup>

@@ -13,7 +13,6 @@
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
-    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

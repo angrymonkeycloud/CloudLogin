@@ -9,7 +9,7 @@ var builder = new ConfigurationBuilder()
 IConfigurationRoot configuration = builder.Build();
 string apiKey = configuration["NuGetApiKey"];
 
-await new InternalMethods(apiKey)
+await new NugetPacking(apiKey)
 {
     MetadataProperies =
     [
@@ -18,8 +18,7 @@ await new InternalMethods(apiKey)
         "PropertyGroup/Version",
         "PropertyGroup/AssemblyVersion",
         "PropertyGroup/FileVersion",
-        "PropertyGroup/PackageIcon",
-        "PropertyGroup/PackageOutputPath"
+        "PropertyGroup/PackageIcon"
     ],
     Projects =
     [

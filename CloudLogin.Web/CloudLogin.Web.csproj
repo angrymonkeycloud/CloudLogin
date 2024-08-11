@@ -15,7 +15,6 @@
     <FileVersion>$(PackageVersion)</FileVersion>
     <Version>1.2.0</Version>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
-    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <Description />
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>

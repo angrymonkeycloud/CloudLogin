@@ -11,7 +11,6 @@
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
-    <PackageOutputPath>..\NugetPackage\</PackageOutputPath>
     <UserSecretsId>9d2adc67-bf55-4756-816f-6279d9a3b594</UserSecretsId>
   </PropertyGroup>
 

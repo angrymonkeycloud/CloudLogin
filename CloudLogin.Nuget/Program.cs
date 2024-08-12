@@ -24,7 +24,7 @@ await new CloudMate(new CloudMateConfig() { NugetApiKey = apiKey })
         new Project("CloudLogin.DataContract"),
         new Project("CloudLogin.Client"),
         new Project("CloudLogin.Server"),
-        new Project("CloudLogin.Web.Components"){ PackAndPublish = false, UpdateMetadata = false },
+        new Project("CloudLogin.Web.Components"),
         new Project("CloudLogin.Web"),
     ]
 }.Pack();

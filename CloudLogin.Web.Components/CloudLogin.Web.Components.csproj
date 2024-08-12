@@ -4,12 +4,19 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     <AssemblyName>AngryMonkey.CloudLogin.Components</AssemblyName>
     <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.2.1</Version>
+    <Version>1.2.3</Version>
+    <Authors>Angry Monkey</Authors>
+    <Company>Angry Monkey</Company>
+    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+    <Product>Cloud Login Web Components</Product>
+    <Configurations>Debug;Release</Configurations>
+    <Description />
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,6 +47,13 @@
     <Content Update="Routes.razor">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="AngryMonkeyCloudLogo-64x64.png">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
   </ItemGroup>
 
 </Project>

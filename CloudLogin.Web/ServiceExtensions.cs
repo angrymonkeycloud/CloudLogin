@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class MvcServiceCollectionExtensions
 {
-    public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
+    public static IServiceCollection AddCloudLoginWeb(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
     {
         ArgumentNullException.ThrowIfNull(services);
 
@@ -222,16 +222,15 @@ public static class MvcServiceCollectionExtensions
         return services;
     }
 }
-public class CloudLoginServer
+public class CloudLoginWeb
 {
     public static async Task InitApp(WebApplicationBuilder builder)
     {
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
-        {
             app.UseWebAssemblyDebugging();
-        }
+
         else
         {
             app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -239,14 +238,12 @@ public class CloudLoginServer
         }
 
         app.UseHttpsRedirection();
-
+        app.UseStaticFiles();
         app.UseRouting();
         app.UseAuthentication();
+        app.UseAntiforgery();
         app.UseAuthorization();
         app.MapControllers();
-
-        app.UseStaticFiles();
-        app.UseAntiforgery();
 
         app.MapRazorComponents<AngryMonkey.CloudLogin.Main.App>()
             .AddInteractiveWebAssemblyRenderMode()

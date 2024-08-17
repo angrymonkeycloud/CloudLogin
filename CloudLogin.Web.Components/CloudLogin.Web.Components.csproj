@@ -10,13 +10,14 @@
     <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.2.3</Version>
+    <Version>1.2.5-alfa03</Version>
     <Authors>Angry Monkey</Authors>
     <Company>Angry Monkey</Company>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <Product>Cloud Login Web Components</Product>
     <Configurations>Debug;Release</Configurations>
     <Description />
+    <PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,8 +35,8 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.7" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.8" PrivateAssets="all" />
   </ItemGroup>
 
 

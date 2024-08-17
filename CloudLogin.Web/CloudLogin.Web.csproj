@@ -13,10 +13,25 @@
     <Company>Angry Monkey</Company>
     <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
     <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.2.3</Version>
+    <Version>1.2.5-alfa03</Version>
+    <PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
     <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\BrowserDebugHost.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\BrowserDebugHost.runtimeconfig.json" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\BrowserDebugProxy.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.CodeAnalysis.CSharp.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.CodeAnalysis.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.CodeAnalysis.Scripting.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.FileFormats.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.NET.WebAssembly.Webcil.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.SymbolStore.dll" />
+    <Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Newtonsoft.Json.dll" />
+  </ItemGroup>
   
 	<ItemGroup>
 		<None Update="AngryMonkeyCloudLogo-64x64.png">
@@ -28,13 +43,13 @@
   <ItemGroup>
     <PackageReference Include="AngryMonkey.CloudWeb.Server" Version="2.2.8" />
     <PackageReference Include="Azure.Identity" Version="1.12.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.8" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.42.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.7" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.7" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.7" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.7" NoWarn="NU1605" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="8.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.8" NoWarn="NU1605" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.8" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
 		<PackageReference Include="Microsoft.Graph" Version="5.56.0" />
   </ItemGroup>

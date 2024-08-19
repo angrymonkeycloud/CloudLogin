@@ -67,6 +67,6 @@ CloudLoginConfiguration cloudLoginConfig = new()
     ]
 };
 
-builder.Services.AddCloudLoginServer(cloudLoginConfig, builder.Configuration);
+builder.Services.AddCloudLoginWeb(cloudLoginConfig, builder.Configuration);
 
-await CloudLoginServer.InitApp(builder);
+await CloudLoginWeb.InitApp(builder);

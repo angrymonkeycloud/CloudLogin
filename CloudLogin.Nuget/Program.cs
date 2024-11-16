@@ -9,7 +9,7 @@ var builder = new ConfigurationBuilder()
 IConfigurationRoot configuration = builder.Build();
 string apiKey = configuration["NuGetApiKey"];
 
-await new CloudMate(new CloudMateConfig() { NugetApiKey = apiKey })
+await new CloudPack(new CloudPackConfig() { NugetApiKey = apiKey })
 {
     MetadataProperies =
     [
@@ -21,10 +21,10 @@ await new CloudMate(new CloudMateConfig() { NugetApiKey = apiKey })
     ],
     Projects =
     [
-        new Project("CloudLogin.DataContract"),
-        new Project("CloudLogin.Client"),
-        new Project("CloudLogin.Server"),
-        new Project("CloudLogin.Web.Components"),
-        new Project("CloudLogin.Web"),
+        new CloudPackProject("CloudLogin.DataContract"),
+        new CloudPackProject("CloudLogin.Client"),
+        new CloudPackProject("CloudLogin.Server"),
+        new CloudPackProject("CloudLogin.Web.Components"),
+        new CloudPackProject("CloudLogin.Web"),
     ]
 }.Pack();

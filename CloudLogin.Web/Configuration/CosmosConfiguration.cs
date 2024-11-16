@@ -2,9 +2,18 @@
 
 namespace AngryMonkey.CloudLogin;
 
-public class CosmosConfiguration(IConfigurationSection configurationSection)
+public class CosmosConfiguration
 {
-    public string? ConnectionString { get; set; } = configurationSection["ConnectionString"];
-    public string? DatabaseId { get; set; } = configurationSection["DatabaseId"];
-    public string? ContainerId { get; set; } = configurationSection["ContainerId"];
+    public CosmosConfiguration(IConfigurationSection configurationSection)
+    {
+        ConnectionString = configurationSection["ConnectionString"];
+        DatabaseId = configurationSection["DatabaseId"];
+        ContainerId = configurationSection["ContainerId"];
+    }
+
+    public CosmosConfiguration() { }
+
+    public string? ConnectionString { get; set; }
+    public string? DatabaseId { get; set; }
+    public string? ContainerId { get; set; } = "Users";
 }

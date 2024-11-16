@@ -1,7 +1,6 @@
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using AngryMonkey.CloudLogin.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 

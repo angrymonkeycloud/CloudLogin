@@ -3,6 +3,7 @@ using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using AngryMonkey.CloudWeb;
+using Azure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -20,11 +21,10 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class MvcServiceCollectionExtensions
 {
-
     public static IServiceCollection AddCloudLoginWeb(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
     {
         ArgumentNullException.ThrowIfNull(services);
-        
+
         services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
@@ -45,6 +45,10 @@ public static class MvcServiceCollectionExtensions
 
         services.AddCloudWeb(config =>
         {
+            config.PageDefaults.AppendBundle("css/site.css");
+            config.PageDefaults.AppendBundle("css/preloaded.css");
+            config.PageDefaults.AppendBundle("js/site.js");
+
             loginConfig.WebConfig(config);
 
             if (string.IsNullOrEmpty(config.PageDefaults.Title))
@@ -259,7 +263,7 @@ public static class MvcServiceCollectionExtensions
                             string? surname = accessToken?.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value;
                             string? email = accessToken?.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
-                            email ??= accessToken?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value; 
+                            email ??= accessToken?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value;
 
                             // Create ClaimsIdentity and add claims manually
                             ClaimsIdentity claimsIdentity = new("Microsoft");
@@ -267,7 +271,7 @@ public static class MvcServiceCollectionExtensions
                             claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, email));
 
                             if (!string.IsNullOrEmpty(givenName))
-                            claimsIdentity.AddClaim(new Claim(ClaimTypes.GivenName, givenName));
+                                claimsIdentity.AddClaim(new Claim(ClaimTypes.GivenName, givenName));
 
                             if (!string.IsNullOrEmpty(surname))
                                 claimsIdentity.AddClaim(new Claim(ClaimTypes.Surname, surname));
@@ -317,6 +321,18 @@ public static class MvcServiceCollectionExtensions
         }
 
         return services;
+    }
+
+    public static async Task ConfigCoconutSharp(this IHostApplicationBuilder builder, string[] args, CloudLoginConfiguration config)
+    {
+        builder.Configuration.AddAzureKeyVault(new Uri(args[0]), new DefaultAzureCredential());
+
+        config.Cosmos.ConnectionString = builder.Configuration.GetValue<string>("coconutsharp-cosmos");
+
+        string tenantArg = args.First(key => key.StartsWith("tenantid:", StringComparison.OrdinalIgnoreCase));
+
+        MicrosoftProviderConfiguration cspMicrosoft = await MicrosoftProviderConfiguration.FromAzureVault(new Uri(args[0]), tenantArg.Split(':')[1]);
+        config.Providers.Insert(0, cspMicrosoft);
     }
 }
 public class CloudLoginWeb

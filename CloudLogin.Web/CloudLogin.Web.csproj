@@ -55,6 +55,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="9.0.0" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
 		<PackageReference Include="Microsoft.Graph" Version="5.62.0" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.2" />
   </ItemGroup>
 
   <ItemGroup>

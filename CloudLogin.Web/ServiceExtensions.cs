@@ -24,7 +24,7 @@ public static class MvcServiceCollectionExtensions
     public static IServiceCollection AddCloudLoginWeb(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
     {
         ArgumentNullException.ThrowIfNull(services);
-
+        
         services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
@@ -215,12 +215,7 @@ public static class MvcServiceCollectionExtensions
 
                         X509Certificate2 certificate = await microsoftProvider.GetCertificate();
 
-                        IConfidentialClientApplication confidentialClient = ConfidentialClientApplicationBuilder.Create(options.ClientId)
-                        //.WithRedirectUri("https://localhost:7003/signin-oidc")
-                        .WithRedirectUri("https://localhost:7115/signin-oidc")
-                        .WithCertificate(certificate)
-                        .WithAuthority(new Uri(options.Authority))
-                        .Build();
+                        IConfidentialClientApplication? confidentialClient = null;
 
                         options.TokenValidationParameters = new TokenValidationParameters
                         {
@@ -241,6 +236,14 @@ public static class MvcServiceCollectionExtensions
                         options.Events.OnAuthorizationCodeReceived = async context =>
                         {
                             string codeVerifier = context.TokenEndpointRequest.Parameters["code_verifier"];
+
+                            string url = $"{context.Request.Scheme}://{context.Request.Host}{context.Request.Path}";
+
+                            confidentialClient ??= ConfidentialClientApplicationBuilder.Create(options.ClientId)
+                            .WithRedirectUri(url)
+                            .WithCertificate(certificate)
+                            .WithAuthority(new Uri(options.Authority))
+                            .Build();
 
                             AuthenticationResult result = await confidentialClient.AcquireTokenByAuthorizationCode(["User.Read"], context.ProtocolMessage.Code)
                                                                                     .WithPkceCodeVerifier(codeVerifier)

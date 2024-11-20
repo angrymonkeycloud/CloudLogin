@@ -1,6 +1,7 @@
 ﻿using Azure.Identity;
 using Azure.Security.KeyVault.Certificates;
 using Azure.Security.KeyVault.Secrets;
+using CoconutSharp.Common;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography.X509Certificates;
 
@@ -29,7 +30,7 @@ public class MicrosoftProviderConfiguration : ProviderConfiguration
 
         CertificateClient client = new(VaultEndpoint, new DefaultAzureCredential());
 
-        Azure.Response<X509Certificate2> response = await client.DownloadCertificateAsync("provider-certificate");
+        Azure.Response<X509Certificate2> response = await client.DownloadCertificateAsync(CoconutSharpDefaults.App_Certificate);
 
         _certification = response.Value;
 
@@ -55,7 +56,7 @@ public class MicrosoftProviderConfiguration : ProviderConfiguration
 
         MicrosoftProviderConfiguration configuration = new()
         {
-            ClientId = (await client.GetSecretAsync("provider-clientid")).Value.Value,
+            ClientId = (await client.GetSecretAsync(CoconutSharpDefaults.App_ClientId)).Value.Value,
             VaultEndpoint = vaultEndpoint,
             TenantId = tenantId,
             Label = label,

@@ -18,6 +18,14 @@ public class CosmosMethods : DataParse, IDisposable
         CloudGeography = cloudGeography;
 
         _client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
+
+        Task.Run(async () =>
+        {
+            DatabaseResponse database = await _client.CreateDatabaseIfNotExistsAsync(cosmosConfiguration.DatabaseId);
+
+            await database.Database.CreateContainerIfNotExistsAsync(new(cosmosConfiguration.ContainerId, "/PartitionKey"));
+        }).Wait();
+
         _container = _client.GetContainer(cosmosConfiguration.DatabaseId, cosmosConfiguration.ContainerId);
     }
 

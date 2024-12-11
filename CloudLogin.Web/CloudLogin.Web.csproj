@@ -60,7 +60,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Coconut Sharp\CoconutSharp.Common\CoconutSharp.Common.csproj" />
+    <ProjectReference Include="..\..\..\CoconutSharp\CoconutSharp.Common\CoconutSharp.Common.csproj" />
     <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
     <ProjectReference Include="..\CloudLogin.Web.Components\CloudLogin.Web.Components.csproj" />
   </ItemGroup>

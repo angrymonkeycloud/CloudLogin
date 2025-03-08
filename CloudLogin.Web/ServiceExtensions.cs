@@ -4,7 +4,6 @@ using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Providers;
 using AngryMonkey.CloudWeb;
 using Azure.Identity;
-using CoconutSharp.Common;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
@@ -356,8 +355,9 @@ public static class MvcServiceCollectionExtensions
     {
         builder.Configuration.AddAzureKeyVault(new Uri(args[0]), new DefaultAzureCredential());
 
-        if (string.IsNullOrEmpty(config.Cosmos.ConnectionString))
-            config.Cosmos.ConnectionString = builder.Configuration.GetValue<string>(CoconutSharpDefaults.Cosmos_ConnectionString);
+        // Coconust Sharp
+        //if (string.IsNullOrEmpty(config.Cosmos.ConnectionString))
+        //    config.Cosmos.ConnectionString = builder.Configuration.GetValue<string>(CoconutSharpDefaults.Cosmos_ConnectionString);
 
         string tenantArg = args.First(key => key.StartsWith("tenantid:", StringComparison.OrdinalIgnoreCase));
 

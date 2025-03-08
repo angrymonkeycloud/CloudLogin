@@ -1,35 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AssemblyName>AngryMonkey.CloudLogin.Client</AssemblyName>
-    <RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-    <Product>Cloud Login Client</Product>
-    <Authors>Angry Monkey</Authors>
-    <Company>Angry Monkey</Company>
-    <AssemblyVersion>$(PackageVersion)</AssemblyVersion>
-    <FileVersion>$(PackageVersion)</FileVersion>
-    <Version>1.2.3</Version>
-    <PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
-    <Description />
-    <Configurations>Debug;Release</Configurations>
-  </PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AssemblyName>AngryMonkey.CloudLogin.Client</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
+		<Product>Cloud Login Client</Product>
+		<Authors>Angry Monkey</Authors>
+		<Company>Angry Monkey</Company>
+		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+		<FileVersion>$(PackageVersion)</FileVersion>
+		<Version>1.2.3</Version>
+		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+		<Description />
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Update="AngryMonkeyCloudLogo-64x64.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="..\CloudLogin.DataContract\CloudLogin.DataContract.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Update="AngryMonkeyCloudLogo-64x64.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\CloudLogin.DataContract\CloudLogin.DataContract.csproj" />
+	</ItemGroup>
 
 </Project>

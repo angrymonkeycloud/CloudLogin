@@ -107,6 +107,9 @@ public class CosmosMethods : DataParse, IDisposable
 
     public async Task<User?> GetUserByPhoneNumber(string number)
     {
+        if (string.IsNullOrEmpty(number))
+            return null;
+
         return await GetUserByPhoneNumber(CloudGeography.PhoneNumbers.Get(number));
     }
 

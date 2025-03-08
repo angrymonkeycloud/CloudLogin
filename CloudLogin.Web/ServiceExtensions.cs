@@ -7,6 +7,7 @@ using Azure.Identity;
 using CoconutSharp.Common;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -200,20 +201,47 @@ public static class MvcServiceCollectionExtensions
             {
                 MicrosoftProviderConfiguration microsoftProvider = (MicrosoftProviderConfiguration)provider;
 
+                MicrosoftProviderAudience audience = microsoftProvider.Audience;
+
                 if (!string.IsNullOrEmpty(microsoftProvider.ClientSecret))
                     service.AddMicrosoftAccount(Option =>
                 {
                     Option.SignInScheme = "Cookies";
                     Option.ClientId = ((MicrosoftProviderConfiguration)provider).ClientId;
                     Option.ClientSecret = ((MicrosoftProviderConfiguration)provider).ClientSecret;
+
+                    if (audience == MicrosoftProviderAudience.Personal)
+                    {
+                        Option.AuthorizationEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
+                        Option.TokenEndpoint = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
+                        Option.UserInformationEndpoint = "https://graph.microsoft.com/oidc/userinfo";
+                    }
+
+                    //// Set the RedirectUri
+                    //Option.CallbackPath = new PathString("/signin-microsoft");
+                    //Option.Events = new OAuthEvents
+                    //{
+                    //    OnRedirectToAuthorizationEndpoint = context =>
+                    //    {
+                    //        var redirectUri = $"{context.Request.Scheme}://{context.Request.Host}{context.Request.PathBase}{Option.CallbackPath}";
+                    //        context.Response.Redirect(context.RedirectUri + "&redirect_uri=" + Uri.EscapeDataString(redirectUri));
+                    //        return Task.CompletedTask;
+                    //    }
+                    //};
                 });
                 else
                     service.AddOpenIdConnect("Microsoft", async options =>
                     {
                         options.SignInScheme = "Cookies";
 
+                        string audiencePath = audience switch
+                        {
+                            MicrosoftProviderAudience.Personal => "consumers",
+                            _ => ((MicrosoftProviderConfiguration)provider).TenantId!
+                        };
+
                         options.ClientId = ((MicrosoftProviderConfiguration)provider).ClientId;
-                        options.Authority = $"https://login.microsoftonline.com/{((MicrosoftProviderConfiguration)provider).TenantId}/v2.0/";
+                        options.Authority = $"https://login.microsoftonline.com/{audiencePath}/v2.0/";
                         options.ResponseType = OpenIdConnectResponseType.Code;
                         options.SaveTokens = true;
                         options.GetClaimsFromUserInfoEndpoint = true;

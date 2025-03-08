@@ -9,10 +9,11 @@ namespace AngryMonkey.CloudLogin.Providers;
 
 public class MicrosoftProviderConfiguration : ProviderConfiguration
 {
-	public string ClientId { get; init; } = string.Empty;
-	public string? ClientSecret { get; init; }
-	public string? TenantId { get; init; }
+    public string ClientId { get; init; } = string.Empty;
+    public string? ClientSecret { get; init; }
+    public string? TenantId { get; init; }
     public Uri? VaultEndpoint { get; init; }
+    public MicrosoftProviderAudience Audience { get; set; } = MicrosoftProviderAudience.All;
 
     //public MicrosoftProviderConfiguration(string? label = null) : base("Microsoft", label)
     //{
@@ -40,14 +41,14 @@ public class MicrosoftProviderConfiguration : ProviderConfiguration
     private MicrosoftProviderConfiguration() { }
 
     public MicrosoftProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
-	{
+    {
         ClientId = configurationSection["ClientId"];
         ClientSecret = configurationSection["ClientSecret"];
         string label = configurationSection["Label"];
 
         Init("Microsoft", label);
-		HandleUpdateOnly = handleUpdateOnly;
-		HandlesEmailAddress = true;
+        HandleUpdateOnly = handleUpdateOnly;
+        HandlesEmailAddress = true;
     }
 
     public static async Task<MicrosoftProviderConfiguration> FromAzureVault(Uri vaultEndpoint, string tenantId, bool handleUpdateOnly = false, string label = "Microsoft")
@@ -65,7 +66,7 @@ public class MicrosoftProviderConfiguration : ProviderConfiguration
         };
 
         configuration.Init("Microsoft", label);
-        
+
         return configuration;
     }
 }

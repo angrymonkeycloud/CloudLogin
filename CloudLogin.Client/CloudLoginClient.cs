@@ -1,4 +1,5 @@
 ﻿using AngryMonkey.Cloud;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -294,11 +295,22 @@ public class CloudLoginClient
 
         await HttpServer.DeleteAsync($"{@UserRoute}/Delete?userId={userId}");
     }
-    public async Task<User?> CurrentUser()
+    public async Task<User?> CurrentUser(string? baseUrl = null)
     {
         try
         {
-            HttpResponseMessage message = await HttpServer.GetAsync($"{@UserRoute}/CurrentUser");
+            var handler = new HttpClientHandler
+            {
+                UseCookies = true,
+                CookieContainer = new CookieContainer(),
+                Credentials = CredentialCache.DefaultCredentials
+            };
+
+            HttpClient httpClient = string.IsNullOrEmpty(baseUrl)? HttpServer : new(handler) { BaseAddress = new(baseUrl) };
+
+            
+
+            HttpResponseMessage message = await httpClient.GetAsync($"{@UserRoute}/CurrentUser");
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                 return null;

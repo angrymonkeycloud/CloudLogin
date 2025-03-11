@@ -26,6 +26,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.2" />
+		<PackageReference Include="Microsoft.JSInterop" Version="9.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -58,11 +58,11 @@ public static class MvcServiceCollectionExtensions
             config.PageDefaults.AppendBundle(new CloudBundle() { Source = "AngryMonkey.CloudLogin.Components.styles.css", MinOnRelease = false });
         });
 
-        loginConfig.FooterLinks.Add(new()
-        {
-            Url = "https://angrymonkeycloud.com/",
-            Title = "Info"
-        });
+        //loginConfig.FooterLinks.Add(new()
+        //{
+        //    Url = "https://angrymonkeycloud.com/",
+        //    Title = "Info"
+        //});
 
         CloudGeographyClient cloudGeography = new();
 

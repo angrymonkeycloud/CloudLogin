@@ -299,18 +299,7 @@ public class CloudLoginClient
     {
         try
         {
-            var handler = new HttpClientHandler
-            {
-                UseCookies = true,
-                CookieContainer = new CookieContainer(),
-                Credentials = CredentialCache.DefaultCredentials
-            };
-
-            HttpClient httpClient = string.IsNullOrEmpty(baseUrl)? HttpServer : new(handler) { BaseAddress = new(baseUrl) };
-
-            
-
-            HttpResponseMessage message = await httpClient.GetAsync($"{@UserRoute}/CurrentUser");
+            HttpResponseMessage message = await HttpServer.GetAsync($"{@UserRoute}/CurrentUser");
 
             if (message.StatusCode == System.Net.HttpStatusCode.NoContent)
                 return null;

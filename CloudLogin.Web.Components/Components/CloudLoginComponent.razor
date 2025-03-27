@@ -80,30 +80,33 @@
 
         @if (State == ProcessState.InputValue)
         {
-            <div class="login-form _center ">
-                @if (AddInputDiplay == false)
-                {
-                    <div class="amc-cloudlogin-keppsignedin">
-                        <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                        <label for="keepme">Keep me signed in</label>
+            @if (AllowTextIntput)
+            {
+                <div class="login-form _center ">
+                    @if (AddInputDiplay == false)
+                    {
+                        <div class="amc-cloudlogin-keppsignedin">
+                            <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                            <label for="keepme">Keep me signed in</label>
+                        </div>
+                    }
+                    <div class="amc-cloudlogin-input">
+                        <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
+                        <label for="email">@InputLabel</label>
                     </div>
-                }
-                <div class="amc-cloudlogin-input">
-                    <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
-                    <label for="email">@InputLabel</label>
+
+                    @if (!string.IsNullOrEmpty(InputValue))
+                    {
+                        <div class="login-form-next ">
+                            <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
+                                <span>Next</span>
+                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                            </button>
+                        </div>
+                    }
+
                 </div>
-
-                @if (!string.IsNullOrEmpty(InputValue))
-                {
-                    <div class="login-form-next ">
-                        <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
-                            <span>Next</span>
-                            <AngryMonkey.Cloud.Components.Icons.LoadingButton />
-                        </button>
-                    </div>
-                }
-
-            </div>
+            }
 
             @if (string.IsNullOrEmpty(InputValue))
             {

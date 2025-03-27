@@ -12,7 +12,7 @@ public partial class CloudLoginComponent
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public User? CurrentUser { get; set; }
 
-    public Methods Methods = new Methods();
+    public Methods Methods = new();
     public Guid UserId { get; set; } = Guid.NewGuid();
     [Parameter] public string? RedirectUri { get; set; }
     private string RedirectUriValue => RedirectUri ?? cloudLoginClient.RedirectUri ?? navigationManager.Uri;
@@ -43,7 +43,7 @@ public partial class CloudLoginComponent
     {
         get
         {
-            List<InputFormat> formats = new();
+            List<InputFormat> formats = [];
 
             if (EmailAddressEnabled)
                 formats.Add(InputFormat.EmailAddress);
@@ -58,7 +58,7 @@ public partial class CloudLoginComponent
 
 
     //PROVIDERS VARIABLES------------------------------------
-    List<ProviderDefinition> Providers { get; set; } = new();
+    List<ProviderDefinition> Providers { get; set; } = [];
     public bool EmailAddressEnabled => cloudLoginClient.Providers.Any(key => key.HandlesEmailAddress);
     public bool PhoneNumberEnabled => cloudLoginClient.Providers.Any(key => key.HandlesPhoneNumber);
     public ProviderDefinition? SelectedProvider { get; set; }
@@ -74,7 +74,7 @@ public partial class CloudLoginComponent
     {
         get
         {
-            List<string> classes = new();
+            List<string> classes = [];
 
             if (IsLoading)
                 classes.Add("_loading");
@@ -97,7 +97,7 @@ public partial class CloudLoginComponent
     public bool IsLoading { get; set; } = false;
     protected bool Next { get; set; } = false;
     protected bool Preview { get; set; } = false;
-    protected List<string> Errors { get; set; } = new List<string>();
+    protected List<string> Errors { get; set; } = [];
 
     private AnimateBodyStep AnimateStep = AnimateBodyStep.None;
 
@@ -162,7 +162,7 @@ public partial class CloudLoginComponent
             }
         }
 
-        Providers = cloudLoginClient.Providers.Where(p=>p.InputRequired == false).ToList();
+        Providers = cloudLoginClient.Providers.Where(p => p.InputRequired == false).ToList();
 
         await base.OnInitializedAsync();
     }
@@ -212,7 +212,7 @@ public partial class CloudLoginComponent
         User? user = await cloudLoginClient.GetUserByInput(InputValue);
 
 
-        Providers = new List<ProviderDefinition>();
+        Providers = [];
 
         bool addAllProviders = true;
 
@@ -310,7 +310,6 @@ public partial class CloudLoginComponent
         {
             await RefreshVerificationCode();
             await SwitchState(ProcessState.CodeVerification);
-
         }
         else ProviderSignInChallenge(provider.Code);
     }
@@ -452,7 +451,7 @@ public partial class CloudLoginComponent
         //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
 
         string navigateUrl = Methods.RedirectString("cloudlogin", $"login/{provider}", inputValue: InputValue, redirectUri: RedirectUri, keepMeSignedIn: KeepMeSignedIn.ToString(), actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString());
-        navigationManager.NavigateTo(navigateUrl, true); 
+        navigationManager.NavigateTo(navigateUrl, true);
     }
 
     private async Task SwitchState(ProcessState state)
@@ -729,7 +728,7 @@ public partial class CloudLoginComponent
             if (InputValueFormat == InputFormat.PhoneNumber)
                 return "Phone";
 
-            List<string> label = new();
+            List<string> label = [];
 
             if (AvailableFormats.Contains(InputFormat.EmailAddress))
                 label.Add("Email");
@@ -740,4 +739,6 @@ public partial class CloudLoginComponent
             return string.Join(" or ", label);
         }
     }
+
+    protected bool AllowTextIntput => Providers.Any(p => p.Code.Equals("custom", StringComparison.OrdinalIgnoreCase));
 }

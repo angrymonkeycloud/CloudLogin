@@ -41,7 +41,7 @@
 
 
 	<ItemGroup>
-		<ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
+	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

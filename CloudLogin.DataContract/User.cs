@@ -16,23 +16,13 @@ public record User
     public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
     public List<LoginInput> Inputs { get; set; } = [];
 
-    [JsonIgnore]
-    public List<LoginInput> EmailAddresses => Inputs.Where(key => key.Format == InputFormat.EmailAddress).ToList();
-
-    [JsonIgnore]
-    public List<LoginInput> PhoneNumbers => Inputs.Where(key => key.Format == InputFormat.PhoneNumber).ToList();
-
-
     // Ignore
 
-    [JsonIgnore]
-    public LoginInput? PrimaryEmailAddress => EmailAddresses?.FirstOrDefault(key => key.IsPrimary);
-
-    [JsonIgnore]
-    public LoginInput? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault(key => key.IsPrimary);
-
-    [JsonIgnore]
-    public List<string> Providers => Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct().ToList();
+    [JsonIgnore] public List<LoginInput> EmailAddresses => Inputs.Where(key => key.Format == InputFormat.EmailAddress).ToList();
+    [JsonIgnore] public List<LoginInput> PhoneNumbers => Inputs.Where(key => key.Format == InputFormat.PhoneNumber).ToList();
+    [JsonIgnore] public LoginInput? PrimaryEmailAddress => EmailAddresses?.FirstOrDefault(key => key.IsPrimary);
+    [JsonIgnore] public LoginInput? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault(key => key.IsPrimary);
+    [JsonIgnore] public List<string> Providers => Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct().ToList();
 
     public static User? Parse(string? decoded)
     {

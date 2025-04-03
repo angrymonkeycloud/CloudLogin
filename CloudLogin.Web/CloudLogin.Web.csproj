@@ -54,13 +54,13 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.3" NoWarn="NU1605" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="9.0.3" />
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
-		<PackageReference Include="Microsoft.Graph" Version="5.74.0" />
+		<PackageReference Include="Microsoft.Graph" Version="5.75.0" />
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
+		<ProjectReference Include="..\CloudLogin.API\CloudLogin.API.csproj" />
 		<ProjectReference Include="..\CloudLogin.Web.Components\CloudLogin.Web.Components.csproj" />
 	</ItemGroup>
 

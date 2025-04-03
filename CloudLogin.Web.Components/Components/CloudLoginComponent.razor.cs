@@ -5,14 +5,13 @@ using System.Text;
 using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin;
+
 public partial class CloudLoginComponent
 {
     //GENERAL VARIABLES--------------------------------------
     [Parameter] public string Logo { get; set; }
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public User? CurrentUser { get; set; }
-
-    public Methods Methods = new();
     public Guid UserId { get; set; } = Guid.NewGuid();
     [Parameter] public string? RedirectUri { get; set; }
     private string RedirectUriValue => RedirectUri ?? cloudLoginClient.RedirectUri ?? navigationManager.Uri;
@@ -59,8 +58,8 @@ public partial class CloudLoginComponent
 
     //PROVIDERS VARIABLES------------------------------------
     List<ProviderDefinition> Providers { get; set; } = [];
-    public bool EmailAddressEnabled => cloudLoginClient.Providers.Any(key => key.HandlesEmailAddress);
-    public bool PhoneNumberEnabled => cloudLoginClient.Providers.Any(key => key.HandlesPhoneNumber);
+    public bool EmailAddressEnabled => Providers.Any(key => key.HandlesEmailAddress);
+    public bool PhoneNumberEnabled => Providers.Any(key => key.HandlesPhoneNumber);
     public ProviderDefinition? SelectedProvider { get; set; }
     public Action OnInput { get; set; }
 
@@ -116,6 +115,8 @@ public partial class CloudLoginComponent
         if (string.IsNullOrEmpty(ActionState))
             ActionState = "login";
 
+        Providers = await cloudLoginClient.GetProviders();
+
         //cloudLoginClient = new(navigationManager.BaseUri);
 
         if (!string.IsNullOrEmpty(ActionState))
@@ -162,7 +163,7 @@ public partial class CloudLoginComponent
             }
         }
 
-        Providers = cloudLoginClient.Providers.Where(p => p.InputRequired == false).ToList();
+        Providers = Providers.Where(p => p.InputRequired == false).ToList();
 
         await base.OnInitializedAsync();
     }
@@ -182,10 +183,10 @@ public partial class CloudLoginComponent
     {
         Errors.Clear();
 
-        List<ProviderDefinition> handlePhoneNumberProviders = cloudLoginClient.Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false).ToList();
+        List<ProviderDefinition> handlePhoneNumberProviders = Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false).ToList();
 
         if (ActionState == "AddInput")
-            handlePhoneNumberProviders = cloudLoginClient.Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true).ToList();
+            handlePhoneNumberProviders = Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true).ToList();
 
 
 
@@ -230,7 +231,7 @@ public partial class CloudLoginComponent
 
                 List<ProviderDefinition> userProviders = user.Providers.Select(key => new ProviderDefinition(key)).ToList();
 
-                Providers.AddRange(cloudLoginClient.Providers.Where(p => p.Code == inputProviderCode));
+                Providers.AddRange(Providers.Where(p => p.Code == inputProviderCode));
 
                 addAllProviders = false;
             }
@@ -245,15 +246,15 @@ public partial class CloudLoginComponent
         }
 
         if (addAllProviders)
-            Providers.AddRange(cloudLoginClient.Providers
+            Providers.AddRange(Providers
                 .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress && key.HandleUpdateOnly == false)
                             || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber && key.HandleUpdateOnly == false)));
 
 
         if (ActionState == "AddInput")
         {
-            Providers.AddRange(cloudLoginClient.Providers.Where(key => key.HandleUpdateOnly == true));
-            foreach (ProviderDefinition providerInside in cloudLoginClient.Providers)
+            Providers.AddRange(Providers.Where(key => key.HandleUpdateOnly == true));
+            foreach (ProviderDefinition providerInside in Providers)
             {
                 List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
                 if (count.Count() > 1)
@@ -265,8 +266,8 @@ public partial class CloudLoginComponent
         }
         if (ActionState == "AddNumber")
         {
-            Providers.AddRange(cloudLoginClient.Providers.Where(key => key.HandlesPhoneNumber == true));
-            foreach (ProviderDefinition providerInside in cloudLoginClient.Providers)
+            Providers.AddRange(Providers.Where(key => key.HandlesPhoneNumber == true));
+            foreach (ProviderDefinition providerInside in Providers)
             {
                 List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
                 if (count.Count() > 1)
@@ -277,8 +278,8 @@ public partial class CloudLoginComponent
         }
         if (ActionState == "AddEmail")
         {
-            Providers.AddRange(cloudLoginClient.Providers.Where(key => key.HandlesEmailAddress == true));
-            foreach (ProviderDefinition providerInside in cloudLoginClient.Providers)
+            Providers.AddRange(Providers.Where(key => key.HandlesEmailAddress == true));
+            foreach (ProviderDefinition providerInside in Providers)
             {
                 List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
                 if (count.Count() > 1)
@@ -389,7 +390,7 @@ public partial class CloudLoginComponent
     {
         //navigationManager.NavigateTo($"/CloudLogin/Actions/SetPrimary?input={HttpUtility.UrlEncode(input)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
 
-        navigationManager.NavigateTo(Methods.RedirectString("CloudLogin", "Actions/SetPrimary", inputValue: input, redirectUri: RedirectUri), true);
+        navigationManager.NavigateTo(CloudLoginShared.RedirectString("CloudLogin", "Actions/SetPrimary", inputValue: input, redirectUri: RedirectUri), true);
     }
     protected async Task OnInputKeyPressed(KeyboardEventArgs args)
     {
@@ -450,7 +451,7 @@ public partial class CloudLoginComponent
 
         //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
 
-        string navigateUrl = Methods.RedirectString("cloudlogin", $"login/{provider}", inputValue: InputValue, redirectUri: RedirectUri, keepMeSignedIn: KeepMeSignedIn.ToString(), actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString());
+        string navigateUrl = CloudLoginShared.RedirectString("cloudlogin", $"login/{provider}", inputValue: InputValue, redirectUri: RedirectUri, keepMeSignedIn: KeepMeSignedIn.ToString(), actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString());
         navigationManager.NavigateTo(navigateUrl, true);
     }
 
@@ -600,7 +601,7 @@ public partial class CloudLoginComponent
         string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
 
         //navigationManager.NavigateTo($"/CloudLogin/Actions/Update?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
-        navigationManager.NavigateTo(Methods.RedirectString("CloudLogin", "Actions", userInfo: userInfoJSON, redirectUri: RedirectUri), true);
+        navigationManager.NavigateTo(CloudLoginShared.RedirectString("CloudLogin", "Actions", userInfo: userInfoJSON, redirectUri: RedirectUri), true);
     }
 
     //CUSTOM SIGN IN FUNCTIONS-------------------------------
@@ -623,7 +624,7 @@ public partial class CloudLoginComponent
         //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
 
 
-        navigationManager.NavigateTo(Methods.RedirectString("cloudlogin", "login", userInfo: userInfoJSON, keepMeSignedIn: KeepMeSignedIn.ToString(), redirectUri: RedirectUri, actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString()), true);
+        navigationManager.NavigateTo(CloudLoginShared.RedirectString("cloudlogin", "login", userInfo: userInfoJSON, keepMeSignedIn: KeepMeSignedIn.ToString(), redirectUri: RedirectUri, actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString()), true);
     }
 
     private static string CreateRandomCode(int length)

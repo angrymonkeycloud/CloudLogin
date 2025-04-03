@@ -76,7 +76,7 @@ else
         if (ActionState == "mobile" && !string.IsNullOrEmpty(RedirectUri))
         {
             if (CurrentUser != null && IsAuthorized)
-                await cloudLogin.CreateUserRequestCustom(CurrentUser.ID, new Guid(RedirectUri));
+                await cloudLogin.CreateLoginRequest(CurrentUser.ID, new Guid(RedirectUri));
             else
                 IsWorking = false;
 
@@ -88,7 +88,7 @@ else
         {
             if (RedirectUri != "/")
             {
-                Guid? requestID = await cloudLogin.CreateUserRequest(CurrentUser.ID);
+                Guid? requestID = await cloudLogin.CreateLoginRequest(CurrentUser.ID);
 
                 string seperator = RedirectUri.Contains('?') ? "&" : "?";
 

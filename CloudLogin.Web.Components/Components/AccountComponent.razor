@@ -1,0 +1,61 @@
+﻿@using AngryMonkey.CloudLogin.Interfaces
+
+@inject ICloudLogin cloudLogin
+@inject NavigationManager navigationManager
+
+@namespace AngryMonkey.CloudLogin
+
+<div class="account-management">
+    <div class="tabs">
+        @foreach (var tab in Tabs)
+        {
+            <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
+        }
+        <button class="tab-button" @onclick="SignOut">Log out</button>
+    </div>
+    <div class="tab-content">
+        @if (activeTab == "UserInfo")
+        {
+            <AccountComponent_Dashboard CurrentUser="CurrentUser" />
+        }
+        else if (activeTab == "Manage")
+        {
+            <AccountComponent_Update CurrentUser="CurrentUser" />
+        }
+        else if (activeTab == "Emails")
+        {
+            <AccountComponent_Emails CurrentUser="CurrentUser" />
+        }
+        else if (activeTab == "PhoneNumbers")
+        {
+            <AccountComponent_Numbers CurrentUser="CurrentUser" />
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public required User CurrentUser { get; set; }
+
+    private string activeTab = "UserInfo";
+
+    private List<TabItem> Tabs = new List<TabItem>
+    {
+        new TabItem { Name = "UserInfo", DisplayName = "User Info" },
+        new TabItem { Name = "Manage", DisplayName = "Manage" },
+        new TabItem { Name = "Emails", DisplayName = "Emails" },
+        new TabItem { Name = "PhoneNumbers", DisplayName = "Phone Numbers" }
+    };
+
+    private class TabItem
+    {
+        public required string Name { get; set; }
+        public required string DisplayName { get; set; }
+    }
+
+    private void SwitchTab(string tab) => activeTab = tab;
+
+    private void SignOut()
+    {
+        navigationManager.NavigateTo("/CloudLogin/Logout", true);
+    }
+}

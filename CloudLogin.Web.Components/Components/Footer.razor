@@ -1,4 +1,6 @@
-﻿@if (DisplayFooter)
+﻿@inject AngryMonkey.CloudLogin.Interfaces.ICloudLogin cloudLogin
+
+@if (DisplayFooter)
 {
     <div class="amc-cloudlogin-footer">
         @*    <div class="amc-cloudlogin-footer-providers">
@@ -22,8 +24,17 @@
 }
 
 @code {
-    [Parameter] public List<ProviderDefinition> Providers { get; set; } = [];
-    [Parameter] public required List<Link> Links { get; set; } = [];
+    List<ProviderDefinition> Providers { get; set; } = [];
+    List<Link> Links { get; set; } = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Providers = await cloudLogin.GetProviders();
+        Providers = Providers.Where(k => k.HandlesPhoneNumber == false).ToList();
+
+
+        Links = cloudLogin.FooterLinks ?? [];
+    }
 
     protected bool DisplayFooter => Providers.Count > 0 || Links.Count > 0;
 }

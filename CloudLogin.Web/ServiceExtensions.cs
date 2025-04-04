@@ -47,6 +47,8 @@ public static class MvcServiceCollectionExtensions
         ConfigureCloudWeb(services, loginConfig);
         ConfigureAuthentication(services, loginConfig);
 
+        services.AddCloudLoginServer(loginConfig);
+
         return services;
     }
 
@@ -78,11 +80,10 @@ public static class MvcServiceCollectionExtensions
 
     private static void ConfigureAuthentication(IServiceCollection services, CloudLoginConfiguration loginConfig)
     {
-        var auth = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options => ConfigureCookieAuth(options, loginConfig));
+        AuthenticationBuilder auth = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                            .AddCookie(options => ConfigureCookieAuth(options, loginConfig));
 
-        var providerService = services.BuildServiceProvider()
-            .GetRequiredService<ProviderConfigurationService>();
+        ProviderConfigurationService providerService = services.BuildServiceProvider().GetRequiredService<ProviderConfigurationService>();
 
         providerService.ConfigureProviders(auth);
     }
@@ -90,17 +91,17 @@ public static class MvcServiceCollectionExtensions
     private static void ConfigureCookieAuth(CookieAuthenticationOptions options, CloudLoginConfiguration loginConfig)
     {
         options.Cookie.Name = "CloudLogin";
+        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 
-        if (!string.IsNullOrEmpty(loginConfig.BaseAddress) &&
-            loginConfig.BaseAddress != "localhost")
+        if (!string.IsNullOrEmpty(loginConfig.BaseAddress) && loginConfig.BaseAddress != "localhost")
             options.Cookie.Domain = $".{loginConfig.BaseAddress}";
 
         options.Events = new CookieAuthenticationEvents
         {
             OnSignedIn = async context =>
             {
-                var authService = context.HttpContext.RequestServices
-                    .GetRequiredService<CloudLoginAuthenticationService>();
+                CloudLoginAuthenticationService authService = context.HttpContext.RequestServices.GetRequiredService<CloudLoginAuthenticationService>();
                 await authService.HandleSignIn(context.Principal!, context.HttpContext);
             }
         };

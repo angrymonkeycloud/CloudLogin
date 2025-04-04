@@ -1,0 +1,65 @@
+﻿@namespace AngryMonkey.CloudLogin
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+<h3>Phone Numbers</h3>
+
+<ul>
+    @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
+    {
+        <li>
+            @phone.Input
+            @if (phone.IsPrimary)
+            {
+                <span class="badge">Primary</span>
+            }
+            <button @onclick="() => SetPrimary(phone.Input)">Set Primary</button>
+            <button @onclick="() => RemovePhoneNumber(phone.Input)">Remove</button>
+        </li>
+    }
+</ul>
+<input type="text" @bind="NewPhoneNumber" placeholder="Add new phone number" />
+<button @onclick="AddPhoneNumber">Add Phone Number</button>
+
+@code {
+    [Parameter] public required User CurrentUser { get; set; }
+
+    private string NewPhoneNumber { get; set; } = string.Empty;
+
+    private async Task AddPhoneNumber()
+    {
+        if (string.IsNullOrEmpty(NewPhoneNumber))
+            return;
+
+        var newPhoneNumber = new LoginInput
+            {
+                Input = NewPhoneNumber,
+                Format = InputFormat.PhoneNumber,
+                IsPrimary = false,
+                Providers = new List<LoginProvider>()
+            };
+
+        CurrentUser.PhoneNumbers.Add(newPhoneNumber);
+        await cloudLogin.UpdateUser(CurrentUser);
+        NewPhoneNumber = string.Empty;
+    }
+
+    private async Task RemovePhoneNumber(string phoneNumber)
+    {
+        var phoneToRemove = CurrentUser.PhoneNumbers.FirstOrDefault(p => p.Input == phoneNumber);
+
+        if (phoneToRemove == null)
+            return;
+
+        CurrentUser.PhoneNumbers.Remove(phoneToRemove);
+        await cloudLogin.UpdateUser(CurrentUser);
+    }
+
+    private async Task SetPrimary(string phoneNumber)
+    {
+        foreach (var p in CurrentUser.PhoneNumbers)
+            p.IsPrimary = p.Input == phoneNumber;
+
+        await cloudLogin.UpdateUser(CurrentUser);
+    }
+}

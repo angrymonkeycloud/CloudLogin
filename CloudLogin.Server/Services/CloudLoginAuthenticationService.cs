@@ -131,7 +131,7 @@ public class CloudLoginAuthenticationService
 
         CloudGeographyClient? cloudGeography = _serviceProvider.GetService<CloudGeographyClient>();
 
-        if (cloudGeography == null)
+        if (cloudGeography == null || string.IsNullOrEmpty(input))
             return (null, null, input);
 
         Cloud.Geography.PhoneNumber phoneNumber = cloudGeography.PhoneNumbers.Get(input);

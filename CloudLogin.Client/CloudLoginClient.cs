@@ -2,6 +2,7 @@
 using AngryMonkey.CloudLogin.Interfaces;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -19,12 +20,30 @@ public class CloudLoginClient : ICloudLogin
 
     public async Task<List<ProviderDefinition>> GetProviders()
     {
-        HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/GetProviders");
+        HttpResponseMessage response = await HttpServer.GetAsync("api/providers");
 
-        if (message.StatusCode == HttpStatusCode.NoContent)
-            return [];
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"Failed to get providers. Status code: {response.StatusCode}");
 
-        return await message.Content.ReadFromJsonAsync<List<ProviderDefinition>>(CloudLoginSerialization.Options) ?? [];
+        string responseContent = await response.Content.ReadAsStringAsync();
+
+        if (string.IsNullOrEmpty(responseContent))
+        {
+            // Handle empty response
+            return new List<ProviderDefinition>();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<ProviderDefinition>>(responseContent, CloudLoginSerialization.Options);
+        }
+        catch (JsonException ex)
+        {
+            // Log the response content and the exception
+            Console.WriteLine($"Failed to deserialize response: {responseContent}");
+            Console.WriteLine(ex);
+            throw;
+        }
     }
 
     public bool UsingDatabase { get; set; } = true;
@@ -317,7 +336,7 @@ public class CloudLoginClient : ICloudLogin
 
             return await message.Content.ReadFromJsonAsync<bool>(CloudLoginSerialization.Options);
         }
-        catch { throw; }
+        catch { return false; }
     }
     public async Task AddUserInput(Guid userId, LoginInput Input)
     {
@@ -337,4 +356,6 @@ public class CloudLoginClient : ICloudLogin
             throw;
         }
     }
+
+    public string GetPhoneNumber(string input) => CloudGeography.PhoneNumbers.Get(input).Number;
 }

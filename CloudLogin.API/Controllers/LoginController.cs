@@ -36,7 +36,7 @@ public class LoginController(CloudLoginConfiguration configuration, CloudLoginSe
     [HttpGet("Login/{identity}")]
     public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "", string? input = null, string? redirectUri = null)
     {
-       return _server.Login(identity, keepMeSignedIn, sameSite, actionState, primaryEmail, input, redirectUri);
+        return _server.Login(identity, keepMeSignedIn, sameSite, actionState, primaryEmail, input, redirectUri);
     }
 
     [HttpGet("Login/CustomLogin")]
@@ -54,7 +54,7 @@ public class LoginController(CloudLoginConfiguration configuration, CloudLoginSe
     [HttpGet("Update")]
     public async Task<IActionResult> Update(string redirectUri, string? userInfo)
     {
-       return await _server.UpdateAuth(redirectUri, userInfo);
+        return await _server.UpdateAuth(redirectUri, userInfo);
     }
 
     [HttpGet("Logout")]

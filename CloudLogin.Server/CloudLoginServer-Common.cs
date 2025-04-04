@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
+using AngryMonkey.Cloud.Geography;
+using AngryMonkey.CloudLogin.Sever.Providers;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -225,4 +227,6 @@ public partial class CloudLoginServer : ICloudLogin
 
         return [.. _configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.HandleUpdateOnly, key.Label))];
     }
+
+    public string GetPhoneNumber(string input) => _cloudGeography.PhoneNumbers.Get(input).Number;
 }

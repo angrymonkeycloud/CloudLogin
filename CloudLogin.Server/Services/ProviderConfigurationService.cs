@@ -102,6 +102,13 @@ public class ProviderConfigurationService
         options.SaveTokens = true;
         options.GetClaimsFromUserInfoEndpoint = true;
 
+        // Add required scopes
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+        options.Scope.Add("User.Read");
+
         ConfigureMicrosoftOpenIdScopes(options);
         ConfigureMicrosoftOpenIdClaims(options);
         await ConfigureMicrosoftOpenIdEvents(options, provider);

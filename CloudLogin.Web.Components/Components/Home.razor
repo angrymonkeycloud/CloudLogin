@@ -1,8 +1,9 @@
 @namespace AngryMonkey.CloudLogin
 @* @using Microsoft.AspNetCore.Http
 @using Microsoft.AspNetCore.WebUtilities; *@
+@using AngryMonkey.CloudLogin.Interfaces
 @using Microsoft.Extensions.Primitives;
-@inject CloudLoginClient cloudLogin
+@inject ICloudLogin cloudLogin
 @inject NavigationManager nav
 @page "/"
 
@@ -41,7 +42,7 @@ else
 {
     <section>
         <article>
-            <AngryMonkey.CloudLogin.CloudLoginComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
+            <AngryMonkey.CloudLogin.CloudLoginFullPageComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
         </article>
     </section>
 }
@@ -65,7 +66,11 @@ else
         IsAuthorized = await cloudLogin.IsAuthenticated();
 
         if (IsAuthorized)
-            CurrentUser = await cloudLogin.CurrentUser();
+        {
+            nav.NavigateTo("/Account");
+
+            return;
+        }
 
         if (string.IsNullOrEmpty(ActionState))
             ActionState = "login";

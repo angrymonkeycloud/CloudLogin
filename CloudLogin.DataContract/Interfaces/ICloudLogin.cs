@@ -26,4 +26,6 @@ public interface ICloudLogin
     Task<bool> IsAuthenticated();
     Task AddUserInput(Guid userId, LoginInput input);
     Task<List<ProviderDefinition>> GetProviders();
+
+    string GetPhoneNumber(string input);
 }

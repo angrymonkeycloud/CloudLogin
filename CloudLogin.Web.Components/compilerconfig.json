@@ -10,5 +10,17 @@
   {
     "outputFile": "Components/CloudLoginComponent.razor.css",
     "inputFile": "Components/CloudLoginComponent.razor.less"
+  },
+  {
+    "outputFile": "Components/CloudLoginFullPageComponent.razor.css",
+    "inputFile": "Components/CloudLoginFullPageComponent.razor.less"
+  },
+  {
+    "outputFile": "Components/AccountComponent-Dashboard.razor.css",
+    "inputFile": "Components/AccountComponent-Dashboard.razor.less"
+  },
+  {
+    "outputFile": "Components/AccountComponent.razor.css",
+    "inputFile": "Components/AccountComponent.razor.less"
   }
 ]

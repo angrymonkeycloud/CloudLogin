@@ -1,4 +1,5 @@
 ﻿using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +14,7 @@ public static class MvcServiceCollectionExtensions
             option.LogoutPath = "/account/logout";
         });
 
-        services.AddSingleton(sp => new CloudLoginClient()
+        services.AddSingleton<ICloudLogin>(sp => new CloudLoginClient()
         {
             HttpServer = new() { BaseAddress = new(loginServerUrl) }
         });

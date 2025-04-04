@@ -1,30 +1,31 @@
 ﻿namespace AngryMonkey.CloudLogin;
-public partial class CloudLoginComponent
+
+internal enum VerificationCodeResult
 {
-    private enum VerificationCodeResult
-    {
-        Valid,
-        NotValid,
-        Expired
-    }
-    private enum AnimateBodyStep
-    {
-        None,
-        Out,
-        In
-    }
-    private enum AnimateBodyDirection
-    {
-        None,
-        Forward,
-        Backward
-    }
-    protected enum ProcessState
-    {
-        InputValue,
-        Providers,
-        Registration,
-        CodeVerification,
-        ChangePrimary
-    }
+    Valid,
+    NotValid,
+    Expired
+}
+
+internal enum AnimateBodyStep
+{
+    None,
+    Out,
+    In
+}
+
+internal enum AnimateBodyDirection
+{
+    None,
+    Forward,
+    Backward
+}
+
+internal enum ProcessState
+{
+    InputValue,
+    Providers,
+    Registration,
+    CodeVerification,
+    ChangePrimary
 }

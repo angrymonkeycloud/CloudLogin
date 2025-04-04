@@ -1,5 +1,7 @@
 using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Services;
+using AngryMonkey.CloudLogin.Sever.Providers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 //        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 //});
 
-builder.Services.Configure<EmailServiceOptions>(builder.Configuration.GetSection("EmailServer"));
+builder.Services.Configure<EmailServiceOptions>(builder.Configuration.GetSection("SMTP"));
 IServiceCollection test = builder.Services.AddScoped<EmailService>();
 
 
@@ -58,10 +60,10 @@ CloudLoginConfiguration cloudLoginConfig = new()
     //},
     Providers =
     [
-        new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
+        new MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")){ Audience = MicrosoftProviderAudience.Personal },
         new GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
-        new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp"), true),
-        new CustomProviderConfiguration(builder.Configuration.GetSection("Custom")),
+        //new WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp"), true),
+        //new CustomProviderConfiguration(builder.Configuration.GetSection("Custom")),
     ]
 };
 

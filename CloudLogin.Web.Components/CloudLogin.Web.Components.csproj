@@ -21,15 +21,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Content Remove=".mateconfig.json" />
 		<Content Remove="compilerconfig.json" />
 	</ItemGroup>
 
 
 	<ItemGroup>
-		<None Include=".mateconfig.json">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</None>
 		<None Include="compilerconfig.json" />
 	</ItemGroup>
 

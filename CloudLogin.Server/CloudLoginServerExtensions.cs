@@ -28,7 +28,7 @@ public static class CloudLoginServerExtensions
         services.AddSingleton<CloudGeographyClient>();
         services.AddSingleton<CloudLoginAuthenticationService>();
 
-        services.AddScoped<CloudLoginServer>();
+        services.AddScoped<ICloudLogin, CloudLoginServer>();
 
         return services;
     }

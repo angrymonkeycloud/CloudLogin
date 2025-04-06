@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
@@ -19,10 +19,6 @@
 		<Description />
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
 	</PropertyGroup>
-	
-	<ItemGroup>
-		<SupportedPlatform Include="browser" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<Content Remove="compilerconfig.json" />
@@ -33,9 +29,12 @@
 		<None Include="compilerconfig.json" />
 	</ItemGroup>
 
+
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.3" PrivateAssets="all" />
 	</ItemGroup>
+
 
 	<ItemGroup>
 	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />

@@ -1,4 +1,5 @@
 ﻿using AngryMonkey.Cloud;
+using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Sever.Providers;
@@ -6,16 +7,23 @@ using AngryMonkey.CloudWeb;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class MvcServiceCollectionExtensions
 {
-    public static IServiceCollection AddCloudLoginWeb(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
+    public static IServiceCollection AddCloudLoginEmbedded(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
     {
         ArgumentNullException.ThrowIfNull(services);
 
@@ -97,49 +105,5 @@ public static class MvcServiceCollectionExtensions
                 await authService.HandleSignIn(context.Principal!, context.HttpContext);
             }
         };
-    }
-
-    public static async Task ConfigCoconutSharp(this IHostApplicationBuilder builder, string[] args, CloudLoginConfiguration config)
-    {
-        builder.Configuration.AddAzureKeyVault(new Uri(args[0]), new DefaultAzureCredential());
-
-        // Coconust Sharp
-        //if (string.IsNullOrEmpty(config.Cosmos.ConnectionString))
-        //    config.Cosmos.ConnectionString = builder.Configuration.GetValue<string>(CoconutSharpDefaults.Cosmos_ConnectionString);
-
-        string tenantArg = args.First(key => key.StartsWith("tenantid:", StringComparison.OrdinalIgnoreCase));
-
-        MicrosoftProviderConfiguration cspMicrosoft = await MicrosoftProviderConfiguration.FromAzureVault(new Uri(args[0]), tenantArg.Split(':')[1]);
-        config.Providers.Insert(0, cspMicrosoft);
-    }
-}
-public class CloudLoginWeb
-{
-    public static async Task InitApp(WebApplicationBuilder builder)
-    {
-        WebApplication app = builder.Build();
-
-        if (app.Environment.IsDevelopment())
-            app.UseWebAssemblyDebugging();
-
-        else
-        {
-            app.UseExceptionHandler("/Error", createScopeForErrors: true);
-            app.UseHsts();
-        }
-
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
-        app.UseRouting();
-        app.UseAuthentication();
-        app.UseAntiforgery();
-        app.UseAuthorization();
-        app.MapControllers();
-
-        app.MapRazorComponents<AngryMonkey.CloudLogin.Main.App>()
-            .AddInteractiveWebAssemblyRenderMode()
-            .AddAdditionalAssemblies(typeof(AngryMonkey.CloudLogin._Imports).Assembly);
-
-        await app.RunAsync();
     }
 }

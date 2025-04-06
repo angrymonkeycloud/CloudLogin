@@ -1,0 +1,47 @@
+﻿@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+@namespace AngryMonkey.CloudLogin
+
+<section>
+    <h3>Account Information</h3>
+    <div>
+        <p><strong>Display Name:</strong> @CurrentUser.DisplayName</p>
+        <p><strong>First Name:</strong> @CurrentUser.FirstName</p>
+        <p><strong>Last Name:</strong> @CurrentUser.LastName</p>
+
+        <p><strong>Email Addresses:</strong></p>
+        <ul>
+            @foreach (var email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
+            {
+                <li>
+                    @email.Input
+
+                    @if (email.IsPrimary)
+                    {
+                        <span class="badge">Primary</span>
+                    }
+                </li>
+            }
+        </ul>
+
+        <p><strong>Phone Numbers:</strong></p>
+        <ul>
+            @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
+            {
+                <li>
+                    @phone.Input
+
+                    @if (phone.IsPrimary)
+                    {
+                        <span class="badge">Primary</span>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+</section>
+
+@code {
+    [Parameter] public required User CurrentUser { get; set; }
+}

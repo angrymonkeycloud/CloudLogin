@@ -22,6 +22,8 @@ public class CloudLoginClient : ICloudLogin
     {
         HttpResponseMessage response = await HttpServer.GetAsync("api/providers");
 
+        Console.WriteLine(LoginUrl);
+
         if (!response.IsSuccessStatusCode)
             throw new Exception($"Failed to get providers. Status code: {response.StatusCode}");
 
@@ -30,7 +32,7 @@ public class CloudLoginClient : ICloudLogin
         if (string.IsNullOrEmpty(responseContent))
         {
             // Handle empty response
-            return new List<ProviderDefinition>();
+            return [];
         }
 
         try

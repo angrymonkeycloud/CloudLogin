@@ -29,6 +29,7 @@ public static class CloudLoginServerExtensions
         services.AddSingleton<CloudLoginAuthenticationService>();
 
         services.AddScoped<ICloudLogin, CloudLoginServer>();
+        services.AddSingleton<CloudLoginServer>();
 
         return services;
     }

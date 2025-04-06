@@ -28,7 +28,6 @@ public static class MvcServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddRazorComponents()
-            .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
 
         //CloudWebConfig? webConfig = builderConfiguration.Get<CloudWebConfig>();

@@ -6,61 +6,6 @@
 @namespace AngryMonkey.CloudLogin
 
 <div class="amc-cloudlogin @CssClass">
-    <div class="amc-cloudlogin-header">
-
-        @* Loading *@
-
-        <div class="amc-cloudlogin-loading">
-            <div></div>
-        </div>
-
-        @* Logo *@
-
-        @if (!string.IsNullOrEmpty(Logo))
-        {
-            <div class="amc-cloudlogin-logo">
-                <img src="@Logo" alt="logo" />
-            </div>
-        }
-
-        @* Title *@
-
-        <div class="amc-cloudlogin-title">
-
-            @if (State != ProcessState.InputValue && ActionState == "login")
-            {
-                <button @onclick="OnBackClicked">
-                    <AngryMonkey.Cloud.Components.Icons.Back />
-                </button>
-            }
-            <div>
-                @Title
-            </div>
-        </div>
-
-        @* Subtitle *@
-
-        @if (!string.IsNullOrEmpty(Subtitle))
-        {
-            <div class="amc-cloudlogin-subtitle">
-                @Subtitle
-            </div>
-        }
-
-        @* Errors *@
-
-        @if (Errors.Any())
-        {
-            <div class="amc-cloudlogin-errors">
-                <ul>
-                    @foreach (string error in Errors)
-                    {
-                        <li>@error</li>
-                    }
-                </ul>
-            </div>
-        }
-    </div>
 
     <CloudLoginComponent />
 

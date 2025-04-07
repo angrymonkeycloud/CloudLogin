@@ -4,23 +4,19 @@
     "inputFile": "Components/CloudLogin.razor.less"
   },
   {
-    "outputFile": "Components/Footer.razor.css",
-    "inputFile": "Components/Footer.razor.less"
-  },
-  {
-    "outputFile": "Components/CloudLoginComponent.razor.css",
-    "inputFile": "Components/CloudLoginComponent.razor.less"
-  },
-  {
-    "outputFile": "Components/CloudLoginFullPageComponent.razor.css",
-    "inputFile": "Components/CloudLoginFullPageComponent.razor.less"
-  },
-  {
     "outputFile": "Components/AccountComponent.razor.css",
     "inputFile": "Components/AccountComponent.razor.less"
   },
   {
     "outputFile": "Components/AccountComponent-UserInfo.razor.css",
     "inputFile": "Components/AccountComponent-UserInfo.razor.less"
+  },
+  {
+    "outputFile": "Components/LoginComponent.razor.css",
+    "inputFile": "Components/LoginComponent.razor.less"
+  },
+  {
+    "outputFile": "Components/LoginComponent-Footer.razor.css",
+    "inputFile": "Components/LoginComponent-Footer.razor.less"
   }
 ]

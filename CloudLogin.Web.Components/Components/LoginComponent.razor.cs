@@ -6,7 +6,7 @@ using static System.Net.WebRequestMethods;
 
 namespace AngryMonkey.CloudLogin;
 
-public partial class CloudLoginComponent
+public partial class LoginComponent
 {
     //GENERAL VARIABLES--------------------------------------
     [Parameter] public string Logo { get; set; }

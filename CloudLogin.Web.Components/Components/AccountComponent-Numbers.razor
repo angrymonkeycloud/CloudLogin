@@ -2,25 +2,32 @@
 @using AngryMonkey.CloudLogin.Interfaces
 @inject ICloudLogin cloudLogin
 
-<h3>Phone Numbers</h3>
+<div class="info">
+    <h3>Phone Numbers</h3>
+    <div class="info-input">
+        <input type="text" @bind="NewPhoneNumber" placeholder="Add new phone number" />
+        <button @onclick="AddPhoneNumber">Add Phone Number</button>
+    </div>
+    <ul>
+        @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
+        {
+            <li>
+                <span>
+                     @phone.Input
+                </span>
+                <div>
+                    @if (phone.IsPrimary)
+                    {
+                        <span class="badge">Primary</span>
+                    }
+                    <button @onclick="() => SetPrimary(phone.Input)">Set Primary</button>
+                    <button @onclick="() => RemovePhoneNumber(phone.Input)">Remove</button>
+                </div>
+            </li>
+        }
+    </ul>
 
-<ul>
-    @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
-    {
-        <li>
-            @phone.Input
-            @if (phone.IsPrimary)
-            {
-                <span class="badge">Primary</span>
-            }
-            <button @onclick="() => SetPrimary(phone.Input)">Set Primary</button>
-            <button @onclick="() => RemovePhoneNumber(phone.Input)">Remove</button>
-        </li>
-    }
-</ul>
-<input type="text" @bind="NewPhoneNumber" placeholder="Add new phone number" />
-<button @onclick="AddPhoneNumber">Add Phone Number</button>
-
+</div>
 @code {
     [Parameter] public required User CurrentUser { get; set; }
 

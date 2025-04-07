@@ -1,0 +1,62 @@
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    > div {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    &-input {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        > div {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+
+            label {
+                margin-left: 5px;
+                font-size: 1rem;
+                font-weight: bold;
+                color: var(--amc-accentColor);
+            }
+
+            input {
+                padding: 15px 20px;
+                outline: none;
+                border: 1px solid var(--amc-accentColor);
+                border-radius: 5px;
+            }
+        }
+    }
+
+    &-buttons {
+        width: 100%;
+        margin-top: 20px;
+
+        button {
+            width: 100%;
+            padding: 10px;
+            text-transform: capitalize;
+            font-size: 1rem;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 20px;
+            background-color: var(--amc-secondColor);
+            border: 1px solid var(--amc-secondColor);
+            transition: all .5s;
+            position: relative;
+            width: 100%;
+
+            &:hover {
+                color: var(--amc-secondColor);
+                background-color: transparent;
+            }
+        }
+    }
+}

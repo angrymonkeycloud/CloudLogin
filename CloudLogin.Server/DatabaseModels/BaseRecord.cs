@@ -5,19 +5,20 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public record BaseRecord
 {
-    internal BaseRecord(string partitionKey, string discriminator)
+    internal BaseRecord(string partitionKey, string type)
     {
         PartitionKey = partitionKey;
-        Discriminator = discriminator;
+        Type = type;
     }
 
     [JsonPropertyName("id")]
     [JsonProperty("id")] // to work with Cosmos
-    internal string CosmosId => $"{Discriminator}|{ID}";
-
-    [JsonPropertyName("ID")]
-    [JsonProperty("ID")] // to work with Cosmos
     public Guid ID { get; set; }
+
+
+    [JsonPropertyName("$type")]
+    [JsonProperty("$type")] // to work with Cosmos
+    public string Type { get; internal set; }
+
     public string PartitionKey { get; internal set; }
-    public string Discriminator { get; internal set; }
 }

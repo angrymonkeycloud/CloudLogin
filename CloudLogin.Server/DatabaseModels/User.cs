@@ -7,6 +7,7 @@ public record DataUser : BaseRecord
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? DisplayName { get; set; }
+    public string? PasswordHash { get; set; }
     public bool IsLocked { get; set; } = false;
     public string? Username { get; set; }
     public DateOnly? DateOfBirth { get; set; }

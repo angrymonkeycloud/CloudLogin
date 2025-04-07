@@ -108,7 +108,6 @@
 }
 .amc-cloudlogin-header {
   text-align: center;
-  min-height: 12rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -388,6 +387,9 @@
 .amc-cloudlogin._animatestep-in._animatedirection-backward .amc-cloudlogin-body .amc-cloudlogin-input,
 .amc-cloudlogin._animatestep-in._animatedirection-backward .amc-cloudlogin-body button {
   animation: animateInBackward 300ms ease-in-out forwards;
+}
+.amc-cloudlogin ._fullpage-header {
+  min-height: 12rem;
 }
 .--disable {
   cursor: none;

@@ -57,7 +57,8 @@ public partial class CloudLoginServer
             redirectUri = redirectUri.Replace($"/login", "");
         }
 
-        Dictionary<string, string> userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo, CloudLoginSerialization.Options)!;
+        User user = JsonSerializer.Deserialize<User>(userInfo, CloudLoginSerialization.Options)!;
+        //Dictionary<string, string> userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo, CloudLoginSerialization.Options)!;
 
         AuthenticationProperties properties = new()
         {
@@ -66,10 +67,10 @@ public partial class CloudLoginServer
             RedirectUri = redirectUri
         };
 
-        string firstName = userDictionary["FirstName"];
-        string lastName = userDictionary["LastName"];
-        string displayName = userDictionary["DisplayName"];
-        string input = userDictionary["Input"];
+        string firstName = user.FirstName;// userDictionary["FirstName"];
+        string lastName = user.LastName; // userDictionary["LastName"];
+        string displayName = user.DisplayName; // userDictionary["DisplayName"];
+        string input = user.Inputs.First().Input;// userDictionary["Input"];
 
         if (_configuration.Cosmos == null)
         {
@@ -80,17 +81,17 @@ public partial class CloudLoginServer
         displayName ??= $"{firstName} {lastName}";
 
         var claimsIdentity = new ClaimsIdentity([
-                new Claim(ClaimTypes.NameIdentifier, userDictionary["UserId"]),
+                new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
                 new Claim(ClaimTypes.GivenName, firstName),
                 new Claim(ClaimTypes.Surname, lastName),
                 new Claim(ClaimTypes.Name, displayName)
             ], "CloudLogin");
 
-        if (userDictionary["Type"].Equals("phonenumber", StringComparison.CurrentCultureIgnoreCase))
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
+        //if (userDictionary["Type"].Equals("phonenumber", StringComparison.CurrentCultureIgnoreCase))
+        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
 
-        if (userDictionary["Type"].Equals("emailaddress", StringComparison.CurrentCultureIgnoreCase))
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
+        //if (userDictionary["Type"].Equals("emailaddress", StringComparison.CurrentCultureIgnoreCase))
+        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
 
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 

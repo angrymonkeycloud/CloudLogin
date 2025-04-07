@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components.Web;
 using System.Text;
 using System.Text.Json;
+using static System.Net.WebRequestMethods;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -9,11 +10,14 @@ public partial class CloudLoginComponent
 {
     //GENERAL VARIABLES--------------------------------------
     [Parameter] public string Logo { get; set; }
+    [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public User? CurrentUser { get; set; }
     public Guid UserId { get; set; } = Guid.NewGuid();
     [Parameter] public string? RedirectUri { get; set; }
     private string RedirectUriValue => RedirectUri ?? cloudLogin.RedirectUri ?? navigationManager.Uri;
+    private string Email { get; set; } = string.Empty;
+    private string Password { get; set; } = string.Empty;
 
     //INPUT VARIABLES----------------------------------------
     public string PrimaryEmail { get; set; }
@@ -76,6 +80,11 @@ public partial class CloudLoginComponent
 
             if (IsLoading)
                 classes.Add("_loading");
+
+            if (Embedded)
+                classes.Add("_embedded");
+            else
+                classes.Add("_fullpage");
 
             if (Next)
                 classes.Add("_next");
@@ -301,6 +310,12 @@ public partial class CloudLoginComponent
     }
     private async Task OnProviderClickedAsync(ProviderDefinition provider)
     {
+        if (provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase))
+        {
+            await SwitchState(ProcessState.EmailPasswordLogin);
+            return;
+        }
+
         StartLoading();
         VerificationValue = "";
         SelectedProvider = provider;
@@ -583,7 +598,31 @@ public partial class CloudLoginComponent
         AnimateDirection = AnimateBodyDirection.None;
         StateHasChanged();
     }
+    private async Task OnEmailPasswordLoginClicked()
+    {
+        try
+        {
+            await cloudLogin.PasswordLogin(Email, Password, KeepMeSignedIn);
+        }
+        catch (Exception ex)
+        {
+            Errors.Add(ex.Message);
+        }
+    }
 
+    private async Task OnEmailPasswordRegisterClicked()
+    {
+        try
+        {
+            User user = await cloudLogin.PasswordRegistration(Email, Password, FirstName, LastName);
+
+            await cloudLogin.PasswordLogin(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
+        }
+        catch (Exception ex)
+        {
+            Errors.Add(ex.Message);
+        }
+    }
 
     //ACTIONS FUNCTIONS--------------------------------------
     private void UpdateUser(User user)

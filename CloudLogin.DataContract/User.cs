@@ -12,6 +12,7 @@ public record User
     public bool IsLocked { get; set; } = false;
     public string? Username { get; set; }
     public DateOnly? DateOfBirth { get; set; }
+    public string? PasswordHash { get; set; }
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;
     public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
     public List<LoginInput> Inputs { get; set; } = [];

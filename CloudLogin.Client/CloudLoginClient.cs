@@ -360,4 +360,37 @@ public class CloudLoginClient : ICloudLogin
     }
 
     public string GetPhoneNumber(string input) => CloudGeography.PhoneNumbers.Get(input).Number;
+
+    public async Task PasswordLogin(string email, string password, bool keepMeSignedIn)
+    {
+        MultipartFormDataContent form = new()
+        {
+            { new StringContent(email), "email" },
+            { new StringContent(password), "password" },
+            { new StringContent(keepMeSignedIn.ToString()), "keepMeSignedIn" }
+        };
+
+        HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Login/PasswordSignIn", form);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception("Invalid email or password");
+    }
+
+    public async Task<User> PasswordRegistration(string email, string password, string firstName, string lastName)
+    {
+        MultipartFormDataContent form = new()
+        {
+            { new StringContent(email), "email" },
+            { new StringContent(password), "password" },
+            { new StringContent(firstName), "firstName" },
+            { new StringContent(lastName),  "lastName" },
+        };
+
+        HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Login/PasswordRegistration", form);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception("Invalid email or password");
+
+        return (await message.Content.ReadFromJsonAsync<User>())!;
+    }
 }

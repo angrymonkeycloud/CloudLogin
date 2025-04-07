@@ -125,7 +125,7 @@ public partial class CloudLoginServer
 
         return $"{baseUrl}/CloudLogin/Update?redirectUri={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}";
     }
-    
+
     //public async Task AddInput(Guid userId, LoginInput Input)
     //{
     //    User user = await GetUserById(userId) ?? throw new Exception("User not found.");

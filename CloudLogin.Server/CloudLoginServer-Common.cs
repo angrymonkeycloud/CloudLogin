@@ -229,4 +229,14 @@ public partial class CloudLoginServer : ICloudLogin
     }
 
     public string GetPhoneNumber(string input) => _cloudGeography.PhoneNumbers.Get(input).Number;
+
+    public Task PasswordLogin(string email, string password, bool keepMeSignedIn)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<User> PasswordRegistration(string email, string password, string firstName, string lastName)
+    {
+        return await RegisterEmailPasswordUser(email, password, firstName, lastName);
+    }
 }

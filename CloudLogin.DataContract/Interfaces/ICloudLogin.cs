@@ -28,4 +28,7 @@ public interface ICloudLogin
     Task<List<ProviderDefinition>> GetProviders();
 
     string GetPhoneNumber(string input);
+
+    Task PasswordLogin(string email, string password, bool keepMeSignedIn);
+    Task<User> PasswordRegistration(string email, string password, string firstName, string lastName);
 }

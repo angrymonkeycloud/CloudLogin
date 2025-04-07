@@ -211,5 +211,54 @@
                 }
             </div>
         }
+        else if (State == ProcessState.EmailPasswordLogin)
+        {
+            <div class="login-form _center">
+                <h3>Login with Email & Password</h3>
+                <div class="amc-cloudlogin-input">
+                    <input type="email" @bind-value="Email" @bind-value:event="oninput" autocomplete="off" />
+                    <label>Email</label>
+                </div>
+                <div class="amc-cloudlogin-input">
+                    <input type="password" @bind-value="Password" @bind-value:event="oninput" />
+                    <label>Password</label>
+                </div>
+                <div class="amc-cloudlogin-keppsignedin">
+                    <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                    <label for="keepme">Keep me signed in</label>
+                </div>
+                <button class="amc-cloudlogin-button" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
+                <button class="amc-cloudlogin-button --link" @onclick="() => SwitchState(ProcessState.EmailPasswordRegister)">Need an account?</button>
+            </div>
+        }
+        else if (State == ProcessState.EmailPasswordRegister)
+        {
+            <div class="login-form _center">
+                <h3>Register with Email & Password</h3>
+                <div class="amc-cloudlogin-input">
+                    <input type="text" @bind-value="FirstName" />
+                    <label>First Name</label>
+                </div>
+                <div class="amc-cloudlogin-input">
+                    <input type="text" @bind-value="LastName" />
+                    <label>Last Name</label>
+                </div>
+                <div class="amc-cloudlogin-input">
+                    <input type="email" @bind-value="Email" @bind-value:event="oninput" />
+                    <label>Email</label>
+                </div>
+                <div class="amc-cloudlogin-input">
+                    <input type="password" @bind-value="Password" />
+                    <label>Choose Password</label>
+                </div>
+                <button class="amc-cloudlogin-button" @onclick="OnEmailPasswordRegisterClicked">Register</button>
+                <button class="amc-cloudlogin-button --link" @onclick="() => SwitchState(ProcessState.EmailPasswordLogin)">Back to Login</button>
+            </div>
+        }
     </div>
+
+    @if (!Embedded)
+    {
+        <AngryMonkey.CloudLogin.Components.Footer />
+    }
 </div>

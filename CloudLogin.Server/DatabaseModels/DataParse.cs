@@ -18,7 +18,8 @@ public class DataParse
             DateOfBirth = user.DateOfBirth,
             LastSignedIn = user.LastSignedIn,
             Inputs = user.Inputs,
-            Username = user.Username
+            Username = user.Username,
+            PasswordHash = user.PasswordHash
         };
 
         return userInformation;
@@ -48,7 +49,8 @@ public class DataParse
             DateOfBirth = dbUser.DateOfBirth,
             LastSignedIn = dbUser.LastSignedIn,
             Inputs = dbUser.Inputs,
-            Username = dbUser.Username
+            Username = dbUser.Username,
+            PasswordHash = dbUser.PasswordHash
         };
     }
 

@@ -25,7 +25,9 @@ internal enum ProcessState
 {
     InputValue,
     Providers,
-    Registration,
     CodeVerification,
-    ChangePrimary
+    Registration,
+    ChangePrimary,
+    EmailPasswordLogin,
+    EmailPasswordRegister
 }

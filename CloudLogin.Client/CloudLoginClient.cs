@@ -373,7 +373,14 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Login/PasswordSignIn", form);
 
         if (!message.IsSuccessStatusCode)
+        {
+            User? currentUser = await CurrentUser();
+
+            if (currentUser != null)
+                return;
+
             throw new Exception("Invalid email or password");
+        }
     }
 
     public async Task<User> PasswordRegistration(string email, string password, string firstName, string lastName)

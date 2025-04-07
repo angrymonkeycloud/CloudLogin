@@ -614,6 +614,8 @@ public partial class LoginComponent
         try
         {
             await cloudLogin.PasswordLogin(Email, Password, KeepMeSignedIn);
+
+            navigationManager.NavigateTo("/", true);
         }
         catch (Exception ex)
         {
@@ -628,6 +630,8 @@ public partial class LoginComponent
             User user = await cloudLogin.PasswordRegistration(Email, Password, FirstName, LastName);
 
             await cloudLogin.PasswordLogin(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
+
+            navigationManager.NavigateTo("/", true);
         }
         catch (Exception ex)
         {

@@ -42,7 +42,9 @@ public class LoginController(CloudLoginConfiguration configuration, CloudLoginSe
     [HttpGet("Login/CustomLogin")]
     public async Task<IActionResult> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string actionState = "", string primaryEmail = "")
     {
-        return await _server.CustomLogin(userInfo, keepMeSignedIn, redirectUri, sameSite, actionState, primaryEmail);
+        User user = JsonSerializer.Deserialize<User>(userInfo, CloudLoginSerialization.Options)!;
+
+        return await _server.CustomLogin(user, keepMeSignedIn, redirectUri, sameSite, actionState, primaryEmail);
     }
 
     [HttpPost("Login/PasswordSignIn")]
@@ -53,17 +55,7 @@ public class LoginController(CloudLoginConfiguration configuration, CloudLoginSe
         if (user is null)
             return BadRequest("Invalid email or password.");
 
-        string userInfo = JsonSerializer.Serialize(new
-        {
-            UserId = user.ID,
-            FirstName = user.FirstName ?? "",
-            LastName = user.LastName ?? "",
-            DisplayName = user.DisplayName ?? "",
-            Input = email,
-            Type = "EmailAddress"
-        }, CloudLoginSerialization.Options);
-
-        return await _server.CustomLogin(userInfo, keepMeSignedIn, redirectUri ?? "", sameSite);
+        return await _server.CustomLogin(user, keepMeSignedIn, redirectUri ?? "", sameSite);
     }
 
     [HttpPost("Login/PasswordRegistration")]
@@ -74,9 +66,7 @@ public class LoginController(CloudLoginConfiguration configuration, CloudLoginSe
         if (user is null)
             return BadRequest("Invalid email or password.");
 
-        string userInfo = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
-
-        return await _server.CustomLogin(userInfo, false, string.Empty, true);
+        return await _server.CustomLogin(user, false, string.Empty, true);
     }
 
     [HttpGet("Result")]

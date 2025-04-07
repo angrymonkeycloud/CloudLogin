@@ -47,7 +47,7 @@ public partial class CloudLoginServer
         };
     }
 
-    public async Task<IActionResult> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string actionState = "", string primaryEmail = "")
+    public async Task<IActionResult> CustomLogin(User user, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string actionState = "", string primaryEmail = "")
     {
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
 
@@ -57,7 +57,6 @@ public partial class CloudLoginServer
             redirectUri = redirectUri.Replace($"/login", "");
         }
 
-        UserInfo user = JsonSerializer.Deserialize<UserInfo>(userInfo, CloudLoginSerialization.Options)!;
         //Dictionary<string, string> userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo, CloudLoginSerialization.Options)!;
 
         AuthenticationProperties properties = new()
@@ -87,11 +86,11 @@ public partial class CloudLoginServer
                 new Claim(ClaimTypes.Name, displayName)
             ], "CloudLogin");
 
-        //if (userDictionary["Type"].Equals("phonenumber", StringComparison.CurrentCultureIgnoreCase))
-        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
+        if (user.Inputs.First().Format == InputFormat.PhoneNumber)
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
 
-        //if (userDictionary["Type"].Equals("emailaddress", StringComparison.CurrentCultureIgnoreCase))
-        //    claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
+        if (user.Inputs.First().Format == InputFormat.EmailAddress)
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
 
         var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 

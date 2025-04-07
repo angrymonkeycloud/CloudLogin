@@ -3,6 +3,8 @@ using AngryMonkey.Cloud.Geography;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -17,7 +19,10 @@ public class CosmosMethods : DataParse, IDisposable
     {
         CloudGeography = cloudGeography;
 
-        _client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { SerializerOptions = new() { IgnoreNullValues = true } });
+        JsonSerializerOptions cosmosSerialization = new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+        cosmosSerialization.Converters.Add(new JsonStringEnumConverter());
+
+        _client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization) });
 
         Task.Run(async () =>
         {
@@ -49,7 +54,7 @@ public class CosmosMethods : DataParse, IDisposable
     internal IQueryable<T> Queryable<T>(string partitionKey, Expression<Func<T, bool>>? predicate) where T : BaseRecord
     {
         var container = _container.GetItemLinqQueryable<T>(requestOptions: new QueryRequestOptions())
-                                 .Where(key => key.Discriminator == typeof(T).Name);
+                                 .Where(key => key.Type == typeof(T).Name);
 
         if (!string.IsNullOrEmpty(partitionKey))
             container = container.Where(key => key.PartitionKey == partitionKey);
@@ -60,7 +65,7 @@ public class CosmosMethods : DataParse, IDisposable
         return container;
     }
 
-    internal async Task<List<T>> ToListAsync<T>(IQueryable<T> query) where T : BaseRecord
+    internal static async Task<List<T>> ToListAsync<T>(IQueryable<T> query) where T : BaseRecord
     {
         try
         {
@@ -82,13 +87,13 @@ public class CosmosMethods : DataParse, IDisposable
 
     internal static PartitionKey GetPartitionKey<T>(T record) where T : BaseRecord => new(record.PartitionKey);
 
-    internal static string GetCosmosId<T>(T record) where T : BaseRecord => $"{record.Discriminator}|{record.ID}";
-
     #endregion
 
     public async Task<User?> GetUserByEmailAddress(string emailAddress)
     {
-        IQueryable<DataUser> usersQueryable = Queryable<DataUser>("User", user => user.Inputs.Any(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)));
+        IQueryable<DataUser> usersQueryable = Queryable<DataUser>("User", user =>
+            user.Inputs.Any(key => key.Format == InputFormat.EmailAddress && key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase))
+        );
 
         List<DataUser> users = await ToListAsync(usersQueryable);
 
@@ -130,9 +135,9 @@ public class CosmosMethods : DataParse, IDisposable
     {
         LoginRequest request = new() { ID = requestId };
 
-        ItemResponse<LoginRequest> response = await _container.ReadItemAsync<LoginRequest>(GetCosmosId(request), GetPartitionKey(request));
+        ItemResponse<LoginRequest> response = await _container.ReadItemAsync<LoginRequest>(requestId.ToString(), GetPartitionKey(request));
 
-        await _container.DeleteItemAsync<LoginRequest>(GetCosmosId(request), GetPartitionKey(request));
+        await _container.DeleteItemAsync<LoginRequest>(requestId.ToString(), GetPartitionKey(request));
 
         LoginRequest selectedRequest = response.Resource;
 
@@ -163,7 +168,7 @@ public class CosmosMethods : DataParse, IDisposable
     public async Task<User?> GetUserById(Guid id)
     {
         DataUser user = new() { ID = id };
-        ItemResponse<DataUser> response = await _container.ReadItemAsync<DataUser>(GetCosmosId(user), GetPartitionKey(user));
+        ItemResponse<DataUser> response = await _container.ReadItemAsync<DataUser>(id.ToString(), GetPartitionKey(user));
 
         return Parse(response.Resource);
     }
@@ -210,6 +215,6 @@ public class CosmosMethods : DataParse, IDisposable
     public async Task DeleteUser(Guid userId)
     {
         DataUser user = new() { ID = userId };
-        await _container.DeleteItemStreamAsync(GetCosmosId(user), GetPartitionKey(user));
+        await _container.DeleteItemStreamAsync(userId.ToString(), GetPartitionKey(user));
     }
 }

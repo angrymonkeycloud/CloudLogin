@@ -10,6 +10,8 @@ public partial class LoginComponent
 {
     //GENERAL VARIABLES--------------------------------------
     [Parameter] public string Logo { get; set; }
+    [Parameter] public string PrimaryColor { get; set; } = "#000";
+    [Parameter] public string SeconadryColor { get; set; } = "#000";
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public User? CurrentUser { get; set; }
@@ -537,6 +539,8 @@ public partial class LoginComponent
 
                 break;
 
+
+
             case ProcessState.Providers:
                 Title = "Continue signing in";
                 Subtitle = "Sign In with";
@@ -575,7 +579,14 @@ public partial class LoginComponent
                 }
                 break;
 
+            case ProcessState.EmailPasswordLogin:
+                Title = "Sign In";
+                break;
 
+            case ProcessState.EmailPasswordRegister:
+                Title = "Register";
+                break;
+            
             case ProcessState.ChangePrimary:
 
                 Title = "Set Primary";

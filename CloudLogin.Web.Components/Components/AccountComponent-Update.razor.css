@@ -1,0 +1,53 @@
+﻿.info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.info-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.info-input > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.info-input > div label {
+  margin-left: 5px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--amc-accentColor);
+}
+.info-input > div input {
+  padding: 15px 20px;
+  outline: none;
+  border: 1px solid var(--amc-accentColor);
+  border-radius: 5px;
+}
+.info-buttons {
+  width: 100%;
+  margin-top: 20px;
+}
+.info-buttons button {
+  padding: 10px;
+  text-transform: capitalize;
+  font-size: 1rem;
+  color: #fff;
+  cursor: pointer;
+  border-radius: 20px;
+  background-color: var(--amc-secondColor);
+  border: 1px solid var(--amc-secondColor);
+  transition: all 0.5s;
+  position: relative;
+  width: 100%;
+}
+.info-buttons button:hover {
+  color: var(--amc-secondColor);
+  background-color: transparent;
+}

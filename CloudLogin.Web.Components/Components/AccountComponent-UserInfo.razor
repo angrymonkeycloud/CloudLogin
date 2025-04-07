@@ -3,44 +3,48 @@
 
 @namespace AngryMonkey.CloudLogin
 
-<section>
+<div class="info">
     <h3>Account Information</h3>
     <div>
         <p><strong>Display Name:</strong> @CurrentUser.DisplayName</p>
         <p><strong>First Name:</strong> @CurrentUser.FirstName</p>
         <p><strong>Last Name:</strong> @CurrentUser.LastName</p>
+        @if (CurrentUser.EmailAddresses.Any()){
+            <p><strong>Email Addresses:</strong></p>
+            <ul>
+                @foreach (var email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
+                {
+                    <li>
+                        @email.Input
 
-        <p><strong>Email Addresses:</strong></p>
-        <ul>
-            @foreach (var email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
-            {
-                <li>
-                    @email.Input
+                        @if (email.IsPrimary)
+                        {
+                            <span class="badge">Primary</span>
+                        }
+                    </li>
+                }
+            </ul>
 
-                    @if (email.IsPrimary)
-                    {
-                        <span class="badge">Primary</span>
-                    }
-                </li>
-            }
-        </ul>
+        }
+        @if (CurrentUser.PhoneNumbers.Any()){
+            <p><strong>Phone Numbers:</strong></p>
+            <ul>
+                @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
+                {
+                    <li>
+                        @phone.Input
 
-        <p><strong>Phone Numbers:</strong></p>
-        <ul>
-            @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
-            {
-                <li>
-                    @phone.Input
-
-                    @if (phone.IsPrimary)
-                    {
-                        <span class="badge">Primary</span>
-                    }
-                </li>
-            }
-        </ul>
+                        @if (phone.IsPrimary)
+                        {
+                            <span class="badge">Primary</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+      
     </div>
-</section>
+</div>
 
 @code {
     [Parameter] public required User CurrentUser { get; set; }

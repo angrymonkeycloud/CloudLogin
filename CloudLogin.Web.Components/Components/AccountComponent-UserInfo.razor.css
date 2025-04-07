@@ -6,3 +6,13 @@
   font-size: 0.8em;
   margin-left: 0.5em;
 }
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}

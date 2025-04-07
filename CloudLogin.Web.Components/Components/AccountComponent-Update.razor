@@ -2,23 +2,38 @@
 @using AngryMonkey.CloudLogin.Interfaces
 @inject ICloudLogin cloudLogin
 
-<h3>Update User Information</h3>
+<div class="info">
 
-<div>
-    <label for="firstName">First Name:</label>
-    <input type="text" id="firstName" @bind="CurrentUser.FirstName" />
+    <h3>Update User Information</h3>
+    <div class="info-body">
+        <div class="info-input">
+            <div>
+                <label for="firstName">First Name:</label>
+                <input type="text" id="firstName" @bind="CurrentUser.FirstName" />
+            </div>
 
-    <label for="lastName">Last Name:</label>
-    <input type="text" id="lastName" @bind="CurrentUser.LastName" />
+            <div>
+                <label for="lastName">Last Name:</label>
+                <input type="text" id="lastName" @bind="CurrentUser.LastName" />
+            </div>
 
-    <label for="displayName">Display Name:</label>
-    <input type="text" id="displayName" @bind="CurrentUser.DisplayName" />
+            <div>
+                <label for="displayName">Display Name:</label>
+                <input type="text" id="displayName" @bind="CurrentUser.DisplayName" />
+            </div>
 
-    <label for="dateOfBirth">Date of Birth:</label>
-    <input type="date" id="dateOfBirth" @bind="CurrentUser.DateOfBirth" />
-
-    <button @onclick="UpdateUserInfo">Update Information</button>
+            <div>
+                <label for="dateOfBirth">Date of Birth:</label>
+                <input type="date" id="dateOfBirth" @bind="CurrentUser.DateOfBirth" />
+            </div>
+        </div>
+        <div class="info-buttons">
+            <button @onclick="UpdateUserInfo">Update Information</button>
+        </div>
+    </div>
 </div>
+
+
 
 @code {
     [Parameter] public required User CurrentUser { get; set; }

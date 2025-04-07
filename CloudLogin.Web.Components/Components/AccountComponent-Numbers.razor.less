@@ -1,0 +1,110 @@
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    > div {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    &-input {
+        display: flex;
+        flex-direction: row;
+        gap: 0px;
+        align-items: stretch;
+        justify-content: flex-start;
+
+        input {
+            padding: 15px 20px;
+            outline: none;
+            border: 1px solid var(--amc-accentColor);
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            text-transform: capitalize;
+            font-size: 1rem;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 20px;
+            background-color: var(--amc-secondColor);
+            border: 1px solid var(--amc-secondColor);
+            transition: all .5s;
+            position: relative;
+            width: 100%;
+
+            &:hover {
+                color: var(--amc-secondColor);
+                background-color: transparent;
+            }
+        }
+    }
+
+    ul {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+
+        li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+
+            span {
+                color: var(--amc-accentColor);
+                font-size: 1rem;
+            }
+
+            > div {
+                display: flex;
+                width: fit-content;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 5px;
+
+                button {
+                    padding: 10px;
+                    color: #fff;
+                    border-radius: 5px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background-color: var(--amc-secondColor);
+                    transition: all .3s ease-in-out;
+                    border: 1px solid var(--amc-secondColor);
+
+                    &:hover {
+                        background-color: transparent;
+                        color: var(--amc-secondColor);
+                    }
+
+                    &:last-child {
+                        background-color: var(--amc-accentColor);
+                        border-color: var(--amc-accentColor);
+
+                        &:hover {
+                            background-color: transparent;
+                            color: var(--amc-accentColor);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+.badge {
+    background-color: var(--amc-accentColor);
+    color: #fff;
+    padding: 0.2em 0.4em;
+    border-radius: 0.2em;
+    font-size: 0.8em;
+    margin-left: 0.5em;
+}

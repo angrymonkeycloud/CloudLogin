@@ -5,113 +5,131 @@
 
 @namespace AngryMonkey.CloudLogin
 
+@if (RendererInfo.IsInteractive)
+{
+    <div class="amc-cloudlogin @CssClass" style="--amc-accentColor:@PrimaryColor;--amc-secondColor:@SeconadryColor">
+        <div class="amc-cloudlogin-header">
 
-<div class="amc-cloudlogin @CssClass">
-    <div class="amc-cloudlogin-header">
+            @* Loading *@
 
-        @* Loading *@
-
-        <div class="amc-cloudlogin-loading">
-            <div></div>
-        </div>
-
-        @* Logo *@
-
-        @if (!string.IsNullOrEmpty(Logo))
-        {
-            <div class="amc-cloudlogin-logo">
-                <img src="@Logo" alt="logo" />
+            <div class="amc-cloudlogin-loading">
+                <div></div>
             </div>
-        }
 
-        @* Title *@
+            @* Logo *@
 
-        <div class="amc-cloudlogin-title">
-
-            @if (State != ProcessState.InputValue && ActionState == "login")
+            @if (!string.IsNullOrEmpty(Logo))
             {
-                <button @onclick="OnBackClicked">
-                    <AngryMonkey.Cloud.Components.Icons.Back />
-                </button>
+                <div class="amc-cloudlogin-logo">
+                    <img src="@Logo" alt="logo" />
+                </div>
             }
-            <div>
-                @Title
+
+            @* Title *@
+
+            <div class="amc-cloudlogin-title">
+
+                @if (State != ProcessState.InputValue && ActionState == "login")
+                {
+                    <button @onclick="OnBackClicked">
+                        <AngryMonkey.Cloud.Components.Icons.Back />
+                    </button>
+                }
+                <div>
+                    @Title
+                </div>
             </div>
+
+            @* Subtitle *@
+
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <div class="amc-cloudlogin-subtitle">
+                    @Subtitle
+                </div>
+            }
+
+            @* Errors *@
+
+            @if (Errors.Any())
+            {
+                <div class="amc-cloudlogin-errors">
+                    <ul>
+                        @foreach (string error in Errors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </div>
+            }
         </div>
 
-        @* Subtitle *@
-
-        @if (!string.IsNullOrEmpty(Subtitle))
-        {
-            <div class="amc-cloudlogin-subtitle">
-                @Subtitle
-            </div>
-        }
-
-        @* Errors *@
-
-        @if (Errors.Any())
-        {
-            <div class="amc-cloudlogin-errors">
-                <ul>
-                    @foreach (string error in Errors)
-                    {
-                        <li>@error</li>
-                    }
-                </ul>
-            </div>
-        }
-    </div>
-
-    <div class="amc-cloudlogin-body">
-        @if (AddInputDiplay)
-        {
-            <div class="amc-cloudlogin-panel">
-                <div class="amc-cloudlogin-inputdisplay">
-                    @PrimaryEmail
-                </div>
-            </div>
-        }
-        @if (DisplayInputValue)
-        {
-            <div class="amc-cloudlogin-panel">
-                <div class="amc-cloudlogin-inputdisplay">
-                    @InputValue
-                </div>
-            </div>
-        }
-
-        @if (State == ProcessState.InputValue)
-        {
-            @if (AllowTextIntput)
+        <div class="amc-cloudlogin-body">
+            @if (AddInputDiplay)
             {
-                <div class="login-form _center ">
-                    @if (AddInputDiplay == false)
-                    {
-                        <div class="amc-cloudlogin-keppsignedin">
-                            <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                            <label for="keepme">Keep me signed in</label>
-                        </div>
-                    }
-                    <div class="amc-cloudlogin-input">
-                        <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
-                        <label for="email">@InputLabel</label>
+                <div class="amc-cloudlogin-panel">
+                    <div class="amc-cloudlogin-inputdisplay">
+                        @PrimaryEmail
                     </div>
-
-                    @if (!string.IsNullOrEmpty(InputValue))
-                    {
-                        <div class="login-form-next ">
-                            <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
-                                <span>Next</span>
-                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
-                            </button>
-                        </div>
-                    }
-
+                </div>
+            }
+            @if (DisplayInputValue)
+            {
+                <div class="amc-cloudlogin-panel">
+                    <div class="amc-cloudlogin-inputdisplay">
+                        @InputValue
+                    </div>
                 </div>
             }
 
-            @if (string.IsNullOrEmpty(InputValue))
+            @if (State == ProcessState.InputValue)
+            {
+                @if (AllowTextIntput)
+                {
+                    <div class="login-form _center ">
+                        @if (AddInputDiplay == false)
+                        {
+                            <div class="amc-cloudlogin-keppsignedin">
+                                <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                                <label for="keepme">Keep me signed in</label>
+                            </div>
+                        }
+                        <div class="amc-cloudlogin-input">
+                            <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
+                            <label for="email">@InputLabel</label>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(InputValue))
+                        {
+                            <div class="login-form-next ">
+                                <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
+                                    <span>Next</span>
+                                    <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                                </button>
+                            </div>
+                        }
+
+                    </div>
+                }
+
+                @if (string.IsNullOrEmpty(InputValue))
+                {
+                    <div class="login-form">
+                        <div class="amc-cloudlogin-providers">
+                            @foreach (ProviderDefinition provider in Providers)
+                            {
+                                <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
+                                    <div class="amc-cloudlogin-provider-icon">
+                                        <AngryMonkey.CloudLogin.Components.ProviderButton Provider="provider" />
+                                    </div>
+                                    <div class="amc-cloudlogin-provider-label">@provider.Label</div>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else if (State == ProcessState.Providers)
             {
                 <div class="login-form">
                     <div class="amc-cloudlogin-providers">
@@ -127,138 +145,147 @@
                     </div>
                 </div>
             }
-        }
-        else if (State == ProcessState.Providers)
-        {
-            <div class="login-form">
-                <div class="amc-cloudlogin-providers">
-                    @foreach (ProviderDefinition provider in Providers)
-                    {
-                        <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
-                            <div class="amc-cloudlogin-provider-icon">
-                                <AngryMonkey.CloudLogin.Components.ProviderButton Provider="provider" />
-                            </div>
-                            <div class="amc-cloudlogin-provider-label">@provider.Label</div>
+            else if (State == ProcessState.CodeVerification)
+            {
+                <div class="login-form">
+                    <div class="amc-cloudlogin-input login-form-emailVerification">
+                        <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                        <label for="code">Enter Code</label>
+                    </div>
+                    <div class="login-form-resend">
+                        <button @onclick="OnNewCodeClicked">Resend code ?</button>
+                    </div>
+                    <div class="login-form-verify">
+                        <button class="amc-cloudlogin-button" @onclick="OnVerifyClicked">
+                            <span>Verify</span>
+                            <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                         </button>
+                    </div>
+                </div>
+
+            }
+            else if (State == ProcessState.Registration)
+            {
+                <div class="login-form">
+                    <div class="login-form-register">
+                        <div class="amc-cloudlogin-input">
+                            <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                            <label for="firstName">First Name</label>
+                        </div>
+                        <div class="amc-cloudlogin-input">
+                            <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
+                            <label for="lastName">Last Name</label>
+                        </div>
+                        <div class="amc-cloudlogin-input">
+                            <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
+                            <label for="displayName">Display Name</label>
+                        </div>
+                    </div>
+
+                    <div class="login-form-finish">
+                        <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))? "" : "--disable" )" @onclick="OnRegisterClicked">
+                            <span>@ButtonName</span>
+                            <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        </button>
+                    </div>
+                </div>
+            }
+            else if (State == ProcessState.ChangePrimary)
+            {
+                <div class="login-form">
+                    @foreach (LoginInput input in CurrentUser.Inputs.Where(i => i.Format == InputFormat.EmailAddress))
+                    {
+                        <div>
+                            <span>@input.Input</span>
+                            @if (input.IsPrimary)
+                            {
+                                <span> | Primary Email</span>
+                            }
+                            else
+                            {
+                                <button class="amc-cloudlogin-button" @onclick="x=>SetPrimary(x,input.Input)">
+                                    <span>Set Primary</span>
+                                    <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                                </button>
+                            }
+                        </div>
                     }
                 </div>
-            </div>
-        }
-        else if (State == ProcessState.CodeVerification)
-        {
-            <div class="login-form">
-                <div class="amc-cloudlogin-input login-form-emailVerification">
-                    <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
-                    <label for="code">Enter Code</label>
-                </div>
-                <div class="login-form-resend">
-                    <button @onclick="OnNewCodeClicked">Resend code ?</button>
-                </div>
-                <div class="login-form-verify">
-                    <button class="amc-cloudlogin-button" @onclick="OnVerifyClicked">
-                        <span>Verify</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
-                    </button>
-                </div>
-            </div>
+            }
+            else if (State == ProcessState.EmailPasswordLogin)
+            {
+                <div class="login-form _center">
+                    <h3>Login with Email & Password</h3>
+                    <div class="login-form-input">
+                        <div class="amc-cloudlogin-input">
+                            <label>Email</label>
+                            <input type="email" @bind-value="Email" @bind-value:event="oninput" autocomplete="off" />
+                        </div>
+                        <div class="amc-cloudlogin-input">
+                            <label>Password</label>
+                            <input type="password" @bind-value="Password" @bind-value:event="oninput" />
+                        </div>
+                        <div class="amc-cloudlogin-keppsignedin">
+                            <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                            <label for="keepme">Keep me signed in</label>
+                        </div>
+                    </div>
+                    <div class="login-form-buttons">
+                        <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
+                        <button class="amc-cloudlogin-button" @onclick="() => SwitchState(ProcessState.EmailPasswordRegister)">Need an account?</button>
+                    </div>
 
-        }
-        else if (State == ProcessState.Registration)
-        {
-            <div class="login-form">
-                <div class="login-form-register">
-                    <div class="amc-cloudlogin-input">
-                        <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
-                        <label for="firstName">First Name</label>
-                    </div>
-                    <div class="amc-cloudlogin-input">
-                        <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
-                        <label for="lastName">Last Name</label>
-                    </div>
-                    <div class="amc-cloudlogin-input">
-                        <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
-                        <label for="displayName">Display Name</label>
-                    </div>
                 </div>
+            }
+            else if (State == ProcessState.EmailPasswordRegister)
+            {
+                <div class="login-form _center">
+                    <h3>Register with Email & Password</h3>
+                    <div class="login-form-input">
+                        <div class="amc-cloudlogin-input">
+                            <label>First Name</label>
+                            <input type="text" @bind-value="FirstName" />
+                        </div>
+                        <div class="amc-cloudlogin-input">
+                            <label>Last Name</label>
+                            <input type="text" @bind-value="LastName" />
+                        </div>
+                        <div class="amc-cloudlogin-input">
+                            <label>Email</label>
+                            <input type="email" @bind-value="Email" @bind-value:event="oninput" />
+                        </div>
+                        <div class="amc-cloudlogin-input">
+                            <label>Choose Password</label>
+                            <input type="password" @bind-value="Password" />
+                        </div>
+                    </div>
 
-                <div class="login-form-finish">
-                    <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))? "" : "--disable" )" @onclick="OnRegisterClicked">
-                        <span>@ButtonName</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
-                    </button>
-                </div>
-            </div>
-        }
-        else if (State == ProcessState.ChangePrimary)
-        {
-            <div class="login-form">
-                @foreach (LoginInput input in CurrentUser.Inputs.Where(i => i.Format == InputFormat.EmailAddress))
-                {
-                    <div>
-                        <span>@input.Input</span>
-                        @if (input.IsPrimary)
-                        {
-                            <span> | Primary Email</span>
-                        }
-                        else
-                        {
-                            <button class="amc-cloudlogin-button" @onclick="x=>SetPrimary(x,input.Input)">
-                                <span>Set Primary</span>
-                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
-                            </button>
-                        }
+                    <div class="login-form-buttons">
+                        <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordRegisterClicked">Register</button>
+                        <button class="amc-cloudlogin-button " @onclick="() => SwitchState(ProcessState.EmailPasswordLogin)">Back to Login</button>
                     </div>
-                }
-            </div>
-        }
-        else if (State == ProcessState.EmailPasswordLogin)
+
+                </div>
+            }
+        </div>
+
+        @if (!Embedded)
         {
-            <div class="login-form _center">
-                <h3>Login with Email & Password</h3>
-                <div class="amc-cloudlogin-input">
-                    <input type="email" @bind-value="Email" @bind-value:event="oninput" autocomplete="off" />
-                    <label>Email</label>
-                </div>
-                <div class="amc-cloudlogin-input">
-                    <input type="password" @bind-value="Password" @bind-value:event="oninput" />
-                    <label>Password</label>
-                </div>
-                <div class="amc-cloudlogin-keppsignedin">
-                    <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                    <label for="keepme">Keep me signed in</label>
-                </div>
-                <button class="amc-cloudlogin-button" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
-                <button class="amc-cloudlogin-button --link" @onclick="() => SwitchState(ProcessState.EmailPasswordRegister)">Need an account?</button>
-            </div>
+            <AngryMonkey.CloudLogin.Components.LoginComponent_Footer />
         }
-        else if (State == ProcessState.EmailPasswordRegister)
-        {
-            <div class="login-form _center">
-                <h3>Register with Email & Password</h3>
-                <div class="amc-cloudlogin-input">
-                    <input type="text" @bind-value="FirstName" />
-                    <label>First Name</label>
-                </div>
-                <div class="amc-cloudlogin-input">
-                    <input type="text" @bind-value="LastName" />
-                    <label>Last Name</label>
-                </div>
-                <div class="amc-cloudlogin-input">
-                    <input type="email" @bind-value="Email" @bind-value:event="oninput" />
-                    <label>Email</label>
-                </div>
-                <div class="amc-cloudlogin-input">
-                    <input type="password" @bind-value="Password" />
-                    <label>Choose Password</label>
-                </div>
-                <button class="amc-cloudlogin-button" @onclick="OnEmailPasswordRegisterClicked">Register</button>
-                <button class="amc-cloudlogin-button --link" @onclick="() => SwitchState(ProcessState.EmailPasswordLogin)">Back to Login</button>
-            </div>
-        }
+
     </div>
+}
+else
+{
 
-    @if (!Embedded)
-    {
-        <AngryMonkey.CloudLogin.Components.Footer />
-    }
-</div>
+    <div class="amc-skelton">
+        <div class="amc-skelton-header">
+        </div>
+        <div class="amc-skelton-body">
+            <div class="amc-skelton-provider"></div>
+            <div class="amc-skelton-provider"></div>
+        </div>
+    </div>
+}
+

@@ -2,25 +2,36 @@
 @using AngryMonkey.CloudLogin.Interfaces
 @inject ICloudLogin cloudLogin
 
-<h3>Email Addresses</h3>
+<div class="info">
+    <h3>Email Addresses</h3>
 
-<ul>
-    @foreach (var email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
-    {
-        <li>
-            @email.Input
-            @if (email.IsPrimary)
-            {
-                <span class="badge">Primary</span>
-            }
-            <button @onclick="() => SetPrimary(email.Input)">Set Primary</button>
-            <button @onclick="() => RemoveEmail(email.Input)">Remove</button>
-        </li>
-    }
-</ul>
+    <div class="info-input">
+        <input type="text" @bind="NewEmail" placeholder="Add new email" />
+        <button @onclick="AddEmail">Add Email</button>
+    </div>
 
-<input type="text" @bind="NewEmail" placeholder="Add new email" />
-<button @onclick="AddEmail">Add Email</button>
+    <ul>
+        @foreach (var email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
+        {
+            <li>
+                <span>
+                    @email.Input
+                </span>
+                <div>
+                    @if (email.IsPrimary)
+                    {
+                        <span class="badge">Primary</span>
+                    }
+                    <button @onclick="() => SetPrimary(email.Input)">Set Primary</button>
+                    <button @onclick="() => RemoveEmail(email.Input)">Remove</button>
+                </div>
+
+            </li>
+        }
+    </ul>
+</div>
+
+
 
 @code {
     [Parameter] public required User CurrentUser { get; set; }

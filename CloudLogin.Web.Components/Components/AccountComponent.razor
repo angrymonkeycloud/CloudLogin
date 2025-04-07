@@ -5,39 +5,68 @@
 
 @namespace AngryMonkey.CloudLogin
 
-@if (CurrentUser != null)
+@if (RendererInfo.IsInteractive)
 {
-    <div class="account-management">
-        <div class="tabs">
-            @foreach (var tab in Tabs)
-            {
-                <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
-            }
-            <button class="tab-button" @onclick="SignOut">Log out</button>
-        </div>
-        <div class="tab-content">
-            @if (activeTab == "Manage")
-            {
-                <AccountComponent_Update CurrentUser="CurrentUser" />
-            }
-            else if (activeTab == "Emails")
-            {
-                <AccountComponent_Emails CurrentUser="CurrentUser" />
-            }
-            else if (activeTab == "PhoneNumbers")
-            {
-                <AccountComponent_Numbers CurrentUser="CurrentUser" />
-            }
-            else
-            {
-                <AccountComponent_UserInfo CurrentUser="CurrentUser" />
-            }
-        </div>
-    </div>
+    @if (CurrentUser != null)
+    {
+        <section class="account-management" style="--amc-accentColor:@PrimaryColor;--amc-secondColor:@SeconadryColor">
+            <article>
+                <div class="tabs">
+                    @foreach (var tab in Tabs)
+                    {
+                        <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
+                    }
+                    <button class="tab-button" @onclick="SignOut">Log out</button>
+                </div>
+                <div class="tab-content">
+                    @if (activeTab == "Manage")
+                    {
+                        <AccountComponent_Update CurrentUser="CurrentUser" />
+                    }
+                    else if (activeTab == "Emails")
+                    {
+                        <AccountComponent_Emails CurrentUser="CurrentUser" />
+                    }
+                    else if (activeTab == "PhoneNumbers")
+                    {
+                        <AccountComponent_Numbers CurrentUser="CurrentUser" />
+                    }
+                    else
+                    {
+                        <AccountComponent_UserInfo CurrentUser="CurrentUser" />
+                    }
+                </div>
+            </article>
+        </section>
+    }
+
+}
+else
+{
+    <section class="account-management skelton">
+        <article>
+            <div class="tabs">
+                <div class="tab">
+                </div>
+                <div class="tab">
+                </div>
+                <div class="tab">
+                </div>
+                <div class="tab">
+                </div>
+            </div>
+            <div class="body">
+            </div>
+        </article>
+
+    </section>
 }
 
 @code {
     private User? CurrentUser { get; set; }
+
+    [Parameter] public string PrimaryColor { get; set; } = "#000";
+    [Parameter] public string SeconadryColor { get; set; } = "#000";
 
     protected override async Task OnInitializedAsync() => CurrentUser = await cloudLogin.CurrentUser();
 

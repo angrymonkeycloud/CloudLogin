@@ -1,8 +1,6 @@
 ﻿using System.Web;
 using System.Security.Claims;
 using System.Text.Json;
-using AngryMonkey.CloudLogin.Interfaces;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;

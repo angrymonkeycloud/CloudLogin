@@ -13,9 +13,7 @@ public class SystemTextJsonCosmosSerializer(JsonSerializerOptions serializerOpti
             return (T)(object)stream;
 
         using (stream)
-        {
             return JsonSerializer.Deserialize<T>(stream, _serializerOptions)!;
-        }
     }
 
     public override Stream ToStream<T>(T input)
@@ -23,6 +21,7 @@ public class SystemTextJsonCosmosSerializer(JsonSerializerOptions serializerOpti
         MemoryStream streamPayload = new();
         JsonSerializer.Serialize(streamPayload, input, _serializerOptions);
         streamPayload.Position = 0;
+
         return streamPayload;
     }
 }

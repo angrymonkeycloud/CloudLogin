@@ -57,7 +57,7 @@ public partial class CloudLoginServer
             redirectUri = redirectUri.Replace($"/login", "");
         }
 
-        User user = JsonSerializer.Deserialize<User>(userInfo, CloudLoginSerialization.Options)!;
+        UserInfo user = JsonSerializer.Deserialize<UserInfo>(userInfo, CloudLoginSerialization.Options)!;
         //Dictionary<string, string> userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo, CloudLoginSerialization.Options)!;
 
         AuthenticationProperties properties = new()

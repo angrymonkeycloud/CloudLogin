@@ -1,13 +1,15 @@
-﻿namespace AngryMonkey.CloudLogin.Server;
+﻿
+using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin.Server;
 
 public class DataParse
 {
-    public static DataUser? Parse(User? user)
+    public static UserInfo? Parse(User? user)
     {
         if (user == null)
             return null;
 
-        DataUser userInformation = new()
+        UserInfo userInformation = new()
         {
             ID = user.ID,
             DisplayName = user.DisplayName,
@@ -25,7 +27,7 @@ public class DataParse
         return userInformation;
     }
 
-    public static List<User>? Parse(List<DataUser> Users)
+    public static List<User>? Parse(List<UserInfo> Users)
     {
         if (Users == null)
             return [];
@@ -33,7 +35,7 @@ public class DataParse
         return Users.Select(Parse).ToList();
     }
 
-    public static User? Parse(DataUser? dbUser)
+    public static User? Parse(UserInfo? dbUser)
     {
         if (dbUser == null)
             return null;
@@ -54,7 +56,7 @@ public class DataParse
         };
     }
 
-    public static List<DataUser> Parse(List<User> Users)
+    public static List<UserInfo> Parse(List<User> Users)
     {
         if (Users == null)
             return [];

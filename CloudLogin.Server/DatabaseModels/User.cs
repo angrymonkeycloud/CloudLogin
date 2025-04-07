@@ -1,8 +1,8 @@
 ﻿namespace AngryMonkey.CloudLogin.Server;
 
-public record DataUser : BaseRecord
+public record UserInfo : BaseRecord
 {
-    public DataUser() : base("User", "User") { }
+    public UserInfo() : base("UserInfo", "UserInfo") { }
 
     public string? FirstName { get; set; }
     public string? LastName { get; set; }

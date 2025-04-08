@@ -156,8 +156,7 @@
 }
 .amc-cloudlogin-providers {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
   justify-content: center;
   align-items: center;
@@ -169,15 +168,16 @@
   background-color: transparent;
   cursor: pointer;
   width: 100%;
-  max-width: 100%;
+  max-width: 300px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   transition: all 0.5s;
   border: 1px solid var(--currentColor);
   border-radius: 3px;
   color: var(--currentColor);
-  padding: 5px 8px;
+  padding: 15px 20px;
 }
 .amc-cloudlogin-provider._primary {
   --currentColor: #ffd800;
@@ -244,6 +244,14 @@
   flex-direction: column;
   gap: 10px;
   width: 100%;
+}
+.amc-cloudlogin-body .login-form-links {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  justify-content: flex-end;
 }
 .amc-cloudlogin-body .login-form-resend {
   align-self: flex-end;
@@ -355,7 +363,9 @@
   margin: 30px auto 5px auto;
 }
 .amc-cloudlogin-button {
-  /*max-width: 100px;*/
+  width: 100%;
+  min-width: 150px;
+  max-width: 200px;
   padding: 10px;
   text-transform: capitalize;
   font-size: 1rem;
@@ -367,7 +377,6 @@
   border: 1px solid var(--amc-accentColor);
   transition: all 0.5s;
   position: relative;
-  width: 100%;
 }
 .amc-cloudlogin-button:hover {
   background-color: var(--amc-accentColor);

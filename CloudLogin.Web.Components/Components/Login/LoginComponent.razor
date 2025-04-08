@@ -120,9 +120,9 @@
                             @foreach (ProviderDefinition provider in Providers)
                             {
                                 <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
-                                    <div class="amc-cloudlogin-provider-icon">
+                                    @*   <div class="amc-cloudlogin-provider-icon">
                                         <AngryMonkey.CloudLogin.Components.ProviderButton Provider="provider" />
-                                    </div>
+                                    </div> *@
                                     <div class="amc-cloudlogin-provider-label">@provider.Label</div>
                                 </button>
                             }
@@ -161,11 +161,11 @@
                     <div class="login-form-input">
                         <div class="amc-cloudlogin-input">
                             <label>Passowrd</label>
-                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password"   @bind-value="Password" @bind-value:event="oninput" spellcheck="false" />
+                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password" @bind-value="Password" @bind-value:event="oninput" spellcheck="false" />
                         </div>
                         <div class="amc-cloudlogin-input">
                             <label>Confirm Passowrd</label>
-                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password"  @bind-value="ConfirmPassword" @bind-value:event="oninput" spellcheck="false" />
+                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password" @bind-value="ConfirmPassword" @bind-value:event="oninput" spellcheck="false" />
                         </div>
                     </div>
 
@@ -226,8 +226,7 @@
             }
             else if (State == ProcessState.EmailPasswordLogin)
             {
-                <div class="login-form _center">
-                    <h3>Login with Email & Password</h3>
+                <div class="login-form _center _password">
                     <div class="login-form-input">
                         <div class="amc-cloudlogin-input">
                             <label>Email</label>
@@ -240,15 +239,16 @@
                         <div class="row">
                             <div class="amc-cloudlogin-keppsignedin">
                                 <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                                <label for="keepme">Keep me signed in</label>
+                                <label for="keepme">Stay signed in</label>
                             </div>
-                            <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailForgetPassword)">Forget Passord ? </button>
+                            @* <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailForgetPassword)">Forget passord?</button> *@
+                            <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
                         </div>
 
                     </div>
-                    <div class="login-form-buttons">
-                        <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
-                        <button class="amc-cloudlogin-button" @onclick="() => SwitchState(ProcessState.EmailPasswordRegister)">Need an account?</button>
+                    <div class="login-form-links">
+                        <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailPasswordRegister)">New account</button>
+                        <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailForgetPassword)">Forget passord?</button>
                     </div>
 
                 </div>
@@ -256,7 +256,6 @@
             else if (State == ProcessState.EmailPasswordRegister)
             {
                 <div class="login-form _center">
-                    <h3>Register with Email & Password</h3>
                     <div class="login-form-input">
                         <div class="amc-cloudlogin-input">
                             <label>First Name</label>
@@ -271,14 +270,13 @@
                             <input type="email" @bind-value="Email" @bind-value:event="oninput" />
                         </div>
                         <div class="amc-cloudlogin-input">
-                            <label>Choose Password</label>
+                            <label>Password</label>
                             <input type="password" @bind-value="Password" />
                         </div>
                     </div>
 
                     <div class="login-form-buttons">
                         <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordRegisterClicked">Register</button>
-                        <button class="amc-cloudlogin-button " @onclick="() => SwitchState(ProcessState.EmailPasswordLogin)">Back to Login</button>
                     </div>
 
                 </div>

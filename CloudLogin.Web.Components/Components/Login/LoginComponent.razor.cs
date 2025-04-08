@@ -15,7 +15,7 @@ public partial class LoginComponent
     [Parameter] public string SeconadryColor { get; set; } = "#000";
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? ActionState { get; set; }
-    [Parameter] public User? CurrentUser { get; set; }
+    [Parameter] public required User CurrentUser { get; set; }
     public Guid UserId { get; set; } = Guid.NewGuid();
     [Parameter] public string? RedirectUri { get; set; }
     private string RedirectUriValue => RedirectUri ?? cloudLogin.RedirectUri ?? navigationManager.Uri;
@@ -175,7 +175,7 @@ public partial class LoginComponent
             }
         }
 
-        Providers = Providers.Where(p => p.InputRequired == false).ToList();
+        Providers = [.. Providers.Where(p => p.InputRequired == false)];
 
         await base.OnInitializedAsync();
     }
@@ -195,14 +195,14 @@ public partial class LoginComponent
     {
         Errors.Clear();
 
-        List<ProviderDefinition> handlePhoneNumberProviders = Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false).ToList();
+        List<ProviderDefinition> handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false)];
 
         if (ActionState == "AddInput")
-            handlePhoneNumberProviders = Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true).ToList();
+            handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true)];
 
 
 
-        if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count() == 0 && ActionState != "AddNumber")
+        if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count == 0 && ActionState != "AddNumber")
         {
             Errors.Add("Unable to log you in. only emails are allowed.");
             return;
@@ -231,7 +231,7 @@ public partial class LoginComponent
 
         if (user != null)
         {
-            if (user.Providers.Any())
+            if (user.Providers.Count != 0)
             {
                 string tempInputValue = InputValue;
 
@@ -240,7 +240,7 @@ public partial class LoginComponent
 
                 string inputProviderCode = user.Inputs.First(p => p.Input == tempInputValue).Providers.First().Code;
 
-                List<ProviderDefinition> userProviders = user.Providers.Select(key => new ProviderDefinition(key)).ToList();
+                List<ProviderDefinition> userProviders = [.. user.Providers.Select(key => new ProviderDefinition(key))];
 
                 Providers.AddRange(Providers.Where(p => p.Code == inputProviderCode));
 
@@ -267,8 +267,8 @@ public partial class LoginComponent
             Providers.AddRange(Providers.Where(key => key.HandleUpdateOnly == true));
             foreach (ProviderDefinition providerInside in Providers)
             {
-                List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
-                if (count.Count() > 1)
+                List<ProviderDefinition> count = [.. Providers.Where(s => s.Code == providerInside.Code)];
+                if (count.Count > 1)
                 {
                     Providers.Remove(providerInside);
                 }
@@ -280,8 +280,8 @@ public partial class LoginComponent
             Providers.AddRange(Providers.Where(key => key.HandlesPhoneNumber == true));
             foreach (ProviderDefinition providerInside in Providers)
             {
-                List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
-                if (count.Count() > 1)
+                List<ProviderDefinition> count = [.. Providers.Where(s => s.Code == providerInside.Code)];
+                if (count.Count > 1)
                 {
                     Providers.Remove(providerInside);
                 }
@@ -292,8 +292,8 @@ public partial class LoginComponent
             Providers.AddRange(Providers.Where(key => key.HandlesEmailAddress == true));
             foreach (ProviderDefinition providerInside in Providers)
             {
-                List<ProviderDefinition> count = Providers.Where(s => s.Code == providerInside.Code).ToList();
-                if (count.Count() > 1)
+                List<ProviderDefinition> count = [.. Providers.Where(s => s.Code == providerInside.Code)];
+                if (count.Count > 1)
                 {
                     Providers.Remove(providerInside);
                 }
@@ -377,7 +377,7 @@ public partial class LoginComponent
     }
     private Task OnRegisterClicked()
     {
-        User userValues = new User()
+        User userValues = new()
         {
             ID = UserId,
             FirstName = FirstName,
@@ -475,7 +475,7 @@ public partial class LoginComponent
     {
         if (state == State)
         {
-            Title = "Sign in";
+            Title = "Sign In";
             Subtitle = string.Empty;
             DisplayInputValue = false;
 
@@ -719,10 +719,6 @@ public partial class LoginComponent
         VerificationCodeExpiry = DateTimeOffset.UtcNow.AddMinutes(5);
 
         Errors.Clear();
-
-        HttpClient client = new HttpClient();
-        client.BaseAddress = new Uri(navigationManager.BaseUri);
-
 
         if (State == ProcessState.EmailForgetPassword)
             await SendEmailCode(InputValue, VerificationCode);

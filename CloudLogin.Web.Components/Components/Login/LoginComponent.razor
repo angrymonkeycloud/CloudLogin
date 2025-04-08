@@ -1,5 +1,6 @@
 ﻿@using AngryMonkey.CloudLogin.Interfaces
 @using static Microsoft.AspNetCore.Components.Forms.InputCheckbox;
+@using AngryMonkey.CloudLogin.Models;
 @inject ICloudLogin cloudLogin
 @inject NavigationManager navigationManager
 
@@ -147,22 +148,33 @@
             }
             else if (State == ProcessState.CodeVerification)
             {
-                <div class="login-form">
-                    <div class="amc-cloudlogin-input login-form-emailVerification">
-                        <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
-                        <label for="code">Enter Code</label>
+                <div class="login-form _center">
+                    <div class="login-form-input login-form-emailVerification">
+                        <div class="amc-cloudlogin-input">
+                            <label>Enter Code</label>
+                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                        </div>
+                        <div class="login-form-resend">
+                            <button class="amc-cloudlogin-button" @onclick="OnNewCodeClicked">Resend code ?</button>
+                        </div>
                     </div>
-                    <div class="login-form-resend">
-                        <button @onclick="OnNewCodeClicked">Resend code ?</button>
+                    <div class="login-form-input">
+                        <div class="amc-cloudlogin-input">
+                            <label>Passowrd</label>
+                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password"   @bind-value="Password" @bind-value:event="oninput" spellcheck="false" />
+                        </div>
+                        <div class="amc-cloudlogin-input">
+                            <label>Confirm Passowrd</label>
+                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password"  @bind-value="ConfirmPassword" @bind-value:event="oninput" spellcheck="false" />
+                        </div>
                     </div>
+
                     <div class="login-form-verify">
-                        <button class="amc-cloudlogin-button" @onclick="OnVerifyClicked">
-                            <span>Verify</span>
-                            <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        <button class="amc-cloudlogin-button _solid" @onclick="OnVerifyClicked">
+                            Verify
                         </button>
                     </div>
                 </div>
-
             }
             else if (State == ProcessState.Registration)
             {
@@ -225,10 +237,14 @@
                             <label>Password</label>
                             <input type="password" @bind-value="Password" @bind-value:event="oninput" />
                         </div>
-                        <div class="amc-cloudlogin-keppsignedin">
-                            <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                            <label for="keepme">Keep me signed in</label>
+                        <div class="row">
+                            <div class="amc-cloudlogin-keppsignedin">
+                                <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
+                                <label for="keepme">Keep me signed in</label>
+                            </div>
+                            <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailForgetPassword)">Forget Passord ? </button>
                         </div>
+
                     </div>
                     <div class="login-form-buttons">
                         <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
@@ -267,11 +283,27 @@
 
                 </div>
             }
+            else if (State == ProcessState.EmailForgetPassword)
+            {
+                <div class="login-form _center">
+                    <div class="login-form-input">
+                        <div class="amc-cloudlogin-input">
+                            <label>Email</label>
+                            <input type="text" @bind-value="Email" />
+                        </div>
+
+                    </div>
+                    <div class="login-form-buttons">
+                        <button class="amc-cloudlogin-button _solid" @onclick="OnEmailForgetPassword">Send</button>
+                    </div>
+
+                </div>
+            }
         </div>
 
         @if (!Embedded)
         {
-            <AngryMonkey.CloudLogin.Components.LoginComponent_Footer />
+            <AngryMonkey.CloudLogin.Components.Login.LoginComponent_Footer />
         }
 
     </div>

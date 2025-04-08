@@ -31,4 +31,6 @@ public interface ICloudLogin
 
     Task PasswordLogin(string email, string password, bool keepMeSignedIn);
     Task<User> PasswordRegistration(string email, string password, string firstName, string lastName);
+
+
 }

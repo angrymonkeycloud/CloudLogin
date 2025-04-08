@@ -1,34 +1,38 @@
 ﻿[
   {
-    "outputFile": "Components/CloudLogin.razor.css",
-    "inputFile": "Components/CloudLogin.razor.less"
+    "outputFile": "Components/Account/AccountComponent.razor.css",
+    "inputFile": "Components/Account/AccountComponent.razor.less"
   },
   {
-    "outputFile": "Components/AccountComponent.razor.css",
-    "inputFile": "Components/AccountComponent.razor.less"
+    "outputFile": "Components/Account/AccountComponent-Emails.razor.css",
+    "inputFile": "Components/Account/AccountComponent-Emails.razor.less"
   },
   {
-    "outputFile": "Components/AccountComponent-UserInfo.razor.css",
-    "inputFile": "Components/AccountComponent-UserInfo.razor.less"
+    "outputFile": "Components/Account/AccountComponent-Numbers.razor.css",
+    "inputFile": "Components/Account/AccountComponent-Numbers.razor.less"
   },
   {
-    "outputFile": "Components/LoginComponent.razor.css",
-    "inputFile": "Components/LoginComponent.razor.less"
+    "outputFile": "Components/Account/AccountComponent-Update.razor.css",
+    "inputFile": "Components/Account/AccountComponent-Update.razor.less"
   },
   {
-    "outputFile": "Components/LoginComponent-Footer.razor.css",
-    "inputFile": "Components/LoginComponent-Footer.razor.less"
+    "outputFile": "Components/Account/AccountComponent-UserInfo.razor.css",
+    "inputFile": "Components/Account/AccountComponent-UserInfo.razor.less"
   },
   {
-    "outputFile": "Components/AccountComponent-Update.razor.css",
-    "inputFile": "Components/AccountComponent-Update.razor.less"
+    "outputFile": "Components/Login/LoginComponent.razor.css",
+    "inputFile": "Components/Login/LoginComponent.razor.less" 
   },
   {
-    "outputFile": "Components/AccountComponent-Emails.razor.css",
-    "inputFile": "Components/AccountComponent-Emails.razor.less"
+    "outputFile": "Components/Login/LoginComponent-Footer.razor.css",
+    "inputFile": "Components/Login/LoginComponent-Footer.razor.less"
   },
   {
-    "outputFile": "Components/AccountComponent-Numbers.razor.css",
-    "inputFile": "Components/AccountComponent-Numbers.razor.less"
+    "outputFile": "Components/Login/ProviderButton.razor.css",
+    "inputFile": "Components/Login/ProviderButton.razor.less"
+  },
+  {
+    "outputFile": "Components/Login/LoginComponent-ForgetPassword.razor.css",
+    "inputFile": "Components/Login/LoginComponent-ForgetPassword.razor.less"
   }
 ]

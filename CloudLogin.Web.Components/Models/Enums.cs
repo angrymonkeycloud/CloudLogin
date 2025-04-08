@@ -1,27 +1,27 @@
-﻿namespace AngryMonkey.CloudLogin;
+﻿namespace AngryMonkey.CloudLogin.Models;
 
-internal enum VerificationCodeResult
+public enum VerificationCodeResult
 {
     Valid,
     NotValid,
     Expired
 }
 
-internal enum AnimateBodyStep
+public enum AnimateBodyStep
 {
     None,
     Out,
     In
 }
 
-internal enum AnimateBodyDirection
+public enum AnimateBodyDirection
 {
     None,
     Forward,
     Backward
 }
 
-internal enum ProcessState
+public enum ProcessState
 {
     InputValue,
     Providers,
@@ -29,5 +29,6 @@ internal enum ProcessState
     Registration,
     ChangePrimary,
     EmailPasswordLogin,
-    EmailPasswordRegister
+    EmailPasswordRegister,
+    EmailForgetPassword
 }

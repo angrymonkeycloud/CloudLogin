@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using AngryMonkey.CloudLogin.Models;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using System.Text;
 using System.Text.Json;
@@ -20,6 +21,7 @@ public partial class LoginComponent
     private string RedirectUriValue => RedirectUri ?? cloudLogin.RedirectUri ?? navigationManager.Uri;
     private string Email { get; set; } = string.Empty;
     private string Password { get; set; } = string.Empty;
+    private string ConfirmPassword { get; set; } = string.Empty;
 
     //INPUT VARIABLES----------------------------------------
     public string PrimaryEmail { get; set; }
@@ -350,7 +352,6 @@ public partial class LoginComponent
         EndLoading();
         User? checkUser = null;
 
-
         switch (SelectedProvider?.Code?.ToLower())
         {
             case "whatsapp":
@@ -539,8 +540,6 @@ public partial class LoginComponent
 
                 break;
 
-
-
             case ProcessState.Providers:
                 Title = "Continue signing in";
                 Subtitle = "Sign In with";
@@ -586,7 +585,11 @@ public partial class LoginComponent
             case ProcessState.EmailPasswordRegister:
                 Title = "Register";
                 break;
-            
+
+            case ProcessState.EmailForgetPassword:
+                Title = "Forget Password";
+                break;
+
             case ProcessState.ChangePrimary:
 
                 Title = "Set Primary";
@@ -720,17 +723,21 @@ public partial class LoginComponent
         HttpClient client = new HttpClient();
         client.BaseAddress = new Uri(navigationManager.BaseUri);
 
-        switch (SelectedProvider?.Code.ToLower())
-        {
-            case "whatsapp":
-                await SendWhatsAppCode(InputValue, VerificationCode);
-                break;
 
-            default:
-                await SendEmailCode(InputValue, VerificationCode);
+        if (State == ProcessState.EmailForgetPassword)
+            await SendEmailCode(InputValue, VerificationCode);
+        else
+            switch (SelectedProvider?.Code.ToLower())
+            {
+                case "whatsapp":
+                    await SendWhatsAppCode(InputValue, VerificationCode);
+                    break;
 
-                break;
-        }
+                default:
+                    await SendEmailCode(InputValue, VerificationCode);
+
+                    break;
+            }
     }
     private async Task OnNewCodeClicked()
     {
@@ -747,6 +754,15 @@ public partial class LoginComponent
             EndLoading();
             return;
         }
+
+    }
+
+    private async Task OnEmailForgetPassword()
+    {
+        InputValue = Email;
+
+        await RefreshVerificationCode();
+        await SwitchState(ProcessState.CodeVerification);
 
     }
 

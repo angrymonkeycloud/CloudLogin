@@ -64,6 +64,13 @@
 .amc-cloudlogin a:active:hover {
   text-decoration: underline;
 }
+.amc-cloudlogin .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 20px;
+}
 .amc-cloudlogin input[type="text"] {
   width: -webkit-fill-available;
   height: 100%;
@@ -238,6 +245,9 @@
   gap: 10px;
   width: 100%;
 }
+.amc-cloudlogin-body .login-form-resend {
+  align-self: flex-end;
+}
 .amc-cloudlogin-body .login-form-resend button {
   border: none;
   background-color: transparent;
@@ -264,6 +274,7 @@
 .amc-cloudlogin-body .login-form-finish {
   text-align: right;
   margin-bottom: 50px;
+  width: 100%;
 }
 .amc-cloudlogin-body .login-form ._center {
   justify-content: center;
@@ -301,6 +312,18 @@
 .amc-cloudlogin-keppsignedin input {
   appearance: checkbox;
   margin: 0;
+}
+.amc-cloudlogin-link {
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--amc-accentColor);
+  transition: all 0.3s ease-in-out;
+  background-color: transparent;
+  outline: none;
+  border: none;
+}
+.amc-cloudlogin-link:hover {
+  color: var(--amc-secondColor);
 }
 .amc-cloudlogin-loading {
   position: fixed;

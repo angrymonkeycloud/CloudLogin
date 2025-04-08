@@ -47,7 +47,13 @@
         }
     }
 
-
+    .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 20px;
+    }
 
     input[type="text"] {
         width: -webkit-fill-available;
@@ -257,6 +263,7 @@
                 }
 
                 &-resend {
+                    align-self:flex-end;
                     button {
                         border: none;
                         background-color: transparent;
@@ -287,6 +294,7 @@
                 &-verify, &-finish {
                     text-align: right;
                     margin-bottom: 50px;
+                    width:100%;
                 }
 
                 ._center {
@@ -332,6 +340,20 @@
         input {
             appearance: checkbox;
             margin: 0;
+        }
+    }
+
+    &-link {
+        cursor: pointer;
+        font-size: .8rem;
+        color: var(--amc-accentColor);
+        transition: all .3s ease-in-out;
+        background-color: transparent;
+        outline: none;
+        border: none;
+
+        &:hover {
+            color: var(--amc-secondColor);
         }
     }
 

@@ -32,3 +32,13 @@ public enum ProcessState
     EmailPasswordRegister,
     EmailForgetPassword
 }
+
+public enum ProcessStep
+{
+    None,
+    MainInput,
+    CodeVerification,
+    Registration,
+    Password,
+    ResetPassword
+}

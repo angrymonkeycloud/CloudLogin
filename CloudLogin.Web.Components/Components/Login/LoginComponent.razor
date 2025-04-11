@@ -30,7 +30,7 @@
 
             <div class="amc-cloudlogin-title">
 
-                @if (State != ProcessState.InputValue && ActionState == "login")
+                @if (CurrentStep != ProcessStep.InputValue && ActionState == "login")
                 {
                     <button @onclick="OnBackClicked">
                         <AngryMonkey.Cloud.Components.Icons.Back />
@@ -83,7 +83,7 @@
                 </div>
             }
 
-            @if (State == ProcessState.InputValue)
+            @if (CurrentStep == ProcessStep.InputValue)
             {
                 @if (AllowTextIntput)
                 {
@@ -130,7 +130,7 @@
                     </div>
                 }
             }
-            else if (State == ProcessState.Providers)
+            else if (CurrentStep == ProcessStep.Providers)
             {
                 <div class="login-form">
                     <div class="amc-cloudlogin-providers">
@@ -146,7 +146,7 @@
                     </div>
                 </div>
             }
-            else if (State == ProcessState.CodeVerification)
+            else if (CurrentStep == ProcessStep.CodeVerification)
             {
                 <div class="login-form _center">
                     <div class="login-form-input login-form-emailVerification">
@@ -176,7 +176,7 @@
                     </div>
                 </div>
             }
-            else if (State == ProcessState.Registration)
+            else if (CurrentStep == ProcessStep.Registration)
             {
                 <div class="login-form">
                     <div class="login-form-register">
@@ -196,13 +196,13 @@
 
                     <div class="login-form-finish">
                         <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))? "" : "--disable" )" @onclick="OnRegisterClicked">
-                            <span>@ButtonName</span>
+                            <span>Register</span>
                             <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                         </button>
                     </div>
                 </div>
             }
-            else if (State == ProcessState.ChangePrimary)
+            else if (CurrentStep == ProcessStep.ChangePrimary)
             {
                 <div class="login-form">
                     @foreach (LoginInput input in CurrentUser.Inputs.Where(i => i.Format == InputFormat.EmailAddress))
@@ -224,7 +224,7 @@
                     }
                 </div>
             }
-            else if (State == ProcessState.EmailPasswordLogin)
+            else if (CurrentStep == ProcessStep.EmailPasswordLogin)
             {
                 <div class="login-form _center _password">
                     <div class="login-form-input">
@@ -241,19 +241,19 @@
                                 <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
                                 <label for="keepme">Stay signed in</label>
                             </div>
-                            @* <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailForgetPassword)">Forget passord?</button> *@
+                            @* <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessStep.EmailForgetPassword)">Forget passord?</button> *@
                             <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
                         </div>
 
                     </div>
                     <div class="login-form-links">
-                        <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailPasswordRegister)">New account</button>
-                        <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessState.EmailForgetPassword)">Forget passord?</button>
+                        <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessStep.EmailPasswordRegister)">New account</button>
+                        <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessStep.EmailForgetPassword)">Forget passord?</button>
                     </div>
 
                 </div>
             }
-            else if (State == ProcessState.EmailPasswordRegister)
+            else if (CurrentStep == ProcessStep.EmailPasswordRegister)
             {
                 <div class="login-form _center">
                     <div class="login-form-input">
@@ -281,7 +281,7 @@
 
                 </div>
             }
-            else if (State == ProcessState.EmailForgetPassword)
+            else if (CurrentStep == ProcessStep.EmailForgetPassword)
             {
                 <div class="login-form _center">
                     <div class="login-form-input">

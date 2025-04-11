@@ -1,4 +1,5 @@
 ﻿using AngryMonkey.CloudLogin.Models;
+using AngryMonkey.CloudLogin.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using System.Text;
@@ -29,7 +30,6 @@ public partial class LoginComponent
     public string LastName { get; set; }
     public string DisplayName { get; set; }
     public bool KeepMeSignedIn { get; set; }
-    public bool DisplayInputValue { get; set; } = false;
     public bool AddInputDiplay { get; set; } = false;
     private string _inputValue;
     public string InputValue
@@ -62,6 +62,25 @@ public partial class LoginComponent
     }
     protected InputFormat InputValueFormat => cloudLogin.GetInputFormat(InputValue);
 
+    // CssClass for animation and loading states
+    protected string CssClass
+    {
+        get
+        {
+            var classes = new List<string>();
+            
+            if (IsLoading)
+                classes.Add("_loading");
+                
+            if (AnimateStep != AnimateBodyStep.None)
+                classes.Add($"_animatestep-{AnimateStep.ToString().ToLower()}");
+                
+            if (AnimateDirection != AnimateBodyDirection.None)
+                classes.Add($"_animatedirection-{AnimateDirection.ToString().ToLower()}");
+                
+            return string.Join(" ", classes);
+        }
+    }
 
     //PROVIDERS VARIABLES------------------------------------
     List<ProviderDefinition> Providers { get; set; } = [];
@@ -70,56 +89,26 @@ public partial class LoginComponent
     public ProviderDefinition? SelectedProvider { get; set; }
     public Action OnInput { get; set; }
 
+    [Inject] private AuthenticationProcessService AuthService { get; set; }
 
-    //VISUAL VARIABLES---------------------------------------
-    private ProcessState State { get; set; } = ProcessState.InputValue;
-    protected string ButtonName { get; set; } = string.Empty;
-    protected string Title { get; set; } = string.Empty;
-    protected string Subtitle { get; set; } = string.Empty;
-    protected string CssClass
-    {
-        get
-        {
-            List<string> classes = [];
+    protected AuthenticationProcess CurrentProcess => AuthService.CurrentProcess;
+    protected ProcessStep CurrentStep => AuthService.CurrentStep;
+    protected string Title => AuthService.Title;
+    protected string Subtitle => AuthService.Subtitle;
+    protected bool DisplayInputValue => AuthService.DisplayInputValue;
+    protected List<string> Errors => AuthService.Errors;
+    protected bool IsLoading => AuthService.IsLoading;
+    protected AnimateBodyStep AnimateStep => AuthService.AnimateStep;
+    protected AnimateBodyDirection AnimateDirection => AuthService.AnimateDirection;
 
-            if (IsLoading)
-                classes.Add("_loading");
-
-            if (Embedded)
-                classes.Add("_embedded");
-            else
-                classes.Add("_fullpage");
-
-            if (Next)
-                classes.Add("_next");
-
-            if (Preview)
-                classes.Add("_preview");
-
-            if (AnimateStep != AnimateBodyStep.None)
-                classes.Add($"_animatestep-{AnimateStep.ToString().ToLower()}");
-
-            if (AnimateDirection != AnimateBodyDirection.None)
-                classes.Add($"_animatedirection-{AnimateDirection.ToString().ToLower()}");
-
-            return string.Join(" ", classes);
-        }
-    }
-    public bool IsLoading { get; set; } = false;
     protected bool Next { get; set; } = false;
     protected bool Preview { get; set; } = false;
-    protected List<string> Errors { get; set; } = [];
-
-    private AnimateBodyStep AnimateStep = AnimateBodyStep.None;
-
-    private AnimateBodyDirection AnimateDirection = AnimateBodyDirection.None;
 
     //VERIFICATION VARIABLES---------------------------------
     public string VerificationValue { get; set; }
     public bool ExpiredCode { get; set; } = false;
     public string? VerificationCode { get; set; }
     public DateTimeOffset? VerificationCodeExpiry { get; set; }
-
 
     //START FUNCTIONS----------------------------------------
     protected override async Task OnInitializedAsync()
@@ -129,15 +118,12 @@ public partial class LoginComponent
 
         Providers = await cloudLogin.GetProviders();
 
-        //cloudLogin = new(navigationManager.BaseUri);
-
         if (!string.IsNullOrEmpty(ActionState))
         {
             switch (ActionState)
             {
                 case "UpdateInput":
-
-                    StartLoading();
+                    AuthService.StartLoading();
 
                     if (CurrentUser == null)
                         return;
@@ -148,7 +134,7 @@ public partial class LoginComponent
                     DisplayName = CurrentUser.DisplayName;
                     UserId = CurrentUser.ID;
 
-                    await SwitchState(ProcessState.Registration);
+                    await SwitchState(ProcessStep.Registration);
                     break;
 
                 case "AddInput":
@@ -156,10 +142,8 @@ public partial class LoginComponent
                     break;
 
                 case "ChangePrimary":
-
                     PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
-
-                    await SwitchState(ProcessState.ChangePrimary);
+                    await SwitchState(ProcessStep.ChangePrimary);
                     break;
 
                 case "AddNumber":
@@ -186,7 +170,7 @@ public partial class LoginComponent
         {
             OnInput = StateHasChanged;
 
-            await SwitchState(ProcessState.InputValue);
+            await SwitchState(ProcessStep.InputValue);
         }
     }
 
@@ -199,8 +183,6 @@ public partial class LoginComponent
 
         if (ActionState == "AddInput")
             handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true)];
-
-
 
         if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count == 0 && ActionState != "AddNumber")
         {
@@ -217,13 +199,10 @@ public partial class LoginComponent
         if (string.IsNullOrEmpty(InputValue))
             return;
 
-
-        IsLoading = true;
-
+        //IsLoading = true;
         InputValue = InputValue.ToLower();
 
         User? user = await cloudLogin.GetUserByInput(InputValue);
-
 
         Providers = [];
 
@@ -261,7 +240,6 @@ public partial class LoginComponent
                 .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress && key.HandleUpdateOnly == false)
                             || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber && key.HandleUpdateOnly == false)));
 
-
         if (ActionState == "AddInput")
         {
             Providers.AddRange(Providers.Where(key => key.HandleUpdateOnly == true));
@@ -272,7 +250,6 @@ public partial class LoginComponent
                 {
                     Providers.Remove(providerInside);
                 }
-
             }
         }
         if (ActionState == "AddNumber")
@@ -300,7 +277,6 @@ public partial class LoginComponent
             }
         }
 
-
         if (Providers.Count == 1)
             if (Providers.First().HandlesEmailAddress)
             {
@@ -309,14 +285,13 @@ public partial class LoginComponent
                 return;
             }
 
-        await SwitchState(ProcessState.Providers);
-
+        await SwitchState(ProcessStep.Providers);
     }
     private async Task OnProviderClickedAsync(ProviderDefinition provider)
     {
         if (provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase))
         {
-            await SwitchState(ProcessState.EmailPasswordLogin);
+            await SwitchState(ProcessStep.EmailPasswordLogin);
             return;
         }
 
@@ -327,14 +302,13 @@ public partial class LoginComponent
         if (provider.IsCodeVerification)
         {
             await RefreshVerificationCode();
-            await SwitchState(ProcessState.CodeVerification);
+            await SwitchState(ProcessStep.CodeVerification);
         }
         else ProviderSignInChallenge(provider.Code);
     }
     private async Task OnVerifyClicked()
     {
         StartLoading();
-
 
         switch (GetVerificationCodeResult(VerificationValue))
         {
@@ -373,7 +347,7 @@ public partial class LoginComponent
 
         if (checkUser != null)
             CustomSignInChallenge(checkUser);
-        else await SwitchState(ProcessState.Registration);
+        else await SwitchState(ProcessStep.Registration);
     }
     private Task OnRegisterClicked()
     {
@@ -396,7 +370,6 @@ public partial class LoginComponent
             return Task.CompletedTask;
         }
 
-
         StartLoading();
 
         CustomSignInChallenge(userValues);
@@ -416,27 +389,27 @@ public partial class LoginComponent
         switch (args.Key)
         {
             case "Enter":
-                if (State == ProcessState.InputValue)
+                if (CurrentStep == ProcessStep.InputValue)
                     if (InputValueFormat == InputFormat.EmailAddress || InputValueFormat == InputFormat.PhoneNumber)
                         await OnInputNextClicked();
 
-                if (State == ProcessState.CodeVerification)
+                if (CurrentStep == ProcessStep.CodeVerification)
                     await OnVerifyClicked();
 
-                if (State == ProcessState.Registration)
+                if (CurrentStep == ProcessStep.Registration)
                     if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))
                         await OnRegisterClicked();
 
                 break;
 
             case "Escape":
-                if (State == ProcessState.InputValue)
+                if (CurrentStep == ProcessStep.InputValue)
                     InputValue = null;
 
-                if (State == ProcessState.CodeVerification)
+                if (CurrentStep == ProcessStep.CodeVerification)
                     VerificationValue = null;
 
-                if (State == ProcessState.Registration)
+                if (CurrentStep == ProcessStep.Registration)
                 {
                     FirstName = null;
                     LastName = null;
@@ -444,21 +417,18 @@ public partial class LoginComponent
                 }
                 break;
 
-
             default: break;
         }
     }
     private async Task OnBackClicked(MouseEventArgs e)
     {
-        if (State == ProcessState.InputValue)
+        if (CurrentStep == ProcessStep.InputValue)
             return;
 
         Errors.Clear();
 
-        await SwitchState(ProcessState.InputValue);
-
+        await SwitchState(ProcessStep.InputValue);
     }
-
 
     //SIGN IN FUNCTIONS-------------------------------------
     private void ProviderSignInChallenge(string provider)
@@ -471,147 +441,12 @@ public partial class LoginComponent
         navigationManager.NavigateTo(navigateUrl, true);
     }
 
-    private async Task SwitchState(ProcessState state)
+    private async Task SwitchState(ProcessStep step)
     {
-        if (state == State)
-        {
-            Title = "Sign In";
-            Subtitle = string.Empty;
-            DisplayInputValue = false;
-
-            if (ActionState == "AddInput")
-            {
-                AddInputDiplay = true;
-                Title = "Add Input";
-                Subtitle = "Add another input for your account";
-            }
-
-            StateHasChanged();
-            return;
-        }
-
-        bool toNext = true;
-
-        switch (state)
-        {
-            case ProcessState.InputValue:
-                toNext = false;
-                break;
-
-            case ProcessState.CodeVerification:
-                if (State == ProcessState.Registration)
-                    toNext = false;
-
-                break;
-
-            case ProcessState.Providers:
-                if (State != ProcessState.InputValue)
-                    toNext = false;
-
-                break;
-            default: break;
-        }
-
-        AnimateDirection = toNext ? AnimateBodyDirection.Forward : AnimateBodyDirection.Backward;
-
-        AnimateStep = AnimateBodyStep.Out;
-        StateHasChanged();
-
-        await Task.Delay(400);
-
-        AnimateStep = AnimateBodyStep.In;
-        StateHasChanged();
-
-        State = state;
-
-        switch (State)
-        {
-            case ProcessState.InputValue:
-                Title = "Sign in";
-                Subtitle = String.Empty;
-                DisplayInputValue = false;
-
-                if (ActionState == "AddInput")
-                {
-                    AddInputDiplay = true;
-                    Title = "Add Input";
-                    Subtitle = "Add another input for your account";
-                }
-
-                break;
-
-            case ProcessState.Providers:
-                Title = "Continue signing in";
-                Subtitle = "Sign In with";
-                DisplayInputValue = true;
-
-                if (ActionState == "AddInput")
-                    Title = "Continue adding input";
-
-                break;
-
-            case ProcessState.CodeVerification:
-                string InputType = "Email";
-
-                if (InputValueFormat == InputFormat.PhoneNumber)
-                    InputType = "Whatsapp";
-
-                Title = $"Verify your {InputType}";
-                Subtitle = $"A verification code has been sent to your {InputType}, if not received, you can send another one.";
-                DisplayInputValue = true;
-                break;
-
-            case ProcessState.Registration:
-                if (ActionState == "UpdateInput")
-                {
-                    Title = "Update";
-                    Subtitle = "Change your credentials.";
-                    DisplayInputValue = true;
-                    ButtonName = "Update";
-                }
-                else
-                {
-                    Title = "Register";
-                    Subtitle = "Add your credentials.";
-                    DisplayInputValue = true;
-                    ButtonName = "Register";
-                }
-                break;
-
-            case ProcessState.EmailPasswordLogin:
-                Title = "Sign In";
-                break;
-
-            case ProcessState.EmailPasswordRegister:
-                Title = "Register";
-                break;
-
-            case ProcessState.EmailForgetPassword:
-                Title = "Forget Password";
-                break;
-
-            case ProcessState.ChangePrimary:
-
-                Title = "Set Primary";
-                Subtitle = "Choose which email to put as primary.";
-                DisplayInputValue = true;
-
-                break;
-            default:
-                Title = "Untitled!!!";
-                Subtitle = string.Empty;
-                DisplayInputValue = false;
-                break;
-        }
-
-        EndLoading();
-
-        await Task.Delay(300);
-
-        AnimateStep = AnimateBodyStep.None;
-        AnimateDirection = AnimateBodyDirection.None;
+        await AuthService.SwitchStep(step);
         StateHasChanged();
     }
+
     private async Task OnEmailPasswordLoginClicked()
     {
         try
@@ -678,7 +513,6 @@ public partial class LoginComponent
 
         //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
 
-
         navigationManager.NavigateTo(CloudLoginShared.RedirectString("cloudlogin", "login", userInfo: userInfoJSON, keepMeSignedIn: KeepMeSignedIn.ToString(), redirectUri: RedirectUri, actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString()), true);
     }
 
@@ -720,7 +554,7 @@ public partial class LoginComponent
 
         Errors.Clear();
 
-        if (State == ProcessState.EmailForgetPassword)
+        if (CurrentStep == ProcessStep.EmailForgetPassword)
             await SendEmailCode(InputValue, VerificationCode);
         else
             switch (SelectedProvider?.Code.ToLower())
@@ -750,7 +584,6 @@ public partial class LoginComponent
             EndLoading();
             return;
         }
-
     }
 
     private async Task OnEmailForgetPassword()
@@ -758,22 +591,20 @@ public partial class LoginComponent
         InputValue = Email;
 
         await RefreshVerificationCode();
-        await SwitchState(ProcessState.CodeVerification);
-
+        await SwitchState(ProcessStep.CodeVerification);
     }
-
 
     //VISUAL FUNCTIONS---------------------------------------
 
     private async void StartLoading()
     {
-        IsLoading = true;
+        //AuthService.IsLoading = true;
         Errors.Clear();
         await Task.Delay(3000);
     }
     private void EndLoading()
     {
-        IsLoading = false;
+        //AuthService.IsLoading = false;
         StateHasChanged();
     }
     protected void OnDisplayNameFocus()

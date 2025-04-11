@@ -21,24 +21,28 @@ public enum AnimateBodyDirection
     Backward
 }
 
-public enum ProcessState
-{
-    InputValue,
-    Providers,
-    CodeVerification,
-    Registration,
-    ChangePrimary,
-    EmailPasswordLogin,
-    EmailPasswordRegister,
-    EmailForgetPassword
-}
-
 public enum ProcessStep
 {
     None,
-    MainInput,
-    CodeVerification,
-    Registration,
-    Password,
-    ResetPassword
+    InputValue,          // Get input value from user (email/phone)
+    Providers,           // Select authentication provider
+    CodeVerification,    // Verify code (OTP)
+    Registration,        // Create a new account
+    EmailPasswordLogin,  // Password-based login
+    EmailPasswordRegister, // Register with password
+    EmailForgetPassword, // Reset forgotten password
+    ChangePrimary        // Change primary email
+}
+
+public enum AuthenticationProcess
+{
+    None,
+    StandardLogin,       // Standard login flow
+    PasswordLogin,       // Password-based login
+    OtpLogin,            // One-time password login
+    Registration,        // New account registration
+    PasswordReset,       // Reset forgotten password
+    UpdateAccount,       // Update account information
+    AddInput,            // Add new login method
+    ChangePrimary        // Change primary email
 }

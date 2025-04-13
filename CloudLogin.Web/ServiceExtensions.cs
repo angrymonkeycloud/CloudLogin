@@ -130,6 +130,7 @@ public class CloudLoginWeb
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();
+        app.MapStaticAssets();
         app.UseRouting();
         app.UseAuthentication();
         app.UseAntiforgery();
@@ -138,7 +139,7 @@ public class CloudLoginWeb
 
         app.MapRazorComponents<AngryMonkey.CloudLogin.Main.App>()
             .AddInteractiveWebAssemblyRenderMode()
-            .AddAdditionalAssemblies(typeof(AngryMonkey.CloudLogin._Imports).Assembly);
+            .AddAdditionalAssemblies(typeof(AngryMonkey.CloudLogin.WASM._Imports).Assembly);
 
         await app.RunAsync();
     }

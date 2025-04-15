@@ -33,17 +33,17 @@ public class EmailService : IEmailService
                     EmailAddress = new() { Address = string.Join(";", ToEmails) }
                 }
             ],
-            BccRecipients =
-            [
-                new()
-                {
-                    EmailAddress = new() { Address = _options.BccEmail }
-                }
-            ],
+            //BccRecipients =
+            //[
+            //    new()
+            //    {
+            //        EmailAddress = new() { Address = _options.BccEmail }
+            //    }
+            //],
             From = new() { EmailAddress = new() { Address = _options.FromEmail } },
         };
 
-        await _graphServiceClient.Users["elietebchrani@coverbox.app"].SendMail.PostAsync(new()
+        await _graphServiceClient.Users[_options.FromEmail].SendMail.PostAsync(new()
         {
             Message = message,
             SaveToSentItems = true

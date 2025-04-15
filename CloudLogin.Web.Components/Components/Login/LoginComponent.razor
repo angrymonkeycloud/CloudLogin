@@ -4,11 +4,12 @@
 @inject ICloudLogin cloudLogin
 @inject NavigationManager navigationManager
 
+
 @namespace AngryMonkey.CloudLogin
 
 @if (RendererInfo.IsInteractive)
 {
-    <div class="amc-cloudlogin @CssClass" style="--amc-accentColor:@PrimaryColor;--amc-secondColor:@SeconadryColor">
+    <div class="amc-cloudlogin @CssClass" >
         <div class="amc-cloudlogin-header">
 
             @* Loading *@
@@ -158,6 +159,20 @@
                             <button class="amc-cloudlogin-button" @onclick="OnNewCodeClicked">Resend code ?</button>
                         </div>
                     </div>
+                </div>
+            }
+            else if (CurrentStep == ProcessStep.CodeEmailVerification)
+            {
+                <div class="login-form _center">
+                    <div class="login-form-input login-form-emailVerification">
+                        <div class="amc-cloudlogin-input">
+                            <label>Enter Code</label>
+                            <input  autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                        </div>
+                        <div class="login-form-resend">
+                            <button class="amc-cloudlogin-button" @onclick="OnNewCodeClicked">Resend code ?</button>
+                        </div>
+                    </div>
                     <div class="login-form-input">
                         <div class="amc-cloudlogin-input">
                             <label>Passowrd</label>
@@ -170,7 +185,7 @@
                     </div>
 
                     <div class="login-form-verify">
-                        <button class="amc-cloudlogin-button _solid" @onclick="OnVerifyClicked">
+                        <button class="amc-cloudlogin-button _solid" @onclick="OnVerifyEmailClicked">
                             Verify
                         </button>
                     </div>
@@ -239,7 +254,7 @@
                         <div class="row">
                             <div class="amc-cloudlogin-keppsignedin">
                                 <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                                <label for="keepme">Stay signed in</label>
+                                <label for="keepme">Keep me signed in</label>
                             </div>
                             @* <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessStep.EmailForgetPassword)">Forget passord?</button> *@
                             <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordLoginClicked">Sign In</button>

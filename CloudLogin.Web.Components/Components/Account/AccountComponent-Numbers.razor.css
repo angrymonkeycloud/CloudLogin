@@ -84,11 +84,3 @@
   background-color: transparent;
   color: var(--amc-accentColor);
 }
-.badge {
-  background-color: var(--amc-accentColor);
-  color: #fff;
-  padding: 0.2em 0.4em;
-  border-radius: 0.2em;
-  font-size: 0.8em;
-  margin-left: 0.5em;
-}

@@ -19,7 +19,7 @@ public partial class CloudLoginServer
             FirstName = firstName,
             LastName = lastName,
             DisplayName = firstName + " " + lastName,
-            PasswordHash = HashPassword(password),
+            PasswordHash = await HashPassword(password),
             Inputs = [new() { Input = email, Format = InputFormat.EmailAddress, IsPrimary = true }]
         };
 
@@ -37,20 +37,7 @@ public partial class CloudLoginServer
         return CheckPassword(password, user.PasswordHash) ? user : null;
     }
 
-    private static string HashPassword(string password)
-    {
-        // Basic PBKDF2 hashing; adjust your iteration count as needed
-        byte[] salt = RandomNumberGenerator.GetBytes(16);
-        byte[] hashed = KeyDerivation.Pbkdf2(
-            password,
-            salt,
-            KeyDerivationPrf.HMACSHA256,
-            iterationCount: 10000,
-            numBytesRequested: 32);
-
-        // Return as base64(salt + hash)
-        return Convert.ToBase64String(salt.Concat(hashed).ToArray());
-    }
+   
 
     private static bool CheckPassword(string providedPassword, string storedHash)
     {

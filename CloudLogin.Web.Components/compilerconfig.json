@@ -7,7 +7,7 @@
     "outputFile": "Components/Account/AccountComponent-Emails.razor.css",
     "inputFile": "Components/Account/AccountComponent-Emails.razor.less"
   },
-  {
+  { 
     "outputFile": "Components/Account/AccountComponent-Numbers.razor.css",
     "inputFile": "Components/Account/AccountComponent-Numbers.razor.less"
   },
@@ -17,13 +17,13 @@
   },
   {
     "outputFile": "Components/Account/AccountComponent-UserInfo.razor.css",
-    "inputFile": "Components/Account/AccountComponent-UserInfo.razor.less"
+    "inputFile": "Components/Account/AccountComponent-UserInfo.razor.less" 
   },
   {
     "outputFile": "Components/Login/LoginComponent.razor.css",
     "inputFile": "Components/Login/LoginComponent.razor.less" 
   },
-  {
+  { 
     "outputFile": "Components/Login/LoginComponent-Footer.razor.css",
     "inputFile": "Components/Login/LoginComponent-Footer.razor.less"
   },

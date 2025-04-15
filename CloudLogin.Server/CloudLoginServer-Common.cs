@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using AngryMonkey.Cloud.Geography;
 using AngryMonkey.CloudLogin.Sever.Providers;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.Security.Cryptography;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -177,7 +179,6 @@ public partial class CloudLoginServer : ICloudLogin
         {
             string subject = _configuration.EmailConfiguration.DefaultSubject;
             string body = _configuration.EmailConfiguration.DefaultBody.Replace(CloudLoginEmailConfiguration.VerificationCodePlaceHolder, code);
-
             await _configuration.EmailConfiguration.EmailService.SendEmail(subject, body, [receiver]);
         }
     }
@@ -230,7 +231,7 @@ public partial class CloudLoginServer : ICloudLogin
 
     public string GetPhoneNumber(string input) => _cloudGeography.PhoneNumbers.Get(input).Number;
 
-    public Task PasswordLogin(string email, string password, bool keepMeSignedIn)
+    public Task<bool> PasswordLogin(string email, string password, bool keepMeSignedIn)
     {
         throw new NotImplementedException();
     }
@@ -239,4 +240,25 @@ public partial class CloudLoginServer : ICloudLogin
     {
         return await RegisterEmailPasswordUser(email, password, firstName, lastName);
     }
+
+    public async Task<string> HashPassword(string password)
+    {
+        byte[] salt = RandomNumberGenerator.GetBytes(16);
+        byte[] hashed = KeyDerivation.Pbkdf2(
+            password,
+            salt,
+            KeyDerivationPrf.HMACSHA256,
+            iterationCount: 10000,
+            numBytesRequested: 32);
+
+        // Return as base64(salt + hash)
+        return Convert.ToBase64String(salt.Concat(hashed).ToArray());
+    }
+
+
+    public bool IsValidPassword(string password)
+    {
+        throw new NotImplementedException();
+    }
+
 }

@@ -27,6 +27,7 @@ public enum ProcessStep
     InputValue,          // Get input value from user (email/phone)
     Providers,           // Select authentication provider
     CodeVerification,    // Verify code (OTP)
+    CodeEmailVerification,    // Verify code (OTP)
     Registration,        // Create a new account
     EmailPasswordLogin,  // Password-based login
     EmailPasswordRegister, // Register with password

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Web;
 using System.Text;
 using System.Text.Json;
 using static System.Net.WebRequestMethods;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -12,8 +13,6 @@ public partial class LoginComponent
 {
     //GENERAL VARIABLES--------------------------------------
     [Parameter] public string Logo { get; set; }
-    [Parameter] public string PrimaryColor { get; set; } = "#000";
-    [Parameter] public string SeconadryColor { get; set; } = "#000";
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public required User CurrentUser { get; set; }
@@ -68,16 +67,16 @@ public partial class LoginComponent
         get
         {
             var classes = new List<string>();
-            
+
             if (IsLoading)
                 classes.Add("_loading");
-                
+
             if (AnimateStep != AnimateBodyStep.None)
                 classes.Add($"_animatestep-{AnimateStep.ToString().ToLower()}");
-                
+
             if (AnimateDirection != AnimateBodyDirection.None)
                 classes.Add($"_animatedirection-{AnimateDirection.ToString().ToLower()}");
-                
+
             return string.Join(" ", classes);
         }
     }
@@ -113,6 +112,7 @@ public partial class LoginComponent
     //START FUNCTIONS----------------------------------------
     protected override async Task OnInitializedAsync()
     {
+     
         if (string.IsNullOrEmpty(ActionState))
             ActionState = "login";
 
@@ -168,6 +168,12 @@ public partial class LoginComponent
     {
         if (firstRender)
         {
+            if (await cloudLogin.IsAuthenticated())
+            {
+                navigationManager.NavigateTo("/", true);
+                return;
+            }
+
             OnInput = StateHasChanged;
 
             await SwitchState(ProcessStep.InputValue);
@@ -326,17 +332,24 @@ public partial class LoginComponent
         EndLoading();
         User? checkUser = null;
 
-        switch (SelectedProvider?.Code?.ToLower())
+        if (SelectedProvider != null)
         {
-            case "whatsapp":
-                checkUser = await cloudLogin.GetUserByPhoneNumber(InputValue);
-                break;
-            case "custom":
-                checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
-                break;
-            default:
-                checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
-                break;
+            switch (SelectedProvider?.Code?.ToLower())
+            {
+                case "whatsapp":
+                    checkUser = await cloudLogin.GetUserByPhoneNumber(InputValue);
+                    break;
+                case "custom":
+                    checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
+                    break;
+                default:
+                    checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
+                    break;
+            }
+        }
+        else
+        {
+            checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
         }
 
         if (ActionState == "AddInput")
@@ -349,8 +362,74 @@ public partial class LoginComponent
             CustomSignInChallenge(checkUser);
         else await SwitchState(ProcessStep.Registration);
     }
+
+    private async Task OnVerifyEmailClicked()
+    {
+        StartLoading();
+
+        switch (GetVerificationCodeResult(VerificationValue))
+        {
+            case VerificationCodeResult.NotValid:
+                Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
+                EndLoading();
+                return;
+
+            case VerificationCodeResult.Expired:
+                Errors.Add("The code validity has expired, please send another one.");
+                EndLoading();
+                return;
+
+            default: break;
+        }
+
+
+        if (!Password.Equals(ConfirmPassword))
+        {
+            Errors.Add("Passwords must match.");
+            
+            EndLoading();
+            return;
+        }
+
+        if (!cloudLogin.IsValidPassword(Password))
+        {
+            Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+            EndLoading();
+
+            return;
+        }
+
+        User? checkUser = null;
+
+        checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
+
+        if (checkUser.ID == Guid.Empty || checkUser == null)
+        {
+            Errors.Add("Error To update Password, Please Try Again Later");
+            EndLoading();
+            return;
+        }
+
+        checkUser.PasswordHash = await cloudLogin.HashPassword(Password);
+
+        await cloudLogin.UpdateUser(checkUser!);
+
+        EndLoading();
+
+        await SwitchState(ProcessStep.EmailPasswordLogin);
+
+    }
     private Task OnRegisterClicked()
     {
+
+        if (!cloudLogin.IsValidPassword(Password))
+        {
+            Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+            EndLoading();
+
+            return Task.CompletedTask;
+        }
+
         User userValues = new()
         {
             ID = UserId,
@@ -426,8 +505,22 @@ public partial class LoginComponent
             return;
 
         Errors.Clear();
+        StateHasChanged();
 
-        await SwitchState(ProcessStep.InputValue);
+        switch (CurrentStep)
+        {
+            case ProcessStep.CodeEmailVerification:
+                await SwitchState(ProcessStep.EmailForgetPassword);
+                break;
+            case ProcessStep.EmailForgetPassword:
+            case ProcessStep.EmailPasswordRegister:
+                await SwitchState(ProcessStep.EmailPasswordLogin);
+                break;
+            default:
+                await SwitchState(ProcessStep.InputValue);
+                break;
+        }
+
     }
 
     //SIGN IN FUNCTIONS-------------------------------------
@@ -451,9 +544,22 @@ public partial class LoginComponent
     {
         try
         {
-            await cloudLogin.PasswordLogin(Email, Password, KeepMeSignedIn);
+            StartLoading();
 
-            navigationManager.NavigateTo("/", true);
+            Errors.Clear();
+
+            bool result = await cloudLogin.PasswordLogin(Email, Password, KeepMeSignedIn);
+
+            EndLoading();
+
+            if (result)
+            {
+                navigationManager.NavigateTo("/", true);
+                return;
+            }
+
+            Errors.Add("Incorrect Email or Passowrd");
+
         }
         catch (Exception ex)
         {
@@ -465,11 +571,23 @@ public partial class LoginComponent
     {
         try
         {
+            StartLoading();
+
+            Errors.Clear();
+
             User user = await cloudLogin.PasswordRegistration(Email, Password, FirstName, LastName);
+            bool result = await cloudLogin.PasswordLogin(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
 
-            await cloudLogin.PasswordLogin(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
+            EndLoading();
 
-            navigationManager.NavigateTo("/", true);
+            if (result)
+            {
+                navigationManager.NavigateTo("/", true);
+                return;
+            }
+
+            Errors.Add("Failed to Register. Please try again later");
+
         }
         catch (Exception ex)
         {
@@ -528,7 +646,17 @@ public partial class LoginComponent
 
     public async Task SendEmailCode(string receiver, string code)
     {
-        await cloudLogin.SendEmailCode(receiver, code);
+        try
+        {
+            await cloudLogin.SendEmailCode(receiver, code);
+        }
+        catch (Exception)
+        {
+            Errors.Add("Failed to send email code.");
+            EndLoading();
+
+            return;
+        }
     }
 
     public async Task SendWhatsAppCode(string receiver, string code)
@@ -588,24 +716,43 @@ public partial class LoginComponent
 
     private async Task OnEmailForgetPassword()
     {
+        StartLoading();
+
         InputValue = Email;
 
+        if (!await CheckEmailHasRegister(InputValue))
+        {
+            Errors.Add("Email is not registered yet.");
+            EndLoading();
+
+            return;
+        }
+
         await RefreshVerificationCode();
-        await SwitchState(ProcessStep.CodeVerification);
+        await SwitchState(ProcessStep.CodeEmailVerification);
+        EndLoading();
+
+    }
+
+    private async Task<bool> CheckEmailHasRegister(string email)
+    {
+
+        User? user = await cloudLogin.GetUserByEmailAddress(email);
+
+        return user.ID != Guid.Empty ? true : false;
+
     }
 
     //VISUAL FUNCTIONS---------------------------------------
 
     private async void StartLoading()
     {
-        //AuthService.IsLoading = true;
-        Errors.Clear();
-        await Task.Delay(3000);
+        AuthService.StartLoading();
+        
     }
     private void EndLoading()
     {
-        //AuthService.IsLoading = false;
-        StateHasChanged();
+        AuthService.EndLoading();
     }
     protected void OnDisplayNameFocus()
     {

@@ -1,7 +1,9 @@
 ﻿using AngryMonkey.Cloud;
 using AngryMonkey.CloudLogin.Interfaces;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -361,7 +363,7 @@ public class CloudLoginClient : ICloudLogin
 
     public string GetPhoneNumber(string input) => CloudGeography.PhoneNumbers.Get(input).Number;
 
-    public async Task PasswordLogin(string email, string password, bool keepMeSignedIn)
+    public async Task<bool> PasswordLogin(string email, string password, bool keepMeSignedIn)
     {
         MultipartFormDataContent form = new()
         {
@@ -376,11 +378,15 @@ public class CloudLoginClient : ICloudLogin
         {
             User? currentUser = await CurrentUser();
 
-            if (currentUser != null)
-                return;
+            if (currentUser != null && currentUser.ID !=Guid.Empty)
+                return true;
 
-            throw new Exception("Invalid email or password");
+            return false;
+
+            //throw new Exception("Invalid email or password");
         }
+
+        return true;
     }
 
     public async Task<User> PasswordRegistration(string email, string password, string firstName, string lastName)
@@ -399,5 +405,28 @@ public class CloudLoginClient : ICloudLogin
             throw new Exception("Invalid email or password");
 
         return (await message.Content.ReadFromJsonAsync<User>())!;
+    }
+
+
+    public async Task<string> HashPassword(string password)
+    {
+        // Basic PBKDF2 hashing; adjust your iteration count as needed
+        byte[] salt = RandomNumberGenerator.GetBytes(16);
+        byte[] hashed = KeyDerivation.Pbkdf2(
+            password,
+            salt,
+            KeyDerivationPrf.HMACSHA256,
+            iterationCount: 10000,
+            numBytesRequested: 32);
+
+        // Return as base64(salt + hash)
+        return Convert.ToBase64String(salt.Concat(hashed).ToArray());
+    }
+
+    public bool IsValidPassword(string password)
+    {
+        // Regular expression to check for at least one letter, one capital letter, and minimum length of 6
+        string pattern = @"^(?=.*[a-z])(?=.*[A-Z]).{6,}$";
+        return Regex.IsMatch(password, pattern);
     }
 }

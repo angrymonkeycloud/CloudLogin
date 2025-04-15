@@ -1,12 +1,4 @@
-﻿.badge {
-  background-color: #007bff;
-  color: white;
-  padding: 0.2em 0.4em;
-  border-radius: 0.2em;
-  font-size: 0.8em;
-  margin-left: 0.5em;
-}
-.info {
+﻿.info {
   display: flex;
   flex-direction: column;
   gap: 20px;

@@ -7,6 +7,7 @@
 @--colorError: #f53030;
 @--colorWhatsApp: #25d366;
 
+
 .disableProvider {
     ::deep svg:first-child {
         display: none
@@ -18,7 +19,8 @@
 }
 
 .amc-cloudlogin {
-    /*--amc-accentColor: #000;*/
+    /*--amc-secondColor:#000;*/
+
     --microsoftColor: #00A4EF;
     --googleColor: #DB4437;
     --facebookColor: #4267B2;
@@ -32,6 +34,7 @@
     background-color: #fff;
     overflow-x: hidden;
     padding-block: 50px;
+    direction: ltr;
 
     a {
         &,
@@ -260,6 +263,7 @@
                     flex-direction: column;
                     gap: 10px;
                     width: 100%;
+                    align-items: flex-end;
                 }
 
                 &-links {
@@ -654,3 +658,7 @@
         background-color: hsl(200,20%,90%);
     }
 }
+
+
+
+ 

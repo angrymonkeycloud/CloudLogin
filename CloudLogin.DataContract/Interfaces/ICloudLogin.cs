@@ -1,4 +1,6 @@
 ﻿
+using System.Text.RegularExpressions;
+
 namespace AngryMonkey.CloudLogin.Interfaces;
 
 public interface ICloudLogin
@@ -29,8 +31,11 @@ public interface ICloudLogin
 
     string GetPhoneNumber(string input);
 
-    Task PasswordLogin(string email, string password, bool keepMeSignedIn);
+    Task<bool> PasswordLogin(string email, string password, bool keepMeSignedIn);
     Task<User> PasswordRegistration(string email, string password, string firstName, string lastName);
 
+    Task<string> HashPassword(string password);
+
+    bool IsValidPassword(string password);
 
 }

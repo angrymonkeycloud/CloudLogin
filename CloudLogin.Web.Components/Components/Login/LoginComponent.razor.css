@@ -35,7 +35,7 @@
   display: block;
 }
 .amc-cloudlogin {
-  /*--amc-accentColor: #000;*/
+  /*--amc-secondColor:#000;*/
   --microsoftColor: #00A4EF;
   --googleColor: #DB4437;
   --facebookColor: #4267B2;
@@ -49,6 +49,7 @@
   background-color: #fff;
   overflow-x: hidden;
   padding-block: 50px;
+  direction: ltr;
 }
 .amc-cloudlogin a,
 .amc-cloudlogin a:visited,
@@ -244,6 +245,7 @@
   flex-direction: column;
   gap: 10px;
   width: 100%;
+  align-items: flex-end;
 }
 .amc-cloudlogin-body .login-form-links {
   display: flex;

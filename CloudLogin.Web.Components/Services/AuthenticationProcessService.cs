@@ -13,16 +13,16 @@ namespace AngryMonkey.CloudLogin.Services
 
         public AuthenticationProcess CurrentProcess { get; private set; } = AuthenticationProcess.None;
         public ProcessStep CurrentStep { get; private set; } = ProcessStep.None;
-        
+
         public string Title { get; private set; } = string.Empty;
         public string Subtitle { get; private set; } = string.Empty;
         public bool DisplayInputValue { get; private set; } = false;
         public bool IsLoading { get; private set; } = false;
         public List<string> Errors { get; private set; } = new List<string>();
-        
+
         public AnimateBodyStep AnimateStep { get; private set; } = AnimateBodyStep.None;
         public AnimateBodyDirection AnimateDirection { get; private set; } = AnimateBodyDirection.None;
-        
+
         public event Action OnStateChanged;
 
         public AuthenticationProcessService(NavigationManager navigationManager, Interfaces.ICloudLogin cloudLogin)
@@ -34,12 +34,12 @@ namespace AngryMonkey.CloudLogin.Services
         public async Task InitializeProcess(AuthenticationProcess process, string actionState = "login")
         {
             CurrentProcess = process;
-            
+
             // Map the process to the initial step
             CurrentStep = GetInitialStepForProcess(process);
-            
+
             await SwitchStep(CurrentStep);
-            
+
             NotifyStateChanged();
         }
 
@@ -62,26 +62,26 @@ namespace AngryMonkey.CloudLogin.Services
         public async Task NextStep()
         {
             ProcessStep nextStep = GetNextStep(CurrentProcess, CurrentStep);
-            
+
             if (nextStep != CurrentStep)
             {
                 AnimateDirection = AnimateBodyDirection.Forward;
                 await SwitchStep(nextStep);
             }
-            
+
             NotifyStateChanged();
         }
 
         public async Task PreviousStep()
         {
             ProcessStep previousStep = GetPreviousStep(CurrentProcess, CurrentStep);
-            
+
             if (previousStep != CurrentStep)
             {
                 AnimateDirection = AnimateBodyDirection.Backward;
                 await SwitchStep(previousStep);
             }
-            
+
             NotifyStateChanged();
         }
 
@@ -145,7 +145,7 @@ namespace AngryMonkey.CloudLogin.Services
                     Title = "Sign in";
                     Subtitle = string.Empty;
                     DisplayInputValue = false;
-                    
+
                     if (CurrentProcess == AuthenticationProcess.AddInput)
                     {
                         Title = "Add Input";
@@ -157,12 +157,13 @@ namespace AngryMonkey.CloudLogin.Services
                     Title = "Continue signing in";
                     Subtitle = "Sign In with";
                     DisplayInputValue = true;
-                    
+
                     if (CurrentProcess == AuthenticationProcess.AddInput)
                         Title = "Continue adding input";
                     break;
 
                 case ProcessStep.CodeVerification:
+                case ProcessStep.CodeEmailVerification:
                     string inputType = "Email"; // This would be dynamic based on input
                     Title = $"Verify your {inputType}";
                     Subtitle = $"A verification code has been sent to your {inputType}, if not received, you can send another one.";
@@ -220,13 +221,13 @@ namespace AngryMonkey.CloudLogin.Services
                     Subtitle = string.Empty;
                     DisplayInputValue = false;
                     break;
-                    
+
                 case AuthenticationProcess.AddInput:
                     Title = "Add Input";
                     Subtitle = "Add another input for your account";
                     break;
-                    
-                // Add other process types as needed
+
+                    // Add other process types as needed
             }
         }
 
@@ -260,9 +261,9 @@ namespace AngryMonkey.CloudLogin.Services
                     _ => currentStep
                 };
             }
-            
+
             // Add other process flows as needed
-            
+
             return currentStep;
         }
 
@@ -296,9 +297,9 @@ namespace AngryMonkey.CloudLogin.Services
                     _ => currentStep
                 };
             }
-            
+
             // Add other process flows as needed
-            
+
             return currentStep;
         }
 

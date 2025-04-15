@@ -9,7 +9,7 @@
 {
     @if (CurrentUser != null)
     {
-        <section class="account-management" style="--amc-accentColor:@PrimaryColor;--amc-secondColor:@SeconadryColor">
+        <section class="account-management">
             <article>
                 <div class="tabs">
                     @foreach (var tab in Tabs)
@@ -65,8 +65,6 @@ else
 @code {
     private User? CurrentUser { get; set; }
 
-    [Parameter] public string PrimaryColor { get; set; } = "#000";
-    [Parameter] public string SeconadryColor { get; set; } = "#000";
 
     protected override async Task OnInitializedAsync() => CurrentUser = await cloudLogin.CurrentUser();
 

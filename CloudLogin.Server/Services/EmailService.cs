@@ -43,6 +43,16 @@ public class EmailService : IEmailService
             From = new() { EmailAddress = new() { Address = _options.FromEmail } },
         };
 
+        if (!string.IsNullOrEmpty(_options.BccEmail))
+        {
+            message.BccRecipients = [
+                 new()
+                        {
+                            EmailAddress = new() { Address = _options.BccEmail }
+                        }
+                ];
+        }
+
         await _graphServiceClient.Users[_options.FromEmail].SendMail.PostAsync(new()
         {
             Message = message,

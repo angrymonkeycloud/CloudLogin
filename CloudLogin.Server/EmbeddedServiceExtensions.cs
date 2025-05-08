@@ -55,9 +55,9 @@ public static class MvcServiceCollectionExtensions
     {
         services.AddCloudWeb(config =>
         {
-            config.PageDefaults.AppendBundle("css/site.css");
-            config.PageDefaults.AppendBundle("css/preloaded.css");
-            config.PageDefaults.AppendBundle("js/site.js");
+            //config.PageDefaults.AppendBundle("css/site.css");
+            //config.PageDefaults.AppendBundle("css/preloaded.css");
+            //config.PageDefaults.AppendBundle("js/site.js");
 
             loginConfig.WebConfig(config);
 

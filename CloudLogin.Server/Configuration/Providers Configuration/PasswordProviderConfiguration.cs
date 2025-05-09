@@ -6,7 +6,7 @@ public class PasswordProviderConfiguration : ProviderConfiguration
 {
     public PasswordProviderConfiguration(IConfigurationSection configurationSection)
     {
-        string? label = configurationSection["Label"] ?? "Email + Passowrd";
+        string? label = configurationSection["Label"] ?? "Email";
         Init("password", label);
         HandleUpdateOnly = true;
         HandlesEmailAddress = true;

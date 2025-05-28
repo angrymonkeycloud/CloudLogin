@@ -26,6 +26,7 @@ await new CloudPack(new CloudPackConfig() { NugetApiKey = apiKey })
         new CloudPackProject("CloudLogin.Server"),
         new CloudPackProject("CloudLogin.API"),
         new CloudPackProject("CloudLogin.Web.Components"),
+        new CloudPackProject("CloudLogin.Web.WASM"),
         new CloudPackProject("CloudLogin.Web"),
     ]
 }.Pack();

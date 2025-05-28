@@ -19,4 +19,11 @@
 		<ProjectReference Include="..\CloudLogin.Server\CloudLogin.Server.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="AngryMonkeyCloudLogo-64x64.png">
+	    <PackagePath>\</PackagePath>
+	    <Pack>True</Pack>
+	  </None>
+	</ItemGroup>
+
 </Project>

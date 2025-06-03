@@ -66,7 +66,9 @@ public class LoginController(CloudLoginConfiguration configuration, CloudLoginSe
         if (user is null)
             return BadRequest("Invalid email or password.");
 
-        return await _server.CustomLogin(user, false, string.Empty, true);
+        await _server.CustomLogin(user, false, string.Empty, true);
+
+        return Ok(user);
     }
 
     [HttpGet("Result")]

@@ -575,6 +575,14 @@ public partial class LoginComponent
 
             Errors.Clear();
 
+            if (!cloudLogin.IsValidPassword(Password))
+            {
+                Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+                EndLoading();
+
+                return;
+            }
+
             User user = await cloudLogin.PasswordRegistration(Email, Password, FirstName, LastName);
             bool result = await cloudLogin.PasswordLogin(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
 
@@ -592,6 +600,7 @@ public partial class LoginComponent
         catch (Exception ex)
         {
             Errors.Add(ex.Message);
+            EndLoading();
         }
     }
 

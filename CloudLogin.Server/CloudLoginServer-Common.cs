@@ -29,7 +29,15 @@ public partial class CloudLoginServer : ICloudLogin
         return InputFormat.Other;
     }
 
-    public static bool IsInputValidEmailAddress(string input) => Regex.IsMatch(input, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
+    public static bool IsInputValidEmailAddress(string input) 
+    {
+        if (string.IsNullOrEmpty(input))
+            return false;
+            
+        // Improved regex that rejects consecutive dots and other invalid patterns
+        return Regex.IsMatch(input, @"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$");
+    }
+    
     public bool IsInputValidPhoneNumber(string input) => _cloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
 
     public IActionResult Login(HttpRequest request, string? returnUrl)

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>e20bd191-3472-45ee-a695-a42c3a4f4c78</UserSecretsId>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.7" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CloudLogin.Web\CloudLogin.Web.csproj" />
+    <ProjectReference Include="..\..\Demo.Login.Aspire\Demo.Login.Aspire.ServiceDefaults\Demo.Login.Aspire.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

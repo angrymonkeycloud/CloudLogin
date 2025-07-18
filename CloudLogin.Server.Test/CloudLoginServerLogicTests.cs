@@ -23,7 +23,7 @@ public class CloudLoginServerLogicTests
             originalPassword,
             salt,
             KeyDerivationPrf.HMACSHA256,
-            iterationCount: 10000,
+            iterationCount: 100000, // Updated to match server implementation
             numBytesRequested: 32);
 
         string storedHash = Convert.ToBase64String(salt.Concat(originalHashed).ToArray());
@@ -37,7 +37,7 @@ public class CloudLoginServerLogicTests
             testPassword,
             extractedSalt,
             KeyDerivationPrf.HMACSHA256,
-            iterationCount: 10000,
+            iterationCount: 100000, // Updated to match server implementation
             numBytesRequested: 32);
 
         bool passwordMatches = testHashed.SequenceEqual(actualHash);
@@ -166,7 +166,7 @@ public class CloudLoginServerLogicTests
             password,
             salt,
             KeyDerivationPrf.HMACSHA256,
-            iterationCount: 10000,
+            iterationCount: 100000, // Updated to match server implementation
             numBytesRequested: 32);
 
         TimeSpan hashingTime = DateTime.Now - startTime;
@@ -175,7 +175,7 @@ public class CloudLoginServerLogicTests
         hash.Should().HaveCount(32, "Hash should be 32 bytes long");
         // Adjust timing expectation to be more realistic for modern hardware
         hashingTime.Should().BeGreaterThan(TimeSpan.Zero, "Hashing should take some time");
-        hashingTime.Should().BeLessThan(TimeSpan.FromSeconds(5), "But not too long for usability");
+        hashingTime.Should().BeLessThan(TimeSpan.FromSeconds(10), "But not too long for usability"); // Increased due to higher iterations
     }
 
     [Theory]
@@ -251,7 +251,7 @@ public class CloudLoginServerLogicTests
                 password,
                 salt,
                 KeyDerivationPrf.HMACSHA256,
-                iterationCount: 10000,
+                iterationCount: 100000, // Updated to match server implementation
                 numBytesRequested: 32);
 
             string hashedPassword = Convert.ToBase64String(salt.Concat(hash).ToArray());

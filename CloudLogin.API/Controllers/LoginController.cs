@@ -1,20 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Facebook;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
-using Microsoft.AspNetCore.Authentication.Twitter;
-using AuthenticationProperties = Microsoft.AspNetCore.Authentication.AuthenticationProperties;
-using Microsoft.AspNetCore.Http;
-using System.Text.Json;
+﻿using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
-namespace AngryMonkey.CloudLogin;
+namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("CloudLogin")]
 [ApiController]
-public class LoginController(CloudLoginConfiguration configuration, CloudLoginServer server) : CloudLoginBaseController(configuration, server)
+public class LoginController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     //[HttpGet("GetClient")]
     //public ActionResult<CloudLoginClient> GetClient(string serverLoginUrl) => new CloudLoginClient()

@@ -3,35 +3,13 @@ using AngryMonkey.Cloud.Geography;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using System.Linq.Expressions;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public class CosmosMethods : DataParse, IDisposable
+public class CosmosMethods(CloudGeographyClient cloudGeography, Container container) : DataParse
 {
-    private readonly CloudGeographyClient CloudGeography;
-    private readonly CosmosClient _client;
-    private readonly Container _container;
-
-    public CosmosMethods(CosmosConfiguration cosmosConfiguration, CloudGeographyClient cloudGeography)
-    {
-        CloudGeography = cloudGeography;
-        JsonSerializerOptions cosmosSerialization = new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
-        cosmosSerialization.Converters.Add(new JsonStringEnumConverter());
-
-        _client = new(cosmosConfiguration.ConnectionString, new CosmosClientOptions() { Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization) });
-
-        Task.Run(async () =>
-        {
-            DatabaseResponse database = await _client.CreateDatabaseIfNotExistsAsync(cosmosConfiguration.DatabaseId);
-            await database.Database.CreateContainerIfNotExistsAsync(new ContainerProperties(cosmosConfiguration.ContainerId, "/PartitionKey"));
-        }).Wait();
-
-        _container = _client.GetContainer(cosmosConfiguration.DatabaseId, cosmosConfiguration.ContainerId);
-    }
-
-    public void Dispose() => _client.Dispose();
+    private readonly CloudGeographyClient CloudGeography = cloudGeography;
+    private readonly Container _container = container;
 
     #region Internal
 

@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AngryMonkey.CloudLogin.Server;
+using AngryMonkey.CloudLogin.Interfaces;
 
 namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("api/Providers")]
 [ApiController]
-public class ProvidersController(CloudLoginConfiguration configuration, CloudLoginServer server) : CloudLoginBaseController(configuration, server)
+public class ProvidersController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpGet("Test")]
     public async Task<ActionResult> Test()

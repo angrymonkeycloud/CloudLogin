@@ -1,12 +1,12 @@
-﻿using AngryMonkey.CloudLogin.Server;
+﻿using AngryMonkey.CloudLogin.Interfaces;
+using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
-using System.Web;
 
-namespace AngryMonkey.CloudLogin;
+namespace AngryMonkey.CloudLogin.API.Controllers;
+
 [Route("CloudLogin/Actions")]
 [ApiController]
-public class ActionsController(CloudLoginConfiguration configuration, CloudLoginServer server) : CloudLoginBaseController(configuration, server)
+public class ActionsController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpGet("AddInput")]
     public async Task<ActionResult> AddInput(string redirectUrl, string userInfo, string primaryEmail)

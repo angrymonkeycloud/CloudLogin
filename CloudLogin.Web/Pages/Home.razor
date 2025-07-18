@@ -1,12 +1,15 @@
 @page "/"
 
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudWeb
 @using Microsoft.Extensions.Primitives;
 @using System.Web
 @using System.Text.Json
 
 @inject ICloudLogin cloudLogin
 @inject NavigationManager nav
+
+<CloudHeadContent />
 
 @if (IsAuthorized && CurrentUser?.PrimaryEmailAddress != null)
 {
@@ -38,11 +41,7 @@
 }
 else
 {
-    <section>
-        <article>
-            <AngryMonkey.CloudLogin.CloudLoginComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
-        </article>
-    </section>
+    <LoginPageComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
 }
 
 @code {
@@ -65,6 +64,7 @@ else
 
         if (IsAuthorized)
         {
+            await Task.Yield();
             nav.NavigateTo("/Account");
 
             return;

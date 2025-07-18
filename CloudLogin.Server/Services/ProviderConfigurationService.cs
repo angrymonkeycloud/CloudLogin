@@ -37,29 +37,29 @@ public class ProviderConfigurationService
     {
         switch (provider)
         {
-            case MicrosoftProviderConfiguration microsoftProvider:
+            case LoginProviders.MicrosoftProviderConfiguration microsoftProvider:
                 ConfigureMicrosoftProvider(builder, microsoftProvider);
                 break;
 
-            case GoogleProviderConfiguration googleProvider:
+            case LoginProviders.GoogleProviderConfiguration googleProvider:
                 ConfigureGoogleProvider(builder, googleProvider);
                 break;
 
-            case FacebookProviderConfiguration facebookProvider:
+            case LoginProviders.FacebookProviderConfiguration facebookProvider:
                 ConfigureFacebookProvider(builder, facebookProvider);
                 break;
 
-            case TwitterProviderConfiguration twitterProvider:
+            case LoginProviders.TwitterProviderConfiguration twitterProvider:
                 ConfigureTwitterProvider(builder, twitterProvider);
                 break;
 
-            case WhatsAppProviderConfiguration whatsAppProvider:
+            case LoginProviders.WhatsAppProviderConfiguration whatsAppProvider:
                 ConfigureWhatsAppProvider(builder, whatsAppProvider);
                 break;
         }
     }
 
-    private void ConfigureMicrosoftProvider(AuthenticationBuilder builder, MicrosoftProviderConfiguration provider)
+    private void ConfigureMicrosoftProvider(AuthenticationBuilder builder, LoginProviders.MicrosoftProviderConfiguration provider)
     {
         if (!string.IsNullOrEmpty(provider.ClientSecret))
         {
@@ -94,7 +94,7 @@ public class ProviderConfigurationService
         }
     }
 
-    private async void ConfigureMicrosoftOpenIdConnect(OpenIdConnectOptions options, MicrosoftProviderConfiguration provider, string audiencePath)
+    private async void ConfigureMicrosoftOpenIdConnect(OpenIdConnectOptions options, LoginProviders.MicrosoftProviderConfiguration provider, string audiencePath)
     {
         options.ClientId = provider.ClientId;
         options.Authority = $"https://login.microsoftonline.com/{audiencePath}/v2.0/";
@@ -129,7 +129,7 @@ public class ProviderConfigurationService
         options.ClaimActions.MapJsonKey(ClaimTypes.Surname, "family_name");
     }
 
-    private async Task ConfigureMicrosoftOpenIdEvents(OpenIdConnectOptions options, MicrosoftProviderConfiguration provider)
+    private async Task ConfigureMicrosoftOpenIdEvents(OpenIdConnectOptions options, LoginProviders.MicrosoftProviderConfiguration provider)
     {
         X509Certificate2 certificate = await provider.GetCertificate();
 
@@ -146,7 +146,7 @@ public class ProviderConfigurationService
         };
     }
 
-    private void ConfigureGoogleProvider(AuthenticationBuilder builder, GoogleProviderConfiguration provider)
+    private void ConfigureGoogleProvider(AuthenticationBuilder builder, LoginProviders.GoogleProviderConfiguration provider)
     {
         builder.AddGoogle(options =>
         {
@@ -156,7 +156,7 @@ public class ProviderConfigurationService
         });
     }
 
-    private void ConfigureFacebookProvider(AuthenticationBuilder builder, FacebookProviderConfiguration provider)
+    private void ConfigureFacebookProvider(AuthenticationBuilder builder, LoginProviders.FacebookProviderConfiguration provider)
     {
         builder.AddFacebook(options =>
         {
@@ -166,7 +166,7 @@ public class ProviderConfigurationService
         });
     }
 
-    private void ConfigureTwitterProvider(AuthenticationBuilder builder, TwitterProviderConfiguration provider)
+    private void ConfigureTwitterProvider(AuthenticationBuilder builder, LoginProviders.TwitterProviderConfiguration provider)
     {
         builder.AddTwitter(options =>
         {
@@ -176,7 +176,7 @@ public class ProviderConfigurationService
         });
     }
 
-    private void ConfigureWhatsAppProvider(AuthenticationBuilder builder, WhatsAppProviderConfiguration provider)
+    private void ConfigureWhatsAppProvider(AuthenticationBuilder builder, LoginProviders.WhatsAppProviderConfiguration provider)
     {
         // WhatsApp specific configuration if needed
     }

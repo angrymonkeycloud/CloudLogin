@@ -2,6 +2,7 @@
 using AngryMonkey.CloudLogin.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using static System.Net.WebRequestMethods;
@@ -12,7 +13,7 @@ namespace AngryMonkey.CloudLogin;
 public partial class LoginComponent
 {
     //GENERAL VARIABLES--------------------------------------
-    [Parameter] public string Logo { get; set; }
+    [Parameter] public string Logo { get; set; } = string.Empty;
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public required User CurrentUser { get; set; }
@@ -24,13 +25,13 @@ public partial class LoginComponent
     private string ConfirmPassword { get; set; } = string.Empty;
 
     //INPUT VARIABLES----------------------------------------
-    public string PrimaryEmail { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string DisplayName { get; set; }
+    public string PrimaryEmail { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
     public bool KeepMeSignedIn { get; set; }
     public bool AddInputDiplay { get; set; } = false;
-    private string _inputValue;
+    private string _inputValue = string.Empty;
     public string InputValue
     {
         get => _inputValue;
@@ -66,7 +67,7 @@ public partial class LoginComponent
     {
         get
         {
-            var classes = new List<string>();
+            List<string> classes = new List<string>();
 
             if (IsLoading)
                 classes.Add("_loading");
@@ -86,9 +87,9 @@ public partial class LoginComponent
     public bool EmailAddressEnabled => Providers.Any(key => key.HandlesEmailAddress);
     public bool PhoneNumberEnabled => Providers.Any(key => key.HandlesPhoneNumber);
     public ProviderDefinition? SelectedProvider { get; set; }
-    public Action OnInput { get; set; }
+    public Action OnInput { get; set; } = () => { };
 
-    [Inject] private AuthenticationProcessService AuthService { get; set; }
+    [Inject] private AuthenticationProcessService AuthService { get; set; } = null!;
 
     protected AuthenticationProcess CurrentProcess => AuthService.CurrentProcess;
     protected ProcessStep CurrentStep => AuthService.CurrentStep;
@@ -104,7 +105,7 @@ public partial class LoginComponent
     protected bool Preview { get; set; } = false;
 
     //VERIFICATION VARIABLES---------------------------------
-    public string VerificationValue { get; set; }
+    public string VerificationValue { get; set; } = string.Empty;
     public bool ExpiredCode { get; set; } = false;
     public string? VerificationCode { get; set; }
     public DateTimeOffset? VerificationCodeExpiry { get; set; }
@@ -112,7 +113,7 @@ public partial class LoginComponent
     //START FUNCTIONS----------------------------------------
     protected override async Task OnInitializedAsync()
     {
-     
+
         if (string.IsNullOrEmpty(ActionState))
             ActionState = "login";
 
@@ -128,30 +129,35 @@ public partial class LoginComponent
                     if (CurrentUser == null)
                         return;
 
-                    _inputValue = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
-                    FirstName = CurrentUser.FirstName;
-                    LastName = CurrentUser.LastName;
-                    DisplayName = CurrentUser.DisplayName;
+                    LoginInput? primaryInput = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
+                    _inputValue = primaryInput?.Input ?? string.Empty;
+                    FirstName = CurrentUser.FirstName ?? string.Empty;
+                    LastName = CurrentUser.LastName ?? string.Empty;
+                    DisplayName = CurrentUser.DisplayName ?? string.Empty;
                     UserId = CurrentUser.ID;
 
                     await SwitchState(ProcessStep.Registration);
                     break;
 
                 case "AddInput":
-                    PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+                    LoginInput? primaryInputForAdd = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
+                    PrimaryEmail = primaryInputForAdd?.Input ?? string.Empty;
                     break;
 
                 case "ChangePrimary":
-                    PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+                    LoginInput? primaryInputForChange = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
+                    PrimaryEmail = primaryInputForChange?.Input ?? string.Empty;
                     await SwitchState(ProcessStep.ChangePrimary);
                     break;
 
                 case "AddNumber":
-                    PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+                    LoginInput? primaryInputForNumber = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
+                    PrimaryEmail = primaryInputForNumber?.Input ?? string.Empty;
                     break;
 
                 case "AddEmail":
-                    PrimaryEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true).Input;
+                    LoginInput? primaryInputForEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
+                    PrimaryEmail = primaryInputForEmail?.Input ?? string.Empty;
                     break;
 
                 default:
@@ -248,39 +254,27 @@ public partial class LoginComponent
 
         if (ActionState == "AddInput")
         {
-            Providers.AddRange(Providers.Where(key => key.HandleUpdateOnly == true));
-            foreach (ProviderDefinition providerInside in Providers)
-            {
-                List<ProviderDefinition> count = [.. Providers.Where(s => s.Code == providerInside.Code)];
-                if (count.Count > 1)
-                {
-                    Providers.Remove(providerInside);
-                }
-            }
+            List<ProviderDefinition> providersToAdd = Providers.Where(key => key.HandleUpdateOnly == true).ToList();
+            Providers.AddRange(providersToAdd);
+
+            // Remove duplicates safely
+            Providers = Providers.GroupBy(p => p.Code).Select(g => g.First()).ToList();
         }
         if (ActionState == "AddNumber")
         {
-            Providers.AddRange(Providers.Where(key => key.HandlesPhoneNumber == true));
-            foreach (ProviderDefinition providerInside in Providers)
-            {
-                List<ProviderDefinition> count = [.. Providers.Where(s => s.Code == providerInside.Code)];
-                if (count.Count > 1)
-                {
-                    Providers.Remove(providerInside);
-                }
-            }
+            List<ProviderDefinition> providersToAdd = Providers.Where(key => key.HandlesPhoneNumber == true).ToList();
+            Providers.AddRange(providersToAdd);
+
+            // Remove duplicates safely
+            Providers = Providers.GroupBy(p => p.Code).Select(g => g.First()).ToList();
         }
         if (ActionState == "AddEmail")
         {
-            Providers.AddRange(Providers.Where(key => key.HandlesEmailAddress == true));
-            foreach (ProviderDefinition providerInside in Providers)
-            {
-                List<ProviderDefinition> count = [.. Providers.Where(s => s.Code == providerInside.Code)];
-                if (count.Count > 1)
-                {
-                    Providers.Remove(providerInside);
-                }
-            }
+            List<ProviderDefinition> providersToAdd = Providers.Where(key => key.HandlesEmailAddress == true).ToList();
+            Providers.AddRange(providersToAdd);
+
+            // Remove duplicates safely
+            Providers = Providers.GroupBy(p => p.Code).Select(g => g.First()).ToList();
         }
 
         if (Providers.Count == 1)
@@ -386,7 +380,7 @@ public partial class LoginComponent
         if (!Password.Equals(ConfirmPassword))
         {
             Errors.Add("Passwords must match.");
-            
+
             EndLoading();
             return;
         }
@@ -456,9 +450,12 @@ public partial class LoginComponent
     }
     private async Task SetPrimary(MouseEventArgs x, string input)
     {
-        //navigationManager.NavigateTo($"/CloudLogin/Actions/SetPrimary?input={HttpUtility.UrlEncode(input)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
-
-        navigationManager.NavigateTo(CloudLoginShared.RedirectString("CloudLogin", "Actions/SetPrimary", inputValue: input, redirectUri: RedirectUri), true);
+        RedirectParameters redirectParams = RedirectParameters.Create("CloudLogin", "Actions/SetPrimary") with
+        {
+            InputValue = input,
+            RedirectUri = RedirectUri
+        };
+        navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
     protected async Task OnInputKeyPressed(KeyboardEventArgs args)
     {
@@ -483,16 +480,16 @@ public partial class LoginComponent
 
             case "Escape":
                 if (CurrentStep == ProcessStep.InputValue)
-                    InputValue = null;
+                    InputValue = string.Empty;
 
                 if (CurrentStep == ProcessStep.CodeVerification)
-                    VerificationValue = null;
+                    VerificationValue = string.Empty;
 
                 if (CurrentStep == ProcessStep.Registration)
                 {
-                    FirstName = null;
-                    LastName = null;
-                    DisplayName = null;
+                    FirstName = string.Empty;
+                    LastName = string.Empty;
+                    DisplayName = string.Empty;
                 }
                 break;
 
@@ -526,12 +523,9 @@ public partial class LoginComponent
     //SIGN IN FUNCTIONS-------------------------------------
     private void ProviderSignInChallenge(string provider)
     {
-        //string redirectUri = $"/cloudlogin/login/{provider}?input={InputValue}&redirectUri={RedirectUri}&keepMeSignedIn={KeepMeSignedIn}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RedirectUri, true, ActionState, PrimaryEmail, null, InputValue);
 
-        //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
-
-        string navigateUrl = CloudLoginShared.RedirectString("cloudlogin", $"login/{provider}", inputValue: InputValue, redirectUri: RedirectUri, keepMeSignedIn: KeepMeSignedIn.ToString(), actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString());
-        navigationManager.NavigateTo(navigateUrl, true);
+        navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
 
     private async Task SwitchState(ProcessStep step)
@@ -610,15 +604,19 @@ public partial class LoginComponent
         Dictionary<string, object> userInfo = new()
             {
                 { "UserId", user.ID },
-                { "FirstName", user.FirstName },
-                { "LastName", user.LastName },
-                { "DisplayName", user.DisplayName }
+                { "FirstName", user.FirstName ?? string.Empty },
+                { "LastName", user.LastName ?? string.Empty },
+                { "DisplayName", user.DisplayName ?? string.Empty }
             };
 
         string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
 
-        //navigationManager.NavigateTo($"/CloudLogin/Actions/Update?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}", true);
-        navigationManager.NavigateTo(CloudLoginShared.RedirectString("CloudLogin", "Actions", userInfo: userInfoJSON, redirectUri: RedirectUri), true);
+        RedirectParameters redirectParams = RedirectParameters.Create("CloudLogin", "Actions") with
+        {
+            UserInfo = userInfoJSON,
+            RedirectUri = RedirectUri
+        };
+        navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
 
     //CUSTOM SIGN IN FUNCTIONS-------------------------------
@@ -627,28 +625,31 @@ public partial class LoginComponent
         Dictionary<string, object> userInfo = new()
             {
                 { "UserId", user.ID },
-                { "FirstName", user.FirstName },
-                { "LastName", user.LastName },
-                { "DisplayName", user.DisplayName },
+                { "FirstName", user.FirstName ?? string.Empty },
+                { "LastName", user.LastName ?? string.Empty },
+                { "DisplayName", user.DisplayName ?? string.Empty },
                 { "Input", InputValue },
                 { "Type", InputValueFormat },
             };
 
         string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
 
-        //string redirectUri = $"/cloudlogin/login/customlogin?userInfo={HttpUtility.UrlEncode(userInfoJSON)}&keepMeSignedIn={KeepMeSignedIn}&redirectUri={HttpUtility.UrlEncode(RedirectUri)}&actionState={ActionState}&primaryEmail={PrimaryEmail}";
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "login", KeepMeSignedIn, RedirectUri, true, ActionState, PrimaryEmail, userInfoJSON);
 
-        //navigationManager.NavigateTo(redirectUri + "&samesite=true", true);
-
-        navigationManager.NavigateTo(CloudLoginShared.RedirectString("cloudlogin", "login", userInfo: userInfoJSON, keepMeSignedIn: KeepMeSignedIn.ToString(), redirectUri: RedirectUri, actionState: ActionState, primaryEmail: PrimaryEmail, sameSite: true.ToString()), true);
+        navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
 
     private static string CreateRandomCode(int length)
     {
         StringBuilder builder = new();
 
+        // Use cryptographically secure random number generator
+        using RandomNumberGenerator rng = RandomNumberGenerator.Create();
+        byte[] randomBytes = new byte[length];
+        rng.GetBytes(randomBytes);
+
         for (int i = 0; i < length; i++)
-            builder.Append(new Random().Next(0, 9));
+            builder.Append(randomBytes[i] % 10); // Convert each byte to a digit 0-9
 
         return builder.ToString();
     }
@@ -745,11 +746,9 @@ public partial class LoginComponent
 
     private async Task<bool> CheckEmailHasRegister(string email)
     {
-
         User? user = await cloudLogin.GetUserByEmailAddress(email);
 
-        return user.ID != Guid.Empty ? true : false;
-
+        return user?.ID != Guid.Empty;
     }
 
     //VISUAL FUNCTIONS---------------------------------------
@@ -757,7 +756,7 @@ public partial class LoginComponent
     private async void StartLoading()
     {
         AuthService.StartLoading();
-        
+
     }
     private void EndLoading()
     {

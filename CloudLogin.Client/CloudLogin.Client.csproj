@@ -27,9 +27,9 @@
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="9.0.4" />
-		<PackageReference Include="Microsoft.JSInterop" Version="9.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.Components" Version="9.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="9.0.7" />
+		<PackageReference Include="Microsoft.JSInterop" Version="9.0.7" />
 	</ItemGroup>
 
 	<ItemGroup>

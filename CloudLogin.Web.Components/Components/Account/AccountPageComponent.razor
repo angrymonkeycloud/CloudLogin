@@ -1,0 +1,24 @@
+﻿@rendermode @(new InteractiveWebAssemblyRenderMode(true))
+
+@namespace AngryMonkey.CloudLogin
+
+@if (!RendererInfo.IsInteractive)
+{
+
+    <div class="pageloading">
+        <div class="pageloading-logo">
+            <img src="/logo.svg" />
+        </div>
+        <div class="pageloading-progress">
+            <span></span>
+        </div>
+    </div>
+}
+else
+{
+    <section>
+        <article>
+            <AngryMonkey.CloudLogin.AccountComponent />
+        </article>
+    </section>
+}

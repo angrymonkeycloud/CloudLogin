@@ -72,10 +72,7 @@ public static class MvcServiceCollectionExtensions
         });
 
         services.AddSingleton(loginConfig);
-
-        if (loginConfig.Cosmos != null)
-            services.AddSingleton(sp => new CosmosMethods(loginConfig.Cosmos, new CloudGeographyClient()));
-    }
+}
 
     private static void ConfigureAuthentication(IServiceCollection services, CloudLoginConfiguration loginConfig)
     {

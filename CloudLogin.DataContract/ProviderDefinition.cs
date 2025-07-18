@@ -21,7 +21,7 @@ public class ProviderDefinition
     {
         get
         {
-            List<string> classes = [$"_{Code.ToLower()}"];
+            List<string> classes = [$"_{Code.ToLowerInvariant()}"];
 
             return string.Join(" ", classes);
         }

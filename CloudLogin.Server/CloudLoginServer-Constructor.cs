@@ -1,31 +1,15 @@
-﻿using System.Web;
-using System.Security.Claims;
-using System.Text.Json;
-using AngryMonkey.CloudLogin.Interfaces;
-using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Http;
 using AngryMonkey.Cloud;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public partial class CloudLoginServer
+public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginConfiguration configuration, IHttpContextAccessor httpContextAccessor, CosmosMethods? cosmosMethods = null, IHttpClientFactory? httpClientFactory = null)
 {
-    public CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginConfiguration configuration, IHttpContextAccessor httpContextAccessor, CosmosMethods? cosmosMethods = null)
-    {
-        _cloudGeography = cloudGeography;
-        _cosmosMethods = cosmosMethods;
-        _configuration = configuration;
-        _accessor = httpContextAccessor;
-    }
-
-    readonly CloudGeographyClient _cloudGeography;
-    readonly CosmosMethods? _cosmosMethods;
-    readonly CloudLoginConfiguration _configuration;
-    readonly IHttpContextAccessor _accessor;
+    readonly CloudGeographyClient _cloudGeography = cloudGeography;
+    readonly CosmosMethods? _cosmosMethods = cosmosMethods;
+    readonly CloudLoginConfiguration _configuration = configuration;
+    readonly IHttpContextAccessor _accessor = httpContextAccessor;
+    readonly IHttpClientFactory? _httpClientFactory = httpClientFactory;
 
     private HttpRequest _request => _accessor.HttpContext!.Request;
 

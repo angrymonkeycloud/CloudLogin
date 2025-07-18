@@ -38,6 +38,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Embedded.Blazor.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Web.WASM", "CloudLogin.Web.WASM\CloudLogin.Web.WASM.csproj", "{C11BA7E7-7143-321C-49A1-E59697C6E02F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Login.Standalone", "Demo.Login.Standalone\Demo.Login.Standalone\Demo.Login.Standalone.csproj", "{6A59C853-AC2A-44D1-9420-BB9881886325}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Standalone", "Standalone", "{211BDFB6-422C-4544-8A70-D184B183AE21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Login.Aspire.AppHost", "Demo.Login.Aspire\Demo.Login.Aspire.AppHost\Demo.Login.Aspire.AppHost.csproj", "{29EB3074-F84A-4392-A5A5-54EA5209BCDD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Login.Aspire.ServiceDefaults", "Demo.Login.Aspire\Demo.Login.Aspire.ServiceDefaults\Demo.Login.Aspire.ServiceDefaults.csproj", "{3321513A-7087-0A85-8105-5BADDEAA9D1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +137,24 @@ Global
 		{C11BA7E7-7143-321C-49A1-E59697C6E02F}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{C11BA7E7-7143-321C-49A1-E59697C6E02F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C11BA7E7-7143-321C-49A1-E59697C6E02F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A59C853-AC2A-44D1-9420-BB9881886325}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A59C853-AC2A-44D1-9420-BB9881886325}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A59C853-AC2A-44D1-9420-BB9881886325}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{6A59C853-AC2A-44D1-9420-BB9881886325}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{6A59C853-AC2A-44D1-9420-BB9881886325}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A59C853-AC2A-44D1-9420-BB9881886325}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29EB3074-F84A-4392-A5A5-54EA5209BCDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29EB3074-F84A-4392-A5A5-54EA5209BCDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29EB3074-F84A-4392-A5A5-54EA5209BCDD}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{29EB3074-F84A-4392-A5A5-54EA5209BCDD}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{29EB3074-F84A-4392-A5A5-54EA5209BCDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29EB3074-F84A-4392-A5A5-54EA5209BCDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,6 +168,10 @@ Global
 		{B690EA1F-9D78-4520-B201-98D3A5AD73EC} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
 		{40FD5448-4CA8-4544-977D-D9BCE9599ED5} = {B690EA1F-9D78-4520-B201-98D3A5AD73EC}
 		{07B522DE-EA9F-44D9-9D0A-A21E5DAF7A9F} = {B690EA1F-9D78-4520-B201-98D3A5AD73EC}
+		{6A59C853-AC2A-44D1-9420-BB9881886325} = {211BDFB6-422C-4544-8A70-D184B183AE21}
+		{211BDFB6-422C-4544-8A70-D184B183AE21} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
+		{29EB3074-F84A-4392-A5A5-54EA5209BCDD} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
+		{3321513A-7087-0A85-8105-5BADDEAA9D1A} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4F149D60-85D2-4D27-A307-7201B420B208}

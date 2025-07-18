@@ -1,0 +1,33 @@
+@rendermode @(new InteractiveWebAssemblyRenderMode(true))
+
+@namespace AngryMonkey.CloudLogin
+
+@if (!RendererInfo.IsInteractive)
+{
+
+    <div class="pageloading">
+        <div class="pageloading-logo">
+            <img src="/logo.svg" />
+        </div>
+        <div class="pageloading-progress">
+            <span></span>
+        </div>
+    </div>
+}
+else
+{
+    <section>
+        <article>
+            <LoginComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@RedirectUri" Embedded="Embedded" />
+        </article>
+    </section>
+}
+
+@code{
+
+    [Parameter] public string Logo { get; set; } = string.Empty;
+    [Parameter] public bool Embedded { get; set; } = false;
+    [Parameter] public string? ActionState { get; set; }
+    [Parameter] public required User CurrentUser { get; set; }
+    [Parameter] public string? RedirectUri { get; set; }
+}

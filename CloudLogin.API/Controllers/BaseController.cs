@@ -1,10 +1,11 @@
-﻿using AngryMonkey.CloudLogin.Server;
+﻿using AngryMonkey.CloudLogin.Interfaces;
+using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AngryMonkey.CloudLogin;
+namespace AngryMonkey.CloudLogin.API.Controllers;
 
-public class CloudLoginBaseController(CloudLoginConfiguration configuration, CloudLoginServer server) : Controller
+public class CloudLoginBaseController(CloudLoginConfiguration configuration, ICloudLogin server) : Controller
 {
     internal CloudLoginConfiguration Configuration = configuration;
-    internal CloudLoginServer _server = server;
+    internal CloudLoginServer _server = (server as CloudLoginServer)!;
 }

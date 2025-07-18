@@ -8,18 +8,20 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class MvcServiceCollectionExtensions
 {
-    public static IServiceCollection AddCloudLoginWeb(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
+    public static void AddCloudLoginWeb(this IHostApplicationBuilder builder, CloudLoginConfiguration loginConfig)
     {
-        ArgumentNullException.ThrowIfNull(services);
-
-        services.AddRazorComponents()
+        builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
 
@@ -31,17 +33,65 @@ public static class MvcServiceCollectionExtensions
         //    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
         //});
 
-        services.AddOptions();
-        services.AddAuthenticationCore();
-        services.AddScoped<CustomAuthenticationStateProvider>();
-        services.AddScoped<ProviderConfigurationService>();
+        builder.Services.AddOptions();
+        builder.Services.AddAuthenticationCore();
+        builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+        builder.Services.AddScoped<ProviderConfigurationService>();
 
-        ConfigureCloudWeb(services, loginConfig);
-        ConfigureAuthentication(services, loginConfig);
+        builder.Services.TryAddScoped<CloudGeographyClient>();
 
-        services.AddCloudLoginServer(loginConfig);
+        ConfigureCosmos(builder, loginConfig);
+        ConfigureCloudWeb(builder.Services, loginConfig);
+        ConfigureAuthentication(builder.Services, loginConfig);
 
-        return services;
+        builder.Services.AddCloudLoginServer(loginConfig);
+    }
+
+    private static void ConfigureCosmos(IHostApplicationBuilder builder, CloudLoginConfiguration loginConfig)
+    {
+        if (!loginConfig.Cosmos.IsValid())
+            return;
+
+        JsonSerializerOptions cosmosSerialization = new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+        cosmosSerialization.Converters.Add(new JsonStringEnumConverter());
+
+        //if (!string.IsNullOrEmpty(loginConfig.Cosmos.AspireName))
+        //    builder.Services.AddAzureCosmosContainer("cosmos",
+        //        configureSettings: settings =>
+        //        {
+        //            settings.DatabaseName = "cosmos-database";
+        //            settings.ContainerName = "cosmos-container";
+        //        },
+        //        configureClientOptions: options =>
+        //        {
+        //            options.Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization);
+        //        });
+        //else
+        //builder.AddAzureCosmosClient(loginConfig.Cosmos.ConnectionString, configureClientOptions: options =>
+        //{
+        //    options.Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization);
+        //});
+        //builder.AddAzureCosmosContainer(loginConfig.Cosmos.ConnectionString,
+        //    configureSettings: settings =>
+        //    {
+        //        settings.DatabaseName = loginConfig.Cosmos.DatabaseId;
+        //        settings.ContainerName = loginConfig.Cosmos.ContainerId;
+        //    },
+        //    configureClientOptions: options =>
+        //    {
+        //        options.Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization);
+        //    });
+
+        // Create CosmosClient
+        CosmosClient cosmosClient = new(loginConfig.Cosmos.ConnectionString);
+
+        // Get container reference
+        var container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
+
+        // Register as singleton
+        builder.Services.AddSingleton(container);
+
+        builder.Services.AddScoped<CosmosMethods>();
     }
 
     private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginConfiguration loginConfig)
@@ -59,15 +109,12 @@ public static class MvcServiceCollectionExtensions
 
             config.PageDefaults.AppendBundle(new CloudBundle()
             {
-                Source = "AngryMonkey.CloudLogin.Components.styles.css",
+                Source = "AngryMonkey.CloudLogin.WASM.styles.css",
                 MinOnRelease = false
             });
         });
 
         services.AddSingleton(loginConfig);
-
-        if (loginConfig.Cosmos != null)
-            services.AddSingleton(sp => new CosmosMethods(loginConfig.Cosmos, new CloudGeographyClient()));
     }
 
     private static void ConfigureAuthentication(IServiceCollection services, CloudLoginConfiguration loginConfig)
@@ -109,7 +156,7 @@ public static class MvcServiceCollectionExtensions
 
         string tenantArg = args.First(key => key.StartsWith("tenantid:", StringComparison.OrdinalIgnoreCase));
 
-        MicrosoftProviderConfiguration cspMicrosoft = await MicrosoftProviderConfiguration.FromAzureVault(new Uri(args[0]), tenantArg.Split(':')[1]);
+        LoginProviders.MicrosoftProviderConfiguration cspMicrosoft = await LoginProviders.MicrosoftProviderConfiguration.FromAzureVault(new Uri(args[0]), tenantArg.Split(':')[1]);
         config.Providers.Insert(0, cspMicrosoft);
     }
 }

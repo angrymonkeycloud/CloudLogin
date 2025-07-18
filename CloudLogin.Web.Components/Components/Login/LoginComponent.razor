@@ -4,12 +4,14 @@
 @inject ICloudLogin cloudLogin
 @inject NavigationManager navigationManager
 
+@rendermode @(new InteractiveWebAssemblyRenderMode(false))
+
 
 @namespace AngryMonkey.CloudLogin
 
 @if (RendererInfo.IsInteractive)
 {
-    <div class="amc-cloudlogin @CssClass" >
+    <div class="amc-cloudlogin @CssClass">
         <div class="amc-cloudlogin-header">
 
             @* Loading *@
@@ -97,14 +99,14 @@
                             </div>
                         }
                         <div class="amc-cloudlogin-input">
-                            <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active": "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
+                            <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active" : "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                             <label for="email">@InputLabel</label>
                         </div>
 
                         @if (!string.IsNullOrEmpty(InputValue))
                         {
                             <div class="login-form-next ">
-                                <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress))? "" : "--disable" )" @onclick="OnInputNextClicked">
+                                <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress)) ? "" : "--disable")" @onclick="OnInputNextClicked">
                                     <span>Next</span>
                                     <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                                 </button>
@@ -120,7 +122,7 @@
                         <div class="amc-cloudlogin-providers">
                             @foreach (ProviderDefinition provider in Providers)
                             {
-                                <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
+                                <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                                     @*   <div class="amc-cloudlogin-provider-icon">
                                         <AngryMonkey.CloudLogin.Components.ProviderButton Provider="provider" />
                                     </div> *@
@@ -137,7 +139,7 @@
                     <div class="amc-cloudlogin-providers">
                         @foreach (ProviderDefinition provider in Providers)
                         {
-                            <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading?$"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
+                            <button class="amc-cloudlogin-provider @provider.CssClass @(IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                                 <div class="amc-cloudlogin-provider-icon">
                                     <AngryMonkey.CloudLogin.Components.ProviderButton Provider="provider" />
                                 </div>
@@ -153,7 +155,7 @@
                     <div class="login-form-input login-form-emailVerification">
                         <div class="amc-cloudlogin-input">
                             <label>Enter Code</label>
-                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                            <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active" : "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
                         </div>
                         <div class="login-form-resend">
                             <button class="amc-cloudlogin-button" @onclick="OnNewCodeClicked">Resend code ?</button>
@@ -167,7 +169,7 @@
                     <div class="login-form-input login-form-emailVerification">
                         <div class="amc-cloudlogin-input">
                             <label>Enter Code</label>
-                            <input  autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active": "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                            <input autocomplete="off" type="text" id="code" class=" @(!string.IsNullOrEmpty(VerificationValue) ? "active" : "") " @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
                         </div>
                         <div class="login-form-resend">
                             <button class="amc-cloudlogin-button" @onclick="OnNewCodeClicked">Resend code ?</button>
@@ -196,21 +198,21 @@
                 <div class="login-form">
                     <div class="login-form-register">
                         <div class="amc-cloudlogin-input">
-                            <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active": "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                            <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class=" @(!string.IsNullOrEmpty(FirstName) ? "active" : "") " @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
                             <label for="firstName">First Name</label>
                         </div>
                         <div class="amc-cloudlogin-input">
-                            <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active": "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
+                            <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active" : "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                             <label for="lastName">Last Name</label>
                         </div>
                         <div class="amc-cloudlogin-input">
-                            <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active": "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
+                            <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active" : "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
                             <label for="displayName">Display Name</label>
                         </div>
                     </div>
 
                     <div class="login-form-finish">
-                        <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))? "" : "--disable" )" @onclick="OnRegisterClicked">
+                        <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnRegisterClicked">
                             <span>Register</span>
                             <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                         </button>
@@ -230,7 +232,7 @@
                             }
                             else
                             {
-                                <button class="amc-cloudlogin-button" @onclick="x=>SetPrimary(x,input.Input)">
+                                <button class="amc-cloudlogin-button" @onclick="x => SetPrimary(x, input.Input)">
                                     <span>Set Primary</span>
                                     <AngryMonkey.Cloud.Components.Icons.LoadingButton />
                                 </button>
@@ -334,3 +336,4 @@ else
     </div>
 }
 
+          

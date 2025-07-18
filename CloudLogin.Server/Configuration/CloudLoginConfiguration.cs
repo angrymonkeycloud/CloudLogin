@@ -10,7 +10,7 @@ public class CloudLoginConfiguration
     public TimeSpan LoginDuration { get; set; } = new TimeSpan(180, 0, 0, 0); //10 months
     public List<Link> FooterLinks { get; set; } = [];
     public string? RedirectUri { get; set; }
-    public CosmosConfiguration? Cosmos { get; set; }
+    public CosmosConfiguration Cosmos { get; set; } = new();
     internal string? EmailMessageBody { get; set; }
     public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; }
     public CloudLoginEmailConfiguration? EmailConfiguration { get; set; }

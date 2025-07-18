@@ -1,7 +1,6 @@
-﻿
-namespace AngryMonkey.CloudLogin.Sever.Providers;
+﻿namespace AngryMonkey.CloudLogin.Sever.Providers;
 
-public class ProviderConfiguration
+public abstract class ProviderConfiguration
 {
     internal ProviderConfiguration() { }
 

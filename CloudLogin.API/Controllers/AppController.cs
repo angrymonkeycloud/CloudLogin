@@ -1,10 +1,12 @@
-﻿using AngryMonkey.CloudLogin.Server;
+﻿using AngryMonkey.CloudLogin.Interfaces;
+using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AngryMonkey.CloudLogin;
+namespace AngryMonkey.CloudLogin.API.Controllers;
+
 [Route("Request/{key}")]
 [ApiController]
-public class AppController(CloudLoginConfiguration configuration, CloudLoginServer server) : CloudLoginBaseController(configuration, server)
+public class AppController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpGet]
     public IActionResult Get(string key)

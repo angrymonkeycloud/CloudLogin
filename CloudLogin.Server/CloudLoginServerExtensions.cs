@@ -15,22 +15,11 @@ public static class CloudLoginServerExtensions
         services.AddSingleton<CloudGeographyClient>();
         services.AddSingleton<CloudLoginAuthenticationService>();
 
-        services.AddScoped<CloudLoginServer>();
-
-        return services;
-    }
-    public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configureOptions)
-    {
-        services.AddSingleton(configureOptions);
-
-        services.AddHttpContextAccessor();
-
-        services.AddSingleton<CloudGeographyClient>();
-        services.AddSingleton<CloudLoginAuthenticationService>();
-
         services.AddScoped<ICloudLogin, CloudLoginServer>();
-        services.AddSingleton<CloudLoginServer>();
 
         return services;
     }
+
+    public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configureOptions)
+        => AddCloudLoginServer(services, config => config = configureOptions);
 }

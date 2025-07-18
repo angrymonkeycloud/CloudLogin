@@ -1,10 +1,12 @@
-﻿using AngryMonkey.CloudLogin.Server;
+﻿using AngryMonkey.CloudLogin.Interfaces;
+using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AngryMonkey.CloudLogin;
+namespace AngryMonkey.CloudLogin.API.Controllers;
+
 [Route("CloudLogin/Request")]
 [ApiController]
-public class RequestController(CloudLoginConfiguration configuration, CloudLoginServer server) : CloudLoginBaseController(configuration, server)
+public class RequestController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpPost("CreateRequest")]
     public async Task<IActionResult> CreateRequest(Guid userId, Guid? requestId = null)

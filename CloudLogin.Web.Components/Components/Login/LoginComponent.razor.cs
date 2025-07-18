@@ -67,16 +67,10 @@ public partial class LoginComponent
     {
         get
         {
-            List<string> classes = new List<string>();
+            List<string> classes = new();
 
             if (IsLoading)
                 classes.Add("_loading");
-
-            if (AnimateStep != AnimateBodyStep.None)
-                classes.Add($"_animatestep-{AnimateStep.ToString().ToLower()}");
-
-            if (AnimateDirection != AnimateBodyDirection.None)
-                classes.Add($"_animatedirection-{AnimateDirection.ToString().ToLower()}");
 
             return string.Join(" ", classes);
         }
@@ -98,8 +92,6 @@ public partial class LoginComponent
     protected bool DisplayInputValue => AuthService.DisplayInputValue;
     protected List<string> Errors => AuthService.Errors;
     protected bool IsLoading => AuthService.IsLoading;
-    protected AnimateBodyStep AnimateStep => AuthService.AnimateStep;
-    protected AnimateBodyDirection AnimateDirection => AuthService.AnimateDirection;
 
     protected bool Next { get; set; } = false;
     protected bool Preview { get; set; } = false;
@@ -113,6 +105,11 @@ public partial class LoginComponent
     //START FUNCTIONS----------------------------------------
     protected override async Task OnInitializedAsync()
     {
+        if (await cloudLogin.IsAuthenticated())
+        {
+            navigationManager.NavigateTo("/", true);
+            return;
+        }
 
         if (string.IsNullOrEmpty(ActionState))
             ActionState = "login";
@@ -167,23 +164,11 @@ public partial class LoginComponent
 
         Providers = [.. Providers.Where(p => p.InputRequired == false)];
 
+        OnInput = StateHasChanged;
+
+        await SwitchState(ProcessStep.InputValue);
+
         await base.OnInitializedAsync();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            if (await cloudLogin.IsAuthenticated())
-            {
-                navigationManager.NavigateTo("/", true);
-                return;
-            }
-
-            OnInput = StateHasChanged;
-
-            await SwitchState(ProcessStep.InputValue);
-        }
     }
 
     //BUTTONS CLICKED FUNCTIONS------------------------------

@@ -502,51 +502,10 @@
         }
     }
 
-    &._animatestep-out._animatedirection-forward {
-        .AnimateElements(animateOutForward 400ms ease-in-out forwards);
-    }
-
-    &._animatestep-out._animatedirection-backward {
-        .AnimateElements(animateOutBackward 400ms ease-in-out forwards);
-    }
-
-    &._animatestep-in._animatedirection-forward {
-        .AnimateElements(animateInForward 300ms ease-in-out forwards);
-    }
-
-    &._animatestep-in._animatedirection-backward {
-        .AnimateElements(animateInBackward 300ms ease-in-out forwards);
-    }
-
     ._fullpage {
         &-header {
             min-height: 12rem;
         }
-    }
-}
-
-.amc-skelton {
-    display: flex;
-    flex-direction: column;
-    gap: 50px;
-    align-items: center;
-    justify-content: center;
-    padding-block: 50px;
-    max-width: 600px;
-    margin-inline: auto;
-    padding-inline:20px;
-    &-header, &-provider {
-        height: 50px;
-        width: 100%;
-        border-radius: 5px;
-        animation: skelton 2s linear infinite alternate;
-    }
-
-    &-body {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        width: 100%;
     }
 }
 
@@ -646,17 +605,6 @@
 
     100% {
         opacity: 1;
-    }
-}
-
-
-@keyframes skelton {
-    0% {
-        background-color: hsl(200,20%,80%);
-    }
-
-    100% {
-        background-color: hsl(200,20%,90%);
     }
 }
 

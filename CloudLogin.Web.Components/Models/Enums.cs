@@ -7,20 +7,6 @@ public enum VerificationCodeResult
     Expired
 }
 
-public enum AnimateBodyStep
-{
-    None,
-    Out,
-    In
-}
-
-public enum AnimateBodyDirection
-{
-    None,
-    Forward,
-    Backward
-}
-
 public enum ProcessStep
 {
     None,

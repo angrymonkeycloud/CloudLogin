@@ -18,10 +18,7 @@ namespace AngryMonkey.CloudLogin.Services
         public string Subtitle { get; private set; } = string.Empty;
         public bool DisplayInputValue { get; private set; } = false;
         public bool IsLoading { get; private set; } = false;
-        public List<string> Errors { get; private set; } = new List<string>();
-
-        public AnimateBodyStep AnimateStep { get; private set; } = AnimateBodyStep.None;
-        public AnimateBodyDirection AnimateDirection { get; private set; } = AnimateBodyDirection.None;
+        public List<string> Errors { get; private set; } = [];
 
         public event Action OnStateChanged;
 
@@ -64,10 +61,7 @@ namespace AngryMonkey.CloudLogin.Services
             ProcessStep nextStep = GetNextStep(CurrentProcess, CurrentStep);
 
             if (nextStep != CurrentStep)
-            {
-                AnimateDirection = AnimateBodyDirection.Forward;
                 await SwitchStep(nextStep);
-            }
 
             NotifyStateChanged();
         }
@@ -77,10 +71,7 @@ namespace AngryMonkey.CloudLogin.Services
             ProcessStep previousStep = GetPreviousStep(CurrentProcess, CurrentStep);
 
             if (previousStep != CurrentStep)
-            {
-                AnimateDirection = AnimateBodyDirection.Backward;
                 await SwitchStep(previousStep);
-            }
 
             NotifyStateChanged();
         }
@@ -94,47 +85,9 @@ namespace AngryMonkey.CloudLogin.Services
                 return;
             }
 
-            bool toNext = DetermineAnimationDirection(step);
-            AnimateDirection = toNext ? AnimateBodyDirection.Forward : AnimateBodyDirection.Backward;
-
-            AnimateStep = AnimateBodyStep.Out;
-            NotifyStateChanged();
-
-            await Task.Delay(400);
-
-            AnimateStep = AnimateBodyStep.In;
-            NotifyStateChanged();
-
             CurrentStep = step;
             UpdateStepMetadata(step);
-
-            await Task.Delay(300);
-
-            AnimateStep = AnimateBodyStep.None;
-            AnimateDirection = AnimateBodyDirection.None;
             NotifyStateChanged();
-        }
-
-        private bool DetermineAnimationDirection(ProcessStep targetStep)
-        {
-            // Determine if we're moving forward or backward in the flow
-            switch (targetStep)
-            {
-                case ProcessStep.InputValue:
-                    return false;
-
-                case ProcessStep.CodeVerification:
-                    if (CurrentStep == ProcessStep.Registration)
-                        return false;
-                    break;
-
-                case ProcessStep.Providers:
-                    if (CurrentStep != ProcessStep.InputValue)
-                        return false;
-                    break;
-            }
-
-            return true;
         }
 
         private void UpdateStepMetadata(ProcessStep step)

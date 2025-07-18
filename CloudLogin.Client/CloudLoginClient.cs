@@ -378,7 +378,7 @@ public class CloudLoginClient : ICloudLogin
         {
             User? currentUser = await CurrentUser();
 
-            if (currentUser != null && currentUser.ID !=Guid.Empty)
+            if (currentUser != null && currentUser.ID != Guid.Empty)
                 return true;
 
             return false;

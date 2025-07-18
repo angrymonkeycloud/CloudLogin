@@ -38,5 +38,9 @@
   {
     "outputFile": "Components/Account/AccountComponent_Orders.razor.css",
     "inputFile": "Components/Account/AccountComponent_Orders.razor.less"
+  },
+  {
+    "outputFile": "Components/LoadingComponent.razor.css",
+    "inputFile": "Components/LoadingComponent.razor.less"
   }
 ]

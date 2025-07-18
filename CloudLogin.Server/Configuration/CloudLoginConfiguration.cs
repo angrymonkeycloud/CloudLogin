@@ -15,4 +15,5 @@ public class CloudLoginConfiguration
     public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; }
     public CloudLoginEmailConfiguration? EmailConfiguration { get; set; }
     public required Action<CloudWebConfig> WebConfig { get; set; }
+    public string? Logo { get; set; }
 }

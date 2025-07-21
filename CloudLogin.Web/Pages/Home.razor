@@ -1,6 +1,7 @@
 @page "/"
 
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Server
 @using AngryMonkey.CloudWeb
 @using Microsoft.Extensions.Primitives;
 @using System.Web
@@ -8,6 +9,7 @@
 
 @inject ICloudLogin cloudLogin
 @inject NavigationManager nav
+@inject CloudLoginConfiguration configuration
 
 <CloudHeadContent />
 
@@ -41,12 +43,10 @@
 }
 else
 {
-    <LoginPageComponent Logo="@Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
+    <LoginPageComponent Logo="@configuration.Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
 }
 
 @code {
-    [Parameter] public string Logo { get; set; } = "/logo.svg";
-
     [Parameter, SupplyParameterFromQuery(Name = "redirectUri")]
     public string? RedirectUri { get; set; }
 

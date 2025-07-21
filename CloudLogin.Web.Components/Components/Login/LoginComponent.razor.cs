@@ -1,19 +1,16 @@
 ﻿using AngryMonkey.CloudLogin.Models;
-using AngryMonkey.CloudLogin.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using static System.Net.WebRequestMethods;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AngryMonkey.CloudLogin;
 
 public partial class LoginComponent
 {
     //GENERAL VARIABLES--------------------------------------
-    [Parameter] public string Logo { get; set; } = string.Empty;
+    [Parameter] public string? Logo { get; set; }
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? ActionState { get; set; }
     [Parameter] public required User CurrentUser { get; set; }
@@ -69,7 +66,7 @@ public partial class LoginComponent
         {
             List<string> classes = new();
 
-            if (IsLoading)
+            if (Auth.IsLoading)
                 classes.Add("_loading");
 
             return string.Join(" ", classes);
@@ -82,16 +79,6 @@ public partial class LoginComponent
     public bool PhoneNumberEnabled => Providers.Any(key => key.HandlesPhoneNumber);
     public ProviderDefinition? SelectedProvider { get; set; }
     public Action OnInput { get; set; } = () => { };
-
-    [Inject] private AuthenticationProcessService AuthService { get; set; } = null!;
-
-    protected AuthenticationProcess CurrentProcess => AuthService.CurrentProcess;
-    protected ProcessStep CurrentStep => AuthService.CurrentStep;
-    protected string Title => AuthService.Title;
-    protected string Subtitle => AuthService.Subtitle;
-    protected bool DisplayInputValue => AuthService.DisplayInputValue;
-    protected List<string> Errors => AuthService.Errors;
-    protected bool IsLoading => AuthService.IsLoading;
 
     protected bool Next { get; set; } = false;
     protected bool Preview { get; set; } = false;
@@ -114,6 +101,8 @@ public partial class LoginComponent
         if (string.IsNullOrEmpty(ActionState))
             ActionState = "login";
 
+        Auth.OnStateChanged += StateHasChanged;
+
         Providers = await cloudLogin.GetProviders();
 
         if (!string.IsNullOrEmpty(ActionState))
@@ -121,7 +110,7 @@ public partial class LoginComponent
             switch (ActionState)
             {
                 case "UpdateInput":
-                    AuthService.StartLoading();
+                    Auth.StartLoading();
 
                     if (CurrentUser == null)
                         return;
@@ -133,7 +122,7 @@ public partial class LoginComponent
                     DisplayName = CurrentUser.DisplayName ?? string.Empty;
                     UserId = CurrentUser.ID;
 
-                    await SwitchState(ProcessStep.Registration);
+                    await Auth.SwitchStep(ProcessStep.Registration);
                     break;
 
                 case "AddInput":
@@ -144,7 +133,7 @@ public partial class LoginComponent
                 case "ChangePrimary":
                     LoginInput? primaryInputForChange = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
                     PrimaryEmail = primaryInputForChange?.Input ?? string.Empty;
-                    await SwitchState(ProcessStep.ChangePrimary);
+                    await Auth.SwitchStep(ProcessStep.ChangePrimary);
                     break;
 
                 case "AddNumber":
@@ -166,7 +155,7 @@ public partial class LoginComponent
 
         OnInput = StateHasChanged;
 
-        await SwitchState(ProcessStep.InputValue);
+        await Auth.SwitchStep(ProcessStep.InputValue);
 
         await base.OnInitializedAsync();
     }
@@ -174,7 +163,7 @@ public partial class LoginComponent
     //BUTTONS CLICKED FUNCTIONS------------------------------
     private async Task OnInputNextClicked()
     {
-        Errors.Clear();
+        Auth.Errors.Clear();
 
         List<ProviderDefinition> handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false)];
 
@@ -183,13 +172,13 @@ public partial class LoginComponent
 
         if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count == 0 && ActionState != "AddNumber")
         {
-            Errors.Add("Unable to log you in. only emails are allowed.");
+            Auth.Errors.Add("Unable to log you in. only emails are allowed.");
             return;
         }
 
         if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress)
         {
-            Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
+            Auth.Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
             return;
         }
 
@@ -226,7 +215,7 @@ public partial class LoginComponent
         }
         else if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
         {
-            Errors.Add("The (+) sign followed by your country code must precede your phone number.");
+            Auth.Errors.Add("The (+) sign followed by your country code must precede your phone number.");
             EndLoading();
 
             return;
@@ -270,13 +259,13 @@ public partial class LoginComponent
                 return;
             }
 
-        await SwitchState(ProcessStep.Providers);
+        await Auth.SwitchStep(ProcessStep.Providers);
     }
     private async Task OnProviderClickedAsync(ProviderDefinition provider)
     {
         if (provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase))
         {
-            await SwitchState(ProcessStep.EmailPasswordLogin);
+            await Auth.SwitchStep(ProcessStep.EmailPasswordLogin);
             return;
         }
 
@@ -287,7 +276,7 @@ public partial class LoginComponent
         if (provider.IsCodeVerification)
         {
             await RefreshVerificationCode();
-            await SwitchState(ProcessStep.CodeVerification);
+            await Auth.SwitchStep(ProcessStep.CodeVerification);
         }
         else ProviderSignInChallenge(provider.Code);
     }
@@ -298,11 +287,11 @@ public partial class LoginComponent
         switch (GetVerificationCodeResult(VerificationValue))
         {
             case VerificationCodeResult.NotValid:
-                Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
+                Auth.Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
                 return;
 
             case VerificationCodeResult.Expired:
-                Errors.Add("The code validity has expired, please send another one.");
+                Auth.Errors.Add("The code validity has expired, please send another one.");
                 return;
 
             default: break;
@@ -339,7 +328,7 @@ public partial class LoginComponent
 
         if (checkUser != null)
             CustomSignInChallenge(checkUser);
-        else await SwitchState(ProcessStep.Registration);
+        else await Auth.SwitchStep(ProcessStep.Registration);
     }
 
     private async Task OnVerifyEmailClicked()
@@ -349,12 +338,12 @@ public partial class LoginComponent
         switch (GetVerificationCodeResult(VerificationValue))
         {
             case VerificationCodeResult.NotValid:
-                Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
+                Auth.Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
                 EndLoading();
                 return;
 
             case VerificationCodeResult.Expired:
-                Errors.Add("The code validity has expired, please send another one.");
+                Auth.Errors.Add("The code validity has expired, please send another one.");
                 EndLoading();
                 return;
 
@@ -364,7 +353,7 @@ public partial class LoginComponent
 
         if (!Password.Equals(ConfirmPassword))
         {
-            Errors.Add("Passwords must match.");
+            Auth.Errors.Add("Passwords must match.");
 
             EndLoading();
             return;
@@ -372,7 +361,7 @@ public partial class LoginComponent
 
         if (!cloudLogin.IsValidPassword(Password))
         {
-            Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+            Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
             EndLoading();
 
             return;
@@ -384,7 +373,7 @@ public partial class LoginComponent
 
         if (checkUser.ID == Guid.Empty || checkUser == null)
         {
-            Errors.Add("Error To update Password, Please Try Again Later");
+            Auth.Errors.Add("Error To update Password, Please Try Again Later");
             EndLoading();
             return;
         }
@@ -395,7 +384,7 @@ public partial class LoginComponent
 
         EndLoading();
 
-        await SwitchState(ProcessStep.EmailPasswordLogin);
+        await Auth.SwitchStep(ProcessStep.EmailPasswordLogin);
 
     }
     private Task OnRegisterClicked()
@@ -403,7 +392,7 @@ public partial class LoginComponent
 
         if (!cloudLogin.IsValidPassword(Password))
         {
-            Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+            Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
             EndLoading();
 
             return Task.CompletedTask;
@@ -424,7 +413,7 @@ public partial class LoginComponent
         }
         if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName))
         {
-            Errors.Add("Unable to log you in. Please check that your first name, last name and your display name are correct.");
+            Auth.Errors.Add("Unable to log you in. Please check that your first name, last name and your display name are correct.");
             return Task.CompletedTask;
         }
 
@@ -444,33 +433,33 @@ public partial class LoginComponent
     }
     protected async Task OnInputKeyPressed(KeyboardEventArgs args)
     {
-        if (IsLoading)
+        if (Auth.IsLoading)
             return;
 
         switch (args.Key)
         {
             case "Enter":
-                if (CurrentStep == ProcessStep.InputValue)
+                if (Auth.CurrentStep == ProcessStep.InputValue)
                     if (InputValueFormat == InputFormat.EmailAddress || InputValueFormat == InputFormat.PhoneNumber)
                         await OnInputNextClicked();
 
-                if (CurrentStep == ProcessStep.CodeVerification)
+                if (Auth.CurrentStep == ProcessStep.CodeVerification)
                     await OnVerifyClicked();
 
-                if (CurrentStep == ProcessStep.Registration)
+                if (Auth.CurrentStep == ProcessStep.Registration)
                     if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))
                         await OnRegisterClicked();
 
                 break;
 
             case "Escape":
-                if (CurrentStep == ProcessStep.InputValue)
+                if (Auth.CurrentStep == ProcessStep.InputValue)
                     InputValue = string.Empty;
 
-                if (CurrentStep == ProcessStep.CodeVerification)
+                if (Auth.CurrentStep == ProcessStep.CodeVerification)
                     VerificationValue = string.Empty;
 
-                if (CurrentStep == ProcessStep.Registration)
+                if (Auth.CurrentStep == ProcessStep.Registration)
                 {
                     FirstName = string.Empty;
                     LastName = string.Empty;
@@ -481,29 +470,6 @@ public partial class LoginComponent
             default: break;
         }
     }
-    private async Task OnBackClicked(MouseEventArgs e)
-    {
-        if (CurrentStep == ProcessStep.InputValue)
-            return;
-
-        Errors.Clear();
-        StateHasChanged();
-
-        switch (CurrentStep)
-        {
-            case ProcessStep.CodeEmailVerification:
-                await SwitchState(ProcessStep.EmailForgetPassword);
-                break;
-            case ProcessStep.EmailForgetPassword:
-            case ProcessStep.EmailPasswordRegister:
-                await SwitchState(ProcessStep.EmailPasswordLogin);
-                break;
-            default:
-                await SwitchState(ProcessStep.InputValue);
-                break;
-        }
-
-    }
 
     //SIGN IN FUNCTIONS-------------------------------------
     private void ProviderSignInChallenge(string provider)
@@ -513,19 +479,13 @@ public partial class LoginComponent
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
 
-    private async Task SwitchState(ProcessStep step)
-    {
-        await AuthService.SwitchStep(step);
-        StateHasChanged();
-    }
-
     private async Task OnEmailPasswordLoginClicked()
     {
         try
         {
             StartLoading();
 
-            Errors.Clear();
+            Auth.Errors.Clear();
 
             bool result = await cloudLogin.PasswordLogin(Email, Password, KeepMeSignedIn);
 
@@ -537,12 +497,12 @@ public partial class LoginComponent
                 return;
             }
 
-            Errors.Add("Incorrect Email or Passowrd");
+            Auth.Errors.Add("Incorrect Email or Passowrd");
 
         }
         catch (Exception ex)
         {
-            Errors.Add(ex.Message);
+            Auth.Errors.Add(ex.Message);
         }
     }
 
@@ -552,11 +512,11 @@ public partial class LoginComponent
         {
             StartLoading();
 
-            Errors.Clear();
+            Auth.Errors.Clear();
 
             if (!cloudLogin.IsValidPassword(Password))
             {
-                Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+                Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
                 EndLoading();
 
                 return;
@@ -573,12 +533,12 @@ public partial class LoginComponent
                 return;
             }
 
-            Errors.Add("Failed to Register. Please try again later");
+            Auth.Errors.Add("Failed to Register. Please try again later");
 
         }
         catch (Exception ex)
         {
-            Errors.Add(ex.Message);
+            Auth.Errors.Add(ex.Message);
             EndLoading();
         }
     }
@@ -647,7 +607,7 @@ public partial class LoginComponent
         }
         catch (Exception)
         {
-            Errors.Add("Failed to send email code.");
+            Auth.Errors.Add("Failed to send email code.");
             EndLoading();
 
             return;
@@ -675,9 +635,9 @@ public partial class LoginComponent
         VerificationCode = CreateRandomCode(6);
         VerificationCodeExpiry = DateTimeOffset.UtcNow.AddMinutes(5);
 
-        Errors.Clear();
+        Auth.Errors.Clear();
 
-        if (CurrentStep == ProcessStep.EmailForgetPassword)
+        if (Auth.CurrentStep == ProcessStep.EmailForgetPassword)
             await SendEmailCode(InputValue, VerificationCode);
         else
             switch (SelectedProvider?.Code.ToLower())
@@ -703,7 +663,7 @@ public partial class LoginComponent
         }
         catch (Exception e)
         {
-            Errors.Add(e.Message);
+            Auth.Errors.Add(e.Message);
             EndLoading();
             return;
         }
@@ -717,14 +677,14 @@ public partial class LoginComponent
 
         if (!await CheckEmailHasRegister(InputValue))
         {
-            Errors.Add("Email is not registered yet.");
+            Auth.Errors.Add("Email is not registered yet.");
             EndLoading();
 
             return;
         }
 
         await RefreshVerificationCode();
-        await SwitchState(ProcessStep.CodeEmailVerification);
+        await Auth.SwitchStep(ProcessStep.CodeEmailVerification);
         EndLoading();
 
     }
@@ -740,12 +700,12 @@ public partial class LoginComponent
 
     private async void StartLoading()
     {
-        AuthService.StartLoading();
+        Auth.StartLoading();
 
     }
     private void EndLoading()
     {
-        AuthService.EndLoading();
+        Auth.EndLoading();
     }
     protected void OnDisplayNameFocus()
     {

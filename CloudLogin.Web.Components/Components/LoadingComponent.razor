@@ -1,9 +1,23 @@
-@inject CloudLoginConfiguration
+@namespace AngryMonkey.CloudLogin
+
 <div class="loading">
-    <div class="loading-logo">
-        <img src="/logo.svg" />
-    </div>
+    @if (!string.IsNullOrEmpty(Logo))
+    {
+        <div class="loading-logo">
+            <img src="@Logo" />
+        </div>
+    }
+    else
+    {
+        <div class="loading-text">
+            Loading...
+        </div>
+    }
     <div class="loading-progress">
         <span></span>
     </div>
 </div>
+
+@code {
+    [Parameter] public string? Logo { get; set; }
+}

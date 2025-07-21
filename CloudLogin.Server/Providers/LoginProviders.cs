@@ -22,6 +22,20 @@ public class LoginProviders
         }
     }
 
+    public class CustomProviderConfiguration : ProviderConfiguration
+    {
+        public CustomProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
+        {
+            string label = configurationSection["Label"] ?? "Custom";
+            Init("custom", label);
+
+            HandleUpdateOnly = handleUpdateOnly;
+            HandlesEmailAddress = true;
+            InputRequired = true;
+            IsCodeVerification = true;
+        }
+    }
+
     public class MicrosoftProviderConfiguration : ProviderConfiguration
     {
         public string ClientId { get; init; } = string.Empty;
@@ -159,20 +173,6 @@ public class LoginProviders
             Init("WhatsApp", label);
             HandleUpdateOnly = handleUpdateOnly;
             HandlesPhoneNumber = true;
-            InputRequired = true;
-            IsCodeVerification = true;
-        }
-    }
-
-    public class CustomProviderConfiguration : ProviderConfiguration
-    {
-        public CustomProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
-        {
-            string label = configurationSection["Label"];
-            Init("custom", label);
-
-            HandleUpdateOnly = handleUpdateOnly;
-            HandlesEmailAddress = true;
             InputRequired = true;
             IsCodeVerification = true;
         }

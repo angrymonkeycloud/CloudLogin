@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace AngryMonkey.CloudLogin.Services
 {
-    public class AuthenticationProcessService
+    public class AuthenticationProcessService(NavigationManager navigationManager, Interfaces.ICloudLogin cloudLogin)
     {
-        private readonly NavigationManager _navigationManager;
-        private Interfaces.ICloudLogin _cloudLogin;
+        private readonly NavigationManager _navigationManager = navigationManager;
+        private Interfaces.ICloudLogin _cloudLogin = cloudLogin;
 
         public AuthenticationProcess CurrentProcess { get; private set; } = AuthenticationProcess.None;
         public ProcessStep CurrentStep { get; private set; } = ProcessStep.None;
@@ -21,12 +21,6 @@ namespace AngryMonkey.CloudLogin.Services
         public List<string> Errors { get; private set; } = [];
 
         public event Action OnStateChanged;
-
-        public AuthenticationProcessService(NavigationManager navigationManager, Interfaces.ICloudLogin cloudLogin)
-        {
-            _navigationManager = navigationManager;
-            _cloudLogin = cloudLogin;
-        }
 
         public async Task InitializeProcess(AuthenticationProcess process, string actionState = "login")
         {

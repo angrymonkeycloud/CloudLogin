@@ -31,6 +31,11 @@
 		<Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.NET.WebAssembly.Webcil.dll" />
 		<Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Microsoft.SymbolStore.dll" />
 		<Content Remove="C:\Users\eliet\.nuget\packages\angrymonkey.cloudweb.server\2.2.8\contentFiles\any\net8.0\Newtonsoft.Json.dll" />
+		<Content Remove="compilerconfig.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="compilerconfig.json" />
 	</ItemGroup>
 
 	<ItemGroup>

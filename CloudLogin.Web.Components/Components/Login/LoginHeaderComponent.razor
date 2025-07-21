@@ -1,0 +1,94 @@
+@inject AuthenticationProcessService Auth
+
+@namespace AngryMonkey.CloudLogin
+@using AngryMonkey.CloudLogin.Services
+
+<div class="amc-cloudlogin-header">
+
+    @* Loading *@
+
+    <div class="amc-cloudlogin-loading">
+        <div></div>
+    </div>
+
+    @* Logo *@
+
+    @if (!string.IsNullOrEmpty(Logo))
+    {
+        <div class="amc-cloudlogin-logo">
+            <img src="@Logo" alt="logo" />
+        </div>
+    }
+
+    @* Title *@
+
+    <div class="amc-cloudlogin-title">
+
+        @if (Auth.CurrentStep != ProcessStep.InputValue && ActionState == "login")
+        {
+            <button @onclick="OnBackClicked">
+                <AngryMonkey.Cloud.Components.Icons.Back />
+            </button>
+        }
+        <div>
+            @Auth.Title
+        </div>
+    </div>
+
+    @* Subtitle *@
+
+    @if (!string.IsNullOrEmpty(Auth.Subtitle))
+    {
+        <div class="amc-cloudlogin-subtitle">
+            @Auth.Subtitle
+        </div>
+    }
+
+    @* Errors *@
+
+    @if (Auth.Errors.Any())
+    {
+        <div class="amc-cloudlogin-errors">
+            <ul>
+                @foreach (string error in Auth.Errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Logo { get; set; }
+    [Parameter] public string? ActionState { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Auth.OnStateChanged += StateHasChanged;
+    }
+
+    private async Task OnBackClicked(MouseEventArgs e)
+    {
+        if (Auth.CurrentStep == ProcessStep.InputValue)
+            return;
+
+        Auth.Errors.Clear();
+        StateHasChanged();
+
+        switch (Auth.CurrentStep)
+        {
+            case ProcessStep.CodeEmailVerification:
+                await Auth.SwitchStep(ProcessStep.EmailForgetPassword);
+                break;
+            case ProcessStep.EmailForgetPassword:
+            case ProcessStep.EmailPasswordRegister:
+                await Auth.SwitchStep(ProcessStep.EmailPasswordLogin);
+                break;
+            default:
+                await Auth.SwitchStep(ProcessStep.InputValue);
+                break;
+        }
+
+    }
+}

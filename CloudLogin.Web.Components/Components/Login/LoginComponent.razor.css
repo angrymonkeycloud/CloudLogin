@@ -199,24 +199,9 @@
 .amc-cloudlogin-provider._whatsapp {
   --currentColor: var(--whatsappColor);
 }
-.amc-cloudlogin-provider-icon {
-  height: 32px;
-  width: 32px;
-}
-.amc-cloudlogin-provider ::deep svg {
-  width: 32px;
-  height: 32px;
-}
-.amc-cloudlogin-provider ::deep svg .amc-svg-fill {
-  transition: all 0.5s;
-  fill: var(--currentColor);
-}
 .amc-cloudlogin-provider:hover {
   color: #fff;
   background-color: var(--currentColor);
-}
-.amc-cloudlogin-provider:hover ::deep svg .amc-svg-fill {
-  fill: #fff;
 }
 .amc-cloudlogin-body {
   width: 100%;

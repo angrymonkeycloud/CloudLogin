@@ -59,12 +59,11 @@ public partial class LoginComponent
     }
     protected InputFormat InputValueFormat => cloudLogin.GetInputFormat(InputValue);
 
-    // CssClass for animation and loading states
     protected string CssClass
     {
         get
         {
-            List<string> classes = new();
+            List<string> classes = [];
 
             if (Auth.IsLoading)
                 classes.Add("_loading");
@@ -75,6 +74,7 @@ public partial class LoginComponent
 
     //PROVIDERS VARIABLES------------------------------------
     List<ProviderDefinition> Providers { get; set; } = [];
+    List<ProviderDefinition> ExternalProviders => Providers.Where(key => key.IsExternal).ToList();
     public bool EmailAddressEnabled => Providers.Any(key => key.HandlesEmailAddress);
     public bool PhoneNumberEnabled => Providers.Any(key => key.HandlesPhoneNumber);
     public ProviderDefinition? SelectedProvider { get; set; }
@@ -130,12 +130,6 @@ public partial class LoginComponent
                     PrimaryEmail = primaryInputForAdd?.Input ?? string.Empty;
                     break;
 
-                case "ChangePrimary":
-                    LoginInput? primaryInputForChange = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
-                    PrimaryEmail = primaryInputForChange?.Input ?? string.Empty;
-                    await Auth.SwitchStep(ProcessStep.ChangePrimary);
-                    break;
-
                 case "AddNumber":
                     LoginInput? primaryInputForNumber = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
                     PrimaryEmail = primaryInputForNumber?.Input ?? string.Empty;
@@ -151,8 +145,6 @@ public partial class LoginComponent
             }
         }
 
-        Providers = [.. Providers.Where(p => p.InputRequired == false)];
-
         OnInput = StateHasChanged;
 
         await Auth.SwitchStep(ProcessStep.InputValue);
@@ -165,101 +157,58 @@ public partial class LoginComponent
     {
         Auth.Errors.Clear();
 
-        List<ProviderDefinition> handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false)];
+        //List<ProviderDefinition> handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false)];
 
-        if (ActionState == "AddInput")
-            handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true)];
+        //if (ActionState == "AddInput")
+        //    handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true)];
 
-        if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count == 0 && ActionState != "AddNumber")
-        {
-            Auth.Errors.Add("Unable to log you in. only emails are allowed.");
-            return;
-        }
+        //if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count == 0 && ActionState != "AddNumber")
+        //{
+        //    Auth.Errors.Add("Unable to log you in. only emails are allowed.");
+        //    return;
+        //}
 
-        if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress)
-        {
-            Auth.Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
-            return;
-        }
+        //if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress)
+        //{
+        //    Auth.Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
+        //    return;
+        //}
 
         if (string.IsNullOrEmpty(InputValue))
             return;
 
-        //IsLoading = true;
+        Auth.StartLoading();
+
         InputValue = InputValue.ToLower();
 
         User? user = await cloudLogin.GetUserByInput(InputValue);
 
-        Providers = [];
-
-        bool addAllProviders = true;
-
         if (user != null)
         {
-            if (user.Providers.Count != 0)
-            {
-                string tempInputValue = InputValue;
-
-                if (InputValueFormat == InputFormat.PhoneNumber)
-                    tempInputValue = cloudLogin.GetPhoneNumber(InputValue);
-
-                string inputProviderCode = user.Inputs.First(p => p.Input == tempInputValue).Providers.First().Code;
-
-                List<ProviderDefinition> userProviders = [.. user.Providers.Select(key => new ProviderDefinition(key))];
-
-                Providers.AddRange(Providers.Where(p => p.Code == inputProviderCode));
-
-                addAllProviders = false;
-            }
             UserId = user.ID;
-        }
-        else if (InputValueFormat == InputFormat.PhoneNumber && !InputValue.StartsWith('+'))
-        {
-            Auth.Errors.Add("The (+) sign followed by your country code must precede your phone number.");
-            EndLoading();
 
-            return;
-        }
+            Auth.Input = new SelectedInput(InputValue.ToLower());
+            Auth.Input.IsFound = true;
 
-        if (addAllProviders)
-            Providers.AddRange(Providers
-                .Where(key => (key.HandlesEmailAddress && InputValueFormat == InputFormat.EmailAddress && key.HandleUpdateOnly == false)
-                            || (key.HandlesPhoneNumber && InputValueFormat == InputFormat.PhoneNumber && key.HandleUpdateOnly == false)));
-
-        if (ActionState == "AddInput")
-        {
-            List<ProviderDefinition> providersToAdd = Providers.Where(key => key.HandleUpdateOnly == true).ToList();
-            Providers.AddRange(providersToAdd);
-
-            // Remove duplicates safely
-            Providers = Providers.GroupBy(p => p.Code).Select(g => g.First()).ToList();
-        }
-        if (ActionState == "AddNumber")
-        {
-            List<ProviderDefinition> providersToAdd = Providers.Where(key => key.HandlesPhoneNumber == true).ToList();
-            Providers.AddRange(providersToAdd);
-
-            // Remove duplicates safely
-            Providers = Providers.GroupBy(p => p.Code).Select(g => g.First()).ToList();
-        }
-        if (ActionState == "AddEmail")
-        {
-            List<ProviderDefinition> providersToAdd = Providers.Where(key => key.HandlesEmailAddress == true).ToList();
-            Providers.AddRange(providersToAdd);
-
-            // Remove duplicates safely
-            Providers = Providers.GroupBy(p => p.Code).Select(g => g.First()).ToList();
-        }
-
-        if (Providers.Count == 1)
-            if (Providers.First().HandlesEmailAddress)
+            foreach (string providerCode in user.Providers)
             {
-                SelectedProvider = Providers.First();
-                ProviderSignInChallenge(SelectedProvider.Code);
-                return;
+                ProviderDefinition? provider = Providers.FirstOrDefault(p => p.Code.Equals(providerCode, StringComparison.OrdinalIgnoreCase));
+
+                if (provider != null)
+                    Auth.Input.Providers.Add(provider);
             }
 
-        await Auth.SwitchStep(ProcessStep.Providers);
+            if (Auth.Input.Providers.Count == 0)
+                Auth.Input.Providers = [.. Providers];
+
+            await Auth.SwitchStep(ProcessStep.Providers);
+        }
+        else
+        {
+            Auth.Errors.Add("Email address not found.");
+        }
+
+        Auth.EndLoading();
     }
     private async Task OnProviderClickedAsync(ProviderDefinition provider)
     {
@@ -269,7 +218,7 @@ public partial class LoginComponent
             return;
         }
 
-        StartLoading();
+        Auth.StartLoading();
         VerificationValue = "";
         SelectedProvider = provider;
 
@@ -282,7 +231,7 @@ public partial class LoginComponent
     }
     private async Task OnVerifyClicked()
     {
-        StartLoading();
+        Auth.StartLoading();
 
         switch (GetVerificationCodeResult(VerificationValue))
         {
@@ -298,27 +247,17 @@ public partial class LoginComponent
         }
 
         EndLoading();
-        User? checkUser = null;
+        User? checkUser;
 
         if (SelectedProvider != null)
-        {
-            switch (SelectedProvider?.Code?.ToLower())
+            checkUser = (SelectedProvider?.Code?.ToLower()) switch
             {
-                case "whatsapp":
-                    checkUser = await cloudLogin.GetUserByPhoneNumber(InputValue);
-                    break;
-                case "custom":
-                    checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
-                    break;
-                default:
-                    checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
-                    break;
-            }
-        }
+                "whatsapp" => await cloudLogin.GetUserByPhoneNumber(InputValue),
+                "custom" => await cloudLogin.GetUserByEmailAddress(InputValue),
+                _ => await cloudLogin.GetUserByEmailAddress(InputValue),
+            };
         else
-        {
             checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
-        }
 
         if (ActionState == "AddInput")
         {
@@ -333,7 +272,7 @@ public partial class LoginComponent
 
     private async Task OnVerifyEmailClicked()
     {
-        StartLoading();
+        Auth.StartLoading();
 
         switch (GetVerificationCodeResult(VerificationValue))
         {
@@ -367,18 +306,16 @@ public partial class LoginComponent
             return;
         }
 
-        User? checkUser = null;
+        User? checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
 
-        checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
-
-        if (checkUser.ID == Guid.Empty || checkUser == null)
+        if (checkUser == null || checkUser.ID == Guid.Empty)
         {
             Auth.Errors.Add("Error To update Password, Please Try Again Later");
             EndLoading();
             return;
         }
 
-        checkUser.PasswordHash = await cloudLogin.HashPassword(Password);
+        //checkUser.PasswordHash = await cloudLogin.HashPassword(Password);
 
         await cloudLogin.UpdateUser(checkUser!);
 
@@ -417,20 +354,12 @@ public partial class LoginComponent
             return Task.CompletedTask;
         }
 
-        StartLoading();
+        Auth.StartLoading();
 
         CustomSignInChallenge(userValues);
         return Task.CompletedTask;
     }
-    private async Task SetPrimary(MouseEventArgs x, string input)
-    {
-        RedirectParameters redirectParams = RedirectParameters.Create("CloudLogin", "Actions/SetPrimary") with
-        {
-            InputValue = input,
-            RedirectUri = RedirectUri
-        };
-        navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
-    }
+
     protected async Task OnInputKeyPressed(KeyboardEventArgs args)
     {
         if (Auth.IsLoading)
@@ -483,11 +412,11 @@ public partial class LoginComponent
     {
         try
         {
-            StartLoading();
+            Auth.StartLoading();
 
             Auth.Errors.Clear();
 
-            bool result = await cloudLogin.PasswordLogin(Email, Password, KeepMeSignedIn);
+            bool result = await cloudLogin.PasswordLogin(Auth.Input.Input, Password, KeepMeSignedIn);
 
             EndLoading();
 
@@ -510,7 +439,7 @@ public partial class LoginComponent
     {
         try
         {
-            StartLoading();
+            Auth.StartLoading();
 
             Auth.Errors.Clear();
 
@@ -630,7 +559,7 @@ public partial class LoginComponent
     }
     private async Task RefreshVerificationCode()
     {
-        StartLoading();
+        Auth.StartLoading();
 
         VerificationCode = CreateRandomCode(6);
         VerificationCodeExpiry = DateTimeOffset.UtcNow.AddMinutes(5);
@@ -654,7 +583,7 @@ public partial class LoginComponent
     }
     private async Task OnNewCodeClicked()
     {
-        StartLoading();
+        Auth.StartLoading();
 
         try
         {
@@ -669,13 +598,14 @@ public partial class LoginComponent
         }
     }
 
+
     private async Task OnEmailForgetPassword()
     {
-        StartLoading();
+        Auth.StartLoading();
 
         InputValue = Email;
 
-        if (!await CheckEmailHasRegister(InputValue))
+        if (!await Auth.CheckEmailHasRegister(InputValue))
         {
             Auth.Errors.Add("Email is not registered yet.");
             EndLoading();
@@ -689,20 +619,8 @@ public partial class LoginComponent
 
     }
 
-    private async Task<bool> CheckEmailHasRegister(string email)
-    {
-        User? user = await cloudLogin.GetUserByEmailAddress(email);
-
-        return user?.ID != Guid.Empty;
-    }
-
     //VISUAL FUNCTIONS---------------------------------------
 
-    private async void StartLoading()
-    {
-        Auth.StartLoading();
-
-    }
     private void EndLoading()
     {
         Auth.EndLoading();
@@ -736,5 +654,13 @@ public partial class LoginComponent
         }
     }
 
-    protected bool AllowTextIntput => Providers.Any(p => p.Code.Equals("custom", StringComparison.OrdinalIgnoreCase));
+    private void OnInputChanged(string newValue) => InputValue = newValue;
+    protected bool InputRequired => Providers.Any(p => p.InputRequired);
+
+    public class SelectedInput(string input)
+    {
+        public readonly string Input = input;
+        public bool IsFound { get; set; } = false;
+        public List<ProviderDefinition> Providers { get; set; } = [];
+    }
 }

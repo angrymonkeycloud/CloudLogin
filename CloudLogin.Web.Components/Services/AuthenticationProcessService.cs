@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Components;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using static AngryMonkey.CloudLogin.LoginComponent;
 
 namespace AngryMonkey.CloudLogin.Services
 {
-    public class AuthenticationProcessService(NavigationManager navigationManager, Interfaces.ICloudLogin cloudLogin)
+    public class AuthenticationProcessService(Interfaces.ICloudLogin cloudLogin)
     {
-        private readonly NavigationManager _navigationManager = navigationManager;
-        private Interfaces.ICloudLogin _cloudLogin = cloudLogin;
+        private readonly Interfaces.ICloudLogin _cloudLogin = cloudLogin;
 
         public AuthenticationProcess CurrentProcess { get; private set; } = AuthenticationProcess.None;
         public ProcessStep CurrentStep { get; private set; } = ProcessStep.None;
@@ -20,7 +20,9 @@ namespace AngryMonkey.CloudLogin.Services
         public bool IsLoading { get; private set; } = false;
         public List<string> Errors { get; private set; } = [];
 
-        public event Action OnStateChanged;
+        public SelectedInput? Input { get; set; }
+
+        public event Action? OnStateChanged;
 
         public async Task InitializeProcess(AuthenticationProcess process, string actionState = "login")
         {
@@ -45,7 +47,6 @@ namespace AngryMonkey.CloudLogin.Services
                 AuthenticationProcess.PasswordReset => ProcessStep.InputValue,
                 AuthenticationProcess.UpdateAccount => ProcessStep.Registration,
                 AuthenticationProcess.AddInput => ProcessStep.InputValue,
-                AuthenticationProcess.ChangePrimary => ProcessStep.ChangePrimary,
                 _ => ProcessStep.InputValue
             };
         }
@@ -102,7 +103,7 @@ namespace AngryMonkey.CloudLogin.Services
 
                 case ProcessStep.Providers:
                     Title = "Continue signing in";
-                    Subtitle = "Sign In with";
+                    Subtitle = Input.IsFound ? "Sign in with" : "Sign up with";
                     DisplayInputValue = true;
 
                     if (CurrentProcess == AuthenticationProcess.AddInput)
@@ -141,12 +142,6 @@ namespace AngryMonkey.CloudLogin.Services
 
                 case ProcessStep.EmailForgetPassword:
                     Title = "Forget Password";
-                    break;
-
-                case ProcessStep.ChangePrimary:
-                    Title = "Set Primary";
-                    Subtitle = "Choose which email to put as primary.";
-                    DisplayInputValue = true;
                     break;
 
                 default:
@@ -253,7 +248,6 @@ namespace AngryMonkey.CloudLogin.Services
         public void StartLoading()
         {
             IsLoading = true;
-            Errors.Clear();
             NotifyStateChanged();
         }
 
@@ -273,6 +267,13 @@ namespace AngryMonkey.CloudLogin.Services
         {
             Errors.Clear();
             NotifyStateChanged();
+        }
+
+        public async Task<bool> CheckEmailHasRegister(string email)
+        {
+            User? user = await _cloudLogin.GetUserByEmailAddress(email);
+
+            return user?.ID != Guid.Empty;
         }
 
         private void NotifyStateChanged() => OnStateChanged?.Invoke();

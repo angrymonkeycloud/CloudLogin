@@ -1,0 +1,95 @@
+.amc-cloudlogin {
+    &-header {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform: translateX(0);
+    }
+
+    &-title {
+        color: #202124;
+        font-size: 2rem;
+        transition: all .8s;
+        padding-bottom: 0;
+        position: relative;
+
+        button {
+            position: absolute;
+            left: 0;
+            height: 0;
+            transform: translate(-100%, 50%);
+            width: 25px;
+            height: 25px;
+            padding: 5px;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-content: stretch;
+            background-color: transparent;
+            transition: all .6s;
+            cursor: pointer;
+
+            &:hover {
+                background-color: rgba(0,0,0,.1);
+            }
+        }
+    }
+
+    &-subtitle {
+        font-size: .8rem;
+        opacity: .7;
+    }
+
+    &-errors {
+        ul {
+            list-style: none;
+            font-size: .8rem;
+            color: #f53030;
+            padding-left: 0;
+        }
+    }
+
+    &-loading {
+        position: fixed;
+        min-height: 10px;
+        display: none;
+
+        > div {
+            position: relative;
+            top: 0px;
+            width: 100px;
+            height: 5px;
+            background-color: var(--amc-accentColor);
+            border-radius: 20px;
+            margin: 0 auto;
+            animation: move 4s cubic-bezier(0.31, 0.33, 1, 1) infinite;
+
+            &:after {
+                content: "";
+                position: absolute;
+                width: 10px;
+                height: 5px;
+                border-radius: 20px;
+                background-color: var(--amc-accentColor);
+            }
+        }
+    }
+
+    &-logo {
+        display: block;
+        width: 100%;
+        max-width: 200px;
+        margin: 30px auto 5px auto;
+    }
+
+    &._loading {
+        .amc-cloudlogin {
+            &-loading {
+                display: block;
+            }
+        }
+    }
+}

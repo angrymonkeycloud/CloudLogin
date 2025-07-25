@@ -28,7 +28,7 @@ public partial class CloudLoginServer
             new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
         };
 
-        var identity = new ClaimsIdentity(claims, "CloudLogin");
+        var identity = new ClaimsIdentity(claims, "Password");
         var principal = new ClaimsPrincipal(identity);
 
         var properties = new AuthenticationProperties
@@ -50,14 +50,17 @@ public partial class CloudLoginServer
         email = email.Trim().ToLowerInvariant();
 
         User? user = await GetUserByEmailAddress(email);
-        if (user == null || string.IsNullOrEmpty(user.PasswordHash))
+
+        string? passwordHash = user?.Inputs.FirstOrDefault(key => !string.IsNullOrEmpty(key.PasswordHash))?.PasswordHash;
+
+        if (passwordHash == null)
             return null;
 
         // Verify password
-        if (VerifyPassword(password, user.PasswordHash))
+        if (VerifyPassword(password, passwordHash))
         {
             // Update last signed in time
-            user.LastSignedIn = DateTimeOffset.UtcNow;
+            user!.LastSignedIn = DateTimeOffset.UtcNow;
             await UpdateUser(user);
             return user;
         }

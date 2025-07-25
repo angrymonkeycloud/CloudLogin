@@ -2,8 +2,9 @@
 
 @namespace AngryMonkey.CloudLogin
 @using AngryMonkey.CloudLogin.Services
+@using static AngryMonkey.CloudLogin.LoginComponent
 
-<div class="amc-cloudlogin-header">
+<div class="amc-cloudlogin-header @CssClass">
 
     @* Loading *@
 
@@ -24,7 +25,7 @@
 
     <div class="amc-cloudlogin-title">
 
-        @if (Auth.CurrentStep != ProcessStep.InputValue && ActionState == "login")
+        @if (ShowBackButton && !Auth.IsLoading)
         {
             <button @onclick="OnBackClicked">
                 <AngryMonkey.Cloud.Components.Icons.Back />
@@ -62,11 +63,24 @@
 @code {
     [Parameter] public string? Logo { get; set; }
     [Parameter] public string? ActionState { get; set; }
+    [Parameter] public EventCallback<string?> ActionStateChanged { get; set; }
 
-    protected override void OnInitialized()
+    private bool ShowBackButton => Auth.Input != null;
+
+    private string CssClass
     {
-        Auth.OnStateChanged += StateHasChanged;
+        get
+        {
+            List<string> classes = [];
+
+            if (Auth.IsLoading)
+                classes.Add("_loading");
+
+            return string.Join(" ", classes);
+        }
     }
+
+    protected override void OnInitialized() => Auth.OnStateChanged += StateHasChanged;
 
     private async Task OnBackClicked(MouseEventArgs e)
     {
@@ -74,21 +88,22 @@
             return;
 
         Auth.Errors.Clear();
-        StateHasChanged();
+        Auth.Input = null;
 
         switch (Auth.CurrentStep)
         {
             case ProcessStep.CodeEmailVerification:
                 await Auth.SwitchStep(ProcessStep.EmailForgetPassword);
                 break;
+
             case ProcessStep.EmailForgetPassword:
             case ProcessStep.EmailPasswordRegister:
                 await Auth.SwitchStep(ProcessStep.EmailPasswordLogin);
                 break;
+
             default:
                 await Auth.SwitchStep(ProcessStep.InputValue);
                 break;
         }
-
     }
 }

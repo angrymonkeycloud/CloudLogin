@@ -9,7 +9,7 @@
         <button @onclick="AddPhoneNumber">Add Phone Number</button>
     </div>
     <ul>
-        @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
+        @foreach (LoginInput phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
         {
             <li>
                 <span>

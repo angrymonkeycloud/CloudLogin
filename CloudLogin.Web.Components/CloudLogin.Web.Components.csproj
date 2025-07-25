@@ -49,6 +49,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="Components\ForgetPassword\" />
 	  <Folder Include="Services\" />
 	</ItemGroup>
 

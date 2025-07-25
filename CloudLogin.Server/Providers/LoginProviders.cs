@@ -13,8 +13,8 @@ public class LoginProviders
     {
         public PasswordProviderConfiguration(IConfigurationSection configurationSection)
         {
-            string? label = configurationSection["Label"] ?? "Email";
-            Init("password", label);
+            string? label = configurationSection["Label"] ?? "Email/Password";
+            Init("password", false, label);
             HandleUpdateOnly = true;
             HandlesEmailAddress = true;
             InputRequired = true;
@@ -22,19 +22,32 @@ public class LoginProviders
         }
     }
 
-    public class CustomProviderConfiguration : ProviderConfiguration
+    public class CodeProviderConfiguration : ProviderConfiguration
     {
-        public CustomProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
+        public CodeProviderConfiguration(IConfigurationSection configurationSection)
         {
-            string label = configurationSection["Label"] ?? "Custom";
-            Init("custom", label);
-
-            HandleUpdateOnly = handleUpdateOnly;
+            string? label = configurationSection["Label"] ?? "Email/Code";
+            Init("code", false, label);
+            HandleUpdateOnly = true;
             HandlesEmailAddress = true;
             InputRequired = true;
-            IsCodeVerification = true;
+            IsCodeVerification = false;
         }
     }
+
+    //public class CustomProviderConfiguration : ProviderConfiguration
+    //{
+    //    public CustomProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
+    //    {
+    //        string label = configurationSection["Label"] ?? "Custom";
+    //        Init("custom", label);
+
+    //        HandleUpdateOnly = handleUpdateOnly;
+    //        HandlesEmailAddress = true;
+    //        InputRequired = true;
+    //        IsCodeVerification = true;
+    //    }
+    //}
 
     public class MicrosoftProviderConfiguration : ProviderConfiguration
     {
@@ -78,7 +91,7 @@ public class LoginProviders
             ClientSecret = configurationSection["ClientSecret"];
             string label = configurationSection["Label"];
 
-            Init("Microsoft", label);
+            Init("Microsoft", true, label);
             HandleUpdateOnly = handleUpdateOnly;
             HandlesEmailAddress = true;
         }
@@ -98,7 +111,7 @@ public class LoginProviders
                 HandlesEmailAddress = true
             };
 
-            configuration.Init("Microsoft", label);
+            configuration.Init("Microsoft", true, label);
 
             return configuration;
         }
@@ -115,7 +128,7 @@ public class LoginProviders
             ClientSecret = configurationSection["ClientSecret"];
             string label = configurationSection["Label"];
 
-            Init("Google", label);
+            Init("Google", true, label);
             HandleUpdateOnly = handleUpdateOnly;
             HandlesEmailAddress = true;
         }
@@ -132,7 +145,7 @@ public class LoginProviders
             ClientSecret = configurationSection["ClientSecret"];
             string label = configurationSection["Label"];
 
-            Init("Facbook", label);
+            Init("Facbook", true, label);
             HandleUpdateOnly = handleUpdateOnly;
             HandlesEmailAddress = true;
         }
@@ -149,7 +162,7 @@ public class LoginProviders
             ClientSecret = configurationSection["ClientSecret"];
             string label = configurationSection["Label"];
 
-            Init("Twitter", label);
+            Init("Twitter", true, label);
             HandleUpdateOnly = handleUpdateOnly;
             HandlesEmailAddress = true;
         }
@@ -170,7 +183,7 @@ public class LoginProviders
             Language = configurationSection["Language"];
             string label = configurationSection["Label"];
 
-            Init("WhatsApp", label);
+            Init("WhatsApp", true, label);
             HandleUpdateOnly = handleUpdateOnly;
             HandlesPhoneNumber = true;
             InputRequired = true;

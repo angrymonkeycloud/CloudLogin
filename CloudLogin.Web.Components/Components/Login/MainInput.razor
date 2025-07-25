@@ -1,0 +1,456 @@
+﻿@using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
+@using Microsoft.AspNetCore.Components.Web
+@using System.Text.RegularExpressions
+
+@inject ICloudLogin cloudLogin
+
+<div class="input @CssClass">
+
+    <label for="@ID" class="input-label">
+        @DisplayLabel
+    </label>
+
+    <div class="input-content">
+        <input type="@InputType" id="@ID" autocomplete="@AutoComplete" spellcheck="false" placeholder="@DisplayPlaceholder"
+               disabled="@Disabled" readonly="@ReadOnly"
+               @bind-value="Value"
+               @bind-value:event="oninput"
+               @onkeydown="HandleKeyDown"
+               @onkeyup="HandleKeyUp"
+               @onfocus="HandleFocus"
+               @onblur="HandleBlur"
+               @onpaste="HandlePaste"
+               @bind-value:after="@(async () => await ValueChanged.InvokeAsync(Value))"
+               aria-invalid="@(HasError ? "true" : "false")"
+               aria-describedby="@(HasError ? $"{ID}-error" : "")" />
+
+        @*        @if (HasValue && !ReadOnly && !Disabled)
+        {
+            <button type="button" class="input-clear" @onclick="ClearInput" aria-label="Clear input" tabindex="-1">
+                ×
+            </button>
+        }
+
+        <div class="input-icons">
+            @if (HasError)
+            {
+                <span class="input-icon _error" aria-hidden="true">⚠</span>
+            }
+            else if (IsValid)
+            {
+                <span class="input-icon _success" aria-hidden="true">✓</span>
+            }
+        </div>
+    </div>
+
+    @if (HasError && !string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div id="@($"{ID}-error")" class="input-errors" role="alert">
+            @ErrorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(FormatHint))
+    {
+        <div class="input-hint">
+            @FormatHint
+        </div>
+    } *@
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool Disabled { get; set; } = false;
+    [Parameter] public bool ReadOnly { get; set; } = false;
+    [Parameter] public bool AllowEmailInput { get; set; } = false;
+    [Parameter] public bool AllowPhoneInput { get; set; } = false;
+    [Parameter] public bool AllowUsernameInput { get; set; } = false;
+    [Parameter] public bool ValidateOnInput { get; set; } = true;
+    [Parameter] public bool ValidateOnBlur { get; set; } = true;
+
+    // Events
+    [Parameter] public EventCallback<KeyboardEventArgs> OnKeyDown { get; set; }
+    [Parameter] public EventCallback<KeyboardEventArgs> OnKeyUp { get; set; }
+    [Parameter] public EventCallback<KeyboardEventArgs> OnEnterPressed { get; set; }
+    [Parameter] public EventCallback<KeyboardEventArgs> OnEscapePressed { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnFocus { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
+    [Parameter] public EventCallback<ClipboardEventArgs> OnPaste { get; set; }
+    [Parameter] public EventCallback OnClear { get; set; }
+    [Parameter] public EventCallback<InputFormatChangedEventArgs> OnFormatChanged { get; set; }
+    [Parameter] public EventCallback<ValidationChangedEventArgs> OnValidationChanged { get; set; }
+
+    private readonly string ID = Guid.NewGuid().ToString("N")[..8];
+    private bool IsFocused { get; set; }
+    private bool HasError { get; set; }
+    private bool IsValid { get; set; }
+    private string? ErrorMessage { get; set; }
+    private InputFormat _currentFormat = InputFormat.Other;
+    private InputFormat _lastKnownFormat = InputFormat.Other;
+    private bool HasValue => !string.IsNullOrEmpty(Value);
+
+    private InputFormat[] AllowedFormats
+    {
+        get
+        {
+            List<InputFormat> formats = [];
+
+            if (AllowEmailInput)
+                formats.Add(InputFormat.EmailAddress);
+
+            if (AllowPhoneInput)
+                formats.Add(InputFormat.PhoneNumber);
+
+            if (AllowUsernameInput)
+                formats.Add(InputFormat.Other);
+
+            return formats.ToArray();
+        }
+    }
+
+    private bool MultipleFormatsAllowed => AllowedFormats.Count() > 1;
+
+    private string InputType => _currentFormat switch
+    {
+        InputFormat.EmailAddress => "email",
+        InputFormat.PhoneNumber => "tel",
+        _ => "text"
+    };
+
+    private string AutoComplete => _currentFormat switch
+    {
+        InputFormat.EmailAddress => "email",
+        InputFormat.PhoneNumber => "tel",
+        _ => "username"
+    };
+
+    private string DisplayLabel => Label ?? _currentFormat switch
+    {
+        InputFormat.EmailAddress => "Email Address",
+        InputFormat.PhoneNumber => "Phone Number",
+        _ => GetDynamicLabel()
+    };
+
+    private string DisplayPlaceholder => Placeholder ?? _currentFormat switch
+    {
+        InputFormat.EmailAddress => "Enter your email address",
+        InputFormat.PhoneNumber => "Enter your phone number",
+        _ => GetDynamicPlaceholder()
+    };
+
+    private string? FormatHint => _currentFormat switch
+    {
+        InputFormat.PhoneNumber => "Include country code (e.g., +1 555-123-4567)",
+        InputFormat.EmailAddress => "Enter a valid email address",
+        _ => null
+    };
+
+    private string CssClass
+    {
+        get
+        {
+            List<string> classes = ["main-input-wrapper"];
+
+            classes.Add($"format-{_currentFormat.ToString().ToLowerInvariant()}");
+
+            if (IsFocused)
+                classes.Add("_focused");
+
+            if (HasError)
+                classes.Add("_error");
+
+            if (IsValid)
+                classes.Add("_valid");
+
+            if (Disabled)
+                classes.Add("_disabled");
+
+            if (ReadOnly)
+                classes.Add("_readonly");
+
+            if (HasValue)
+                classes.Add("_filled");
+            else classes.Add("_empty");
+
+            return string.Join(" ", classes);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        if (MultipleFormatsAllowed)
+            DetectAndSetFormat();
+
+        if (ValidateOnInput)
+            ValidateInput();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        await OnKeyDown.InvokeAsync(e);
+
+        switch (e.Key.ToLowerInvariant())
+        {
+            case "enter":
+                await OnEnterPressed.InvokeAsync(e);
+                break;
+            case "escape":
+                await OnEscapePressed.InvokeAsync(e);
+                break;
+        }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        await OnKeyUp.InvokeAsync(e);
+    }
+
+    private async Task HandleFocus(FocusEventArgs e)
+    {
+        IsFocused = true;
+        await OnFocus.InvokeAsync(e);
+        StateHasChanged();
+    }
+
+    private async Task HandleBlur(FocusEventArgs e)
+    {
+        IsFocused = false;
+
+        if (ValidateOnBlur)
+            ValidateInput();
+
+        await OnBlur.InvokeAsync(e);
+        StateHasChanged();
+    }
+
+    private async Task HandlePaste(ClipboardEventArgs e)
+    {
+        await OnPaste.InvokeAsync(e);
+
+        // Allow paste processing to complete, then detect format
+        await Task.Delay(10);
+        DetectAndSetFormat();
+        StateHasChanged();
+    }
+
+    private async Task ClearInput()
+    {
+        Value = string.Empty;
+        await ValueChanged.InvokeAsync(Value);
+        await OnClear.InvokeAsync();
+
+        _currentFormat = InputFormat.Other;
+        HasError = false;
+        IsValid = false;
+        ErrorMessage = null;
+
+        StateHasChanged();
+    }
+
+    private void DetectAndSetFormat()
+    {
+        if (string.IsNullOrWhiteSpace(Value))
+        {
+            _currentFormat = InputFormat.Other;
+            return;
+        }
+
+        InputFormat detectedFormat = cloudLogin.GetInputFormat(Value);
+
+        if (detectedFormat != _lastKnownFormat)
+        {
+            _lastKnownFormat = _currentFormat;
+            _currentFormat = detectedFormat;
+
+            OnFormatChanged.InvokeAsync(new InputFormatChangedEventArgs
+            {
+                PreviousFormat = _lastKnownFormat,
+                CurrentFormat = _currentFormat,
+                Value = Value
+            });
+        }
+    }
+
+    private void ValidateInput()
+    {
+        if (string.IsNullOrWhiteSpace(Value))
+        {
+            HasError = false;
+            IsValid = false;
+            ErrorMessage = null;
+            return;
+        }
+
+        var validationResult = ValidateCurrentInput();
+        bool wasValid = IsValid;
+        bool hadError = HasError;
+
+        HasError = !validationResult.IsValid;
+        IsValid = validationResult.IsValid;
+        ErrorMessage = validationResult.ErrorMessage;
+
+        if (wasValid != IsValid || hadError != HasError)
+        {
+            OnValidationChanged.InvokeAsync(new ValidationChangedEventArgs
+            {
+                IsValid = IsValid,
+                HasError = HasError,
+                ErrorMessage = ErrorMessage,
+                Format = _currentFormat,
+                Value = Value
+            });
+        }
+    }
+
+    private ValidationResult ValidateCurrentInput()
+    {
+        if (string.IsNullOrWhiteSpace(Value))
+            return new ValidationResult { IsValid = false, ErrorMessage = "Input is required" };
+
+        return _currentFormat switch
+        {
+            InputFormat.EmailAddress => ValidateEmail(),
+            InputFormat.PhoneNumber => ValidatePhoneNumber(),
+            InputFormat.Other => ValidateGeneral(),
+            _ => new ValidationResult { IsValid = false, ErrorMessage = "Invalid input format" }
+        };
+    }
+
+    private ValidationResult ValidateEmail()
+    {
+        if (!AllowEmailInput)
+            return new ValidationResult { IsValid = false, ErrorMessage = "Email input is not allowed" };
+
+        bool isValid = IsInputValidEmailAddress(Value);
+
+        return new ValidationResult
+        {
+            IsValid = isValid,
+            ErrorMessage = isValid ? null : "Please enter a valid email address"
+        };
+    }
+
+    private ValidationResult ValidatePhoneNumber()
+    {
+        if (!AllowPhoneInput)
+            return new ValidationResult { IsValid = false, ErrorMessage = "Phone number input is not allowed" };
+
+        bool isValid = IsInputValidPhoneNumber(Value);
+
+        if (!isValid && !(Value?.StartsWith('+') ?? false))
+            return new ValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = "Phone number must include country code (e.g., +1)"
+            };
+
+        return new ValidationResult
+        {
+            IsValid = isValid,
+            ErrorMessage = isValid ? null : "Please enter a valid phone number"
+        };
+    }
+
+    private ValidationResult ValidateGeneral()
+    {
+        // Check if it might be a username
+        if (!AllowUsernameInput && _currentFormat == InputFormat.Other)
+            return new ValidationResult { IsValid = false, ErrorMessage = "This input format is not allowed" };
+
+        // Basic username validation (if it's not email or phone)
+        if ((Value?.Length ?? 0) < 3)
+            return new ValidationResult { IsValid = false, ErrorMessage = "Input must be at least 3 characters long" };
+
+        // Check for invalid characters in username
+        if (_currentFormat == InputFormat.Other && (Value?.Any(c => !char.IsLetterOrDigit(c) && c != '_' && c != '-' && c != '.') ?? false))
+            return new ValidationResult { IsValid = false, ErrorMessage = "Username can only contain letters, numbers, underscores, hyphens, and periods" };
+
+        return new ValidationResult { IsValid = true };
+    }
+
+    private string GetDynamicLabel()
+    {
+        List<string> allowedTypes = [];
+
+        if (AllowEmailInput) allowedTypes.Add("Email");
+        if (AllowPhoneInput) allowedTypes.Add("Phone");
+        if (AllowUsernameInput) allowedTypes.Add("Username");
+
+        return allowedTypes.Count switch
+        {
+            0 => throw new Exception("No input allowed"),
+            1 => allowedTypes[0],
+            2 => $"{allowedTypes[0]} or {allowedTypes[1]}",
+            _ => string.Join(", ", allowedTypes[..^1]) + $", or {allowedTypes[^1]}"
+        };
+    }
+
+    private string GetDynamicPlaceholder()
+    {
+        List<string> allowedTypes = [];
+
+        if (AllowEmailInput) allowedTypes.Add("email");
+        if (AllowPhoneInput) allowedTypes.Add("phone");
+        if (AllowUsernameInput) allowedTypes.Add("username");
+
+        return allowedTypes.Count switch
+        {
+            0 => "Enter input",
+            1 => $"Enter {allowedTypes[0]}",
+            2 => $"Enter {allowedTypes[0]} or {allowedTypes[1]}",
+            _ => string.Join(", ", allowedTypes[..^1]) + $", or {allowedTypes[^1]}"
+        };
+    }
+
+    // Validation methods based on CloudLoginServer patterns
+    private static bool IsInputValidEmailAddress(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return false;
+
+        // Normalize email to lowercase for case-insensitive validation
+        input = input.Trim().ToLowerInvariant();
+
+        // Improved regex that rejects consecutive dots and other invalid patterns
+        return Regex.IsMatch(input, @"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$", RegexOptions.IgnoreCase);
+    }
+
+    private static bool IsInputValidPhoneNumber(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return false;
+
+        // Basic phone number validation - should start with + and contain only digits, spaces, hyphens, parentheses
+        // Simplified: just check if it starts with + followed by 7-14 digits
+        return Regex.IsMatch(input.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "").Replace(".", ""), @"^\+[1-9]\d{7,14}$");
+    }
+
+    public class InputFormatChangedEventArgs
+    {
+        public InputFormat PreviousFormat { get; set; }
+        public InputFormat CurrentFormat { get; set; }
+        public string? Value { get; set; }
+    }
+
+    public class ValidationChangedEventArgs
+    {
+        public bool IsValid { get; set; }
+        public bool HasError { get; set; }
+        public string? ErrorMessage { get; set; }
+        public InputFormat Format { get; set; }
+        public string? Value { get; set; }
+    }
+
+    private class ValidationResult
+    {
+        public bool IsValid { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+}

@@ -271,7 +271,9 @@ public partial class CloudLoginServer : ICloudLogin
         if (_configuration.Providers == null)
             throw new InvalidOperationException("Providers configuration is not initialized");
 
-        return [.. _configuration.Providers.Select(key => new ProviderDefinition(key.Code, key.HandleUpdateOnly, key.Label))];
+        List<ProviderDefinition> providers = [.. _configuration.Providers.Select(key => key.ToModel())];
+
+        return providers;
     }
 
     public string GetPhoneNumber(string input) => _cloudGeography.PhoneNumbers.Get(input).Number;

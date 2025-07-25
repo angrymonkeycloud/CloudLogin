@@ -19,8 +19,7 @@ public partial class CloudLoginServer
             FirstName = firstName,
             LastName = lastName,
             DisplayName = firstName + " " + lastName,
-            PasswordHash = await HashPassword(password),
-            Inputs = [new() { Input = email, Format = InputFormat.EmailAddress, IsPrimary = true }]
+            Inputs = [new() { Input = email, Format = InputFormat.EmailAddress, IsPrimary = true, PasswordHash = await HashPassword(password) }]
         };
 
         await CreateUser(newUser);

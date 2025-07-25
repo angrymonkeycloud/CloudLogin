@@ -15,6 +15,7 @@
     <LoginHeaderComponent Logo="@Logo" @bind-ActionState="@ActionState" />
 
     <div class="amc-cloudlogin-body">
+
         @if (AddInputDiplay)
         {
             <div class="amc-cloudlogin-panel">
@@ -23,18 +24,22 @@
                 </div>
             </div>
         }
-        @if (Auth.DisplayInputValue)
+
+        @if (Auth.Input != null)
         {
             <div class="amc-cloudlogin-panel">
-                <div class="amc-cloudlogin-inputdisplay">
-                    @InputValue
+                <div class="amc-cloudlogin-selectedinput">
+
+                    <div class="amc-cloudlogin-selectedinput-value">
+                        @Auth.Input.Input
+                    </div>
                 </div>
             </div>
         }
 
-        @if (Auth.CurrentStep == ProcessStep.InputValue)
+        @if (Auth.CurrentStep == ProcessStep.None)
         {
-            @if (AllowTextIntput)
+            @if (InputRequired)
             {
                 <div class="login-form _center ">
                     @if (AddInputDiplay == false)
@@ -48,16 +53,6 @@
                         <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active" : "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                         <label for="email">@InputLabel</label>
                     </div>
-
-                    @if (!string.IsNullOrEmpty(InputValue))
-                    {
-                        <div class="login-form-next ">
-                            <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress)) ? "" : "--disable")" @onclick="OnInputNextClicked">
-                                <span>Next</span>
-                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
-                            </button>
-                        </div>
-                    }
 
                 </div>
             }
@@ -83,7 +78,7 @@
         {
             <div class="login-form">
                 <div class="amc-cloudlogin-providers">
-                    @foreach (ProviderDefinition provider in Providers)
+                    @foreach (ProviderDefinition provider in Auth.Input!.Providers)
                     {
                         <button class="amc-cloudlogin-provider @provider.CssClass @(Auth.IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                             <div class="amc-cloudlogin-provider-label">@provider.Label</div>
@@ -163,52 +158,20 @@
                 </div>
             </div>
         }
-        else if (Auth.CurrentStep == ProcessStep.ChangePrimary)
-        {
-            <div class="login-form">
-                @foreach (LoginInput input in CurrentUser.Inputs.Where(i => i.Format == InputFormat.EmailAddress))
-                {
-                    <div>
-                        <span>@input.Input</span>
-                        @if (input.IsPrimary)
-                        {
-                            <span> | Primary Email</span>
-                        }
-                        else
-                        {
-                            <button class="amc-cloudlogin-button" @onclick="x => SetPrimary(x, input.Input)">
-                                <span>Set Primary</span>
-                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
-                            </button>
-                        }
-                    </div>
-                }
-            </div>
-        }
         else if (Auth.CurrentStep == ProcessStep.EmailPasswordLogin)
         {
             <div class="login-form _center _password">
                 <div class="login-form-input">
                     <div class="amc-cloudlogin-input">
-                        <label>Email</label>
-                        <input type="email" @bind-value="Email" @bind-value:event="oninput" autocomplete="off" />
-                    </div>
-                    <div class="amc-cloudlogin-input">
                         <label>Password</label>
                         <input type="password" @bind-value="Password" @bind-value:event="oninput" />
                     </div>
                     <div class="row">
-                        <div class="amc-cloudlogin-keppsignedin">
-                            <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                            <label for="keepme">Keep me signed in</label>
-                        </div>
-                        @* <button class="amc-cloudlogin-link" @onclick="() => SwitchState(ProcessStep.EmailForgetPassword)">Forget passord?</button> *@
                         <button class="amc-cloudlogin-button _solid" @onclick="OnEmailPasswordLoginClicked">Sign In</button>
                     </div>
 
                 </div>
                 <div class="login-form-links">
-                    <button class="amc-cloudlogin-link" @onclick="() => Auth.SwitchStep(ProcessStep.EmailPasswordRegister)">New account</button>
                     <button class="amc-cloudlogin-link" @onclick="() => Auth.SwitchStep(ProcessStep.EmailForgetPassword)">Forget password?</button>
                 </div>
 
@@ -258,11 +221,48 @@
 
             </div>
         }
+        else
+        {
+            <div class="login-form">
+
+                @if (InputRequired)
+                {
+                    <AngryMonkey.CloudLogin.Components.Login.MainInput AllowEmailInput="true" AllowPhoneInput="false" AllowUsernameInput="false" Value="@InputValue" ValueChanged="OnInputChanged" />
+
+                    @if (!string.IsNullOrEmpty(InputValue))
+                    {
+                        <div class="login-form-next ">
+                            <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress)) ? "" : "--disable")" @onclick="OnInputNextClicked">
+                                <span>Next</span>
+                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                            </button>
+                        </div>
+                    }
+
+                    <div class="login-form-title">no account?</div>
+                    <button class="amc-cloudlogin-provider" @onclick="() => Auth.SwitchStep(ProcessStep.EmailPasswordRegister)">Create new account</button>
+                }
+
+                <div class="login-form-title">or sign in with</div>
+                <div class="amc-cloudlogin-providers">
+                    @foreach (ProviderDefinition provider in ExternalProviders)
+                    {
+                        <button class="amc-cloudlogin-provider @provider.CssClass @(Auth.IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
+                            @*   <div class="amc-cloudlogin-provider-icon">
+                                        <AngryMonkey.CloudLogin.Components.ProviderButton Provider="provider" />
+                                    </div> *@
+                            <div class="amc-cloudlogin-provider-label">@provider.Label</div>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+
     </div>
 
-    @if (!Embedded)
+    @*     @if (!Embedded)
     {
         <AngryMonkey.CloudLogin.Components.Login.LoginComponent_Footer />
-    }
+    } *@
 
 </div>       

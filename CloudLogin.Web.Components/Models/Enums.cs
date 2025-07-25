@@ -18,7 +18,6 @@ public enum ProcessStep
     EmailPasswordLogin,  // Password-based login
     EmailPasswordRegister, // Register with password
     EmailForgetPassword, // Reset forgotten password
-    ChangePrimary        // Change primary email
 }
 
 public enum AuthenticationProcess

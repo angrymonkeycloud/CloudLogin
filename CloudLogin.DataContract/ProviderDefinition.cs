@@ -1,4 +1,6 @@
-﻿namespace AngryMonkey.CloudLogin;
+﻿using System.Text.Json.Serialization;
+
+namespace AngryMonkey.CloudLogin;
 
 public class ProviderDefinition
 {
@@ -11,12 +13,15 @@ public class ProviderDefinition
 
     public string Code { get; init; } = string.Empty;
     public string Label { get; set; } = string.Empty;
-    public bool HandlesEmailAddress { get; init; } = false; // Should Be private
-    public bool HandlesPhoneNumber { get; set; } = false; // Should Be private
-    public bool IsCodeVerification { get; init; } = false; // Should Be private
-    public bool InputRequired { get; init; } = false; // Should Be private
     public bool HandleUpdateOnly { get; set; }
 
+    public required bool HandlesEmailAddress { get; set; }
+    public required bool HandlesPhoneNumber { get; set; }
+    public required bool IsCodeVerification { get; set; }
+    public required bool InputRequired { get; set; }
+    public required bool IsExternal { get; set; }
+
+    [JsonIgnore]
     public string CssClass // Should Be private
     {
         get

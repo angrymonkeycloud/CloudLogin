@@ -42,5 +42,13 @@
   {
     "outputFile": "Components/LoadingComponent.razor.css",
     "inputFile": "Components/LoadingComponent.razor.less"
+  },
+  {
+    "outputFile": "Components/Login/MainInput.razor.css",
+    "inputFile": "Components/Login/MainInput.razor.less"
+  },
+  {
+    "outputFile": "Components/Login/LoginHeaderComponent.razor.css",
+    "inputFile": "Components/Login/LoginHeaderComponent.razor.less"
   }
 ]

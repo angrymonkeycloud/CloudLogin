@@ -6,14 +6,9 @@ using System.Security.Claims;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public class CloudLoginAuthenticationService
+public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public CloudLoginAuthenticationService(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     public async Task HandleSignIn(ClaimsPrincipal principal, HttpContext context)
     {
@@ -63,19 +58,21 @@ public class CloudLoginAuthenticationService
 
     private static LoginProvider CreateLoginProvider(string providerCode, string? providerUserID, InputFormat format)
     {
-        if (!providerCode.Equals("CloudLogin"))
-            return new() { Code = providerCode, Identifier = providerUserID };
-
-        return format switch
+        // Map CloudLogin to specific provider codes based on format
+        if (providerCode.Equals("CloudLogin", StringComparison.OrdinalIgnoreCase))
         {
-            InputFormat.EmailAddress => new() { Code = "CloudLogin", Identifier = providerUserID },
-            InputFormat.PhoneNumber => new() { Code = "WhatsApp", Identifier = providerUserID },
-            _ => new() { Code = providerCode, Identifier = providerUserID }
-        };
+            return format switch
+            {
+                InputFormat.EmailAddress => new() { Code = "Code", Identifier = providerUserID },
+                InputFormat.PhoneNumber => new() { Code = "WhatsApp", Identifier = providerUserID },
+                _ => new() { Code = "Code", Identifier = providerUserID }
+            };
+        }
+
+        return new() { Code = providerCode, Identifier = providerUserID };
     }
 
-    private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, LoginProvider provider,
-        string input, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, LoginProvider provider, string input, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
         user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
         user.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
@@ -89,11 +86,9 @@ public class CloudLoginAuthenticationService
         await cosmosMethods.Update(user);
     }
 
-    private async Task CreateNewUser(ClaimsPrincipal principal, LoginProvider provider, string input,
-        InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private async Task CreateNewUser(ClaimsPrincipal principal, LoginProvider provider, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
-        (string? countryCode, string? callingCode, string formattedInput) =
-            await ProcessPhoneNumber(formatValue, input);
+        (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
 
         string firstName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
         string lastName = principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
@@ -103,8 +98,7 @@ public class CloudLoginAuthenticationService
             ID = Guid.NewGuid(),
             FirstName = firstName,
             LastName = lastName,
-            DisplayName = (principal.FindFirst(ClaimTypes.Name) ?? principal.FindFirst("name"))?.Value
-                ?? $"{firstName} {lastName}",
+            DisplayName = (principal.FindFirst(ClaimTypes.Name) ?? principal.FindFirst("name"))?.Value ?? $"{firstName} {lastName}",
             CreatedOn = currentDateTime,
             LastSignedIn = currentDateTime,
             Inputs =

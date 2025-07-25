@@ -1,4 +1,4 @@
-﻿using AngryMonkey.Cloud;
+using AngryMonkey.Cloud;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Sever.Providers;
@@ -52,8 +52,14 @@ public static class MvcServiceCollectionExtensions
         if (!loginConfig.Cosmos.IsValid())
             return;
 
-        JsonSerializerOptions cosmosSerialization = new() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
-        cosmosSerialization.Converters.Add(new JsonStringEnumConverter());
+        // Create CosmosClient with custom serialization to exclude null values and serialize enums as strings
+        CosmosClient cosmosClient = new(loginConfig.Cosmos.ConnectionString, new CosmosClientOptions
+        {
+            SerializerOptions = new CosmosSerializationOptions 
+            { 
+                IgnoreNullValues = true
+            }
+        });
 
         //if (!string.IsNullOrEmpty(loginConfig.Cosmos.AspireName))
         //    builder.Services.AddAzureCosmosContainer("cosmos",
@@ -82,15 +88,11 @@ public static class MvcServiceCollectionExtensions
         //        options.Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization);
         //    });
 
-        // Create CosmosClient
-        CosmosClient cosmosClient = new(loginConfig.Cosmos.ConnectionString);
-
         // Get container reference
         var container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
 
         // Register as singleton
         builder.Services.AddSingleton(container);
-
         builder.Services.AddScoped<CosmosMethods>();
     }
 
@@ -160,6 +162,7 @@ public static class MvcServiceCollectionExtensions
         config.Providers.Insert(0, cspMicrosoft);
     }
 }
+
 public class CloudLoginWeb
 {
     public static async Task InitApp(WebApplicationBuilder builder)
@@ -168,7 +171,6 @@ public class CloudLoginWeb
 
         if (app.Environment.IsDevelopment())
             app.UseWebAssemblyDebugging();
-
         else
         {
             app.UseExceptionHandler("/Error", createScopeForErrors: true);

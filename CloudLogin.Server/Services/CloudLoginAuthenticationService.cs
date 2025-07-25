@@ -29,17 +29,14 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             ? InputFormat.EmailAddress
             : InputFormat.PhoneNumber;
 
-        string providerCode = principal.Identity!.AuthenticationType!;
-        string? providerUserID = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         string input = GetUserInput(principal, formatValue);
 
         User? user = await GetExistingUser(cosmosMethods, input, formatValue);
-        LoginProvider provider = CreateLoginProvider(providerCode, providerUserID, formatValue);
 
         if (user != null)
-            await UpdateExistingUser(user, principal, provider, input, currentDateTime, cosmosMethods);
+            await UpdateUserLastSignedIn(user.ID, currentDateTime, cosmosMethods);
         else
-            await CreateNewUser(principal, provider, input, formatValue, currentDateTime, cosmosMethods);
+            throw new UnauthorizedAccessException($"User with {(formatValue == InputFormat.EmailAddress ? "email" : "phone number")} '{input}' does not exist.");
     }
 
     private static string GetUserInput(ClaimsPrincipal principal, InputFormat format)
@@ -56,68 +53,55 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             : await cosmosMethods.GetUserByPhoneNumber(input);
     }
 
-    private static LoginProvider CreateLoginProvider(string providerCode, string? providerUserID, InputFormat format)
+    private static async Task UpdateUserLastSignedIn(Guid userId, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
-        // Map CloudLogin to specific provider codes based on format
-        if (providerCode.Equals("CloudLogin", StringComparison.OrdinalIgnoreCase))
-        {
-            return format switch
-            {
-                InputFormat.EmailAddress => new() { Code = "Code", Identifier = providerUserID },
-                InputFormat.PhoneNumber => new() { Code = "WhatsApp", Identifier = providerUserID },
-                _ => new() { Code = "Code", Identifier = providerUserID }
-            };
-        }
-
-        return new() { Code = providerCode, Identifier = providerUserID };
+        await cosmosMethods.UpdateLastSignedIn(userId, currentDateTime);
     }
+    //private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, LoginProvider provider, string input, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    //{
+    //    user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
+    //    user.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
+    //    user.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}";
 
-    private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, LoginProvider provider, string input, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
-    {
-        user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
-        user.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
-        user.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}";
+    //    LoginInput existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
+    //    if (!existingInput.Providers.Any(key => key.Code.Equals(provider.Code, StringComparison.OrdinalIgnoreCase)))
+    //        existingInput.Providers.Add(provider);
 
-        LoginInput existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
-        if (!existingInput.Providers.Any(key => key.Code.Equals(provider.Code, StringComparison.OrdinalIgnoreCase)))
-            existingInput.Providers.Add(provider);
+    //    user.LastSignedIn = currentDateTime;
+    //    await cosmosMethods.Update(user);
+    //}
 
-        user.LastSignedIn = currentDateTime;
-        await cosmosMethods.Update(user);
-    }
+    //private async Task CreateNewUser(ClaimsPrincipal principal, LoginProvider provider, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    //{
+    //    (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
 
-    private async Task CreateNewUser(ClaimsPrincipal principal, LoginProvider provider, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
-    {
-        (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
+    //    string firstName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
+    //    string lastName = principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
 
-        string firstName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
-        string lastName = principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
+    //    User user = new()
+    //    {
+    //        ID = Guid.NewGuid(),
+    //        FirstName = firstName,
+    //        LastName = lastName,
+    //        DisplayName = (principal.FindFirst(ClaimTypes.Name) ?? principal.FindFirst("name"))?.Value ?? $"{firstName} {lastName}",
+    //        CreatedOn = currentDateTime,
+    //        LastSignedIn = currentDateTime,
+    //        Inputs =
+    //        [
+    //            new LoginInput()
+    //            {
+    //                Input = formattedInput,
+    //                Format = formatValue,
+    //                IsPrimary = true,
+    //                PhoneNumberCountryCode = countryCode,
+    //                PhoneNumberCallingCode = callingCode,
+    //                Providers = provider != null ? new() { provider } : new()
+    //            }
+    //        ]
+    //    };
 
-        User user = new()
-        {
-            ID = Guid.NewGuid(),
-            FirstName = firstName,
-            LastName = lastName,
-            DisplayName = (principal.FindFirst(ClaimTypes.Name) ?? principal.FindFirst("name"))?.Value ?? $"{firstName} {lastName}",
-            CreatedOn = currentDateTime,
-            LastSignedIn = currentDateTime,
-            Inputs =
-            [
-                new LoginInput()
-                {
-                    Input = formattedInput,
-                    Format = formatValue,
-                    IsPrimary = true,
-                    PhoneNumberCountryCode = countryCode,
-                    PhoneNumberCallingCode = callingCode,
-                    Providers = provider != null ? new() { provider } : new()
-                }
-            ]
-        };
-
-        await cosmosMethods.Create(user);
-    }
-
+    //    await cosmosMethods.Create(user);
+    //}
     private async Task<(string? countryCode, string? callingCode, string input)> ProcessPhoneNumber(InputFormat formatValue, string input)
     {
         if (formatValue != InputFormat.PhoneNumber)

@@ -28,18 +28,18 @@ public partial class CloudLoginServer : ICloudLogin
         return InputFormat.Other;
     }
 
-    public static bool IsInputValidEmailAddress(string input) 
+    public static bool IsInputValidEmailAddress(string input)
     {
         if (string.IsNullOrEmpty(input))
             return false;
-            
+
         // Normalize email to lowercase for case-insensitive validation
         input = input.Trim().ToLowerInvariant();
-        
+
         // Improved regex that rejects consecutive dots and other invalid patterns
         return Regex.IsMatch(input, @"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$", RegexOptions.IgnoreCase);
     }
-    
+
     public bool IsInputValidPhoneNumber(string input) => _cloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
 
     public IActionResult Login(HttpRequest request, string? returnUrl)
@@ -125,7 +125,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         // Normalize email input
         email = email?.Trim().ToLowerInvariant() ?? string.Empty;
-        
+
         return await _cosmosMethods.GetUserByEmailAddress(email);
     }
 
@@ -194,7 +194,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         // Use IHttpClientFactory if available, otherwise create a new HttpClient
         HttpClient httpClient = _httpClientFactory?.CreateClient() ?? new HttpClient();
-        
+
         try
         {
             HttpResponseMessage response = await httpClient.SendAsync(request);
@@ -298,8 +298,14 @@ public partial class CloudLoginServer : ICloudLogin
                 Input = email,
                 Format = InputFormat.EmailAddress,
                 IsPrimary = true,
-                PasswordHash = await HashPassword(password),
-                Providers = [new() { Code = "Password" }]
+                Providers = 
+                [
+                    new()
+                    {
+                        Code = "Password",
+                        PasswordHash = await HashPassword(password)
+                    }
+                ]
             }]
         };
 

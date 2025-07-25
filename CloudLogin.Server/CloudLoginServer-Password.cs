@@ -51,7 +51,7 @@ public partial class CloudLoginServer
 
         User? user = await GetUserByEmailAddress(email);
 
-        string? passwordHash = user?.Inputs.FirstOrDefault(key => !string.IsNullOrEmpty(key.PasswordHash))?.PasswordHash;
+        string? passwordHash = user?.Inputs.SelectMany(key => key.Providers).FirstOrDefault(key => key.Code.Equals("password", StringComparison.OrdinalIgnoreCase))?.PasswordHash;
 
         if (passwordHash == null)
             return null;

@@ -157,6 +157,16 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         await _container.UpsertItemAsync(dbUser, GetPartitionKey(dbUser));
     }
 
+    public async Task UpdateLastSignedIn(Guid userId, DateTimeOffset lastSignedIn)
+    {
+        UserInfo userInfo = new() { ID = userId };
+        PartitionKey partitionKey = GetPartitionKey(userInfo);
+
+        List<PatchOperation> patchOperations = [PatchOperation.Replace("/LastSignedIn", lastSignedIn)];
+
+        await _container.PatchItemAsync<UserInfo>(userId.ToString(), partitionKey, patchOperations);
+    }
+
     public async Task Create(User user)
     {
         UserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));

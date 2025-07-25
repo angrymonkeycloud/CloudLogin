@@ -1,5 +1,4 @@
-﻿
-using Azure.Identity;
+﻿using Azure.Identity;
 using Azure.Security.KeyVault.Certificates;
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Configuration;
@@ -28,10 +27,10 @@ public class LoginProviders
         {
             string? label = configurationSection["Label"] ?? "Email/Code";
             Init("code", false, label);
-            HandleUpdateOnly = true;
+            HandleUpdateOnly = false;
             HandlesEmailAddress = true;
             InputRequired = true;
-            IsCodeVerification = false;
+            IsCodeVerification = true;
         }
     }
 

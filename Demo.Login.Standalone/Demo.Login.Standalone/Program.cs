@@ -11,6 +11,7 @@ builder.AddCloudLoginWeb(new()
 
     Providers =
     [
+        new LoginProviders.CodeProviderConfiguration(builder.Configuration.GetSection("Code")),
         new LoginProviders.PasswordProviderConfiguration(builder.Configuration.GetSection("Password")),
         new LoginProviders.GoogleProviderConfiguration(builder.Configuration.GetSection("Google"))
     ]

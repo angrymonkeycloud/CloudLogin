@@ -77,30 +77,6 @@
         &:focus {
             outline: none;
         }
-
-        ~ label {
-            position: absolute;
-            top: 24%;
-            left: 10px;
-            font-size: 1rem;
-            color: var(--amc-accentColor);
-            background-color: #fff;
-            transition: all .3s;
-            padding-inline: 5px;
-            user-select: none;
-            cursor: text;
-            pointer-events: none;
-        }
-
-        &.active,
-        &:focus {
-            ~ label {
-                top: -10px;
-                left: 10px;
-                font-size: .8rem;
-                color: var(--amc-accentColor);
-            }
-        }
     }
 
     &-providers {

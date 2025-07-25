@@ -363,13 +363,21 @@ public class CloudLoginClient : ICloudLogin
 
     public string GetPhoneNumber(string input) => CloudGeography.PhoneNumbers.Get(input).Number;
 
-    public async Task<bool> PasswordLogin(string email, string password, bool keepMeSignedIn)
+    public bool IsValidPassword(string password)
+    {
+        // Regular expression to check for at least one letter, one capital letter, and minimum length of 6
+        string pattern = @"^(?=.*[a-z])(?=.*[A-Z]).{6,}$";
+        return Regex.IsMatch(password, pattern);
+    }
+
+    // Model-based methods
+    public async Task<bool> PasswordLogin(PasswordLoginRequest request)
     {
         MultipartFormDataContent form = new()
         {
-            { new StringContent(email), "email" },
-            { new StringContent(password), "password" },
-            { new StringContent(keepMeSignedIn.ToString()), "keepMeSignedIn" }
+            { new StringContent(request.Email), "email" },
+            { new StringContent(request.Password), "password" },
+            { new StringContent(request.KeepMeSignedIn.ToString()), "keepMeSignedIn" }
         };
 
         HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Login/PasswordSignIn", form);
@@ -382,51 +390,48 @@ public class CloudLoginClient : ICloudLogin
                 return true;
 
             return false;
-
-            //throw new Exception("Invalid email or password");
         }
 
         return true;
     }
 
-    public async Task<User> PasswordRegistration(string email, string password, string firstName, string lastName)
+    public async Task<User> PasswordRegistration(PasswordRegistrationRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        
         MultipartFormDataContent form = new()
         {
-            { new StringContent(email), "email" },
-            { new StringContent(password), "password" },
-            { new StringContent(firstName), "firstName" },
-            { new StringContent(lastName),  "lastName" },
+            { new StringContent(request.Input), "input" },
+            { new StringContent(request.InputFormat.ToString()), "inputFormat" },
+            { new StringContent(request.Password), "password" },
+            { new StringContent(request.FirstName), "firstName" },
+            { new StringContent(request.LastName), "lastName" },
+            { new StringContent(request.DisplayName), "displayName" }
         };
 
         HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Login/PasswordRegistration", form);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception("Invalid email or password");
+            throw new Exception("Password registration failed");
 
-        return (await message.Content.ReadFromJsonAsync<User>())!;
+        return (await message.Content.ReadFromJsonAsync<User>(CloudLoginSerialization.Options))!;
     }
 
-
-    public async Task<string> HashPassword(string password)
+    public async Task<User> CodeRegistration(CodeRegistrationRequest request)
     {
-        // Basic PBKDF2 hashing; adjust your iteration count as needed
-        byte[] salt = RandomNumberGenerator.GetBytes(16);
-        byte[] hashed = KeyDerivation.Pbkdf2(
-            password,
-            salt,
-            KeyDerivationPrf.HMACSHA256,
-            iterationCount: 10000,
-            numBytesRequested: 32);
+        ArgumentNullException.ThrowIfNull(request);
+        
+        MultipartFormDataContent form = new()
+        {
+            { new StringContent(request.Input), "input" },
+            { new StringContent(request.InputFormat.ToString()), "inputFormat" },
+            { new StringContent(request.FirstName), "firstName" },
+            { new StringContent(request.LastName), "lastName" },
+            { new StringContent(request.DisplayName), "displayName" }
+        };
 
-        // Return as base64(salt + hash)
-        return Convert.ToBase64String(salt.Concat(hashed).ToArray());
-    }
-
-    public bool IsValidPassword(string password)
-    {
-        // Regular expression to check for at least one letter, one capital letter, and minimum length of 6
-        string pattern = @"^(?=.*[a-z])(?=.*[A-Z]).{6,}$";
-        return Regex.IsMatch(password, pattern);
+        HttpResponseMessage message = await HttpServer.PostAsync("CloudLogin/Login/CodeRegistration", form);
+        if (!message.IsSuccessStatusCode) throw new Exception("Code registration failed");
+        return (await message.Content.ReadFromJsonAsync<User>(CloudLoginSerialization.Options))!;
     }
 }

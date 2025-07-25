@@ -18,6 +18,11 @@ public enum ProcessStep
     EmailPasswordLogin,  // Password-based login
     EmailPasswordRegister, // Register with password
     EmailForgetPassword, // Reset forgotten password
+    RegistrationInput,   // Step 1: Input email/phone for registration
+    RegistrationDetails, // Step 2: Fill in name details for registration
+    RegistrationProviders, // Step 3: Choose registration method (Code/Password/Both)
+    RegistrationCodeVerification, // Step 4a: Code-only registration verification
+    RegistrationPasswordVerification, // Step 4b: Password+Code registration verification
 }
 
 public enum AuthenticationProcess

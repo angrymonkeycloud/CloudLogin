@@ -91,26 +91,6 @@
 .amc-cloudlogin input[type="text"]:focus {
   outline: none;
 }
-.amc-cloudlogin input[type="text"] ~ label {
-  position: absolute;
-  top: 24%;
-  left: 10px;
-  font-size: 1rem;
-  color: var(--amc-accentColor);
-  background-color: #fff;
-  transition: all 0.3s;
-  padding-inline: 5px;
-  user-select: none;
-  cursor: text;
-  pointer-events: none;
-}
-.amc-cloudlogin input[type="text"].active ~ label,
-.amc-cloudlogin input[type="text"]:focus ~ label {
-  top: -10px;
-  left: 10px;
-  font-size: 0.8rem;
-  color: var(--amc-accentColor);
-}
 .amc-cloudlogin-providers {
   display: flex;
   flex-direction: column;

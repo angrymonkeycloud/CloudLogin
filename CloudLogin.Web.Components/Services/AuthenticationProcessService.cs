@@ -101,6 +101,36 @@ namespace AngryMonkey.CloudLogin.Services
                     }
                     break;
 
+                case ProcessStep.RegistrationInput:
+                    Title = "Create Account";
+                    Subtitle = "Enter your email address or phone number";
+                    DisplayInputValue = false;
+                    break;
+
+                case ProcessStep.RegistrationDetails:
+                    Title = "Personal Information";
+                    Subtitle = "Please provide your name details";
+                    DisplayInputValue = true;
+                    break;
+
+                case ProcessStep.RegistrationProviders:
+                    Title = "Registration Method";
+                    Subtitle = "Choose how you'd like to secure your account";
+                    DisplayInputValue = true;
+                    break;
+
+                case ProcessStep.RegistrationCodeVerification:
+                    Title = "Verify Your Account";
+                    Subtitle = "A verification code has been sent. Enter it below to complete registration.";
+                    DisplayInputValue = true;
+                    break;
+
+                case ProcessStep.RegistrationPasswordVerification:
+                    Title = "Complete Registration";
+                    Subtitle = "Enter the verification code and create a password to complete registration.";
+                    DisplayInputValue = true;
+                    break;
+
                 case ProcessStep.Providers:
                     Title = "Continue signing in";
                     Subtitle = Input.IsFound ? "Sign in with" : "Sign up with";
@@ -126,7 +156,7 @@ namespace AngryMonkey.CloudLogin.Services
                     }
                     else
                     {
-                        Title = "Register";
+                        Title = "New Account";
                         Subtitle = "Add your credentials.";
                     }
                     DisplayInputValue = true;
@@ -137,7 +167,7 @@ namespace AngryMonkey.CloudLogin.Services
                     break;
 
                 case ProcessStep.EmailPasswordRegister:
-                    Title = "Register";
+                    Title = "New Account";
                     break;
 
                 case ProcessStep.EmailForgetPassword:

@@ -43,23 +43,38 @@ public class LoginController(CloudLoginConfiguration configuration, ICloudLogin 
     [HttpPost("Login/PasswordSignIn")]
     public async Task<IActionResult> PasswordSignIn([FromForm] string email, [FromForm] string password, [FromForm] bool keepMeSignedIn = false, [FromForm] string? redirectUri = null, [FromForm] bool sameSite = false)
     {
-        User? user = await _server.ValidateEmailPassword(email, password);
+        PasswordLoginRequest request = PasswordLoginRequest.Create(email, password, keepMeSignedIn);
+        bool result = await _server.PasswordLogin(request);
 
-        if (user is null)
+        if (!result)
             return BadRequest("Invalid email or password.");
 
-        return await _server.CustomLogin(user, keepMeSignedIn, redirectUri ?? "", sameSite);
+        return Ok();
     }
 
     [HttpPost("Login/PasswordRegistration")]
-    public async Task<IActionResult> PasswordRegistration([FromForm] string email, [FromForm] string password, [FromForm] string firstName, [FromForm] string lastName)
+    public async Task<IActionResult> PasswordRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string password, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName)
     {
-        User user = await _server.PasswordRegistration(email, password, firstName, lastName);
+        if (!Enum.TryParse<InputFormat>(inputFormat, true, out InputFormat format))
+            return BadRequest("Invalid input format.");
+
+        PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(input, format, password, firstName, lastName, displayName);
+        User user = await _server.PasswordRegistration(request);
 
         if (user is null)
-            return BadRequest("Invalid email or password.");
+            return BadRequest("Registration failed.");
 
-        await _server.CustomLogin(user, false, string.Empty, true);
+        return Ok(user);
+    }
+
+    [HttpPost("Login/CodeRegistration")]
+    public async Task<IActionResult> CodeRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName)
+    {
+        if (!Enum.TryParse<InputFormat>(inputFormat, true, out InputFormat format))
+            return BadRequest("Invalid input format.");
+
+        CodeRegistrationRequest request = CodeRegistrationRequest.Create(input, format, firstName, lastName, displayName);
+        User user = await _server.CodeRegistration(request);
 
         return Ok(user);
     }

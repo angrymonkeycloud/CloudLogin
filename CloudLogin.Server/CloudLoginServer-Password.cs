@@ -8,39 +8,6 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public partial class CloudLoginServer
 {
-    public async Task<bool> PasswordLogin(string email, string password, bool keepMeSignedIn)
-    {
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-            return false;
-
-        User? user = await ValidateEmailPassword(email, password);
-        if (user == null)
-            return false;
-
-        // Create claims for the authenticated user
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.ID.ToString()),
-            new(ClaimTypes.Email, email.ToLowerInvariant()),
-            new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
-            new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
-            new(ClaimTypes.Surname, user.LastName ?? string.Empty),
-            new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
-        };
-
-        var identity = new ClaimsIdentity(claims, "Password");
-        var principal = new ClaimsPrincipal(identity);
-
-        var properties = new AuthenticationProperties
-        {
-            IsPersistent = keepMeSignedIn,
-            ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddDays(30) : null
-        };
-
-        await _accessor.HttpContext!.SignInAsync(principal, properties);
-        return true;
-    }
-
     public async Task<User?> ValidateEmailPassword(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))

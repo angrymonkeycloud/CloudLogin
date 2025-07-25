@@ -89,6 +89,15 @@ public partial class LoginComponent
     public string? VerificationCode { get; set; }
     public DateTimeOffset? VerificationCodeExpiry { get; set; }
 
+    //REGISTRATION VARIABLES----------------------------------
+    public List<ProviderDefinition> NonExternalProviders => Providers.Where(key => !key.IsExternal).ToList();
+    public List<ProviderDefinition> AvailableRegistrationProviders => NonExternalProviders.Where(p =>
+        p.Code.Equals("code", StringComparison.OrdinalIgnoreCase) ||
+        p.Code.Equals("password", StringComparison.OrdinalIgnoreCase)).ToList();
+    public bool HasCodeProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("code", StringComparison.OrdinalIgnoreCase));
+    public bool HasPasswordProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase));
+    public string? SelectedRegistrationMethod { get; set; }
+
     //START FUNCTIONS----------------------------------------
     protected override async Task OnInitializedAsync()
     {
@@ -157,23 +166,6 @@ public partial class LoginComponent
     {
         Auth.Errors.Clear();
 
-        //List<ProviderDefinition> handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber == true && s.HandleUpdateOnly == false)];
-
-        //if (ActionState == "AddInput")
-        //    handlePhoneNumberProviders = [.. Providers.Where(s => s.HandlesPhoneNumber && s.HandleUpdateOnly == true)];
-
-        //if (InputValueFormat == InputFormat.PhoneNumber && handlePhoneNumberProviders.Count == 0 && ActionState != "AddNumber")
-        //{
-        //    Auth.Errors.Add("Unable to log you in. only emails are allowed.");
-        //    return;
-        //}
-
-        //if (InputValueFormat != InputFormat.PhoneNumber && InputValueFormat != InputFormat.EmailAddress)
-        //{
-        //    Auth.Errors.Add("Unable to log you in. Please check that your email/phone number are correct.");
-        //    return;
-        //}
-
         if (string.IsNullOrEmpty(InputValue))
             return;
 
@@ -185,6 +177,7 @@ public partial class LoginComponent
 
         if (user != null)
         {
+            // Existing user - proceed with login flow
             UserId = user.ID;
 
             Auth.Input = new SelectedInput(InputValue.ToLower());
@@ -205,11 +198,96 @@ public partial class LoginComponent
         }
         else
         {
-            Auth.Errors.Add("Email address not found.");
+            // New user - check if we should proceed with registration
+            if (NonExternalProviders.Count > 0)
+            {
+                // We have internal providers (Code/Password), proceed with registration
+                Auth.Input = new SelectedInput(InputValue.ToLower());
+                Auth.Input.IsFound = false;
+
+                await Auth.SwitchStep(ProcessStep.RegistrationDetails);
+            }
+            else
+            {
+                Auth.Errors.Add("Email address not found.");
+            }
         }
 
         Auth.EndLoading();
     }
+
+    private async Task OnRegistrationInputNextClicked()
+    {
+        Auth.Errors.Clear();
+
+        if (string.IsNullOrEmpty(InputValue))
+            return;
+
+        if (InputValueFormat != InputFormat.EmailAddress && InputValueFormat != InputFormat.PhoneNumber)
+        {
+            Auth.Errors.Add("Please enter a valid email address or phone number.");
+            return;
+        }
+
+        Auth.StartLoading();
+
+        InputValue = InputValue.ToLower();
+
+        User? user = await cloudLogin.GetUserByInput(InputValue);
+
+        if (user != null)
+        {
+            Auth.Errors.Add("An account with this email/phone already exists. Please sign in instead.");
+            Auth.EndLoading();
+            return;
+        }
+
+        // Proceed with registration
+        Auth.Input = new SelectedInput(InputValue.ToLower());
+        Auth.Input.IsFound = false;
+
+        await Auth.SwitchStep(ProcessStep.RegistrationDetails);
+        Auth.EndLoading();
+    }
+
+    private async Task OnRegistrationDetailsNextClicked()
+    {
+        Auth.Errors.Clear();
+
+        if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName))
+        {
+            Auth.Errors.Add("Please fill in all required fields.");
+            return;
+        }
+
+        Auth.StartLoading();
+
+        // Check available registration providers
+        if (HasCodeProvider && HasPasswordProvider)
+        {
+            // Both providers available - let user choose
+            await Auth.SwitchStep(ProcessStep.RegistrationProviders);
+        }
+        else if (HasCodeProvider)
+        {
+            // Only code provider - proceed with code registration
+            SelectedRegistrationMethod = "code";
+            await StartRegistrationProcess();
+        }
+        else if (HasPasswordProvider)
+        {
+            // Only password provider - proceed with password registration
+            SelectedRegistrationMethod = "password";
+            await StartRegistrationProcess();
+        }
+        else
+        {
+            Auth.Errors.Add("No registration methods available.");
+        }
+
+        Auth.EndLoading();
+    }
+
     private async Task OnProviderClickedAsync(ProviderDefinition provider)
     {
         if (provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase))
@@ -229,6 +307,128 @@ public partial class LoginComponent
         }
         else ProviderSignInChallenge(provider.Code);
     }
+
+    private async Task OnRegistrationProviderSelected(string method)
+    {
+        SelectedRegistrationMethod = method;
+        Auth.StartLoading();
+        await StartRegistrationProcess();
+        Auth.EndLoading();
+    }
+
+    private async Task StartRegistrationProcess()
+    {
+        if (SelectedRegistrationMethod == "code")
+        {
+            // Send verification code and proceed to code verification
+            await RefreshVerificationCode();
+            await Auth.SwitchStep(ProcessStep.RegistrationCodeVerification);
+        }
+        else if (SelectedRegistrationMethod == "password")
+        {
+            // Send verification code and proceed to password+code verification
+            await RefreshVerificationCode();
+            await Auth.SwitchStep(ProcessStep.RegistrationPasswordVerification);
+        }
+    }
+
+    private async Task OnRegistrationCodeVerifyClicked()
+    {
+        Auth.StartLoading();
+
+        switch (GetVerificationCodeResult(VerificationValue))
+        {
+            case VerificationCodeResult.NotValid:
+                Auth.Errors.Add("The code you entered is incorrect. Please check your email/phone again or resend another one.");
+                Auth.EndLoading();
+                return;
+
+            case VerificationCodeResult.Expired:
+                Auth.Errors.Add("The code validity has expired, please send another one.");
+                Auth.EndLoading();
+                return;
+
+            default: break;
+        }
+
+        try
+        {
+            // Create user with code provider only using new model
+            CodeRegistrationRequest request = CodeRegistrationRequest.Create(
+                Auth.Input!.Input,
+                InputValueFormat,
+                FirstName,
+                LastName,
+                DisplayName);
+
+            User newUser = await cloudLogin.CodeRegistration(request);
+
+            // Sign in the new user
+            CustomSignInChallenge(newUser);
+        }
+        catch (Exception ex)
+        {
+            Auth.Errors.Add(ex.Message);
+            Auth.EndLoading();
+        }
+    }
+
+    private async Task OnRegistrationPasswordVerifyClicked()
+    {
+        Auth.StartLoading();
+
+        switch (GetVerificationCodeResult(VerificationValue))
+        {
+            case VerificationCodeResult.NotValid:
+                Auth.Errors.Add("The code you entered is incorrect. Please check your email/phone again or resend another one.");
+                Auth.EndLoading();
+                return;
+
+            case VerificationCodeResult.Expired:
+                Auth.Errors.Add("The code validity has expired, please send another one.");
+                Auth.EndLoading();
+                return;
+
+            default: break;
+        }
+
+        if (!cloudLogin.IsValidPassword(Password))
+        {
+            Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be at least 8 characters long.");
+            Auth.EndLoading();
+            return;
+        }
+
+        if (!Password.Equals(ConfirmPassword))
+        {
+            Auth.Errors.Add("Passwords must match.");
+            Auth.EndLoading();
+            return;
+        }
+
+        try
+        {
+            // Create user with password provider (includes code verification)
+            PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
+                Auth.Input!.Input,
+                InputValueFormat,
+                Password,
+                FirstName,
+                LastName,
+                DisplayName);
+
+            User newUser = await cloudLogin.PasswordRegistration(request);
+
+            // Sign in the new user
+            CustomSignInChallenge(newUser);
+        }
+        catch (Exception ex)
+        {
+            Auth.Errors.Add(ex.Message);
+            Auth.EndLoading();
+        }
+    }
+
     private async Task OnVerifyClicked()
     {
         Auth.StartLoading();
@@ -372,8 +572,22 @@ public partial class LoginComponent
                     if (InputValueFormat == InputFormat.EmailAddress || InputValueFormat == InputFormat.PhoneNumber)
                         await OnInputNextClicked();
 
+                if (Auth.CurrentStep == ProcessStep.RegistrationInput)
+                    if (InputValueFormat == InputFormat.EmailAddress || InputValueFormat == InputFormat.PhoneNumber)
+                        await OnRegistrationInputNextClicked();
+
+                if (Auth.CurrentStep == ProcessStep.RegistrationDetails)
+                    if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))
+                        await OnRegistrationDetailsNextClicked();
+
                 if (Auth.CurrentStep == ProcessStep.CodeVerification)
                     await OnVerifyClicked();
+
+                if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification)
+                    await OnRegistrationCodeVerifyClicked();
+
+                if (Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
+                    await OnRegistrationPasswordVerifyClicked();
 
                 if (Auth.CurrentStep == ProcessStep.Registration)
                     if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))
@@ -385,10 +599,23 @@ public partial class LoginComponent
                 if (Auth.CurrentStep == ProcessStep.InputValue)
                     InputValue = string.Empty;
 
+                if (Auth.CurrentStep == ProcessStep.RegistrationInput)
+                    InputValue = string.Empty;
+
                 if (Auth.CurrentStep == ProcessStep.CodeVerification)
                     VerificationValue = string.Empty;
 
-                if (Auth.CurrentStep == ProcessStep.Registration)
+                if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification)
+                    VerificationValue = string.Empty;
+
+                if (Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
+                {
+                    VerificationValue = string.Empty;
+                    Password = string.Empty;
+                    ConfirmPassword = string.Empty;
+                }
+
+                if (Auth.CurrentStep == ProcessStep.Registration || Auth.CurrentStep == ProcessStep.RegistrationDetails)
                 {
                     FirstName = string.Empty;
                     LastName = string.Empty;
@@ -416,7 +643,8 @@ public partial class LoginComponent
 
             Auth.Errors.Clear();
 
-            bool result = await cloudLogin.PasswordLogin(Auth.Input.Input, Password, KeepMeSignedIn);
+            PasswordLoginRequest request = PasswordLoginRequest.Create(Auth.Input!.Input, Password, KeepMeSignedIn);
+            bool result = await cloudLogin.PasswordLogin(request);
 
             EndLoading();
 
@@ -426,7 +654,7 @@ public partial class LoginComponent
                 return;
             }
 
-            Auth.Errors.Add("Incorrect Email or Passowrd");
+            Auth.Errors.Add("Incorrect Email or Password");
 
         }
         catch (Exception ex)
@@ -445,14 +673,17 @@ public partial class LoginComponent
 
             if (!cloudLogin.IsValidPassword(Password))
             {
-                Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+                Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be at least 8 characters long.");
                 EndLoading();
 
                 return;
             }
 
-            User user = await cloudLogin.PasswordRegistration(Email, Password, FirstName, LastName);
-            bool result = await cloudLogin.PasswordLogin(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
+            PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(Email, Password, FirstName, LastName);
+            User user = await cloudLogin.PasswordRegistration(request);
+
+            PasswordLoginRequest loginRequest = PasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
+            bool result = await cloudLogin.PasswordLogin(loginRequest);
 
             EndLoading();
 
@@ -568,6 +799,17 @@ public partial class LoginComponent
 
         if (Auth.CurrentStep == ProcessStep.EmailForgetPassword)
             await SendEmailCode(InputValue, VerificationCode);
+        else if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification || Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
+        {
+            // For registration, use the input from Auth.Input
+            string targetInput = Auth.Input?.Input ?? InputValue;
+            InputFormat format = cloudLogin.GetInputFormat(targetInput);
+
+            if (format == InputFormat.PhoneNumber)
+                await SendWhatsAppCode(targetInput, VerificationCode);
+            else
+                await SendEmailCode(targetInput, VerificationCode);
+        }
         else
             switch (SelectedProvider?.Code.ToLower())
             {

@@ -9,6 +9,7 @@ using AngryMonkey.CloudLogin.Sever.Providers;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -278,10 +279,60 @@ public partial class CloudLoginServer : ICloudLogin
 
     public string GetPhoneNumber(string input) => _cloudGeography.PhoneNumbers.Get(input).Number;
 
-    public async Task<User> PasswordRegistration(string email, string password, string firstName, string lastName)
+    // Model-based authentication methods
+    public async Task<bool> PasswordLogin(PasswordLoginRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Email);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
+
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            return false;
+
+        User? user = await ValidateEmailPassword(request.Email, request.Password);
+        if (user == null)
+            return false;
+
+        // Create claims for the authenticated user
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.ID.ToString()),
+            new(ClaimTypes.Email, request.Email.ToLowerInvariant()),
+            new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
+            new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
+            new(ClaimTypes.Surname, user.LastName ?? string.Empty),
+            new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+        };
+
+        var identity = new ClaimsIdentity(claims, "Password");
+        var principal = new ClaimsPrincipal(identity);
+
+        var properties = new AuthenticationProperties
+        {
+            IsPersistent = request.KeepMeSignedIn,
+            ExpiresUtc = request.KeepMeSignedIn ? DateTimeOffset.UtcNow.AddDays(30) : null
+        };
+
+        await _accessor.HttpContext!.SignInAsync(principal, properties);
+        return true;
+    }
+
+    public async Task<User> PasswordRegistration(PasswordRegistrationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Input);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.FirstName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.LastName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
+
         // Ensure user doesn't already exist
-        User? existing = await GetUserByEmailAddress(email);
+        User? existing = request.InputFormat switch
+        {
+            InputFormat.EmailAddress => await GetUserByEmailAddress(request.Input),
+            InputFormat.PhoneNumber => await GetUserByPhoneNumber(request.Input),
+            _ => throw new ArgumentException("Invalid input format for registration", nameof(request.InputFormat))
+        };
 
         if (existing != null)
             throw new Exception("User already exists.");
@@ -289,21 +340,71 @@ public partial class CloudLoginServer : ICloudLogin
         User newUser = new()
         {
             ID = Guid.NewGuid(),
-            FirstName = firstName,
-            LastName = lastName,
-            DisplayName = firstName + " " + lastName,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            DisplayName = request.DisplayName,
             CreatedOn = DateTimeOffset.UtcNow,
             LastSignedIn = DateTimeOffset.UtcNow,
             Inputs = [new() {
-                Input = email,
-                Format = InputFormat.EmailAddress,
+                Input = request.InputFormat == InputFormat.EmailAddress ? request.Input.Trim().ToLowerInvariant() : request.Input,
+                Format = request.InputFormat,
                 IsPrimary = true,
                 Providers = 
                 [
                     new()
                     {
+                        Code = "Code"
+                    },
+                    new()
+                    {
                         Code = "Password",
-                        PasswordHash = await HashPassword(password)
+                        PasswordHash = await HashPassword(request.Password)
+                    }
+                ]
+            }]
+        };
+
+        await CreateUser(newUser);
+
+        return newUser;
+    }
+
+    public async Task<User> CodeRegistration(CodeRegistrationRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Input);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.FirstName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.LastName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
+
+        // Ensure user doesn't already exist
+        User? existing = request.InputFormat switch
+        {
+            InputFormat.EmailAddress => await GetUserByEmailAddress(request.Input),
+            InputFormat.PhoneNumber => await GetUserByPhoneNumber(request.Input),
+            _ => throw new ArgumentException("Invalid input format for registration", nameof(request.InputFormat))
+        };
+
+        if (existing != null)
+            throw new Exception("User already exists.");
+
+        User newUser = new()
+        {
+            ID = Guid.NewGuid(),
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            DisplayName = request.DisplayName,
+            CreatedOn = DateTimeOffset.UtcNow,
+            LastSignedIn = DateTimeOffset.UtcNow,
+            Inputs = [new() {
+                Input = request.InputFormat == InputFormat.EmailAddress ? request.Input.Trim().ToLowerInvariant() : request.Input,
+                Format = request.InputFormat,
+                IsPrimary = true,
+                Providers = 
+                [
+                    new()
+                    {
+                        Code = "Code"
                     }
                 ]
             }]
@@ -360,4 +461,58 @@ public partial class CloudLoginServer : ICloudLogin
 
         return true;
     }
+
+    // API Controller methods
+    //public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail, string? input, string? redirectUri)
+    //{
+    //    // This is typically implemented in a different partial class file
+    //    // For now, return a redirect to the login URL
+    //    string baseUrl = LoginUrl;
+    //    string separator = baseUrl.Contains('?') ? "&" : "?";
+        
+    //    var parameters = new List<string>();
+    //    if (!string.IsNullOrEmpty(redirectUri)) parameters.Add($"redirectUri={HttpUtility.UrlEncode(redirectUri)}");
+    //    if (!string.IsNullOrEmpty(actionState)) parameters.Add($"actionState={HttpUtility.UrlEncode(actionState)}");
+    //    if (!string.IsNullOrEmpty(primaryEmail)) parameters.Add($"primaryEmail={HttpUtility.UrlEncode(primaryEmail)}");
+    //    if (!string.IsNullOrEmpty(input)) parameters.Add($"input={HttpUtility.UrlEncode(input)}");
+    //    parameters.Add($"keepMeSignedIn={keepMeSignedIn}");
+    //    parameters.Add($"sameSite={sameSite}");
+        
+    //    string queryString = string.Join("&", parameters);
+    //    return new RedirectResult($"{baseUrl}{separator}{queryString}");
+    //}
+
+    //public async Task<IActionResult> CustomLogin(User user, bool keepMeSignedIn, string redirectUri, bool sameSite, string actionState, string primaryEmail)
+    //{
+    //    // Create claims for the authenticated user
+    //    var claims = new List<Claim>
+    //    {
+    //        new(ClaimTypes.NameIdentifier, user.ID.ToString()),
+    //        new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
+    //        new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
+    //        new(ClaimTypes.Surname, user.LastName ?? string.Empty),
+    //        new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+    //    };
+
+    //    if (user.PrimaryEmailAddress != null)
+    //        claims.Add(new Claim(ClaimTypes.Email, user.PrimaryEmailAddress.Input));
+    //    else if (user.Inputs.Any())
+    //        claims.Add(new Claim(ClaimTypes.Email, user.Inputs.First().Input));
+
+    //    var identity = new ClaimsIdentity(claims, "CloudLogin");
+    //    var principal = new ClaimsPrincipal(identity);
+
+    //    var properties = new AuthenticationProperties
+    //    {
+    //        IsPersistent = keepMeSignedIn,
+    //        ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddDays(30) : null
+    //    };
+
+    //    await _accessor.HttpContext!.SignInAsync(principal, properties);
+
+    //    if (!string.IsNullOrEmpty(redirectUri))
+    //        return new RedirectResult(redirectUri);
+        
+    //    return new OkResult();
+    //}
 }

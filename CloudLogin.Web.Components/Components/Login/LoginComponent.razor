@@ -221,13 +221,133 @@
 
             </div>
         }
+        else if (Auth.CurrentStep == ProcessStep.RegistrationInput)
+        {
+            <div class="login-form _center">
+                <AngryMonkey.CloudLogin.Components.Login.MainInput AllowEmailInput="true" AllowPhoneInput="@PhoneNumberEnabled" AllowUsernameInput="false" Value="@InputValue" ValueChanged="OnInputChanged" />
+
+                @if (!string.IsNullOrEmpty(InputValue))
+                {
+                    <div class="login-form-next">
+                        <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || InputValueFormat == InputFormat.EmailAddress) ? "" : "--disable")" @onclick="OnRegistrationInputNextClicked">
+                            <span>Next</span>
+                            <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+        else if (Auth.CurrentStep == ProcessStep.RegistrationDetails)
+        {
+            <div class="login-form _center">
+                <div class="login-form-register">
+                    <div class="amc-cloudlogin-input">
+                        <label for="firstName">First Name</label>
+                        <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class="@(!string.IsNullOrEmpty(FirstName) ? "active" : "")" @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                    <div class="amc-cloudlogin-input">
+                        <label for="lastName">Last Name</label>
+                        <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class="@(!string.IsNullOrEmpty(LastName) ? "active" : "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                    <div class="amc-cloudlogin-input">
+                        <label for="displayName">Display Name</label>
+                        <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class="@(!string.IsNullOrEmpty(DisplayName) ? "active" : "")" @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
+                    </div>
+                </div>
+
+                <div class="login-form-finish">
+                    <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnRegistrationDetailsNextClicked">
+                        <span>Next</span>
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                    </button>
+                </div>
+            </div>
+        }
+        else if (Auth.CurrentStep == ProcessStep.RegistrationProviders)
+        {
+            <div class="login-form _center">
+                <div class="registration-providers">
+                    <div class="registration-provider-description">
+                        <p>Choose how you'd like to secure your account:</p>
+                    </div>
+                    
+                    <div class="registration-provider-options">
+                        @if (HasCodeProvider)
+                        {
+                            <button class="amc-cloudlogin-provider registration-provider-option @(Auth.IsLoading ? "--disable" : "")" @onclick="@(() => OnRegistrationProviderSelected("code"))">
+                                <div class="registration-provider-title">Code (OTP))</div>
+                            </button>
+                        }
+                        
+                        @if (HasPasswordProvider)
+                        {
+                            <button class="amc-cloudlogin-provider registration-provider-option @(Auth.IsLoading ? "--disable" : "")" @onclick="@(() => OnRegistrationProviderSelected("password"))">
+                                <div class="registration-provider-title">Password</div>
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification)
+        {
+            <div class="login-form _center">
+                <div class="login-form-input login-form-emailVerification">
+                    <div class="amc-cloudlogin-input">
+                        <label>Enter Verification Code</label>
+                        <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class="@(!string.IsNullOrEmpty(VerificationValue) ? "active" : "")" @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                    <div class="login-form-resend">
+                        <button class="amc-cloudlogin-button" @onclick="OnNewCodeClicked">Resend code</button>
+                    </div>
+                </div>
+
+                <div class="login-form-verify">
+                    <button class="amc-cloudlogin-button _solid @(string.IsNullOrEmpty(VerificationValue) ? "--disable" : "")" @onclick="OnRegistrationCodeVerifyClicked">
+                        <span>Complete Registration</span>
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                    </button>
+                </div>
+            </div>
+        }
+        else if (Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
+        {
+            <div class="login-form _center">
+                <div class="login-form-input login-form-emailVerification">
+                    <div class="amc-cloudlogin-input">
+                        <label>Enter Verification Code</label>
+                        <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="text" id="code" class="@(!string.IsNullOrEmpty(VerificationValue) ? "active" : "")" @bind-value="VerificationValue" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                    <div class="login-form-resend">
+                        <button class="amc-cloudlogin-button" @onclick="OnNewCodeClicked">Resend code</button>
+                    </div>
+                </div>
+                <div class="login-form-input">
+                    <div class="amc-cloudlogin-input">
+                        <label>Password</label>
+                        <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password" @bind-value="Password" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                    <div class="amc-cloudlogin-input">
+                        <label>Confirm Password</label>
+                        <input @onkeydown="OnInputKeyPressed" autocomplete="off" type="password" @bind-value="ConfirmPassword" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                </div>
+
+                <div class="login-form-verify">
+                    <button class="amc-cloudlogin-button _solid @(string.IsNullOrEmpty(VerificationValue) || string.IsNullOrEmpty(Password) || string.IsNullOrEmpty(ConfirmPassword) ? "--disable" : "")" @onclick="OnRegistrationPasswordVerifyClicked">
+                        <span>Complete Registration</span>
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                    </button>
+                </div>
+            </div>
+        }
         else
         {
             <div class="login-form">
 
                 @if (InputRequired)
                 {
-                    <AngryMonkey.CloudLogin.Components.Login.MainInput AllowEmailInput="true" AllowPhoneInput="false" AllowUsernameInput="false" Value="@InputValue" ValueChanged="OnInputChanged" />
+                    <AngryMonkey.CloudLogin.Components.Login.MainInput AllowEmailInput="true" AllowPhoneInput="@PhoneNumberEnabled" AllowUsernameInput="false" Value="@InputValue" ValueChanged="OnInputChanged" />
 
                     @if (!string.IsNullOrEmpty(InputValue))
                     {
@@ -239,8 +359,16 @@
                         </div>
                     }
 
-                    <div class="login-form-title">no account?</div>
-                    <button class="amc-cloudlogin-provider" @onclick="() => Auth.SwitchStep(ProcessStep.EmailPasswordRegister)">Create new account</button>
+                    @if (NonExternalProviders.Count > 0)
+                    {
+                        <div class="login-form-title">no account?</div>
+                        <button class="amc-cloudlogin-provider" @onclick="() => Auth.SwitchStep(ProcessStep.RegistrationInput)">Create new account</button>
+                    }
+                    else
+                    {
+                        <div class="login-form-title">no account?</div>
+                        <button class="amc-cloudlogin-provider" @onclick="() => Auth.SwitchStep(ProcessStep.EmailPasswordRegister)">Create new account</button>
+                    }
                 }
 
                 <div class="login-form-title">or sign in with</div>
@@ -265,4 +393,4 @@
         <AngryMonkey.CloudLogin.Components.Login.LoginComponent_Footer />
     } *@
 
-</div>       
+</div>

@@ -12,13 +12,17 @@ public record BaseRecord
     }
 
     [JsonPropertyName("id")]
-    [JsonProperty("id")] // to work with Cosmos
+    [JsonPropertyOrder(0)]
+    [JsonProperty("id", Order = 0)] // to work with Cosmos
     public Guid ID { get; set; }
 
 
     [JsonPropertyName("$type")]
-    [JsonProperty("$type")] // to work with Cosmos
+    [JsonPropertyOrder(1)]
+    [JsonProperty("$type", Order = 1)] // to work with Cosmos
     public string Type { get; internal set; }
 
+    [JsonPropertyOrder(2)]
+    [JsonProperty(Order = 2)] // to work with Cosmos
     public string PartitionKey { get; internal set; }
 }

@@ -108,49 +108,13 @@ public partial class CloudLoginServer
     }
     public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
     {
-        ClaimsIdentity userIdentity = _request.HttpContext.User.Identities.First();
-        string emailAddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;
+        if (_cosmosMethods == null)
+            throw new ArgumentNullException(nameof(CosmosMethods));
 
-        // The CloudLoginAuthenticationService has ALREADY handled user creation/linking in the OnSignedIn event
-        // We should ONLY get the existing user that was processed by the authentication service
-        User? user = null;
-        
-        if (_configuration.Cosmos != null && _cosmosMethods != null)
-        {
-            // Get the user that was created/updated by CloudLoginAuthenticationService
-            user = await _cosmosMethods.GetUserByInput(emailAddress);
-            
-            // If user is null here, something went wrong with CloudLoginAuthenticationService
-            // We should NOT create a new user here - that would cause duplicates
-            if (user == null)
-            {
-                throw new InvalidOperationException($"User with email '{emailAddress}' should have been created by CloudLoginAuthenticationService but was not found.");
-            }
-        }
-        else
-        {
-            // No Cosmos configuration - create a temporary user for the session only
-            string firstName = userIdentity.FindFirst(ClaimTypes.GivenName)?.Value ?? "Guest";
-            string lastName = userIdentity.FindFirst(ClaimTypes.Surname)?.Value ?? "User";
-            string displayName = userIdentity.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}";
-            
-            user = new User
-            {
-                DisplayName = displayName,
-                FirstName = firstName,
-                LastName = lastName,
-                ID = Guid.NewGuid(),
-                Inputs =
-                [
-                    new LoginInput
-                    {
-                        Format = InputFormat.EmailAddress,
-                        Input = emailAddress,
-                        IsPrimary = true
-                    }
-                ]
-            };
-        }
+        ClaimsIdentity userIdentity = _request.HttpContext.User.Identities.First();
+        string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;
+
+        User user = (_configuration.Cosmos != null ? await _cosmosMethods.GetUserByInput(emailaddress) : new()) ?? new();
 
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
         redirectUri ??= baseUrl;
@@ -160,6 +124,30 @@ public partial class CloudLoginServer
             ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(_configuration.LoginDuration) : null,
             IsPersistent = keepMeSignedIn
         };
+
+        string? firstName = user.FirstName ??= userIdentity.FindFirst(ClaimTypes.GivenName)?.Value;
+        string? lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value;
+        string? displayName = user.DisplayName ??= $"{firstName} {lastName}";
+
+        if (_configuration.Cosmos == null)
+        {
+            user = new()
+            {
+                DisplayName = displayName,
+                FirstName = firstName,
+                LastName = lastName,
+                ID = Guid.NewGuid(),
+                Inputs =
+                [
+                    new()
+                    {
+                        Format = InputFormat.EmailAddress,
+                        Input = emailaddress,
+                        IsPrimary = true
+                    }
+                ]
+            };
+        }
 
         if (user == null)
             return new RedirectResult(redirectUri);

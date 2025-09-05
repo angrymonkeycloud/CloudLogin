@@ -30,20 +30,39 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             : InputFormat.PhoneNumber;
 
         string input = GetUserInput(principal, formatValue);
+        string providerName = GetProviderName(principal);
 
         User? user = await GetExistingUser(cosmosMethods, input, formatValue);
 
         if (user != null)
-            await UpdateUserLastSignedIn(user.ID, currentDateTime, cosmosMethods);
+        {
+            await UpdateExistingUser(user, principal, providerName, input, formatValue, currentDateTime, cosmosMethods);
+        }
         else
-            throw new UnauthorizedAccessException($"User with {(formatValue == InputFormat.EmailAddress ? "email" : "phone number")} '{input}' does not exist.");
+        {
+            await CreateNewUser(principal, providerName, input, formatValue, currentDateTime, cosmosMethods);
+        }
     }
 
     private static string GetUserInput(ClaimsPrincipal principal, InputFormat format)
     {
-        return format == InputFormat.EmailAddress
-            ? principal.FindFirst(ClaimTypes.Email)?.Value!
-            : principal.FindFirst(ClaimTypes.MobilePhone)?.Value!;
+        string input = format == InputFormat.EmailAddress
+            ? principal.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty
+            : principal.FindFirst(ClaimTypes.MobilePhone)?.Value ?? string.Empty;
+            
+        // Normalize email addresses
+        if (format == InputFormat.EmailAddress)
+        {
+            input = input.Trim().ToLowerInvariant();
+        }
+        
+        return input;
+    }
+
+    private static string GetProviderName(ClaimsPrincipal principal)
+    {
+        var identity = principal.Identity as ClaimsIdentity;
+        return identity?.AuthenticationType ?? "External";
     }
 
     private static async Task<User?> GetExistingUser(CosmosMethods cosmosMethods, string input, InputFormat format)
@@ -53,55 +72,85 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             : await cosmosMethods.GetUserByPhoneNumber(input);
     }
 
-    private static async Task UpdateUserLastSignedIn(Guid userId, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, string providerName, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
-        await cosmosMethods.UpdateLastSignedIn(userId, currentDateTime);
+        // Update user information with latest from provider
+        user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? string.Empty;
+        user.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? string.Empty;
+        user.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}";
+
+        // Normalize input for comparison
+        string normalizedInput = formatValue == InputFormat.EmailAddress 
+            ? input.Trim().ToLowerInvariant() 
+            : input;
+
+        // Find the existing input that matches
+        LoginInput? existingInput = user.Inputs.FirstOrDefault(i => 
+            string.Equals(i.Input, normalizedInput, StringComparison.OrdinalIgnoreCase));
+
+        if (existingInput != null)
+        {
+            // Add provider if it doesn't exist
+            if (!existingInput.Providers.Any(p => string.Equals(p.Code, providerName, StringComparison.OrdinalIgnoreCase)))
+            {
+                existingInput.Providers.Add(new LoginProvider { Code = providerName });
+            }
+        }
+        else
+        {
+            // This shouldn't happen if the user was found by this input, but add it as fallback
+            user.Inputs.Add(new LoginInput
+            {
+                Input = normalizedInput,
+                Format = formatValue,
+                IsPrimary = user.Inputs.Count == 0,
+                Providers = [new LoginProvider { Code = providerName }]
+            });
+        }
+
+        user.LastSignedIn = currentDateTime;
+        await cosmosMethods.Update(user);
     }
-    //private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, LoginProvider provider, string input, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
-    //{
-    //    user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
-    //    user.LastName ??= principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
-    //    user.DisplayName ??= principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}";
 
-    //    LoginInput existingInput = user.Inputs.First(key => key.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
-    //    if (!existingInput.Providers.Any(key => key.Code.Equals(provider.Code, StringComparison.OrdinalIgnoreCase)))
-    //        existingInput.Providers.Add(provider);
+    private async Task CreateNewUser(ClaimsPrincipal principal, string providerName, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    {
+        (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
 
-    //    user.LastSignedIn = currentDateTime;
-    //    await cosmosMethods.Update(user);
-    //}
+        // Ensure email is normalized
+        if (formatValue == InputFormat.EmailAddress)
+        {
+            formattedInput = formattedInput.Trim().ToLowerInvariant();
+        }
 
-    //private async Task CreateNewUser(ClaimsPrincipal principal, LoginProvider provider, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
-    //{
-    //    (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
+        string firstName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "User";
+        string lastName = principal.FindFirst(ClaimTypes.Surname)?.Value ?? "";
+        string displayName = principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}";
 
-    //    string firstName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "--";
-    //    string lastName = principal.FindFirst(ClaimTypes.Surname)?.Value ?? "--";
+        User user = new()
+        {
+            ID = Guid.NewGuid(),
+            FirstName = firstName,
+            LastName = lastName,
+            DisplayName = displayName.Trim(),
+            CreatedOn = currentDateTime,
+            LastSignedIn = currentDateTime,
+            Inputs =
+            [
+                new LoginInput()
+                {
+                    Input = formattedInput,
+                    Format = formatValue,
+                    IsPrimary = true,
+                    PhoneNumberCountryCode = countryCode,
+                    PhoneNumberCallingCode = callingCode,
+                    Providers = [new LoginProvider { Code = providerName }]
+                }
+            ]
+        };
 
-    //    User user = new()
-    //    {
-    //        ID = Guid.NewGuid(),
-    //        FirstName = firstName,
-    //        LastName = lastName,
-    //        DisplayName = (principal.FindFirst(ClaimTypes.Name) ?? principal.FindFirst("name"))?.Value ?? $"{firstName} {lastName}",
-    //        CreatedOn = currentDateTime,
-    //        LastSignedIn = currentDateTime,
-    //        Inputs =
-    //        [
-    //            new LoginInput()
-    //            {
-    //                Input = formattedInput,
-    //                Format = formatValue,
-    //                IsPrimary = true,
-    //                PhoneNumberCountryCode = countryCode,
-    //                PhoneNumberCallingCode = callingCode,
-    //                Providers = provider != null ? new() { provider } : new()
-    //            }
-    //        ]
-    //    };
+        await cosmosMethods.Create(user);
+    }
 
-    //    await cosmosMethods.Create(user);
-    //}
     private async Task<(string? countryCode, string? callingCode, string input)> ProcessPhoneNumber(InputFormat formatValue, string input)
     {
         if (formatValue != InputFormat.PhoneNumber)

@@ -1,6 +1,7 @@
 using AngryMonkey.Cloud;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
+using AngryMonkey.CloudLogin.Server.Serialization;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using AngryMonkey.CloudWeb;
 using Azure.Identity;
@@ -12,6 +13,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -52,41 +54,14 @@ public static class MvcServiceCollectionExtensions
         if (!loginConfig.Cosmos.IsValid())
             return;
 
-        // Create CosmosClient with custom serialization to exclude null values and serialize enums as strings
+        // Configure BaseRecord with Cosmos configuration for property naming
+        BaseRecord.CosmosConfiguration = loginConfig.Cosmos;
+
+        // Create CosmosClient with custom serialization using configurable property names
         CosmosClient cosmosClient = new(loginConfig.Cosmos.ConnectionString, new CosmosClientOptions
         {
-            SerializerOptions = new CosmosSerializationOptions 
-            { 
-                IgnoreNullValues = true
-            }
+            Serializer = new ConfigurableCosmosSerializer()
         });
-
-        //if (!string.IsNullOrEmpty(loginConfig.Cosmos.AspireName))
-        //    builder.Services.AddAzureCosmosContainer("cosmos",
-        //        configureSettings: settings =>
-        //        {
-        //            settings.DatabaseName = "cosmos-database";
-        //            settings.ContainerName = "cosmos-container";
-        //        },
-        //        configureClientOptions: options =>
-        //        {
-        //            options.Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization);
-        //        });
-        //else
-        //builder.AddAzureCosmosClient(loginConfig.Cosmos.ConnectionString, configureClientOptions: options =>
-        //{
-        //    options.Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization);
-        //});
-        //builder.AddAzureCosmosContainer(loginConfig.Cosmos.ConnectionString,
-        //    configureSettings: settings =>
-        //    {
-        //        settings.DatabaseName = loginConfig.Cosmos.DatabaseId;
-        //        settings.ContainerName = loginConfig.Cosmos.ContainerId;
-        //    },
-        //    configureClientOptions: options =>
-        //    {
-        //        options.Serializer = new SystemTextJsonCosmosSerializer(cosmosSerialization);
-        //    });
 
         // Get container reference
         var container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
@@ -94,6 +69,11 @@ public static class MvcServiceCollectionExtensions
         // Register as singleton
         builder.Services.AddSingleton(container);
         builder.Services.AddScoped<CosmosMethods>();
+        
+        // Log the configured property names for debugging
+        var logger = builder.Services.BuildServiceProvider().GetService<ILogger<CloudLoginConfiguration>>();
+        logger?.LogInformation("CloudLogin Cosmos Configuration: PartitionKey='{PartitionKey}', Type='{Type}'", 
+            loginConfig.Cosmos.PartitionKeyName, loginConfig.Cosmos.TypeName);
     }
 
     private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginConfiguration loginConfig)

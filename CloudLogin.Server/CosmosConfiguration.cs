@@ -10,6 +10,8 @@ public class CosmosConfiguration
         ConnectionString = configurationSection["ConnectionString"];
         DatabaseId = configurationSection["DatabaseId"];
         ContainerId = configurationSection["ContainerId"] ?? "Users";
+        PartitionKeyName = configurationSection["PartitionKeyName"] ?? "/pk";
+        TypeName = configurationSection["TypeName"] ?? "$type";
     }
 
     public CosmosConfiguration() { }
@@ -18,6 +20,8 @@ public class CosmosConfiguration
     public string? ConnectionString { get; set; }
     public string? DatabaseId { get; set; }
     public string? ContainerId { get; set; }
+    public string PartitionKeyName { get; set; } = "/pk";
+    public string TypeName { get; set; } = "$type";
 
     public bool IsValid() => !string.IsNullOrEmpty(AspireName) || !string.IsNullOrEmpty(ConnectionString);
 }

@@ -25,11 +25,8 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         if (!string.IsNullOrEmpty(partitionKey))
             options.PartitionKey = new PartitionKey(partitionKey);
 
-        IQueryable<T> query = _container.GetItemLinqQueryable<T>(requestOptions: options)
-                                 .Where(item => item.Type == typeof(T).Name);
-
-        if (!string.IsNullOrEmpty(partitionKey))
-            query = query.Where(item => item.PartitionKey == partitionKey);
+        // Don't filter by Type or PartitionKey in LINQ - let the JSON converter handle it
+        IQueryable<T> query = _container.GetItemLinqQueryable<T>(requestOptions: options);
 
         if (predicate != null)
             query = query.Where(predicate);
@@ -55,11 +52,25 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<User?> GetUserByEmailAddress(string emailAddress)
     {
-        IQueryable<UserInfo> usersQueryable = Queryable<UserInfo>("UserInfo", user =>
-            user.Inputs.Any(key => key.Format == InputFormat.EmailAddress &&
-            key.Input.Equals(emailAddress.Trim(), StringComparison.OrdinalIgnoreCase)));
+        // Use raw SQL query to avoid LINQ property name translation issues
+        string typePropertyName = BaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        
+        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = \"UserInfo\" AND root[\"{partitionKeyPropertyName}\"] = \"UserInfo\" AND EXISTS(SELECT VALUE 1 FROM input IN root.Inputs WHERE input.Format = \"EmailAddress\" AND UPPER(input.Input) = UPPER(@emailAddress))";
 
-        List<UserInfo> users = await ToListAsync(usersQueryable);
+        QueryDefinition queryDefinition = new QueryDefinition(sql)
+            .WithParameter("@emailAddress", emailAddress.Trim());
+
+        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+            queryDefinition, 
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey("UserInfo") });
+
+        List<UserInfo> users = [];
+        while (iterator.HasMoreResults)
+        {
+            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            users.AddRange(response);
+        }
 
         return Parse(users.FirstOrDefault());
     }
@@ -84,13 +95,26 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<User?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
     {
-        IQueryable<UserInfo> usersQueryable = Queryable<UserInfo>("UserInfo", user =>
-            user.Inputs.Any(key => key.Format == InputFormat.PhoneNumber &&
-            key.Input.Equals(phoneNumber.Number) &&
-            (string.IsNullOrEmpty(phoneNumber.CountryCode) ||
-            key.PhoneNumberCountryCode.Equals(phoneNumber.CountryCode, StringComparison.OrdinalIgnoreCase))));
+        // Use raw SQL query to avoid LINQ property name translation issues
+        string typePropertyName = BaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        
+        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = \"UserInfo\" AND root[\"{partitionKeyPropertyName}\"] = \"UserInfo\" AND EXISTS(SELECT VALUE 1 FROM input IN root.Inputs WHERE input.Format = \"PhoneNumber\" AND input.Input = @phoneNumber AND (@countryCode = \"\" OR input.PhoneNumberCountryCode = @countryCode))";
 
-        List<UserInfo> users = await ToListAsync(usersQueryable);
+        QueryDefinition queryDefinition = new QueryDefinition(sql)
+            .WithParameter("@phoneNumber", phoneNumber.Number)
+            .WithParameter("@countryCode", phoneNumber.CountryCode ?? "");
+
+        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+            queryDefinition, 
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey("UserInfo") });
+
+        List<UserInfo> users = [];
+        while (iterator.HasMoreResults)
+        {
+            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            users.AddRange(response);
+        }
 
         return Parse(users.FirstOrDefault());
     }
@@ -110,20 +134,50 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<User?> GetUserByDisplayName(string displayName)
     {
-        IQueryable<UserInfo> usersQueryable = Queryable<UserInfo>("UserInfo")
-            .Where(user => user.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+        // Use raw SQL query to avoid LINQ property name translation issues
+        string typePropertyName = BaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        
+        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = \"UserInfo\" AND root[\"{partitionKeyPropertyName}\"] = \"UserInfo\" AND UPPER(root.DisplayName) = UPPER(@displayName)";
 
-        List<UserInfo> users = await ToListAsync(usersQueryable);
+        QueryDefinition queryDefinition = new QueryDefinition(sql)
+            .WithParameter("@displayName", displayName);
+
+        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+            queryDefinition, 
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey("UserInfo") });
+
+        List<UserInfo> users = [];
+        while (iterator.HasMoreResults)
+        {
+            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            users.AddRange(response);
+        }
 
         return Parse(users.FirstOrDefault());
     }
 
     public async Task<List<User>> GetUsersByDisplayName(string displayName)
     {
-        IQueryable<UserInfo> usersQueryable = Queryable<UserInfo>("UserInfo")
-            .Where(user => user.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase));
+        // Use raw SQL query to avoid LINQ property name translation issues
+        string typePropertyName = BaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        
+        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = \"UserInfo\" AND root[\"{partitionKeyPropertyName}\"] = \"UserInfo\" AND UPPER(root.DisplayName) = UPPER(@displayName)";
 
-        List<UserInfo> users = await ToListAsync(usersQueryable);
+        QueryDefinition queryDefinition = new QueryDefinition(sql)
+            .WithParameter("@displayName", displayName);
+
+        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+            queryDefinition, 
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey("UserInfo") });
+
+        List<UserInfo> users = [];
+        while (iterator.HasMoreResults)
+        {
+            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            users.AddRange(response);
+        }
 
         return Parse(users) ?? [];
     }
@@ -138,9 +192,26 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<List<User>> GetUsers()
     {
-        IQueryable<UserInfo> usersQueryable = Queryable<UserInfo>("UserInfo");
+        // Use raw SQL query to avoid LINQ property name translation issues
+        string typePropertyName = BaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        
+        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = \"UserInfo\" AND root[\"{partitionKeyPropertyName}\"] = \"UserInfo\"";
 
-        return Parse(await ToListAsync(usersQueryable)) ?? [];
+        QueryDefinition queryDefinition = new QueryDefinition(sql);
+
+        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+            queryDefinition, 
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey("UserInfo") });
+
+        List<UserInfo> users = [];
+        while (iterator.HasMoreResults)
+        {
+            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            users.AddRange(response);
+        }
+
+        return Parse(users) ?? [];
     }
 
     public async Task<LoginRequest> CreateRequest(Guid userId, Guid? requestId = null)
@@ -162,7 +233,9 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         UserInfo userInfo = new() { ID = userId };
         PartitionKey partitionKey = GetPartitionKey(userInfo);
 
-        List<PatchOperation> patchOperations = [PatchOperation.Replace("/LastSignedIn", lastSignedIn)];
+        // Note: Patch operations use JSON property paths, so we need to use configured names
+        string lastSignedInPath = "/LastSignedIn"; // This should work as property names are preserved
+        List<PatchOperation> patchOperations = [PatchOperation.Replace(lastSignedInPath, lastSignedIn)];
 
         await _container.PatchItemAsync<UserInfo>(userId.ToString(), partitionKey, patchOperations);
     }

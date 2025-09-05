@@ -21,5 +21,10 @@ public static class CloudLoginServerExtensions
     }
 
     public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configureOptions)
-        => AddCloudLoginServer(services, config => config = configureOptions);
+    {
+        // Configure BaseRecord with Cosmos configuration for property naming
+        BaseRecord.CosmosConfiguration = configureOptions.Cosmos;
+        
+        return AddCloudLoginServer(services, config => config = configureOptions);
+    }
 }

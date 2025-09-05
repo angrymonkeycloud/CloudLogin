@@ -353,12 +353,14 @@ public partial class CloudLoginServer : ICloudLogin
                 [
                     new()
                     {
-                        Code = "Code"
+                        Code = "Code",
+                        Identifier = null // Internal providers don't have external identifiers
                     },
                     new()
                     {
                         Code = "Password",
-                        PasswordHash = await HashPassword(request.Password)
+                        PasswordHash = await HashPassword(request.Password),
+                        Identifier = null // Internal providers don't have external identifiers
                     }
                 ]
             }]
@@ -404,7 +406,8 @@ public partial class CloudLoginServer : ICloudLogin
                 [
                     new()
                     {
-                        Code = "Code"
+                        Code = "Code",
+                        Identifier = null // Internal providers don't have external identifiers
                     }
                 ]
             }]

@@ -31,16 +31,17 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
         string input = GetUserInput(principal, formatValue);
         string providerName = GetProviderName(principal);
+        string? providerIdentifier = GetProviderIdentifier(principal);
 
         User? user = await GetExistingUser(cosmosMethods, input, formatValue);
 
         if (user != null)
         {
-            await UpdateExistingUser(user, principal, providerName, input, formatValue, currentDateTime, cosmosMethods);
+            await UpdateExistingUser(user, principal, providerName, providerIdentifier, input, formatValue, currentDateTime, cosmosMethods);
         }
         else
         {
-            await CreateNewUser(principal, providerName, input, formatValue, currentDateTime, cosmosMethods);
+            await CreateNewUser(principal, providerName, providerIdentifier, input, formatValue, currentDateTime, cosmosMethods);
         }
     }
 
@@ -65,6 +66,30 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         return identity?.AuthenticationType ?? "External";
     }
 
+    private static string? GetProviderIdentifier(ClaimsPrincipal principal)
+    {
+        // Try to get the provider-specific user identifier
+        // Different providers use different claim types for user identifiers
+        var nameIdentifier = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(nameIdentifier))
+            return nameIdentifier;
+
+        // Fallback to other common identifier claims
+        var subject = principal.FindFirst("sub")?.Value;
+        if (!string.IsNullOrEmpty(subject))
+            return subject;
+
+        var oid = principal.FindFirst("oid")?.Value;
+        if (!string.IsNullOrEmpty(oid))
+            return oid;
+
+        var id = principal.FindFirst("id")?.Value;
+        if (!string.IsNullOrEmpty(id))
+            return id;
+
+        return null;
+    }
+
     private static async Task<User?> GetExistingUser(CosmosMethods cosmosMethods, string input, InputFormat format)
     {
         return format == InputFormat.EmailAddress
@@ -72,7 +97,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             : await cosmosMethods.GetUserByPhoneNumber(input);
     }
 
-    private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, string providerName, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private static async Task UpdateExistingUser(User user, ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
         // Update user information with latest from provider
         user.FirstName ??= principal.FindFirst(ClaimTypes.GivenName)?.Value ?? string.Empty;
@@ -90,10 +115,26 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
         if (existingInput != null)
         {
-            // Add provider if it doesn't exist
-            if (!existingInput.Providers.Any(p => string.Equals(p.Code, providerName, StringComparison.OrdinalIgnoreCase)))
+            // Find existing provider or add new one
+            LoginProvider? existingProvider = existingInput.Providers.FirstOrDefault(p => 
+                string.Equals(p.Code, providerName, StringComparison.OrdinalIgnoreCase));
+
+            if (existingProvider != null)
             {
-                existingInput.Providers.Add(new LoginProvider { Code = providerName });
+                // Update provider identifier if it's missing or different
+                if (string.IsNullOrEmpty(existingProvider.Identifier) && !string.IsNullOrEmpty(providerIdentifier))
+                {
+                    existingProvider.Identifier = providerIdentifier;
+                }
+            }
+            else
+            {
+                // Add new provider with identifier
+                existingInput.Providers.Add(new LoginProvider 
+                { 
+                    Code = providerName,
+                    Identifier = providerIdentifier
+                });
             }
         }
         else
@@ -104,7 +145,11 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
                 Input = normalizedInput,
                 Format = formatValue,
                 IsPrimary = user.Inputs.Count == 0,
-                Providers = [new LoginProvider { Code = providerName }]
+                Providers = [new LoginProvider 
+                { 
+                    Code = providerName,
+                    Identifier = providerIdentifier
+                }]
             });
         }
 
@@ -112,7 +157,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         await cosmosMethods.Update(user);
     }
 
-    private async Task CreateNewUser(ClaimsPrincipal principal, string providerName, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private async Task CreateNewUser(ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
         (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
 
@@ -143,7 +188,11 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
                     IsPrimary = true,
                     PhoneNumberCountryCode = countryCode,
                     PhoneNumberCallingCode = callingCode,
-                    Providers = [new LoginProvider { Code = providerName }]
+                    Providers = [new LoginProvider 
+                    { 
+                        Code = providerName,
+                        Identifier = providerIdentifier
+                    }]
                 }
             ]
         };

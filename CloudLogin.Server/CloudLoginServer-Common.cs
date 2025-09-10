@@ -47,6 +47,9 @@ public partial class CloudLoginServer : ICloudLogin
     {
         string baseUrl = $"{request.Scheme}://{request.Host}";
 
+        if (string.IsNullOrEmpty(LoginUrl))
+            LoginUrl = baseUrl;
+
         string separator = LoginUrl.Contains('?') ? "&" : "?";
 
         if (string.IsNullOrEmpty(returnUrl))

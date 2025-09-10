@@ -25,7 +25,9 @@ public partial class CloudLoginServer
             if (!string.IsNullOrEmpty(currentUser))
                 cloudUser = JsonSerializer.Deserialize<User>(currentUser, CloudLoginSerialization.Options);
             else
-                return new RedirectResult($"{LoginUrl}{separator}redirectUri={HttpUtility.UrlEncode(request.GetEncodedUrl())}&actionState=login");
+                return new RedirectResult($"{LoginUrl}{separator}ReturnUrl={HttpUtility.UrlEncode(returnUrl ?? request.GetEncodedUrl())}&actionState=login");
+
+            //return new RedirectResult($"{LoginUrl}{separator}redirectUri={HttpUtility.UrlEncode(returnUrl ?? request.GetEncodedUrl())}&actionState=login");
         }
 
         if (cloudUser == null)

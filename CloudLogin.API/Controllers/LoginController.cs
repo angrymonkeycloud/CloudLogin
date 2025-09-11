@@ -27,17 +27,17 @@ public class LoginController(CloudLoginConfiguration configuration, ICloudLogin 
     //};
 
     [HttpGet("Login/{identity}")]
-    public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "", string? input = null, string? redirectUri = null)
+    public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? redirectUri = null)
     {
-        return _server.Login(identity, keepMeSignedIn, sameSite, actionState, primaryEmail, input, redirectUri);
+        return _server.Login(identity, keepMeSignedIn, sameSite, primaryEmail, input, redirectUri);
     }
 
     [HttpGet("Login/CustomLogin")]
-    public async Task<IActionResult> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string actionState = "", string primaryEmail = "")
+    public async Task<IActionResult> CustomLogin(string userInfo, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string primaryEmail = "")
     {
         User user = JsonSerializer.Deserialize<User>(userInfo, CloudLoginSerialization.Options)!;
 
-        return await _server.CustomLogin(user, keepMeSignedIn, redirectUri, sameSite, actionState, primaryEmail);
+        return await _server.CustomLogin(user, keepMeSignedIn, redirectUri, sameSite, primaryEmail);
     }
 
     [HttpPost("Login/PasswordSignIn")]
@@ -80,9 +80,9 @@ public class LoginController(CloudLoginConfiguration configuration, ICloudLogin 
     }
 
     [HttpGet("Result")]
-    public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
+    public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string primaryEmail = "")
     {
-        return await _server.LoginResult(keepMeSignedIn, sameSite, redirectUri, actionState, primaryEmail);
+        return await _server.LoginResult(keepMeSignedIn, sameSite, redirectUri, primaryEmail);
     }
 
     [HttpGet("Update")]

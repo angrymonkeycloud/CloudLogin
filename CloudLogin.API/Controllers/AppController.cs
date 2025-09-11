@@ -13,6 +13,6 @@ public class AppController(CloudLoginConfiguration configuration, ICloudLogin se
     {
         string baseUrl = $"http{(Request.IsHttps ? "s" : string.Empty)}://{Request.Host.Value}";
 
-        return Redirect($"{baseUrl}/?actionState=mobile&redirectUri={key}");
+        return Redirect($"{baseUrl}/?redirectUri={key}");
     }
 }

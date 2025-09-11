@@ -134,7 +134,6 @@ public class CloudLoginServerBasicTests
         string keepMeSignedIn = "true";
         string redirectUri = "https://example.com/dashboard";
         string sameSite = "false";
-        string actionState = "login";
         string primaryEmail = "user@example.com";
         string userInfo = "encoded-user-info";
         string inputValue = "test-input";
@@ -142,13 +141,12 @@ public class CloudLoginServerBasicTests
         // Act
         string result = CloudLoginShared.RedirectString(
             controller, action, keepMeSignedIn, redirectUri, 
-            sameSite, actionState, primaryEmail, userInfo, inputValue);
+            sameSite, primaryEmail, userInfo, inputValue);
 
         // Assert
         result.Should().StartWith($"/{controller}/{action}?");
         result.Should().Contain("keepMeSignedIn=true");
         result.Should().Contain("sameSite=false");
-        result.Should().Contain("actionState=login");
         result.Should().Contain("primaryEmail=");
         result.Should().Contain("userInfo=");
         result.Should().Contain("input=");

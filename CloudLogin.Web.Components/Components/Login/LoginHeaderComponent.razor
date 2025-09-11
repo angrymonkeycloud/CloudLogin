@@ -62,8 +62,6 @@
 
 @code {
     [Parameter] public string? Logo { get; set; }
-    [Parameter] public string? ActionState { get; set; }
-    [Parameter] public EventCallback<string?> ActionStateChanged { get; set; }
 
     private bool ShowBackButton => Auth.Input != null;
 

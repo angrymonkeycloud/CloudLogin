@@ -29,24 +29,6 @@ public class CloudLoginController(CloudLoginServer cloudLoginServer) : Controlle
         return new RedirectResult(await _cloudLoginServer.Logout(Request, Response));
     }
 
-    [Route("ChangePrimary")]
-    public IActionResult ChangePrimary()
-    {
-        return new RedirectResult(_cloudLoginServer.ChangePrimary());
-    }
-
-    [Route("AddInput")]
-    public IActionResult AddInput()
-    {
-        return new RedirectResult(_cloudLoginServer.GetAddInputUrl());
-    }
-
-    [Route("Update")]
-    public IActionResult Update()
-    {
-        return new RedirectResult(_cloudLoginServer.GetUpdateUrl());
-    }
-
     [HttpGet("CurrentUser")]
     public async Task<ActionResult<User?>> CurrentUser()
     {

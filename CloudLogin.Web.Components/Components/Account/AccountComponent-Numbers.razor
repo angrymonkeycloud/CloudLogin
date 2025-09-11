@@ -2,71 +2,329 @@
 @using AngryMonkey.CloudLogin.Interfaces
 @inject ICloudLogin cloudLogin
 
-<div class="info">
-    <h3>Phone Numbers</h3>
-    <div class="info-input">
-        <input type="text" @bind="NewPhoneNumber" placeholder="Add new phone number" />
-        <button @onclick="AddPhoneNumber">Add Phone Number</button>
+<div class="account-section">
+    <div class="section-header">
+        <h3>Phone Numbers</h3>
+        <p class="section-description">Manage your phone numbers</p>
     </div>
-    <ul>
-        @foreach (LoginInput phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
-        {
-            <li>
-                <span>
-                     @phone.Input
-                </span>
-                <div>
-                    @if (phone.IsPrimary)
-                    {
-                        <span class="badge">Primary</span>
-                    }
-                    <button @onclick="() => SetPrimary(phone.Input)">Set Primary</button>
-                    <button @onclick="() => RemovePhoneNumber(phone.Input)">Remove</button>
-                </div>
-            </li>
-        }
-    </ul>
 
+    <div class="add-input-section">
+        <div class="input-group">
+            <input type="tel" 
+                   class="form-input" 
+                   @bind="NewPhoneNumber" 
+                   placeholder="Add new phone number (e.g., +1 555-123-4567)" 
+                   disabled="@_isProcessing" />
+            <button class="btn btn-secondary" 
+                    @onclick="AddPhoneNumber" 
+                    disabled="@(_isProcessing || string.IsNullOrWhiteSpace(NewPhoneNumber) || !IsValidPhoneNumber(NewPhoneNumber))">
+                @if (_isProcessing)
+                {
+                    <span class="loading-spinner"></span>
+                }
+                else
+                {
+                    <span>Add Phone</span>
+                }
+            </button>
+        </div>
+        <small class="input-hint">Phone number must include country code (e.g., +1 for US)</small>
+    </div>
+
+    @if (CurrentUser.PhoneNumbers.Any())
+    {
+        <div class="items-list">
+            @foreach (LoginInput phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
+            {
+                <div class="item-row">
+                    <div class="item-info">
+                        <span class="item-text">@FormatPhoneNumber(phone.Input)</span>
+                        @if (phone.IsPrimary)
+                        {
+                            <span class="badge badge-primary">Primary</span>
+                        }
+                        @if (!string.IsNullOrEmpty(phone.PhoneNumberCountryCode))
+                        {
+                            <span class="badge badge-info">@phone.PhoneNumberCountryCode</span>
+                        }
+                    </div>
+                    <div class="item-actions">
+                        @if (!phone.IsPrimary)
+                        {
+                            <button class="btn btn-outline btn-sm" 
+                                    @onclick="() => SetPrimary(phone.Input)" 
+                                    disabled="@_isProcessing">
+                                Set Primary
+                            </button>
+                        }
+                        @if (CurrentUser.PhoneNumbers.Count > 1 || CurrentUser.EmailAddresses.Any())
+                        {
+                            <button class="btn btn-danger btn-sm" 
+                                    @onclick="() => RemovePhoneNumber(phone.Input)" 
+                                    disabled="@_isProcessing">
+                                Remove
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <p>No phone numbers configured.</p>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="@(_operationSuccess ? "alert-success" : "alert-error")">
+            @_statusMessage
+        </div>
+    }
 </div>
+
 @code {
     [Parameter] public required User CurrentUser { get; set; }
 
     private string NewPhoneNumber { get; set; } = string.Empty;
+    private bool _isProcessing = false;
+    private string _statusMessage = string.Empty;
+    private bool _operationSuccess = false;
 
+    /// <summary>
+    /// Adds a new phone number to the user's account
+    /// </summary>
     private async Task AddPhoneNumber()
     {
-        if (string.IsNullOrEmpty(NewPhoneNumber))
+        if (_isProcessing || string.IsNullOrWhiteSpace(NewPhoneNumber) || !IsValidPhoneNumber(NewPhoneNumber))
             return;
 
-        var newPhoneNumber = new LoginInput
+        try
+        {
+            _isProcessing = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            // Normalize phone number
+            string normalizedPhone = NormalizePhoneNumber(NewPhoneNumber);
+
+            // Check if phone already exists
+            if (CurrentUser.PhoneNumbers.Any(p => p.Input.Equals(normalizedPhone, StringComparison.OrdinalIgnoreCase)))
             {
-                Input = NewPhoneNumber,
+                _statusMessage = "This phone number is already associated with your account.";
+                _operationSuccess = false;
+                return;
+            }
+
+            // Check if phone exists in system for another user
+            User? existingUser = await cloudLogin.GetUserByPhoneNumber(normalizedPhone);
+            if (existingUser != null && existingUser.ID != CurrentUser.ID)
+            {
+                _statusMessage = "This phone number is already in use by another account.";
+                _operationSuccess = false;
+                return;
+            }
+
+            var newPhoneInput = new LoginInput
+            {
+                Input = normalizedPhone,
                 Format = InputFormat.PhoneNumber,
-                IsPrimary = false,
-                Providers = new List<LoginProvider>()
+                IsPrimary = !CurrentUser.PhoneNumbers.Any() && !CurrentUser.EmailAddresses.Any(), // First contact becomes primary
+                Providers = []
             };
 
-        CurrentUser.PhoneNumbers.Add(newPhoneNumber);
-        await cloudLogin.UpdateUser(CurrentUser);
-        NewPhoneNumber = string.Empty;
+            // Extract country information if available through CloudLogin service
+            try
+            {
+                string formattedNumber = cloudLogin.GetPhoneNumber(normalizedPhone);
+                // Additional phone number processing could be added here
+            }
+            catch
+            {
+                // Continue without additional formatting if service unavailable
+            }
+
+            CurrentUser.Inputs.Add(newPhoneInput);
+            await cloudLogin.UpdateUser(CurrentUser);
+            
+            NewPhoneNumber = string.Empty;
+            _statusMessage = "Phone number added successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to add phone number: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
     }
 
+    /// <summary>
+    /// Removes a phone number from the user's account
+    /// </summary>
     private async Task RemovePhoneNumber(string phoneNumber)
     {
-        var phoneToRemove = CurrentUser.PhoneNumbers.FirstOrDefault(p => p.Input == phoneNumber);
-
-        if (phoneToRemove == null)
+        if (_isProcessing)
             return;
 
-        CurrentUser.PhoneNumbers.Remove(phoneToRemove);
-        await cloudLogin.UpdateUser(CurrentUser);
+        // Ensure user has at least one contact method
+        if (CurrentUser.PhoneNumbers.Count <= 1 && !CurrentUser.EmailAddresses.Any())
+        {
+            _statusMessage = "You must have at least one contact method (email or phone).";
+            _operationSuccess = false;
+            await ClearStatusMessageAfterDelay();
+            return;
+        }
+
+        try
+        {
+            _isProcessing = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            var phoneToRemove = CurrentUser.Inputs.FirstOrDefault(p => 
+                p.Format == InputFormat.PhoneNumber && 
+                p.Input.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase));
+
+            if (phoneToRemove == null)
+            {
+                _statusMessage = "Phone number not found.";
+                _operationSuccess = false;
+                return;
+            }
+
+            // If removing primary phone, set another as primary
+            if (phoneToRemove.IsPrimary)
+            {
+                var nextPrimary = CurrentUser.PhoneNumbers.FirstOrDefault(p => p != phoneToRemove) ??
+                                 CurrentUser.EmailAddresses.FirstOrDefault();
+                if (nextPrimary != null)
+                    nextPrimary.IsPrimary = true;
+            }
+
+            CurrentUser.Inputs.Remove(phoneToRemove);
+            await cloudLogin.UpdateUser(CurrentUser);
+            
+            _statusMessage = "Phone number removed successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to remove phone number: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
     }
 
+    /// <summary>
+    /// Sets a phone number as the primary contact
+    /// </summary>
     private async Task SetPrimary(string phoneNumber)
     {
-        foreach (var p in CurrentUser.PhoneNumbers)
-            p.IsPrimary = p.Input == phoneNumber;
+        if (_isProcessing)
+            return;
 
-        await cloudLogin.UpdateUser(CurrentUser);
+        try
+        {
+            _isProcessing = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            // Update primary status for all inputs
+            foreach (var input in CurrentUser.Inputs)
+                input.IsPrimary = input.Format == InputFormat.PhoneNumber && 
+                                 input.Input.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase);
+
+            await cloudLogin.UpdateUser(CurrentUser);
+            
+            _statusMessage = "Primary phone number updated successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to update primary phone number: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
+    }
+
+    /// <summary>
+    /// Validates phone number format
+    /// </summary>
+    private static bool IsValidPhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return false;
+
+        // Basic phone number validation - should start with + and contain only digits, spaces, hyphens, parentheses
+        string cleaned = phoneNumber.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "").Replace(".", "");
+        return System.Text.RegularExpressions.Regex.IsMatch(cleaned, @"^\+[1-9]\d{7,14}$");
+    }
+
+    /// <summary>
+    /// Normalizes phone number format
+    /// </summary>
+    private static string NormalizePhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return string.Empty;
+
+        // Remove all non-digit characters except +
+        string cleaned = System.Text.RegularExpressions.Regex.Replace(phoneNumber.Trim(), @"[^\d+]", "");
+        
+        // Ensure it starts with +
+        if (!cleaned.StartsWith('+'))
+            cleaned = "+" + cleaned;
+
+        return cleaned;
+    }
+
+    /// <summary>
+    /// Formats phone number for display
+    /// </summary>
+    private static string FormatPhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrEmpty(phoneNumber))
+            return phoneNumber;
+
+        // Basic formatting for common country codes
+        if (phoneNumber.StartsWith("+1") && phoneNumber.Length == 12)
+        {
+            // US/Canada format: +1 (555) 123-4567
+            return $"{phoneNumber[..2]} ({phoneNumber[2..5]}) {phoneNumber[5..8]}-{phoneNumber[8..]}";
+        }
+
+        // For other formats, just return as-is
+        return phoneNumber;
+    }
+
+    /// <summary>
+    /// Clears status message after a delay
+    /// </summary>
+    private async Task ClearStatusMessageAfterDelay()
+    {
+        if (_operationSuccess)
+        {
+            await Task.Delay(3000);
+            _statusMessage = string.Empty;
+            StateHasChanged();
+        }
     }
 }

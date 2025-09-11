@@ -11,76 +11,42 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public partial class CloudLoginServer
 {
+    /// <summary>
+    /// Handles the final login result and creates the authenticated session
+    /// </summary>
     public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? currentUser, string? returnUrl, bool keepMeSignedIn)
     {
-        string separator = LoginUrl.Contains('?') ? "&" : "?";
+        const string separator = "?";
+        string actualSeparator = LoginUrl.Contains('?') ? "&" : separator;
 
-        if (string.IsNullOrEmpty(returnUrl))
-            returnUrl = $"{request.Scheme}://{request.Host}";
+        returnUrl ??= $"{request.Scheme}://{request.Host}";
 
-        User? cloudUser = null;
-
-        if (requestId == Guid.Empty)
-        {
-            if (!string.IsNullOrEmpty(currentUser))
-                cloudUser = JsonSerializer.Deserialize<User>(currentUser, CloudLoginSerialization.Options);
-            else
-                return new RedirectResult($"{LoginUrl}{separator}ReturnUrl={HttpUtility.UrlEncode(returnUrl ?? request.GetEncodedUrl())}&actionState=login");
-
-            //return new RedirectResult($"{LoginUrl}{separator}redirectUri={HttpUtility.UrlEncode(returnUrl ?? request.GetEncodedUrl())}&actionState=login");
-        }
-
-        if (cloudUser == null)
-            cloudUser = await GetUserByRequestId(requestId);
+        User? cloudUser = await ResolveUserFromRequest(requestId, currentUser);
 
         if (cloudUser == null)
             return Login(request, returnUrl);
 
-        ClaimsIdentity claimsIdentity = new(
-        [
-            new Claim(ClaimTypes.NameIdentifier, cloudUser.ID.ToString()),
-            new Claim(ClaimTypes.GivenName, cloudUser.FirstName ?? string.Empty),
-            new Claim(ClaimTypes.Surname, cloudUser.LastName ?? string.Empty),
-            new Claim(ClaimTypes.Name, cloudUser.DisplayName ?? string.Empty),
-            new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(cloudUser, CloudLoginSerialization.Options))
-        ], "CloudLogin");
-
-        if (cloudUser.PrimaryEmailAddress != null)
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, cloudUser.PrimaryEmailAddress.Input));
-        else
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, cloudUser.Inputs.First().Input));
-
-        ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
-
-        AuthenticationProperties properties = new()
-        {
-            ExpiresUtc = null,
-            IsPersistent = false
-        };
-
-        await request.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, properties);
-
-        response.Cookies.Delete("LoggingIn");
-
-        if (keepMeSignedIn)
-            response.Cookies.Append("AutomaticSignIn", "True", new CookieOptions { Expires = DateTime.MaxValue });
+        await CreateAuthenticatedSession(request.HttpContext, cloudUser, keepMeSignedIn);
+        
+        CleanupLoginCookies(response, keepMeSignedIn);
 
         return new RedirectResult(returnUrl);
     }
 
+    /// <summary>
+    /// Handles automatic login for returning users
+    /// </summary>
     public ActionResult<bool> AutomaticLogin(HttpRequest request)
     {
         try
         {
-            string baseUrl = $"{request.Scheme}://{request.Host}";
             string separator = LoginUrl.Contains('?') ? "&" : "?";
-
             string? userCookie = request.Cookies["AutomaticSignIn"];
 
             if (userCookie == null)
                 return new OkObjectResult(false);
-            else
-                return new RedirectResult($"{LoginUrl}{separator}Account/Login");
+            
+            return new RedirectResult($"{LoginUrl}{separator}Account/Login");
         }
         catch
         {
@@ -88,118 +54,80 @@ public partial class CloudLoginServer
         }
     }
 
+    /// <summary>
+    /// Handles user logout and cleanup
+    /// </summary>
     public async Task<string> Logout(HttpRequest request, HttpResponse response)
     {
         await request.HttpContext.SignOutAsync();
 
         response.Cookies.Delete("AutomaticSignIn");
-        var baseUri = $"{request.Scheme}://{request.Host}";
-
+        string baseUri = $"{request.Scheme}://{request.Host}";
         string separator = LoginUrl.Contains('?') ? "&" : "?";
-
         return $"{LoginUrl}CloudLogin/Logout{separator}redirectUri={HttpUtility.UrlEncode(baseUri)}";
     }
 
-    public string ChangePrimary()
-    {
-        var baseUri = $"{_request.Scheme}://{_request.Host}";
+    #region Private Helper Methods
 
-        return $"{LoginUrl}{HttpUtility.UrlEncode(baseUri)}/ChangePrimary";
+    /// <summary>
+    /// Resolves user from either request ID or serialized user data
+    /// </summary>
+    private async Task<User?> ResolveUserFromRequest(Guid requestId, string? currentUser)
+    {
+        if (requestId != Guid.Empty)
+            return await GetUserByRequestId(requestId);
+
+        if (!string.IsNullOrEmpty(currentUser))
+            return JsonSerializer.Deserialize<User>(currentUser, CloudLoginSerialization.Options);
+
+        return null;
     }
 
-    public async Task<string> SetPrimary(string input, string domainName)
+    /// <summary>
+    /// Creates an authenticated session for the user
+    /// </summary>
+    private static async Task CreateAuthenticatedSession(HttpContext context, User user, bool keepMeSignedIn)
     {
-        string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host.Value}";
+        ClaimsIdentity claimsIdentity = new(
+        [
+            new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+            new Claim(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
+            new Claim(ClaimTypes.Surname, user.LastName ?? string.Empty),
+            new Claim(ClaimTypes.Name, user.DisplayName ?? string.Empty),
+            new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+        ], "CloudLogin");
 
-        User? user = await _cosmosMethods.GetUserByEmailAddress(input);
+        // Add email claim - prefer primary email, fallback to first input
+        string emailClaim = user.PrimaryEmailAddress?.Input ?? user.Inputs.FirstOrDefault()?.Input ?? string.Empty;
+        if (!string.IsNullOrEmpty(emailClaim))
+            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, emailClaim));
 
-        if (user == null)
-            return $"{baseUrl}/CloudLogin/Update?redirectUri={domainName}";
+        ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
 
-        user.Inputs.First(i => i.IsPrimary).IsPrimary = false;
-        user.Inputs.First(i => i.Input == input).IsPrimary = true;
+        AuthenticationProperties properties = new()
+        {
+            ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddMonths(6) : null,
+            IsPersistent = keepMeSignedIn
+        };
 
-        await _cosmosMethods.Update(user);
-
-        string userSerialized = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
-
-        return $"{baseUrl}/CloudLogin/Update?redirectUri={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}";
+        await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, properties);
     }
 
-    //public async Task AddInput(Guid userId, LoginInput Input)
-    //{
-    //    User user = await GetUserById(userId) ?? throw new Exception("User not found.");
-
-    //    user.Inputs.Add(Input);
-
-    //    await _cosmosMethods._container.UpsertItemAsync(user);
-    //}
-
-    public async Task<string> AddInput(string redirectUrl, string userInfo, string primaryEmail)
+    /// <summary>
+    /// Cleans up login-related cookies
+    /// </summary>
+    private static void CleanupLoginCookies(HttpResponse response, bool keepMeSignedIn)
     {
-        string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host.Value}";
+        response.Cookies.Delete("LoggingIn");
 
-        LoginInput? input = JsonSerializer.Deserialize<LoginInput>(userInfo, CloudLoginSerialization.Options);
-
-        input.IsPrimary = false;
-
-        User? user = await _cosmosMethods.GetUserByEmailAddress(primaryEmail);
-        User? oldUser = await _cosmosMethods.GetUserByEmailAddress(input.Input);
-
-        if (oldUser != null)
-            return $"{baseUrl}/CloudLogin/Update?redirectUri={redirectUrl}";
-
-        oldUser = await _cosmosMethods.GetUserByPhoneNumber(input.Input);
-
-        if (oldUser != null)
-            return $"{baseUrl}/CloudLogin/Update?redirectUri={redirectUrl}";
-
-        user.Inputs.Add(input);
-
-        await _cosmosMethods.AddInput(user.ID, input);
-        string redirectTo = redirectUrl.Split("/").Last().Replace("AddInput", "");
-        redirectUrl = redirectUrl.Replace(redirectUrl.Split("/").Last(), "");
-
-        string userSerialized = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
-
-        return $"{redirectUrl}CloudLogin/Update?redirectUri={redirectTo}&userInfo={HttpUtility.UrlEncode(userSerialized)}";
+        if (keepMeSignedIn)
+            response.Cookies.Append("AutomaticSignIn", "True", new CookieOptions { 
+                Expires = DateTimeOffset.UtcNow.AddMonths(6),
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            });
     }
 
-    public string GetAddInputUrl()
-    {
-        var baseUri = $"{_request.Scheme}://{_request.Host}";
-
-        return Path.Combine(HttpUtility.UrlEncode(baseUri), "AddInput");
-    }
-
-    public string GetUpdateUrl()
-    {
-        var baseUri = $"{_request.Scheme}://{_request.Host}";
-
-        return Path.Combine(HttpUtility.UrlEncode(baseUri), "UpdateInput");
-    }
-
-    public async Task<string> Update(string userInfo, string domainName)
-    {
-        string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host.Value}";
-
-        Dictionary<string, string>? userDictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(userInfo, CloudLoginSerialization.Options);
-
-        string? firstName = userDictionary?["FirstName"];
-        string? lastName = userDictionary?["LastName"];
-        string? displayName = userDictionary?["DisplayName"];
-        string? userID = userDictionary?["UserId"];
-
-        User? user = await _cosmosMethods.GetUserById(new Guid(userID));
-
-        user.FirstName = firstName;
-        user.LastName = lastName;
-        user.DisplayName = displayName;
-
-        await _cosmosMethods.Update(user);
-
-        string userSerialized = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
-
-        return $"{baseUrl}/CloudLogin/Update?redirectUri={domainName}&userInfo={HttpUtility.UrlEncode(userSerialized)}";
-    }
+    #endregion
 }

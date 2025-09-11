@@ -20,14 +20,14 @@
             @if (!IsWorking)
             {
                 <h1>Error</h1>
-                <div>An error occured, please <a href="./cloudlogin/logout?redirectUri=@nav.BaseUri?actionState=@ActionState&redirectUri=@RedirectUri">Retry</a>.</div>
+                <div>An error occured, please <a href="./cloudlogin/logout?redirectUri=@nav.BaseUri?redirectUri=@RedirectUri">Retry</a>.</div>
             }
             else
             {
-                @if (ActionState == "mobile")
+                @* @if ("mobile")
                 {
                     <div>Mobile login successful, go back to the mobile application.</div>
-                }
+                } *@
                 @if (RedirectUri == "/")
                 {
                     <h1>Login successful</h1>
@@ -43,15 +43,12 @@
 }
 else
 {
-    <LoginPageComponent Logo="@configuration.Logo" ActionState="@ActionState" CurrentUser="@CurrentUser" RedirectUri="@_RedirectUri" />
+    <LoginPageComponent Logo="@configuration.Logo" RedirectUri="@_RedirectUri" />
 }
 
 @code {
     [Parameter, SupplyParameterFromQuery(Name = "redirectUri")]
     public string? RedirectUri { get; set; }
-
-    [Parameter, SupplyParameterFromQuery(Name = "actionState")]
-    public string? ActionState { get; set; }
 
     private string? _RedirectUri => RedirectUri ?? "/";
     public User? CurrentUser { get; set; } = new();
@@ -70,24 +67,21 @@ else
             return;
         }
 
-        if (string.IsNullOrEmpty(ActionState))
-            ActionState = "login";
-
         if (string.IsNullOrEmpty(RedirectUri))
             RedirectUri = "/";
 
-        if (ActionState == "mobile" && !string.IsNullOrEmpty(RedirectUri))
-        {
-            if (CurrentUser != null && IsAuthorized)
-                await cloudLogin.CreateLoginRequest(CurrentUser.ID, new Guid(RedirectUri));
-            else
-                IsWorking = false;
+        // if ( == "mobile" && !string.IsNullOrEmpty(RedirectUri))
+        // {
+        //     if (CurrentUser != null && IsAuthorized)
+        //         await cloudLogin.CreateLoginRequest(CurrentUser.ID, new Guid(RedirectUri));
+        //     else
+        //         IsWorking = false;
 
-            StateHasChanged();
-            return;
-        }
+        //     StateHasChanged();
+        //     return;
+        // }
 
-        if (IsAuthorized && (ActionState == "login" || ActionState == "/") && CurrentUser != null)
+        if (IsAuthorized && CurrentUser != null)
         {
             if (RedirectUri != "/")
             {

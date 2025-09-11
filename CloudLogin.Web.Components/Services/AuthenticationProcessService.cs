@@ -24,7 +24,7 @@ namespace AngryMonkey.CloudLogin.Services
 
         public event Action? OnStateChanged;
 
-        public async Task InitializeProcess(AuthenticationProcess process, string actionState = "login")
+        public async Task InitializeProcess(AuthenticationProcess process)
         {
             CurrentProcess = process;
 

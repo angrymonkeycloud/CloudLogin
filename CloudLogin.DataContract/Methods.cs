@@ -12,7 +12,6 @@ public sealed record RedirectParameters
     public string? KeepMeSignedIn { get; init; }
     public string? RedirectUri { get; init; }
     public string? SameSite { get; init; }
-    public string? ActionState { get; init; }
     public string? PrimaryEmail { get; init; }
     public string? UserInfo { get; init; }
     public string? InputValue { get; init; }
@@ -38,7 +37,7 @@ public sealed record RedirectParameters
     /// <summary>
     /// Creates parameters for a custom login redirect
     /// </summary>
-    public static RedirectParameters CreateCustomLogin(string controller, string action, bool keepMeSignedIn = false, string? redirectUri = null, bool sameSite = false, string? actionState = null, string? primaryEmail = null, string? userInfo = null, string? inputValue = null)
+    public static RedirectParameters CreateCustomLogin(string controller, string action, bool keepMeSignedIn = false, string? redirectUri = null, bool sameSite = false, string? primaryEmail = null, string? userInfo = null, string? inputValue = null)
         => new()
         {
             Controller = controller,
@@ -46,7 +45,6 @@ public sealed record RedirectParameters
             KeepMeSignedIn = keepMeSignedIn.ToString().ToLowerInvariant(),
             RedirectUri = redirectUri,
             SameSite = sameSite.ToString().ToLowerInvariant(),
-            ActionState = actionState,
             PrimaryEmail = primaryEmail,
             UserInfo = userInfo,
             InputValue = inputValue
@@ -61,18 +59,16 @@ public sealed record AuthParameters
     public bool KeepMeSignedIn { get; init; }
     public string RedirectUri { get; init; } = string.Empty;
     public bool SameSite { get; init; }
-    public string ActionState { get; init; } = string.Empty;
     public string PrimaryEmail { get; init; } = string.Empty;
     public string? UserInfo { get; init; }
     public string? Input { get; init; }
 
-    public static AuthParameters Create(bool keepMeSignedIn = false, string redirectUri = "", bool sameSite = false, string actionState = "", string primaryEmail = "", string? userInfo = null, string? input = null)
+    public static AuthParameters Create(bool keepMeSignedIn = false, string redirectUri = "", bool sameSite = false, string primaryEmail = "", string? userInfo = null, string? input = null)
         => new()
         {
             KeepMeSignedIn = keepMeSignedIn,
             RedirectUri = redirectUri,
             SameSite = sameSite,
-            ActionState = actionState,
             PrimaryEmail = primaryEmail,
             UserInfo = userInfo,
             Input = input
@@ -101,34 +97,11 @@ public static class CloudLoginShared
         AddParameter(queryParams, "keepMeSignedIn", parameters.KeepMeSignedIn);
         AddParameter(queryParams, "redirectUri", parameters.RedirectUri);
         AddParameter(queryParams, "sameSite", parameters.SameSite);
-        AddParameter(queryParams, "actionState", parameters.ActionState);
         AddParameter(queryParams, "primaryEmail", parameters.PrimaryEmail);
         AddParameter(queryParams, "userInfo", parameters.UserInfo);
         AddParameter(queryParams, "input", parameters.InputValue);
 
         return queryParams.Count > 0 ? $"{path}?{string.Join("&", queryParams)}" : path;
-    }
-
-    /// <summary>
-    /// Legacy method for backward compatibility - use RedirectString(RedirectParameters) instead
-    /// </summary>
-    [Obsolete("Use RedirectString(RedirectParameters parameters) instead")]
-    public static string RedirectString(string controller, string action, string? keepMeSignedIn = null, string? redirectUri = null, string? sameSite = null, string? actionState = null, string? primaryEmail = null, string? userInfo = null, string? inputValue = null)
-    {
-        RedirectParameters parameters = new()
-        {
-            Controller = controller,
-            Action = action,
-            KeepMeSignedIn = keepMeSignedIn,
-            RedirectUri = redirectUri,
-            SameSite = sameSite,
-            ActionState = actionState,
-            PrimaryEmail = primaryEmail,
-            UserInfo = userInfo,
-            InputValue = inputValue
-        };
-
-        return RedirectString(parameters);
     }
 
     private static void AddParameter(List<string> queryParams, string name, string? value)

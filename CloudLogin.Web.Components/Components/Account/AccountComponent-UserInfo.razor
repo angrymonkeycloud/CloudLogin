@@ -3,49 +3,191 @@
 
 @namespace AngryMonkey.CloudLogin
 
-<div class="info">
-    <h3>Account Information</h3>
-    <div>
-        <p><strong>Display Name:</strong> @CurrentUser.DisplayName</p>
-        <p><strong>First Name:</strong> @CurrentUser.FirstName</p>
-        <p><strong>Last Name:</strong> @CurrentUser.LastName</p>
-        @if (CurrentUser.EmailAddresses.Any()){
-            <p><strong>Email Addresses:</strong></p>
-            <ul>
+<div class="account-section">
+    <div class="section-header">
+        <h3>Account Information</h3>
+        <p class="section-description">Your current account details</p>
+    </div>
+    
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Display Name</div>
+            <div class="info-value">@(CurrentUser.DisplayName ?? "Not specified")</div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-label">First Name</div>
+            <div class="info-value">@(CurrentUser.FirstName ?? "Not specified")</div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-label">Last Name</div>
+            <div class="info-value">@(CurrentUser.LastName ?? "Not specified")</div>
+        </div>
+
+        @if (CurrentUser.DateOfBirth.HasValue)
+        {
+            <div class="info-item">
+                <div class="info-label">Date of Birth</div>
+                <div class="info-value">@CurrentUser.DateOfBirth.Value.ToString("MMMM dd, yyyy")</div>
+            </div>
+        }
+
+        <div class="info-item">
+            <div class="info-label">Account Created</div>
+            <div class="info-value">@FormatDateTime(CurrentUser.CreatedOn)</div>
+        </div>
+
+        <div class="info-item">
+            <div class="info-label">Last Sign In</div>
+            <div class="info-value">@FormatDateTime(CurrentUser.LastSignedIn)</div>
+        </div>
+    </div>
+
+    @if (CurrentUser.EmailAddresses.Any())
+    {
+        <div class="contact-section">
+            <h4>Email Addresses</h4>
+            <div class="contact-list">
                 @foreach (var email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
                 {
-                    <li>
-                        @email.Input
-
-                        @if (email.IsPrimary)
-                        {
-                            <span class="badge">Primary</span>
-                        }
-                    </li>
+                    <div class="contact-item">
+                        <span class="contact-text">@email.Input</span>
+                        <div class="contact-badges">
+                            @if (email.IsPrimary)
+                            {
+                                <span class="badge badge-primary">Primary</span>
+                            }
+                            <span class="badge badge-info">@FormatProviders(email.Providers)</span>
+                        </div>
+                    </div>
                 }
-            </ul>
+            </div>
+        </div>
+    }
 
-        }
-        @if (CurrentUser.PhoneNumbers.Any()){
-            <p><strong>Phone Numbers:</strong></p>
-            <ul>
+    @if (CurrentUser.PhoneNumbers.Any())
+    {
+        <div class="contact-section">
+            <h4>Phone Numbers</h4>
+            <div class="contact-list">
                 @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
                 {
-                    <li>
-                        @phone.Input
-
-                        @if (phone.IsPrimary)
-                        {
-                            <span class="badge">Primary</span>
-                        }
-                    </li>
+                    <div class="contact-item">
+                        <span class="contact-text">@FormatPhoneNumber(phone.Input)</span>
+                        <div class="contact-badges">
+                            @if (phone.IsPrimary)
+                            {
+                                <span class="badge badge-primary">Primary</span>
+                            }
+                            @if (!string.IsNullOrEmpty(phone.PhoneNumberCountryCode))
+                            {
+                                <span class="badge badge-secondary">@phone.PhoneNumberCountryCode</span>
+                            }
+                            <span class="badge badge-info">@FormatProviders(phone.Providers)</span>
+                        </div>
+                    </div>
                 }
-            </ul>
-        }
-      
-    </div>
+            </div>
+        </div>
+    }
+
+    @if (CurrentUser.Providers.Any())
+    {
+        <div class="providers-section">
+            <h4>Connected Providers</h4>
+            <div class="providers-list">
+                @foreach (var provider in CurrentUser.Providers.Distinct())
+                {
+                    <span class="provider-badge">@FormatProviderName(provider)</span>
+                }
+            </div>
+        </div>
+    }
+
+    @if (CurrentUser.IsLocked)
+    {
+        <div class="alert alert-warning">
+            <strong>Account Status:</strong> This account is currently locked.
+        </div>
+    }
 </div>
 
 @code {
     [Parameter] public required User CurrentUser { get; set; }
+
+    /// <summary>
+    /// Formats DateTime for user-friendly display
+    /// </summary>
+    private static string FormatDateTime(DateTimeOffset dateTime)
+    {
+        if (dateTime == DateTimeOffset.MinValue)
+            return "Not available";
+
+        var timeAgo = DateTimeOffset.UtcNow - dateTime;
+
+        if (timeAgo.TotalDays < 1 && timeAgo.TotalHours < 1)
+            return $"{(int)timeAgo.TotalMinutes} minutes ago";
+        
+        if (timeAgo.TotalDays < 1)
+            return $"{(int)timeAgo.TotalHours} hours ago";
+            
+        if (timeAgo.TotalDays < 7)
+            return $"{(int)timeAgo.TotalDays} days ago";
+            
+        if (timeAgo.TotalDays < 30)
+            return $"{(int)(timeAgo.TotalDays / 7)} weeks ago";
+            
+        if (timeAgo.TotalDays < 365)
+            return $"{(int)(timeAgo.TotalDays / 30)} months ago";
+            
+        return dateTime.ToString("MMMM dd, yyyy");
+    }
+
+    /// <summary>
+    /// Formats phone number for display
+    /// </summary>
+    private static string FormatPhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrEmpty(phoneNumber))
+            return phoneNumber;
+
+        // Basic formatting for US/Canada numbers
+        if (phoneNumber.StartsWith("+1") && phoneNumber.Length == 12)
+        {
+            return $"{phoneNumber[..2]} ({phoneNumber[2..5]}) {phoneNumber[5..8]}-{phoneNumber[8..]}";
+        }
+
+        return phoneNumber;
+    }
+
+    /// <summary>
+    /// Formats provider names for display
+    /// </summary>
+    private static string FormatProviderName(string provider)
+    {
+        return provider.ToLowerInvariant() switch
+        {
+            "microsoft" => "Microsoft",
+            "google" => "Google",
+            "facebook" => "Facebook",
+            "twitter" => "Twitter",
+            "whatsapp" => "WhatsApp",
+            "code" => "Email/SMS Code",
+            "password" => "Password",
+            _ => provider
+        };
+    }
+
+    /// <summary>
+    /// Formats list of providers for display
+    /// </summary>
+    private static string FormatProviders(List<LoginProvider> providers)
+    {
+        if (!providers.Any())
+            return "None";
+
+        var providerNames = providers.Select(p => FormatProviderName(p.Code)).Distinct();
+        return string.Join(", ", providerNames);
+    }
 }

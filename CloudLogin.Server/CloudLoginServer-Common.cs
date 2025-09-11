@@ -57,7 +57,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         string redirectUri = $"{baseUrl}/Account/LoginResult?ReturnUrl={HttpUtility.UrlEncode(returnUrl)}";
 
-        return new RedirectResult($"{LoginUrl}{separator}redirectUri={HttpUtility.UrlEncode(redirectUri)}&actionState=login");
+        return new RedirectResult($"{LoginUrl}{separator}redirectUri={HttpUtility.UrlEncode(redirectUri)}");
     }
 
     public async Task<User?> CurrentUser()
@@ -467,58 +467,4 @@ public partial class CloudLoginServer : ICloudLogin
 
         return true;
     }
-
-    // API Controller methods
-    //public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail, string? input, string? redirectUri)
-    //{
-    //    // This is typically implemented in a different partial class file
-    //    // For now, return a redirect to the login URL
-    //    string baseUrl = LoginUrl;
-    //    string separator = baseUrl.Contains('?') ? "&" : "?";
-        
-    //    var parameters = new List<string>();
-    //    if (!string.IsNullOrEmpty(redirectUri)) parameters.Add($"redirectUri={HttpUtility.UrlEncode(redirectUri)}");
-    //    if (!string.IsNullOrEmpty(actionState)) parameters.Add($"actionState={HttpUtility.UrlEncode(actionState)}");
-    //    if (!string.IsNullOrEmpty(primaryEmail)) parameters.Add($"primaryEmail={HttpUtility.UrlEncode(primaryEmail)}");
-    //    if (!string.IsNullOrEmpty(input)) parameters.Add($"input={HttpUtility.UrlEncode(input)}");
-    //    parameters.Add($"keepMeSignedIn={keepMeSignedIn}");
-    //    parameters.Add($"sameSite={sameSite}");
-        
-    //    string queryString = string.Join("&", parameters);
-    //    return new RedirectResult($"{baseUrl}{separator}{queryString}");
-    //}
-
-    //public async Task<IActionResult> CustomLogin(User user, bool keepMeSignedIn, string redirectUri, bool sameSite, string actionState, string primaryEmail)
-    //{
-    //    // Create claims for the authenticated user
-    //    var claims = new List<Claim>
-    //    {
-    //        new(ClaimTypes.NameIdentifier, user.ID.ToString()),
-    //        new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
-    //        new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
-    //        new(ClaimTypes.Surname, user.LastName ?? string.Empty),
-    //        new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
-    //    };
-
-    //    if (user.PrimaryEmailAddress != null)
-    //        claims.Add(new Claim(ClaimTypes.Email, user.PrimaryEmailAddress.Input));
-    //    else if (user.Inputs.Any())
-    //        claims.Add(new Claim(ClaimTypes.Email, user.Inputs.First().Input));
-
-    //    var identity = new ClaimsIdentity(claims, "CloudLogin");
-    //    var principal = new ClaimsPrincipal(identity);
-
-    //    var properties = new AuthenticationProperties
-    //    {
-    //        IsPersistent = keepMeSignedIn,
-    //        ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.AddDays(30) : null
-    //    };
-
-    //    await _accessor.HttpContext!.SignInAsync(principal, properties);
-
-    //    if (!string.IsNullOrEmpty(redirectUri))
-    //        return new RedirectResult(redirectUri);
-        
-    //    return new OkResult();
-    //}
 }

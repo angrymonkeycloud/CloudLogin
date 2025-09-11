@@ -7,27 +7,27 @@ using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin;
 
+/// <summary>
+/// Main login component handling authentication flows
+/// This component focuses purely on authentication - user management is handled by separate Account components
+/// </summary>
 public partial class LoginComponent
 {
-    //GENERAL VARIABLES--------------------------------------
+    #region Core Parameters
     [Parameter] public string? Logo { get; set; }
     [Parameter] public bool Embedded { get; set; } = false;
-    [Parameter] public string? ActionState { get; set; }
-    [Parameter] public required User CurrentUser { get; set; }
-    public Guid UserId { get; set; } = Guid.NewGuid();
     [Parameter] public string? RedirectUri { get; set; }
     private string RedirectUriValue => RedirectUri ?? cloudLogin.RedirectUri ?? navigationManager.Uri;
+    #endregion
+
+    #region Authentication State
     private string Email { get; set; } = string.Empty;
     private string Password { get; set; } = string.Empty;
     private string ConfirmPassword { get; set; } = string.Empty;
-
-    //INPUT VARIABLES----------------------------------------
-    public string PrimaryEmail { get; set; } = string.Empty;
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
     public bool KeepMeSignedIn { get; set; }
-    public bool AddInputDiplay { get; set; } = false;
+    #endregion
+
+    #region Input Management
     private string _inputValue = string.Empty;
     public string InputValue
     {
@@ -38,10 +38,10 @@ public partial class LoginComponent
                 return;
 
             _inputValue = value;
-
             OnInput.Invoke();
         }
     }
+
     List<InputFormat> AvailableFormats
     {
         get
@@ -58,7 +58,9 @@ public partial class LoginComponent
         }
     }
     protected InputFormat InputValueFormat => cloudLogin.GetInputFormat(InputValue);
+    #endregion
 
+    #region UI State
     protected string CssClass
     {
         get
@@ -72,24 +74,30 @@ public partial class LoginComponent
         }
     }
 
-    //PROVIDERS VARIABLES------------------------------------
+    public Action OnInput { get; set; } = () => { };
+    protected bool Next { get; set; } = false;
+    protected bool Preview { get; set; } = false;
+    #endregion
+
+    #region Provider Management
     List<ProviderDefinition> Providers { get; set; } = [];
     List<ProviderDefinition> ExternalProviders => Providers.Where(key => key.IsExternal).ToList();
     public bool EmailAddressEnabled => Providers.Any(key => key.HandlesEmailAddress);
     public bool PhoneNumberEnabled => Providers.Any(key => key.HandlesPhoneNumber);
     public ProviderDefinition? SelectedProvider { get; set; }
-    public Action OnInput { get; set; } = () => { };
+    #endregion
 
-    protected bool Next { get; set; } = false;
-    protected bool Preview { get; set; } = false;
-
-    //VERIFICATION VARIABLES---------------------------------
+    #region Verification Management
     public string VerificationValue { get; set; } = string.Empty;
     public bool ExpiredCode { get; set; } = false;
     public string? VerificationCode { get; set; }
     public DateTimeOffset? VerificationCodeExpiry { get; set; }
+    #endregion
 
-    //REGISTRATION VARIABLES----------------------------------
+    #region Registration Data
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
     public List<ProviderDefinition> NonExternalProviders => Providers.Where(key => !key.IsExternal).ToList();
     public List<ProviderDefinition> AvailableRegistrationProviders => NonExternalProviders.Where(p =>
         p.Code.Equals("code", StringComparison.OrdinalIgnoreCase) ||
@@ -97,8 +105,9 @@ public partial class LoginComponent
     public bool HasCodeProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("code", StringComparison.OrdinalIgnoreCase));
     public bool HasPasswordProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase));
     public string? SelectedRegistrationMethod { get; set; }
+    #endregion
 
-    //START FUNCTIONS----------------------------------------
+    #region Lifecycle Methods
     protected override async Task OnInitializedAsync()
     {
         if (await cloudLogin.IsAuthenticated())
@@ -107,61 +116,16 @@ public partial class LoginComponent
             return;
         }
 
-        if (string.IsNullOrEmpty(ActionState))
-            ActionState = "login";
-
         Auth.OnStateChanged += StateHasChanged;
-
         Providers = await cloudLogin.GetProviders();
-
-        if (!string.IsNullOrEmpty(ActionState))
-        {
-            switch (ActionState)
-            {
-                case "UpdateInput":
-                    Auth.StartLoading();
-
-                    if (CurrentUser == null)
-                        return;
-
-                    LoginInput? primaryInput = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
-                    _inputValue = primaryInput?.Input ?? string.Empty;
-                    FirstName = CurrentUser.FirstName ?? string.Empty;
-                    LastName = CurrentUser.LastName ?? string.Empty;
-                    DisplayName = CurrentUser.DisplayName ?? string.Empty;
-                    UserId = CurrentUser.ID;
-
-                    await Auth.SwitchStep(ProcessStep.Registration);
-                    break;
-
-                case "AddInput":
-                    LoginInput? primaryInputForAdd = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
-                    PrimaryEmail = primaryInputForAdd?.Input ?? string.Empty;
-                    break;
-
-                case "AddNumber":
-                    LoginInput? primaryInputForNumber = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
-                    PrimaryEmail = primaryInputForNumber?.Input ?? string.Empty;
-                    break;
-
-                case "AddEmail":
-                    LoginInput? primaryInputForEmail = CurrentUser.Inputs.FirstOrDefault(i => i.IsPrimary == true);
-                    PrimaryEmail = primaryInputForEmail?.Input ?? string.Empty;
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
         OnInput = StateHasChanged;
 
         await Auth.SwitchStep(ProcessStep.InputValue);
-
         await base.OnInitializedAsync();
     }
+    #endregion
 
-    //BUTTONS CLICKED FUNCTIONS------------------------------
+    #region Input Validation and Navigation
     private async Task OnInputNextClicked()
     {
         Auth.Errors.Clear();
@@ -170,7 +134,6 @@ public partial class LoginComponent
             return;
 
         Auth.StartLoading();
-
         InputValue = InputValue.ToLower();
 
         User? user = await cloudLogin.GetUserByInput(InputValue);
@@ -178,10 +141,10 @@ public partial class LoginComponent
         if (user != null)
         {
             // Existing user - proceed with login flow
-            UserId = user.ID;
-
-            Auth.Input = new SelectedInput(InputValue.ToLower());
-            Auth.Input.IsFound = true;
+            Auth.Input = new SelectedInput(InputValue.ToLower())
+            {
+                IsFound = true
+            };
 
             foreach (string providerCode in user.Providers)
             {
@@ -201,9 +164,10 @@ public partial class LoginComponent
             // New user - check if we should proceed with registration
             if (NonExternalProviders.Count > 0)
             {
-                // We have internal providers (Code/Password), proceed with registration
-                Auth.Input = new SelectedInput(InputValue.ToLower());
-                Auth.Input.IsFound = false;
+                Auth.Input = new SelectedInput(InputValue.ToLower())
+                {
+                    IsFound = false
+                };
 
                 await Auth.SwitchStep(ProcessStep.RegistrationDetails);
             }
@@ -230,7 +194,6 @@ public partial class LoginComponent
         }
 
         Auth.StartLoading();
-
         InputValue = InputValue.ToLower();
 
         User? user = await cloudLogin.GetUserByInput(InputValue);
@@ -242,9 +205,10 @@ public partial class LoginComponent
             return;
         }
 
-        // Proceed with registration
-        Auth.Input = new SelectedInput(InputValue.ToLower());
-        Auth.Input.IsFound = false;
+        Auth.Input = new SelectedInput(InputValue.ToLower())
+        {
+            IsFound = false
+        };
 
         await Auth.SwitchStep(ProcessStep.RegistrationDetails);
         Auth.EndLoading();
@@ -262,21 +226,17 @@ public partial class LoginComponent
 
         Auth.StartLoading();
 
-        // Check available registration providers
         if (HasCodeProvider && HasPasswordProvider)
         {
-            // Both providers available - let user choose
             await Auth.SwitchStep(ProcessStep.RegistrationProviders);
         }
         else if (HasCodeProvider)
         {
-            // Only code provider - proceed with code registration
             SelectedRegistrationMethod = "code";
             await StartRegistrationProcess();
         }
         else if (HasPasswordProvider)
         {
-            // Only password provider - proceed with password registration
             SelectedRegistrationMethod = "password";
             await StartRegistrationProcess();
         }
@@ -287,7 +247,9 @@ public partial class LoginComponent
 
         Auth.EndLoading();
     }
+    #endregion
 
+    #region Provider Selection
     private async Task OnProviderClickedAsync(ProviderDefinition provider)
     {
         if (provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase))
@@ -315,18 +277,18 @@ public partial class LoginComponent
         await StartRegistrationProcess();
         Auth.EndLoading();
     }
+    #endregion
 
+    #region Registration Flow
     private async Task StartRegistrationProcess()
     {
         if (SelectedRegistrationMethod == "code")
         {
-            // Send verification code and proceed to code verification
             await RefreshVerificationCode();
             await Auth.SwitchStep(ProcessStep.RegistrationCodeVerification);
         }
         else if (SelectedRegistrationMethod == "password")
         {
-            // Send verification code and proceed to password+code verification
             await RefreshVerificationCode();
             await Auth.SwitchStep(ProcessStep.RegistrationPasswordVerification);
         }
@@ -353,7 +315,6 @@ public partial class LoginComponent
 
         try
         {
-            // Create user with code provider only using new model
             CodeRegistrationRequest request = CodeRegistrationRequest.Create(
                 Auth.Input!.Input,
                 InputValueFormat,
@@ -362,8 +323,6 @@ public partial class LoginComponent
                 DisplayName);
 
             User newUser = await cloudLogin.CodeRegistration(request);
-
-            // Sign in the new user
             CustomSignInChallenge(newUser);
         }
         catch (Exception ex)
@@ -408,7 +367,6 @@ public partial class LoginComponent
 
         try
         {
-            // Create user with password provider (includes code verification)
             PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
                 Auth.Input!.Input,
                 InputValueFormat,
@@ -418,8 +376,6 @@ public partial class LoginComponent
                 DisplayName);
 
             User newUser = await cloudLogin.PasswordRegistration(request);
-
-            // Sign in the new user
             CustomSignInChallenge(newUser);
         }
         catch (Exception ex)
@@ -428,7 +384,9 @@ public partial class LoginComponent
             Auth.EndLoading();
         }
     }
+    #endregion
 
+    #region Verification Flow
     private async Task OnVerifyClicked()
     {
         Auth.StartLoading();
@@ -447,27 +405,17 @@ public partial class LoginComponent
         }
 
         EndLoading();
-        User? checkUser;
-
-        if (SelectedProvider != null)
-            checkUser = (SelectedProvider?.Code?.ToLower()) switch
-            {
-                "whatsapp" => await cloudLogin.GetUserByPhoneNumber(InputValue),
-                "custom" => await cloudLogin.GetUserByEmailAddress(InputValue),
-                _ => await cloudLogin.GetUserByEmailAddress(InputValue),
-            };
-        else
-            checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
-
-        if (ActionState == "AddInput")
+        User? checkUser = SelectedProvider?.Code?.ToLower() switch
         {
-            CustomSignInChallenge(CurrentUser);
-            return;
-        }
+            "whatsapp" => await cloudLogin.GetUserByPhoneNumber(InputValue),
+            "custom" => await cloudLogin.GetUserByEmailAddress(InputValue),
+            _ => await cloudLogin.GetUserByEmailAddress(InputValue),
+        };
 
         if (checkUser != null)
             CustomSignInChallenge(checkUser);
-        else await Auth.SwitchStep(ProcessStep.Registration);
+        else 
+            await Auth.SwitchStep(ProcessStep.Registration);
     }
 
     private async Task OnVerifyEmailClicked()
@@ -489,11 +437,9 @@ public partial class LoginComponent
             default: break;
         }
 
-
         if (!Password.Equals(ConfirmPassword))
         {
             Auth.Errors.Add("Passwords must match.");
-
             EndLoading();
             return;
         }
@@ -502,7 +448,6 @@ public partial class LoginComponent
         {
             Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
             EndLoading();
-
             return;
         }
 
@@ -515,39 +460,20 @@ public partial class LoginComponent
             return;
         }
 
-        //checkUser.PasswordHash = await cloudLogin.HashPassword(Password);
-
         await cloudLogin.UpdateUser(checkUser!);
-
         EndLoading();
-
         await Auth.SwitchStep(ProcessStep.EmailPasswordLogin);
-
     }
+
     private Task OnRegisterClicked()
     {
-
         if (!cloudLogin.IsValidPassword(Password))
         {
             Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
             EndLoading();
-
             return Task.CompletedTask;
         }
 
-        User userValues = new()
-        {
-            ID = UserId,
-            FirstName = FirstName,
-            LastName = LastName,
-            DisplayName = DisplayName
-        };
-
-        if (ActionState == "UpdateInput")
-        {
-            UpdateUser(userValues);
-            return Task.CompletedTask;
-        }
         if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName))
         {
             Auth.Errors.Add("Unable to log you in. Please check that your first name, last name and your display name are correct.");
@@ -556,10 +482,31 @@ public partial class LoginComponent
 
         Auth.StartLoading();
 
+        User userValues = new()
+        {
+            ID = Guid.NewGuid(),
+            FirstName = FirstName,
+            LastName = LastName,
+            DisplayName = DisplayName
+        };
+
         CustomSignInChallenge(userValues);
         return Task.CompletedTask;
     }
 
+    private VerificationCodeResult GetVerificationCodeResult(string code)
+    {
+        if (VerificationCode != code.Trim())
+            return VerificationCodeResult.NotValid;
+
+        if (VerificationCodeExpiry.HasValue && DateTimeOffset.UtcNow >= VerificationCodeExpiry.Value)
+            return VerificationCodeResult.Expired;
+
+        return VerificationCodeResult.Valid;
+    }
+    #endregion
+
+    #region Keyboard Handling
     protected async Task OnInputKeyPressed(KeyboardEventArgs args)
     {
         if (Auth.IsLoading)
@@ -596,41 +543,47 @@ public partial class LoginComponent
                 break;
 
             case "Escape":
-                if (Auth.CurrentStep == ProcessStep.InputValue)
-                    InputValue = string.Empty;
-
-                if (Auth.CurrentStep == ProcessStep.RegistrationInput)
-                    InputValue = string.Empty;
-
-                if (Auth.CurrentStep == ProcessStep.CodeVerification)
-                    VerificationValue = string.Empty;
-
-                if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification)
-                    VerificationValue = string.Empty;
-
-                if (Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
-                {
-                    VerificationValue = string.Empty;
-                    Password = string.Empty;
-                    ConfirmPassword = string.Empty;
-                }
-
-                if (Auth.CurrentStep == ProcessStep.Registration || Auth.CurrentStep == ProcessStep.RegistrationDetails)
-                {
-                    FirstName = string.Empty;
-                    LastName = string.Empty;
-                    DisplayName = string.Empty;
-                }
+                ClearCurrentStepInputs();
                 break;
 
             default: break;
         }
     }
 
-    //SIGN IN FUNCTIONS-------------------------------------
+    private void ClearCurrentStepInputs()
+    {
+        switch (Auth.CurrentStep)
+        {
+            case ProcessStep.InputValue:
+            case ProcessStep.RegistrationInput:
+                InputValue = string.Empty;
+                break;
+
+            case ProcessStep.CodeVerification:
+            case ProcessStep.RegistrationCodeVerification:
+                VerificationValue = string.Empty;
+                break;
+
+            case ProcessStep.RegistrationPasswordVerification:
+                VerificationValue = string.Empty;
+                Password = string.Empty;
+                ConfirmPassword = string.Empty;
+                break;
+
+            case ProcessStep.Registration:
+            case ProcessStep.RegistrationDetails:
+                FirstName = string.Empty;
+                LastName = string.Empty;
+                DisplayName = string.Empty;
+                break;
+        }
+    }
+    #endregion
+
+    #region Authentication Actions
     private void ProviderSignInChallenge(string provider)
     {
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RedirectUri, true, ActionState, PrimaryEmail, null, InputValue);
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RedirectUri, true, string.Empty, null, InputValue);
 
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
@@ -640,7 +593,6 @@ public partial class LoginComponent
         try
         {
             Auth.StartLoading();
-
             Auth.Errors.Clear();
 
             PasswordLoginRequest request = PasswordLoginRequest.Create(Auth.Input!.Input, Password, KeepMeSignedIn);
@@ -655,7 +607,6 @@ public partial class LoginComponent
             }
 
             Auth.Errors.Add("Incorrect Email or Password");
-
         }
         catch (Exception ex)
         {
@@ -668,14 +619,12 @@ public partial class LoginComponent
         try
         {
             Auth.StartLoading();
-
             Auth.Errors.Clear();
 
             if (!cloudLogin.IsValidPassword(Password))
             {
                 Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be at least 8 characters long.");
                 EndLoading();
-
                 return;
             }
 
@@ -694,7 +643,6 @@ public partial class LoginComponent
             }
 
             Auth.Errors.Add("Failed to Register. Please try again later");
-
         }
         catch (Exception ex)
         {
@@ -703,58 +651,37 @@ public partial class LoginComponent
         }
     }
 
-    //ACTIONS FUNCTIONS--------------------------------------
-    private void UpdateUser(User user)
-    {
-        Dictionary<string, object> userInfo = new()
-            {
-                { "UserId", user.ID },
-                { "FirstName", user.FirstName ?? string.Empty },
-                { "LastName", user.LastName ?? string.Empty },
-                { "DisplayName", user.DisplayName ?? string.Empty }
-            };
-
-        string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
-
-        RedirectParameters redirectParams = RedirectParameters.Create("CloudLogin", "Actions") with
-        {
-            UserInfo = userInfoJSON,
-            RedirectUri = RedirectUri
-        };
-        navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
-    }
-
-    //CUSTOM SIGN IN FUNCTIONS-------------------------------
     private void CustomSignInChallenge(User user)
     {
         Dictionary<string, object> userInfo = new()
-            {
-                { "UserId", user.ID },
-                { "FirstName", user.FirstName ?? string.Empty },
-                { "LastName", user.LastName ?? string.Empty },
-                { "DisplayName", user.DisplayName ?? string.Empty },
-                { "Input", InputValue },
-                { "Type", InputValueFormat },
-            };
+        {
+            { "UserId", user.ID },
+            { "FirstName", user.FirstName ?? string.Empty },
+            { "LastName", user.LastName ?? string.Empty },
+            { "DisplayName", user.DisplayName ?? string.Empty },
+            { "Input", InputValue },
+            { "Type", InputValueFormat },
+        };
 
         string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
 
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "login", KeepMeSignedIn, RedirectUri, true, ActionState, PrimaryEmail, userInfoJSON);
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "login", KeepMeSignedIn, RedirectUri, true, "login", string.Empty, userInfoJSON);
 
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
+    #endregion
 
+    #region Code Management
     private static string CreateRandomCode(int length)
     {
         StringBuilder builder = new();
 
-        // Use cryptographically secure random number generator
         using RandomNumberGenerator rng = RandomNumberGenerator.Create();
         byte[] randomBytes = new byte[length];
         rng.GetBytes(randomBytes);
 
         for (int i = 0; i < length; i++)
-            builder.Append(randomBytes[i] % 10); // Convert each byte to a digit 0-9
+            builder.Append(randomBytes[i] % 10);
 
         return builder.ToString();
     }
@@ -769,8 +696,6 @@ public partial class LoginComponent
         {
             Auth.Errors.Add("Failed to send email code.");
             EndLoading();
-
-            return;
         }
     }
 
@@ -778,16 +703,7 @@ public partial class LoginComponent
     {
         await cloudLogin.SendWhatsAppCode(receiver, code);
     }
-    private VerificationCodeResult GetVerificationCodeResult(string code)
-    {
-        if (VerificationCode != code.Trim())
-            return VerificationCodeResult.NotValid;
 
-        if (VerificationCodeExpiry.HasValue && DateTimeOffset.UtcNow >= VerificationCodeExpiry.Value)
-            return VerificationCodeResult.Expired;
-
-        return VerificationCodeResult.Valid;
-    }
     private async Task RefreshVerificationCode()
     {
         Auth.StartLoading();
@@ -801,7 +717,6 @@ public partial class LoginComponent
             await SendEmailCode(InputValue, VerificationCode);
         else if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification || Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
         {
-            // For registration, use the input from Auth.Input
             string targetInput = Auth.Input?.Input ?? InputValue;
             InputFormat format = cloudLogin.GetInputFormat(targetInput);
 
@@ -819,10 +734,10 @@ public partial class LoginComponent
 
                 default:
                     await SendEmailCode(InputValue, VerificationCode);
-
                     break;
             }
     }
+
     private async Task OnNewCodeClicked()
     {
         Auth.StartLoading();
@@ -836,10 +751,8 @@ public partial class LoginComponent
         {
             Auth.Errors.Add(e.Message);
             EndLoading();
-            return;
         }
     }
-
 
     private async Task OnEmailForgetPassword()
     {
@@ -851,22 +764,21 @@ public partial class LoginComponent
         {
             Auth.Errors.Add("Email is not registered yet.");
             EndLoading();
-
             return;
         }
 
         await RefreshVerificationCode();
         await Auth.SwitchStep(ProcessStep.CodeEmailVerification);
         EndLoading();
-
     }
+    #endregion
 
-    //VISUAL FUNCTIONS---------------------------------------
-
+    #region UI Helpers
     private void EndLoading()
     {
         Auth.EndLoading();
     }
+
     protected void OnDisplayNameFocus()
     {
         if (!string.IsNullOrEmpty(DisplayName) || string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
@@ -874,6 +786,7 @@ public partial class LoginComponent
 
         DisplayName = $"{FirstName} {LastName}";
     }
+
     public string InputLabel
     {
         get
@@ -898,11 +811,14 @@ public partial class LoginComponent
 
     private void OnInputChanged(string newValue) => InputValue = newValue;
     protected bool InputRequired => Providers.Any(p => p.InputRequired);
+    #endregion
 
+    #region Nested Classes
     public class SelectedInput(string input)
     {
         public readonly string Input = input;
         public bool IsFound { get; set; } = false;
         public List<ProviderDefinition> Providers { get; set; } = [];
     }
+    #endregion
 }

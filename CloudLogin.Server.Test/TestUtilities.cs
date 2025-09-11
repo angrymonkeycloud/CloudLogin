@@ -22,7 +22,7 @@ public static class CloudLoginShared
 {
     public static string RedirectString(string controller, string action, 
         string? keepMeSignedIn = null, string? redirectUri = null, 
-        string? sameSite = null, string? actionState = null, 
+        string? sameSite = null, 
         string? primaryEmail = null, string? userInfo = null,
         string? inputValue = null)
     {
@@ -34,8 +34,6 @@ public static class CloudLoginShared
             parameters.Add($"redirectUri={System.Web.HttpUtility.UrlEncode(redirectUri)}");
         if (!string.IsNullOrEmpty(sameSite))
             parameters.Add($"sameSite={sameSite}");
-        if (!string.IsNullOrEmpty(actionState))
-            parameters.Add($"actionState={actionState}");
         if (!string.IsNullOrEmpty(primaryEmail))
             parameters.Add($"primaryEmail={System.Web.HttpUtility.UrlEncode(primaryEmail)}");
         if (!string.IsNullOrEmpty(userInfo))

@@ -2,78 +2,262 @@
 @using AngryMonkey.CloudLogin.Interfaces
 @inject ICloudLogin cloudLogin
 
-<div class="info">
-    <h3>Email Addresses</h3>
-
-    <div class="info-input">
-        <input type="text" @bind="NewEmail" placeholder="Add new email" />
-        <button @onclick="AddEmail">Add Email</button>
+<div class="account-section">
+    <div class="section-header">
+        <h3>Email Addresses</h3>
+        <p class="section-description">Manage your email addresses</p>
     </div>
 
-    <ul>
-        @foreach (LoginInput email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
-        {
-            <li>
-                <span>
-                    @email.Input
-                </span>
-                <div>
-                    @if (email.IsPrimary)
-                    {
-                        <span class="badge">Primary</span>
-                    }
-                    <button @onclick="() => SetPrimary(email.Input)">Set Primary</button>
-                    <button @onclick="() => RemoveEmail(email.Input)">Remove</button>
+    <div class="add-input-section">
+        <div class="input-group">
+            <input type="email" 
+                   class="form-input" 
+                   @bind="NewEmail" 
+                   placeholder="Add new email address" 
+                   disabled="@_isProcessing" />
+            <button class="btn btn-secondary" 
+                    @onclick="AddEmail" 
+                    disabled="@(_isProcessing || string.IsNullOrWhiteSpace(NewEmail) || !IsValidEmail(NewEmail))">
+                @if (_isProcessing)
+                {
+                    <span class="loading-spinner"></span>
+                }
+                else
+                {
+                    <span>Add Email</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @if (CurrentUser.EmailAddresses.Any())
+    {
+        <div class="items-list">
+            @foreach (LoginInput email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
+            {
+                <div class="item-row">
+                    <div class="item-info">
+                        <span class="item-text">@email.Input</span>
+                        @if (email.IsPrimary)
+                        {
+                            <span class="badge badge-primary">Primary</span>
+                        }
+                    </div>
+                    <div class="item-actions">
+                        @if (!email.IsPrimary)
+                        {
+                            <button class="btn btn-outline btn-sm" 
+                                    @onclick="() => SetPrimary(email.Input)" 
+                                    disabled="@_isProcessing">
+                                Set Primary
+                            </button>
+                        }
+                        @if (CurrentUser.EmailAddresses.Count > 1)
+                        {
+                            <button class="btn btn-danger btn-sm" 
+                                    @onclick="() => RemoveEmail(email.Input)" 
+                                    disabled="@_isProcessing">
+                                Remove
+                            </button>
+                        }
+                    </div>
                 </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <p>No email addresses configured.</p>
+        </div>
+    }
 
-            </li>
-        }
-    </ul>
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="@(_operationSuccess ? "alert-success" : "alert-error")">
+            @_statusMessage
+        </div>
+    }
 </div>
-
-
 
 @code {
     [Parameter] public required User CurrentUser { get; set; }
 
     private string NewEmail { get; set; } = string.Empty;
+    private bool _isProcessing = false;
+    private string _statusMessage = string.Empty;
+    private bool _operationSuccess = false;
 
+    /// <summary>
+    /// Adds a new email address to the user's account
+    /// </summary>
     private async Task AddEmail()
     {
-        if (string.IsNullOrEmpty(NewEmail))
+        if (_isProcessing || string.IsNullOrWhiteSpace(NewEmail) || !IsValidEmail(NewEmail))
             return;
 
-        var newEmail = new LoginInput
+        try
+        {
+            _isProcessing = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            // Check if email already exists
+            if (CurrentUser.EmailAddresses.Any(e => e.Input.Equals(NewEmail.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)))
             {
-                Input = NewEmail,
+                _statusMessage = "This email address is already associated with your account.";
+                _operationSuccess = false;
+                return;
+            }
+
+            // Check if email exists in system for another user
+            User? existingUser = await cloudLogin.GetUserByEmailAddress(NewEmail.Trim().ToLowerInvariant());
+            if (existingUser != null && existingUser.ID != CurrentUser.ID)
+            {
+                _statusMessage = "This email address is already in use by another account.";
+                _operationSuccess = false;
+                return;
+            }
+
+            var newEmailInput = new LoginInput
+            {
+                Input = NewEmail.Trim().ToLowerInvariant(),
                 Format = InputFormat.EmailAddress,
-                IsPrimary = false,
-                Providers = new List<LoginProvider>()
+                IsPrimary = !CurrentUser.EmailAddresses.Any(), // First email becomes primary
+                Providers = []
             };
 
-        CurrentUser.EmailAddresses.Add(newEmail);
-
-        await cloudLogin.UpdateUser(CurrentUser);
-
-        NewEmail = string.Empty;
+            CurrentUser.Inputs.Add(newEmailInput);
+            await cloudLogin.UpdateUser(CurrentUser);
+            
+            NewEmail = string.Empty;
+            _statusMessage = "Email address added successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to add email address: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
     }
 
+    /// <summary>
+    /// Removes an email address from the user's account
+    /// </summary>
     private async Task RemoveEmail(string email)
     {
-        var emailToRemove = CurrentUser?.EmailAddresses.FirstOrDefault(e => e.Input == email);
-
-        if (emailToRemove == null)
+        if (_isProcessing || CurrentUser.EmailAddresses.Count <= 1)
             return;
 
-        CurrentUser.EmailAddresses.Remove(emailToRemove);
-        await cloudLogin.UpdateUser(CurrentUser);
+        try
+        {
+            _isProcessing = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            var emailToRemove = CurrentUser.Inputs.FirstOrDefault(e => 
+                e.Format == InputFormat.EmailAddress && 
+                e.Input.Equals(email, StringComparison.OrdinalIgnoreCase));
+
+            if (emailToRemove == null)
+            {
+                _statusMessage = "Email address not found.";
+                _operationSuccess = false;
+                return;
+            }
+
+            // If removing primary email, set another as primary
+            if (emailToRemove.IsPrimary)
+            {
+                var nextPrimary = CurrentUser.EmailAddresses.FirstOrDefault(e => e != emailToRemove);
+                if (nextPrimary != null)
+                    nextPrimary.IsPrimary = true;
+            }
+
+            CurrentUser.Inputs.Remove(emailToRemove);
+            await cloudLogin.UpdateUser(CurrentUser);
+            
+            _statusMessage = "Email address removed successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to remove email address: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
     }
 
+    /// <summary>
+    /// Sets an email address as the primary email
+    /// </summary>
     private async Task SetPrimary(string email)
     {
-        foreach (var e in CurrentUser.EmailAddresses)
-            e.IsPrimary = e.Input == email;
+        if (_isProcessing)
+            return;
 
-        await cloudLogin.UpdateUser(CurrentUser);
+        try
+        {
+            _isProcessing = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            // Update primary status
+            foreach (var e in CurrentUser.EmailAddresses)
+                e.IsPrimary = e.Input.Equals(email, StringComparison.OrdinalIgnoreCase);
+
+            await cloudLogin.UpdateUser(CurrentUser);
+            
+            _statusMessage = "Primary email address updated successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to update primary email: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
+    }
+
+    /// <summary>
+    /// Validates email address format
+    /// </summary>
+    private static bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        return System.Text.RegularExpressions.Regex.IsMatch(email.Trim(), 
+            @"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$", 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
+
+    /// <summary>
+    /// Clears status message after a delay
+    /// </summary>
+    private async Task ClearStatusMessageAfterDelay()
+    {
+        if (_operationSuccess)
+        {
+            await Task.Delay(3000);
+            _statusMessage = string.Empty;
+            StateHasChanged();
+        }
     }
 }

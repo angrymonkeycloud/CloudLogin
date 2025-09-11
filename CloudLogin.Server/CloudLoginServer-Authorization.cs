@@ -27,13 +27,13 @@ public partial class CloudLoginServer
     //    RedirectUri = _configuration.RedirectUri
     //};
 
-    public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string actionState, string primaryEmail = "", string? input = null, string? redirectUri = null)
+    public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? redirectUri = null)
     {
         // Validate redirect URI to prevent open redirect attacks
         if (!string.IsNullOrEmpty(redirectUri) && !CloudLoginShared.IsValidRedirectUri(redirectUri))
             throw new ArgumentException("Invalid redirect URI", nameof(redirectUri));
 
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "result", keepMeSignedIn, redirectUri, sameSite, actionState, primaryEmail);
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "result", keepMeSignedIn, redirectUri, sameSite,  primaryEmail);
 
         AuthenticationProperties globalProperties = new()
         {
@@ -53,7 +53,7 @@ public partial class CloudLoginServer
         };
     }
 
-    public async Task<IActionResult> CustomLogin(User user, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string actionState = "", string primaryEmail = "")
+    public async Task<IActionResult> CustomLogin(User user, bool keepMeSignedIn, string redirectUri = "", bool sameSite = false, string primaryEmail = "")
     {
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
 
@@ -102,11 +102,11 @@ public partial class CloudLoginServer
 
         await _accessor.HttpContext!.SignInAsync(claimsPrincipal, properties);
 
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "result", keepMeSignedIn, redirectUri, sameSite, actionState, primaryEmail);
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "result", keepMeSignedIn, redirectUri, sameSite, primaryEmail);
 
         return new RedirectResult(CloudLoginShared.RedirectString(redirectParams));
     }
-    public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string actionState = "", string primaryEmail = "")
+    public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, string? redirectUri = null, string primaryEmail = "")
     {
         if (_cosmosMethods == null)
             throw new ArgumentNullException(nameof(CosmosMethods));
@@ -159,26 +159,7 @@ public partial class CloudLoginServer
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
 
-        if (actionState == "AddInput")
-        {
-            LoginInput input = user.Inputs.First();
-            string userInfo = JsonSerializer.Serialize(input, CloudLoginSerialization.Options);
-
-            RedirectParameters redirectParams = RedirectParameters.Create("Actions", "AddInput");
-            redirectParams = redirectParams with
-            {
-                RedirectUri = redirectUri,
-                UserInfo = userInfo,
-                PrimaryEmail = primaryEmail
-            };
-
-            return new RedirectResult(CloudLoginShared.RedirectString(redirectParams));
-        }
-
         await _request.HttpContext.SignInAsync(claimsPrincipal, properties);
-
-        if (actionState == "mobile")
-            return new RedirectResult($"{baseUrl}/?actionState=mobile&redirectUri={redirectUri}");
 
         if (sameSite)
             return new RedirectResult(AddQueryString(redirectUri, $"KeepMeSignedIn={keepMeSignedIn}"));

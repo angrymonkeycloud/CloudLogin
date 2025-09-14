@@ -20,6 +20,94 @@ public class CloudLoginClient : ICloudLogin
     public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }
 
+    // URL Generation methods for login flows
+    /// <summary>
+    /// Generates a login URL for web applications
+    /// </summary>
+    /// <param name="referer">The external website URL that referred to CloudLogin</param>
+    /// <param name="isMobileApp">Indicates if this is for a mobile application</param>
+    /// <returns>The complete login URL</returns>
+    public string GetLoginUrl(string? referer = null, bool isMobileApp = false)
+    {
+        string baseUrl = LoginUrl.TrimEnd('/');
+        referer ??= RedirectUri ?? "/";
+
+        var parameters = new List<string>();
+
+        if (!string.IsNullOrEmpty(referer))
+            parameters.Add($"referer={referer}");
+
+        if (isMobileApp)
+            parameters.Add("isMobileApp=true");
+
+        string queryString = parameters.Count > 0 ? "?" + string.Join("&", parameters) : "";
+        return $"{baseUrl}/{queryString}";
+    }
+
+    /// <summary>
+    /// Generates a login URL for external provider authentication
+    /// </summary>
+    /// <param name="providerCode">The provider code (e.g., "google", "microsoft")</param>
+    /// <param name="referer">The external website URL that referred to CloudLogin (legacy parameter name)</param>
+    /// <param name="isMobileApp">Indicates if this is for a mobile application</param>
+    /// <param name="keepMeSignedIn">Whether to maintain persistent session</param>
+    /// <param name="finalReferer">The external website URL that referred to CloudLogin</param>
+    /// <returns>The complete provider login URL</returns>
+    public string GetProviderLoginUrl(string providerCode, string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false)
+    {
+        if (string.IsNullOrEmpty(providerCode))
+            throw new ArgumentException("Provider code cannot be null or empty", nameof(providerCode));
+
+        string baseUrl = LoginUrl.TrimEnd('/');
+        referer ??= RedirectUri ?? "/";
+
+        var parameters = new List<string>();
+
+        if (!string.IsNullOrEmpty(referer))
+            parameters.Add($"referer={referer}");
+
+        if (isMobileApp)
+            parameters.Add("isMobileApp=true");
+
+        if (keepMeSignedIn)
+            parameters.Add("keepMeSignedIn=true");
+
+        string queryString = parameters.Count > 0 ? "?" + string.Join("&", parameters) : "";
+        return $"{baseUrl}/cloudlogin/login/{providerCode.ToLowerInvariant()}{queryString}";
+    }
+
+    /// <summary>
+    /// Generates a custom login URL with additional parameters
+    /// </summary>
+    /// <param name="referer">The external website URL that referred to CloudLogin (legacy parameter name)</param>
+    /// <param name="isMobileApp">Indicates if this is for a mobile application</param>
+    /// <param name="keepMeSignedIn">Whether to maintain persistent session</param>
+    /// <param name="userHint">Optional user hint (email/phone)</param>
+    /// <param name="finalReferer">The external website URL that referred to CloudLogin</param>
+    /// <returns>The complete custom login URL</returns>
+    public string GetCustomLoginUrl(string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false, string? userHint = null)
+    {
+        string baseUrl = LoginUrl.TrimEnd('/');
+        referer ??= RedirectUri ?? "/";
+
+        var parameters = new List<string>();
+
+        if (!string.IsNullOrEmpty(referer))
+            parameters.Add($"referer={HttpUtility.UrlEncode(referer)}");
+
+        if (isMobileApp)
+            parameters.Add("isMobileApp=true");
+
+        if (keepMeSignedIn)
+            parameters.Add("keepMeSignedIn=true");
+
+        if (!string.IsNullOrEmpty(userHint))
+            parameters.Add($"input={HttpUtility.UrlEncode(userHint)}");
+
+        string queryString = parameters.Count > 0 ? "?" + string.Join("&", parameters) : "";
+        return $"{baseUrl}/cloudlogin/login{queryString}";
+    }
+
     public async Task<List<ProviderDefinition>> GetProviders()
     {
         HttpResponseMessage response = await HttpServer.GetAsync("api/providers");
@@ -398,7 +486,7 @@ public class CloudLoginClient : ICloudLogin
     public async Task<User> PasswordRegistration(PasswordRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
+
         MultipartFormDataContent form = new()
         {
             { new StringContent(request.Input), "input" },
@@ -420,7 +508,7 @@ public class CloudLoginClient : ICloudLogin
     public async Task<User> CodeRegistration(CodeRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        
+
         MultipartFormDataContent form = new()
         {
             { new StringContent(request.Input), "input" },

@@ -20,15 +20,24 @@
             @if (!IsWorking)
             {
                 <h1>Error</h1>
-                <div>An error occured, please <a href="./cloudlogin/logout?redirectUri=@nav.BaseUri?redirectUri=@RedirectUri">Retry</a>.</div>
+                <div>An error occured, please <a href="./cloudlogin/logout?referer=@nav.BaseUri?referer=@Referer">Retry</a>.</div>
             }
             else
             {
-                @* @if ("mobile")
+                @if (IsMobileApp)
                 {
-                    <div>Mobile login successful, go back to the mobile application.</div>
-                } *@
-                @if (RedirectUri == "/")
+                    <div class="mobile-login-success">
+                        <h1>Mobile login successful</h1>
+                        <p>Please return to your mobile application. You can close this browser window.</p>
+                        @if (!string.IsNullOrEmpty(Referer) && Referer != "/")
+                        {
+                            <div class="mobile-redirect-note">
+                                <p><small>If the app doesn't automatically detect the login, please return to the app and try again.</small></p>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (string.IsNullOrEmpty(Referer) || Referer == "/")
                 {
                     <h1>Login successful</h1>
                     <a href="/account">View Account</a>
@@ -43,64 +52,137 @@
 }
 else
 {
-    <LoginPageComponent Logo="@configuration.Logo" RedirectUri="@_RedirectUri" />
+    <LoginPageComponent Logo="@configuration.Logo" Referer="@_Referer" />
 }
 
 @code {
+    [Parameter, SupplyParameterFromQuery(Name = "referer")]
+    public string? Referer { get; set; }
+
+    // Legacy support for existing integrations
+    [Parameter, SupplyParameterFromQuery(Name = "referredUrl")]
+    public string? ReferredUrl { get; set; }
+
     [Parameter, SupplyParameterFromQuery(Name = "redirectUri")]
     public string? RedirectUri { get; set; }
 
-    private string? _RedirectUri => RedirectUri ?? "/";
+    [Parameter, SupplyParameterFromQuery(Name = "isMobileApp")]
+    public bool IsMobileApp { get; set; } = false;
+
+    private string? _Referer => Referer ?? ReferredUrl ?? RedirectUri ?? "/";
     public User? CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool IsWorking { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
     {
+        // Normalize to use referer consistently
+        if (!string.IsNullOrEmpty(ReferredUrl) && string.IsNullOrEmpty(Referer))
+        {
+            Referer = ReferredUrl;
+        }
+        else if (!string.IsNullOrEmpty(RedirectUri) && string.IsNullOrEmpty(Referer))
+        {
+            Referer = RedirectUri;
+        }
+
+        // Debug: Log all query parameters
+        var uri = new Uri(nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
         IsAuthorized = await cloudLogin.IsAuthenticated();
 
         if (IsAuthorized)
         {
-            await Task.Yield();
-            nav.NavigateTo("/Account");
+            CurrentUser = await cloudLogin.CurrentUser();
 
+            // Handle redirect logic for authenticated users
+            await HandleAuthenticatedUserRedirect();
             return;
         }
 
-        if (string.IsNullOrEmpty(RedirectUri))
-            RedirectUri = "/";
+        if (string.IsNullOrEmpty(Referer))
+            Referer = "/";
 
-        // if ( == "mobile" && !string.IsNullOrEmpty(RedirectUri))
-        // {
-        //     if (CurrentUser != null && IsAuthorized)
-        //         await cloudLogin.CreateLoginRequest(CurrentUser.ID, new Guid(RedirectUri));
-        //     else
-        //         IsWorking = false;
+        IsWorking = false;
+        StateHasChanged();
+    }
 
-        //     StateHasChanged();
-        //     return;
-        // }
+    private async Task HandleAuthenticatedUserRedirect()
+    {
+        // Check for redirect parameters from OAuth callback
+        var uri = new Uri(nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        string? requestId = query["requestId"];
+        string? currentUser = query["currentUser"];
 
-        if (IsAuthorized && CurrentUser != null)
+        // If we have callback parameters, we're already being redirected from OAuth
+        if (!string.IsNullOrEmpty(requestId) || !string.IsNullOrEmpty(currentUser))
         {
-            if (RedirectUri != "/")
-            {
-                Guid? requestID = await cloudLogin.CreateLoginRequest(CurrentUser.ID);
-
-                string seperator = RedirectUri.Contains('?') ? "&" : "?";
-
-                if (CurrentUser != null)
-                {
-                    if (requestID == null)
-                        nav.NavigateTo($"{RedirectUri}{seperator}currentUser={HttpUtility.UrlEncode(JsonSerializer.Serialize(CurrentUser, CloudLoginSerialization.Options))}");
-                    else
-                        nav.NavigateTo($"{RedirectUri}{seperator}requestId={HttpUtility.UrlEncode(requestID.ToString())}");
-                }
-            }
+            IsWorking = true;
             StateHasChanged();
             return;
         }
-        IsWorking = false;
+
+        // If no referer or it's just "/", go to default account page for web users
+        if (string.IsNullOrEmpty(Referer) || Referer == "/")
+        {
+            if (!IsMobileApp)
+            {
+                await Task.Yield();
+                nav.NavigateTo("/Account");
+                return;
+            }
+            else
+            {
+                // Mobile users with no referer see success message
+                IsWorking = true;
+                StateHasChanged();
+                return;
+            }
+        }
+
+        // Handle external referer for both mobile and web
+        if (Referer != "/")
+        {
+            Guid? requestID = null;
+            try
+            {
+                requestID = await cloudLogin.CreateLoginRequest(CurrentUser!.ID);
+            }
+            catch (Exception ex) { }
+
+            string separator = Referer.Contains('?') ? "&" : "?";
+            string finalRedirectUrl;
+
+            if (requestID != null && requestID != Guid.Empty)
+            {
+                finalRedirectUrl = $"{Referer}{separator}requestId={HttpUtility.UrlEncode(requestID.ToString())}&keepMeSignedIn=true";
+            }
+            else
+            {
+                // Fallback: include user data directly
+                string userJson = JsonSerializer.Serialize(CurrentUser, CloudLoginSerialization.Options);
+                finalRedirectUrl = $"{Referer}{separator}currentUser={HttpUtility.UrlEncode(userJson)}&keepMeSignedIn=true";
+            }
+
+            if (IsMobileApp)
+                finalRedirectUrl += "&isMobileApp=true";
+
+            if (IsMobileApp)
+            {
+                // For mobile apps, show success message instead of redirecting
+                IsWorking = true;
+                StateHasChanged();
+            }
+            else
+                nav.NavigateTo(finalRedirectUrl, true); // forceLoad = true for external URLs
+
+            return;
+        }
+
+        // Default fallback
+        IsWorking = true;
         StateHasChanged();
     }
 }

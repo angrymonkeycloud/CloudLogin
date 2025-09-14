@@ -14,7 +14,7 @@ public partial class CloudLoginServer
     /// <summary>
     /// Handles the final login result and creates the authenticated session
     /// </summary>
-    public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? currentUser, string? returnUrl, bool keepMeSignedIn)
+    public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? currentUser, string? returnUrl, bool keepMeSignedIn, bool isMobileApp = false)
     {
         const string separator = "?";
         string actualSeparator = LoginUrl.Contains('?') ? "&" : separator;
@@ -24,11 +24,18 @@ public partial class CloudLoginServer
         User? cloudUser = await ResolveUserFromRequest(requestId, currentUser);
 
         if (cloudUser == null)
-            return Login(request, returnUrl);
+            return Login(request, returnUrl, isMobileApp);
 
         await CreateAuthenticatedSession(request.HttpContext, cloudUser, keepMeSignedIn);
         
         CleanupLoginCookies(response, keepMeSignedIn);
+
+        // Add mobile app parameter to return URL if needed
+        if (isMobileApp)
+        {
+            string separator2 = returnUrl.Contains('?') ? "&" : "?";
+            returnUrl = $"{returnUrl}{separator2}isMobileApp=true";
+        }
 
         return new RedirectResult(returnUrl);
     }
@@ -36,7 +43,7 @@ public partial class CloudLoginServer
     /// <summary>
     /// Handles automatic login for returning users
     /// </summary>
-    public ActionResult<bool> AutomaticLogin(HttpRequest request)
+    public ActionResult<bool> AutomaticLogin(HttpRequest request, bool isMobileApp = false)
     {
         try
         {
@@ -45,8 +52,16 @@ public partial class CloudLoginServer
 
             if (userCookie == null)
                 return new OkObjectResult(false);
+
+            string redirectUrl = $"{LoginUrl}{separator}Account/Login";
             
-            return new RedirectResult($"{LoginUrl}{separator}Account/Login");
+            if (isMobileApp)
+            {
+                string mobileSeparator = redirectUrl.Contains('?') ? "&" : "?";
+                redirectUrl = $"{redirectUrl}{mobileSeparator}isMobileApp=true";
+            }
+            
+            return new RedirectResult(redirectUrl);
         }
         catch
         {
@@ -57,14 +72,51 @@ public partial class CloudLoginServer
     /// <summary>
     /// Handles user logout and cleanup
     /// </summary>
-    public async Task<string> Logout(HttpRequest request, HttpResponse response)
+    public async Task<string> Logout(HttpRequest request, HttpResponse response, bool isMobileApp = false)
     {
         await request.HttpContext.SignOutAsync();
 
         response.Cookies.Delete("AutomaticSignIn");
         string baseUri = $"{request.Scheme}://{request.Host}";
         string separator = LoginUrl.Contains('?') ? "&" : "?";
-        return $"{LoginUrl}CloudLogin/Logout{separator}redirectUri={HttpUtility.UrlEncode(baseUri)}";
+        
+        string logoutUrl = $"{LoginUrl}CloudLogin/Logout{separator}redirectUri={HttpUtility.UrlEncode(baseUri)}";
+        
+        if (isMobileApp)
+        {
+            string mobileSeparator = logoutUrl.Contains('?') ? "&" : "?";
+            logoutUrl = $"{logoutUrl}{mobileSeparator}isMobileApp=true";
+        }
+        
+        return logoutUrl;
+    }
+
+    /// <summary>
+    /// Updated Login method to handle mobile app parameter
+    /// </summary>
+    public IActionResult Login(HttpRequest request, string? returnUrl, bool isMobileApp = false)
+    {
+        string baseUrl = $"{request.Scheme}://{request.Host}";
+
+        string separator = LoginUrl.Contains('?') ? "&" : "?";
+
+        if (string.IsNullOrEmpty(returnUrl))
+            returnUrl = baseUrl;
+
+        string redirectUri = $"{baseUrl}/Account/LoginResult?ReturnUrl={HttpUtility.UrlEncode(returnUrl)}";
+        
+        if (isMobileApp)
+            redirectUri += "&isMobileApp=true";
+
+        string finalUrl = $"{LoginUrl}{separator}redirectUri={HttpUtility.UrlEncode(redirectUri)}";
+        
+        if (isMobileApp)
+        {
+            string mobileSeparator = finalUrl.Contains('?') ? "&" : "?";
+            finalUrl = $"{finalUrl}{mobileSeparator}isMobileApp=true";
+        }
+
+        return new RedirectResult(finalUrl);
     }
 
     #region Private Helper Methods

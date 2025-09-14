@@ -5,7 +5,7 @@ namespace AngryMonkey.CloudLogin.Interfaces;
 public interface ICloudLogin
 {
     string LoginUrl { get; }
-    string? RedirectUri { get; set; }
+    string? RedirectUri { get; set; } // Legacy property - will be deprecated
     List<Link>? FooterLinks { get; set; }
     InputFormat GetInputFormat(string input);
     Task<bool> AutomaticLogin();
@@ -36,4 +36,35 @@ public interface ICloudLogin
     Task<User> CodeRegistration(CodeRegistrationRequest request);
 
     bool IsValidPassword(string password);
+
+    // URL Generation methods for login flows
+    /// <summary>
+    /// Generates a login URL for web applications
+    /// </summary>
+    /// <param name="referer">The external website URL that referred to CloudLogin</param>
+    /// <param name="isMobileApp">Indicates if this is for a mobile application</param>
+    /// <returns>The complete login URL</returns>
+    string GetLoginUrl(string? referer = null, bool isMobileApp = false);
+
+    /// <summary>
+    /// Generates a login URL for external provider authentication
+    /// </summary>
+    /// <param name="providerCode">The provider code (e.g., "google", "microsoft")</param>
+    /// <param name="referer">The external website URL that referred to CloudLogin (legacy parameter name)</param>
+    /// <param name="isMobileApp">Indicates if this is for a mobile application</param>
+    /// <param name="keepMeSignedIn">Whether to maintain persistent session</param>
+    /// <param name="finalReferer">The external website URL that referred to CloudLogin</param>
+    /// <returns>The complete provider login URL</returns>
+    string GetProviderLoginUrl(string providerCode, string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false);
+
+    /// <summary>
+    /// Generates a custom login URL with additional parameters
+    /// </summary>
+    /// <param name="referer">The external website URL that referred to CloudLogin (legacy parameter name)</param>
+    /// <param name="isMobileApp">Indicates if this is for a mobile application</param>
+    /// <param name="keepMeSignedIn">Whether to maintain persistent session</param>
+    /// <param name="userHint">Optional user hint (email/phone)</param>
+    /// <param name="finalReferer">The external website URL that referred to CloudLogin</param>
+    /// <returns>The complete custom login URL</returns>
+    string GetCustomLoginUrl(string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false, string? userHint = null);
 }

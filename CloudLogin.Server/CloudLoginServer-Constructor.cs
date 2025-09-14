@@ -13,7 +13,8 @@ public partial class CloudLoginServer(CloudGeographyClient cloudGeography, Cloud
 
     private HttpRequest _request => _accessor.HttpContext!.Request;
 
-    public string LoginUrl { get; set; } = string.Empty;
+    // Use BaseAddress from configuration as the LoginUrl, with fallback to current request
+    public string LoginUrl => _configuration.BaseAddress ?? $"{_request.Scheme}://{_request.Host}";
     public string UserRoute { get; set; } = "CloudLogin/User";
     public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }

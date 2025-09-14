@@ -8,12 +8,6 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 [ApiController]
 public class ProvidersController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
-    [HttpGet("Test")]
-    public async Task<ActionResult> Test()
-    {
-       return Ok("Test");
-    }
-
     [HttpGet("")]
     public async Task<ActionResult> GetProviders()
     {

@@ -16,8 +16,13 @@ public partial class LoginComponent
     #region Core Parameters
     [Parameter] public string? Logo { get; set; }
     [Parameter] public bool Embedded { get; set; } = false;
+    [Parameter] public string? Referer { get; set; }
+    
+    // Legacy support for backward compatibility
     [Parameter] public string? RedirectUri { get; set; }
-    private string RedirectUriValue => RedirectUri ?? cloudLogin.RedirectUri ?? navigationManager.Uri;
+    [Parameter] public string? ReferredUrl { get; set; }
+    
+    private string RefererValue => Referer ?? ReferredUrl ?? RedirectUri ?? cloudLogin.RedirectUri ?? navigationManager.Uri;
     #endregion
 
     #region Authentication State
@@ -469,7 +474,7 @@ public partial class LoginComponent
     {
         if (!cloudLogin.IsValidPassword(Password))
         {
-            Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, and be at least 6 characters long.");
+            Auth.Errors.Add("Password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be at least 8 characters long.");
             EndLoading();
             return Task.CompletedTask;
         }
@@ -583,7 +588,7 @@ public partial class LoginComponent
     #region Authentication Actions
     private void ProviderSignInChallenge(string provider)
     {
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RedirectUri, true, string.Empty, null, InputValue);
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RefererValue, true, string.Empty, null, InputValue);
 
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
@@ -665,7 +670,7 @@ public partial class LoginComponent
 
         string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
 
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "login", KeepMeSignedIn, RedirectUri, true, "login", string.Empty, userInfoJSON);
+        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "login", KeepMeSignedIn, RefererValue, true, "login", userInfoJSON, InputValue);
 
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }

@@ -1,24 +1,16 @@
-@rendermode @(new InteractiveWebAssemblyRenderMode(true))
+@* CloudLoginPage.razor - Alias for LoginPageComponent for backward compatibility *@
 
 @namespace AngryMonkey.CloudLogin
 
-@if (!RendererInfo.IsInteractive)
-{
-    <LoadingComponent Logo="@Logo" />
-}
-else
-{
-    <section>
-        <article>
-            <LoginComponent Logo="@Logo" Referer="@Referer" Embedded="Embedded" />
-        </article>
-    </section>
-}
+<LoginPageComponent Logo="@Logo" 
+                   Referer="@(Referer ?? ReferredUrl ?? RedirectUri)" 
+                   Embedded="@Embedded" />
 
 @code {
-
     [Parameter] public string? Logo { get; set; }
     [Parameter] public bool Embedded { get; set; } = false;
+    
+    // New parameter
     [Parameter] public string? Referer { get; set; }
     
     // Legacy support for backward compatibility

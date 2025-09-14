@@ -52,39 +52,24 @@
 }
 else
 {
-    <LoginPageComponent Logo="@configuration.Logo" Referer="@_Referer" />
+    <LoginPageComponent Logo="@configuration.Logo" Referer="@Referer" />
 }
 
 @code {
     [Parameter, SupplyParameterFromQuery(Name = "referer")]
     public string? Referer { get; set; }
 
-    // Legacy support for existing integrations
-    [Parameter, SupplyParameterFromQuery(Name = "referredUrl")]
-    public string? ReferredUrl { get; set; }
-
-    [Parameter, SupplyParameterFromQuery(Name = "redirectUri")]
-    public string? RedirectUri { get; set; }
-
     [Parameter, SupplyParameterFromQuery(Name = "isMobileApp")]
     public bool IsMobileApp { get; set; } = false;
 
-    private string? _Referer => Referer ?? ReferredUrl ?? RedirectUri ?? "/";
     public User? CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool IsWorking { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
     {
-        // Normalize to use referer consistently
-        if (!string.IsNullOrEmpty(ReferredUrl) && string.IsNullOrEmpty(Referer))
-        {
-            Referer = ReferredUrl;
-        }
-        else if (!string.IsNullOrEmpty(RedirectUri) && string.IsNullOrEmpty(Referer))
-        {
-            Referer = RedirectUri;
-        }
+        if (string.IsNullOrEmpty(Referer))
+            Referer = "/";
 
         // Debug: Log all query parameters
         var uri = new Uri(nav.Uri);

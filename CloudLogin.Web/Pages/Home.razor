@@ -148,7 +148,7 @@ else
             {
                 // Fallback: include user data directly
                 string userJson = JsonSerializer.Serialize(CurrentUser, CloudLoginSerialization.Options);
-                finalRedirectUrl = $"{Referer}{separator}currentUser={HttpUtility.UrlEncode(userJson)}&keepMeSignedIn=true";
+                finalRedirectUrl = $"{Referer}{separator}keepMeSignedIn=true";
             }
 
             if (IsMobileApp)

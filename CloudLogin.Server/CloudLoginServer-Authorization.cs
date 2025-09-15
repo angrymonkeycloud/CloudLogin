@@ -260,10 +260,6 @@ public partial class CloudLoginServer
 
             if (finalIsMobileApp)
                 finalUrl += "&isMobileApp=true";
-
-            // Include user data directly for external website integration
-            string userJson = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
-            finalUrl += $"&currentUser={HttpUtility.UrlEncode(userJson)}";
         }
 
             return new RedirectResult(finalUrl);

@@ -58,7 +58,17 @@ public partial class CloudLoginServer
         if (!string.IsNullOrEmpty(primaryEmail))
             globalProperties.Items["primaryEmail"] = primaryEmail;
 
-        return _accessor.HttpContext?.User.Identity?.IsAuthenticated == true ? new RedirectResult(referer ?? "/") : identity.Trim().ToLower() switch
+        // If user is already authenticated, redirect appropriately
+        if (_accessor.HttpContext?.User.Identity?.IsAuthenticated == true)
+        {
+            // If no external referer, go to account page
+            if (string.IsNullOrEmpty(referer) || referer == "/" || referer == baseUrl || referer == $"{baseUrl}/")
+                return new RedirectResult($"{baseUrl}/Account");
+            
+            return new RedirectResult(referer);
+        }
+
+        return identity.Trim().ToLower() switch
         {
             "microsoft" => new ChallengeResult(MicrosoftAccountDefaults.AuthenticationScheme, globalProperties),
             "google" => new ChallengeResult(GoogleDefaults.AuthenticationScheme, globalProperties),
@@ -172,23 +182,18 @@ public partial class CloudLoginServer
         bool finalIsMobileApp = !string.IsNullOrEmpty(storedIsMobileApp) ? bool.Parse(storedIsMobileApp) : isMobileApp;
         bool finalKeepMeSignedIn = !string.IsNullOrEmpty(storedKeepMeSignedIn) ? bool.Parse(storedKeepMeSignedIn) : keepMeSignedIn;
 
-        // Priority: stored referer > parameter redirectUri > CloudLogin base URL
-        //string finalReferer;
-        //if (!string.IsNullOrEmpty(referer) && Uri.IsWellFormedUriString(referer, UriKind.Absolute))
-        //{
-        //    finalReferer = referer;
-        //}
-        //else if (!string.IsNullOrEmpty(redirectUri) && Uri.IsWellFormedUriString(redirectUri, UriKind.Absolute))
-        //{
-        //    finalReferer = redirectUri; // Legacy support
-        //}
-        //else
-        //{
-        //    finalReferer = baseUrl; // Default to CloudLogin homepage if no external website
-        //}
-
-        if (string.IsNullOrEmpty(referer))
-            return new RedirectResult(baseUrl);
+        // If no valid external referer, redirect to account page directly without request ID
+        // Consider "/" or base URL as "no external referer"
+        if (string.IsNullOrEmpty(referer) || referer == "/" || referer == baseUrl || referer == $"{baseUrl}/")
+        {
+            string accountUrl = $"{baseUrl}/Account";
+            if (finalIsMobileApp)
+            {
+                string separator = accountUrl.Contains('?') ? "&" : "?";
+                accountUrl = $"{accountUrl}{separator}isMobileApp=true";
+            }
+            return new RedirectResult(accountUrl);
+        }
 
         if (!Uri.IsWellFormedUriString(referer, UriKind.Absolute))
             referer = HttpUtility.UrlDecode(referer);
@@ -262,7 +267,7 @@ public partial class CloudLoginServer
                 finalUrl += "&isMobileApp=true";
         }
 
-            return new RedirectResult(finalUrl);
+        return new RedirectResult(finalUrl);
     }
 
     private static string AddQueryString(string url, string queryString) =>

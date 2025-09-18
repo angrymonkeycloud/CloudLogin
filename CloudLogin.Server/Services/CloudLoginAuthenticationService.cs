@@ -62,7 +62,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
     private static string GetProviderName(ClaimsPrincipal principal)
     {
-        var identity = principal.Identity as ClaimsIdentity;
+        ClaimsIdentity? identity = principal.Identity as ClaimsIdentity;
         return identity?.AuthenticationType ?? "External";
     }
 
@@ -70,20 +70,20 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
     {
         // Try to get the provider-specific user identifier
         // Different providers use different claim types for user identifiers
-        var nameIdentifier = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string? nameIdentifier = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(nameIdentifier))
             return nameIdentifier;
 
         // Fallback to other common identifier claims
-        var subject = principal.FindFirst("sub")?.Value;
+        string? subject = principal.FindFirst("sub")?.Value;
         if (!string.IsNullOrEmpty(subject))
             return subject;
 
-        var oid = principal.FindFirst("oid")?.Value;
+        string? oid = principal.FindFirst("oid")?.Value;
         if (!string.IsNullOrEmpty(oid))
             return oid;
 
-        var id = principal.FindFirst("id")?.Value;
+        string? id = principal.FindFirst("id")?.Value;
         if (!string.IsNullOrEmpty(id))
             return id;
 

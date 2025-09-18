@@ -27,7 +27,7 @@ public class ConfigurableCosmosSerializer : CosmosSerializer
 
     private static JsonSerializerOptions CreateDefaultOptions()
     {
-        var options = new JsonSerializerOptions
+        JsonSerializerOptions options = new()
         {
             PropertyNamingPolicy = null, // Keep original property names (PascalCase)
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -61,7 +61,7 @@ public class ConfigurableCosmosSerializer : CosmosSerializer
 
     public override Stream ToStream<T>(T input)
     {
-        var memoryStream = new MemoryStream();
+        MemoryStream memoryStream = new();
         JsonSerializer.Serialize(memoryStream, input, _jsonSerializerOptions);
         memoryStream.Position = 0;
         return memoryStream;

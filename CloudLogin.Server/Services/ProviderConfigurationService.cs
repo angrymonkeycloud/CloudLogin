@@ -201,14 +201,14 @@ public class ProviderConfigurationService
 
     private static async Task ProcessMicrosoftTokens(AuthorizationCodeReceivedContext context, AuthenticationResult result)
     {
-        JwtSecurityTokenHandler handler = new JwtSecurityTokenHandler();
+        JwtSecurityTokenHandler handler = new();
         JwtSecurityToken? accessToken = handler.ReadToken(result.AccessToken) as JwtSecurityToken;
         JwtSecurityToken? idToken = handler.ReadToken(result.IdToken) as JwtSecurityToken;
 
-        ClaimsIdentity claimsIdentity = new ClaimsIdentity("Microsoft");
+        ClaimsIdentity claimsIdentity = new("Microsoft");
         AddMicrosoftClaims(claimsIdentity, accessToken, idToken);
 
-        ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+        ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
         await context.HttpContext.SignInAsync("Cookies", claimsPrincipal);
 
         context.HandleCodeRedemption(result.AccessToken, result.IdToken);

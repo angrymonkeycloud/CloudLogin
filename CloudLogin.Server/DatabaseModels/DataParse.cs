@@ -1,5 +1,4 @@
-﻿
-using AngryMonkey.CloudLogin;
+﻿using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
 
 public class DataParse
@@ -11,7 +10,6 @@ public class DataParse
 
         UserInfo userInformation = new()
         {
-            ID = user.ID,
             DisplayName = user.DisplayName,
             FirstName = user.FirstName,
             IsLocked = user.IsLocked,
@@ -23,6 +21,8 @@ public class DataParse
             Username = user.Username
         };
 
+        userInformation.SetId(user.ID);
+
         return userInformation;
     }
 
@@ -31,7 +31,7 @@ public class DataParse
         if (Users == null)
             return [];
 
-        return Users.Select(Parse).ToList();
+        return Users.Select(Parse).Where(user => user != null).ToList()!;
     }
 
     public static User? Parse(UserInfo? dbUser)
@@ -39,9 +39,12 @@ public class DataParse
         if (dbUser == null)
             return null;
 
+        // Ensure ID is properly parsed from the lowercase 'id' field
+        dbUser.ProcessExtensionData();
+
         return new()
         {
-            ID = dbUser.ID,
+            ID = dbUser.GetId(),
             DisplayName = dbUser.DisplayName,
             FirstName = dbUser.FirstName,
             IsLocked = dbUser.IsLocked,
@@ -59,6 +62,6 @@ public class DataParse
         if (Users == null)
             return [];
 
-        return Users.Select(Parse).Where(key => key != null).ToList();
+        return Users.Select(Parse).Where(user => user != null).ToList()!;
     }
 }

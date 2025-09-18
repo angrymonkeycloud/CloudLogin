@@ -24,7 +24,7 @@ public partial class CloudLoginServer : ICloudLogin
     {
         string baseUrl = LoginUrl.TrimEnd('/');
 
-        var parameters = new List<string>();
+        List<string> parameters = [];
 
         if (!string.IsNullOrEmpty(referer))
             parameters.Add($"referer={HttpUtility.UrlEncode(referer)}");
@@ -53,7 +53,7 @@ public partial class CloudLoginServer : ICloudLogin
         string baseUrl = LoginUrl.TrimEnd('/');
         referer ??= "/";
 
-        var parameters = new List<string>();
+        List<string> parameters = [];
 
         if (!string.IsNullOrEmpty(referer))
             parameters.Add($"referer={referer}");
@@ -82,7 +82,7 @@ public partial class CloudLoginServer : ICloudLogin
         string baseUrl = LoginUrl.TrimEnd('/');
         referer ??= "/";
 
-        var parameters = new List<string>();
+        List<string> parameters = [];
 
         if (!string.IsNullOrEmpty(referer))
             parameters.Add($"referer={referer}");
@@ -224,7 +224,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         LoginRequest request = await _cosmosMethods.CreateRequest(userId, requestId);
 
-        return request.ID;
+        return request.GetId();
     }
 
     public async Task SendWhatsAppCode(string receiver, string code)
@@ -365,20 +365,20 @@ public partial class CloudLoginServer : ICloudLogin
             return false;
 
         // Create claims for the authenticated user
-        var claims = new List<Claim>
-        {
+        List<Claim> claims =
+        [
             new(ClaimTypes.NameIdentifier, user.ID.ToString()),
             new(ClaimTypes.Email, request.Email.ToLowerInvariant()),
             new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
             new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
             new(ClaimTypes.Surname, user.LastName ?? string.Empty),
             new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
-        };
+        ];
 
-        var identity = new ClaimsIdentity(claims, "Password");
-        var principal = new ClaimsPrincipal(identity);
+        ClaimsIdentity identity = new(claims, "Password");
+        ClaimsPrincipal principal = new(identity);
 
-        var properties = new AuthenticationProperties
+        AuthenticationProperties properties = new()
         {
             IsPersistent = request.KeepMeSignedIn,
             ExpiresUtc = request.KeepMeSignedIn ? DateTimeOffset.UtcNow.AddDays(30) : null

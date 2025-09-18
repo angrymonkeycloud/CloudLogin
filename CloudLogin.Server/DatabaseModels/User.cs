@@ -2,7 +2,8 @@
 
 public record UserInfo : BaseRecord
 {
-    public UserInfo() : base("UserInfo", "UserInfo") { }
+    // Ensure both Type and PartitionKey align with configuration
+    public UserInfo() : base(GetEffectiveTypeValue(nameof(UserInfo)), GetEffectiveTypeValue(nameof(UserInfo))) { }
 
     public string? FirstName { get; set; }
     public string? LastName { get; set; }

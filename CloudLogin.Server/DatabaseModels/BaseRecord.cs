@@ -93,7 +93,7 @@ public abstract record BaseRecord
     // Also include legacy partition key name for backward compatibility when configured
     [JsonPropertyName("PartitionKey")]
     [Newtonsoft.Json.JsonProperty("PartitionKey")]
-    public string LegacyPartitionKey => PartitionKeyValue;
+    public string? LegacyPartitionKey => ShouldIncludeLegacySchema() ? PartitionKeyValue : null;
 
     // Include both modern and legacy type discriminator names so queries work in both modes
     [JsonPropertyName("$type")]
@@ -102,7 +102,7 @@ public abstract record BaseRecord
 
     [JsonPropertyName("Discriminator")]
     [Newtonsoft.Json.JsonProperty("Discriminator")]
-    public string LegacyDiscriminator => TypeValue;
+    public string? LegacyDiscriminator => ShouldIncludeLegacySchema() ? TypeValue : null;
 
     // Internal properties (not serialized directly)
     [JsonIgnore]
@@ -191,33 +191,6 @@ public abstract record BaseRecord
 }
 
 /// <summary>
-/// Custom JSON converter for BaseRecord to handle ID parsing for System.Text.Json
-/// </summary>
-public class BaseRecordJsonConverter<T> : JsonConverter<T> where T : BaseRecord
-{
-    public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
-        using JsonDocument doc = JsonDocument.ParseValue(ref reader);
-        string jsonString = doc.RootElement.GetRawText();
-
-        // Use default deserialization
-        T? result = JsonSerializer.Deserialize<T>(jsonString, new JsonSerializerOptions(options)
-        {
-            Converters = { } // Remove this converter to avoid infinite recursion
-        });
-
-        result?.ProcessExtensionData();
-
-        return result;
-    }
-
-    public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) => JsonSerializer.Serialize(writer, value, value.GetType(), new JsonSerializerOptions(options)
-    {
-        Converters = { } // Remove this converter to avoid infinite recursion
-    });
-}
-
-/// <summary>
 /// Custom contract resolver for BaseRecord serialization that handles dynamic property names
 /// and guarantees Cosmos DB partition key compatibility.
 /// </summary>
@@ -264,6 +237,19 @@ public class BaseRecordContractResolver : Newtonsoft.Json.Serialization.DefaultC
         Newtonsoft.Json.Serialization.JsonProperty? extensionDataProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.ExtensionData), StringComparison.Ordinal));
         if (extensionDataProp != null)
             extensionDataProp.Ignored = true;
+
+        // Handle legacy property visibility based on configuration
+        if (!includeLegacy)
+        {
+            // Hide legacy properties when legacy schema is not enabled
+            Newtonsoft.Json.Serialization.JsonProperty? legacyPkProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.LegacyPartitionKey), StringComparison.Ordinal));
+            if (legacyPkProp != null)
+                legacyPkProp.Ignored = true;
+
+            Newtonsoft.Json.Serialization.JsonProperty? legacyDiscProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.LegacyDiscriminator), StringComparison.Ordinal));
+            if (legacyDiscProp != null)
+                legacyDiscProp.Ignored = true;
+        }
 
         // Add configured type property alias if missing
         string configuredTypePropertyName = BaseRecord.GetTypePropertyName();

@@ -50,18 +50,52 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     #endregion
 
-    public async Task<User?> GetUserByEmailAddress(string emailAddress)
+    #region SQL Query Helpers
+
+    /// <summary>
+    /// Builds a WHERE clause that checks both modern and legacy property names for type/discriminator when IncludeLegacySchema is enabled
+    /// </summary>
+    private static string BuildTypeCondition(string userType)
     {
         string typePropertyName = BaseRecord.GetTypePropertyName();
         string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        
+        if (BaseRecord.ShouldIncludeLegacySchema())
+        {
+            // When legacy schema is included, check both modern and legacy property names
+            // This handles cases where data might exist with either naming convention
+            return $@"(
+                (root[""{typePropertyName}""] = @userType OR root[""Discriminator""] = @userType) AND 
+                (root[""{partitionKeyPropertyName}""] = @userType OR root[""PartitionKey""] = @userType)
+            )";
+        }
+        else
+        {
+            // Standard mode - only check modern property names
+            return $@"root[""{typePropertyName}""] = @userType AND root[""{partitionKeyPropertyName}""] = @userType";
+        }
+    }
+
+    /// <summary>
+    /// Creates a QueryDefinition with proper parameter setup for the user type
+    /// </summary>
+    private static QueryDefinition CreateUserQueryDefinition(string sql, string userType)
+    {
+        return new QueryDefinition(sql).WithParameter("@userType", userType);
+    }
+
+    #endregion
+
+    public async Task<User?> GetUserByEmailAddress(string emailAddress)
+    {
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string typeCondition = BuildTypeCondition(userType);
         
         // Note: use normal escaped quotes (\") so Cosmos SQL doesn't see backslashes
-        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = @userType AND root[\"{partitionKeyPropertyName}\"] = @userType AND EXISTS(SELECT VALUE 1 FROM input IN root.Inputs WHERE input.Format = \"EmailAddress\" AND UPPER(input.Input) = UPPER(@emailAddress))";
+        string sql = $"SELECT VALUE root FROM root WHERE {typeCondition} AND EXISTS(SELECT VALUE 1 FROM input IN root.Inputs WHERE input.Format = \"EmailAddress\" AND UPPER(input.Input) = UPPER(@emailAddress))";
 
-        QueryDefinition queryDefinition = new QueryDefinition(sql)
-            .WithParameter("@emailAddress", emailAddress.Trim())
-            .WithParameter("@userType", userType);
+        QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType)
+            .WithParameter("@emailAddress", emailAddress.Trim());
 
         FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
             queryDefinition,
@@ -97,16 +131,14 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<User?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
     {
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string typeCondition = BuildTypeCondition(userType);
         
-        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = @userType AND root[\"{partitionKeyPropertyName}\"] = @userType AND EXISTS(SELECT VALUE 1 FROM input IN root.Inputs WHERE input.Format = \"PhoneNumber\" AND input.Input = @phoneNumber AND (@countryCode = \"\" OR input.PhoneNumberCountryCode = @countryCode))";
+        string sql = $"SELECT VALUE root FROM root WHERE {typeCondition} AND EXISTS(SELECT VALUE 1 FROM input IN root.Inputs WHERE input.Format = \"PhoneNumber\" AND input.Input = @phoneNumber AND (@countryCode = \"\" OR input.PhoneNumberCountryCode = @countryCode))";
 
-        QueryDefinition queryDefinition = new QueryDefinition(sql)
+        QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType)
             .WithParameter("@phoneNumber", phoneNumber.Number)
-            .WithParameter("@countryCode", phoneNumber.CountryCode ?? string.Empty)
-            .WithParameter("@userType", userType);
+            .WithParameter("@countryCode", phoneNumber.CountryCode ?? string.Empty);
 
         FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
             queryDefinition,
@@ -138,15 +170,13 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<User?> GetUserByDisplayName(string displayName)
     {
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string typeCondition = BuildTypeCondition(userType);
         
-        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = @userType AND root[\"{partitionKeyPropertyName}\"] = @userType AND UPPER(root.DisplayName) = UPPER(@displayName)";
+        string sql = $"SELECT VALUE root FROM root WHERE {typeCondition} AND UPPER(root.DisplayName) = UPPER(@displayName)";
 
-        QueryDefinition queryDefinition = new QueryDefinition(sql)
-            .WithParameter("@displayName", displayName)
-            .WithParameter("@userType", userType);
+        QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType)
+            .WithParameter("@displayName", displayName);
 
         FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
             queryDefinition,
@@ -164,15 +194,13 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<List<User>> GetUsersByDisplayName(string displayName)
     {
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string typeCondition = BuildTypeCondition(userType);
         
-        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = @userType AND root[\"{partitionKeyPropertyName}\"] = @userType AND UPPER(root.DisplayName) = UPPER(@displayName)";
+        string sql = $"SELECT VALUE root FROM root WHERE {typeCondition} AND UPPER(root.DisplayName) = UPPER(@displayName)";
 
-        QueryDefinition queryDefinition = new QueryDefinition(sql)
-            .WithParameter("@displayName", displayName)
-            .WithParameter("@userType", userType);
+        QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType)
+            .WithParameter("@displayName", displayName);
 
         FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
             queryDefinition,
@@ -199,14 +227,12 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task<List<User>> GetUsers()
     {
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string typeCondition = BuildTypeCondition(userType);
         
-        string sql = $"SELECT VALUE root FROM root WHERE root[\"{typePropertyName}\"] = @userType AND root[\"{partitionKeyPropertyName}\"] = @userType";
+        string sql = $"SELECT VALUE root FROM root WHERE {typeCondition}";
 
-        QueryDefinition queryDefinition = new(sql);
-        queryDefinition.WithParameter("@userType", userType);
+        QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType);
 
         FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
             queryDefinition,

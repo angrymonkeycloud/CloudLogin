@@ -64,7 +64,7 @@ public partial class CloudLoginServer
             // If no external referer, go to account page
             if (string.IsNullOrEmpty(referer) || referer == "/" || referer == baseUrl || referer == $"{baseUrl}/")
                 return new RedirectResult($"{baseUrl}/Account");
-            
+
             return new RedirectResult(referer);
         }
 

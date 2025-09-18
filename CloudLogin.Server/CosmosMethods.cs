@@ -158,8 +158,12 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
     {
         LoginRequest request = new();
         request.SetId(requestId);
-        ItemResponse<LoginRequest> response = await _container.ReadItemAsync<LoginRequest>(requestId.ToString(), GetPartitionKey(request));
-        await _container.DeleteItemAsync<LoginRequest>(requestId.ToString(), GetPartitionKey(request));
+        
+        // When using legacy schema with TypePrefixed save mode, use the formatted ID
+        string documentId = request.GetFormattedId();
+        
+        ItemResponse<LoginRequest> response = await _container.ReadItemAsync<LoginRequest>(documentId, GetPartitionKey(request));
+        await _container.DeleteItemAsync<LoginRequest>(documentId, GetPartitionKey(request));
         LoginRequest selectedRequest = response.Resource;
 
         if (selectedRequest.UserId == null)
@@ -220,7 +224,11 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
     {
         UserInfo user = new();
         user.SetId(id);
-        ItemResponse<UserInfo> response = await _container.ReadItemAsync<UserInfo>(id.ToString(), GetPartitionKey(user));
+        
+        // When using legacy schema with TypePrefixed save mode, use the formatted ID
+        string documentId = user.GetFormattedId();
+        
+        ItemResponse<UserInfo> response = await _container.ReadItemAsync<UserInfo>(documentId, GetPartitionKey(user));
 
         return Parse(response.Resource);
     }
@@ -289,10 +297,13 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         userInfo.SetId(userId);
         PartitionKey partitionKey = GetPartitionKey(userInfo);
 
+        // When using legacy schema with TypePrefixed save mode, use the formatted ID
+        string documentId = userInfo.GetFormattedId();
+
         string lastSignedInPath = "/LastSignedIn";
         List<PatchOperation> patchOperations = [PatchOperation.Replace(lastSignedInPath, lastSignedIn)];
 
-        await _container.PatchItemAsync<UserInfo>(userId.ToString(), partitionKey, patchOperations);
+        await _container.PatchItemAsync<UserInfo>(documentId, partitionKey, patchOperations);
     }
 
     public async Task Create(User user)
@@ -318,6 +329,10 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
     {
         UserInfo user = new();
         user.SetId(userId);
-        await _container.DeleteItemStreamAsync(userId.ToString(), GetPartitionKey(user));
+        
+        // When using legacy schema with TypePrefixed save mode, use the formatted ID
+        string documentId = user.GetFormattedId();
+        
+        await _container.DeleteItemStreamAsync(documentId, GetPartitionKey(user));
     }
 }

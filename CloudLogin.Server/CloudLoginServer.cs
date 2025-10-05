@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace AngryMonkey.CloudLogin.Server;
@@ -12,55 +11,50 @@ namespace AngryMonkey.CloudLogin.Server;
 public partial class CloudLoginServer
 {
     /// <summary>
-    /// Handles the final login result and creates the authenticated session
+    /// Finalizes login: creates authenticated session then redirects.
+    /// If a referer/returnUrl is provided it appends the one-time requestId (if not already present) and redirects there.
+    /// If not provided, redirects to the local /Account page.
     /// </summary>
-    public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? currentUser, string? returnUrl, bool keepMeSignedIn, bool isMobileApp = false)
+    public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? currentUser, string? returnUrl, bool keepMeSignedIn, bool _ = false)
     {
-        const string separator = "?";
-        string actualSeparator = LoginUrl.Contains('?') ? "&" : separator;
-
-        returnUrl ??= $"{request.Scheme}://{request.Host}";
-
+        // Resolve user from requestId or serialized user payload
         User? cloudUser = await ResolveUserFromRequest(requestId, currentUser);
-
         if (cloudUser == null)
-            return Login(request, returnUrl, isMobileApp);
+            return Login(request, returnUrl, false); // Restart login flow if user vanished (e.g. expired request)
 
         await CreateAuthenticatedSession(request.HttpContext, cloudUser, keepMeSignedIn);
-        
         CleanupLoginCookies(response, keepMeSignedIn);
 
-        // Add mobile app parameter to return URL if needed
-        if (isMobileApp)
+        // If no returnUrl (referer) -> go to account page on host
+        if (string.IsNullOrWhiteSpace(returnUrl))
         {
-            string separator2 = returnUrl.Contains('?') ? "&" : "?";
-            returnUrl = $"{returnUrl}{separator2}isMobileApp=true";
+            string localAccount = $"{request.Scheme}://{request.Host}/Account";
+            return new RedirectResult(localAccount);
         }
+
+        // Decode if encoded
+        try { returnUrl = HttpUtility.UrlDecode(returnUrl); } catch { }
+
+        // Append requestId only if not already present
+        if (!returnUrl.Contains("requestId=", StringComparison.OrdinalIgnoreCase))
+            returnUrl = AppendQuery(returnUrl, "requestId", requestId.ToString());
 
         return new RedirectResult(returnUrl);
     }
 
     /// <summary>
-    /// Handles automatic login for returning users
+    /// Automatic login (unchanged logic except mobile flag removed)
     /// </summary>
-    public ActionResult<bool> AutomaticLogin(HttpRequest request, bool isMobileApp = false)
+    public ActionResult<bool> AutomaticLogin(HttpRequest request, bool _ = false)
     {
         try
         {
-            string separator = LoginUrl.Contains('?') ? "&" : "?";
             string? userCookie = request.Cookies["AutomaticSignIn"];
-
             if (userCookie == null)
                 return new OkObjectResult(false);
 
-            string redirectUrl = $"{LoginUrl}{separator}Account/Login";
-            
-            if (isMobileApp)
-            {
-                string mobileSeparator = redirectUrl.Contains('?') ? "&" : "?";
-                redirectUrl = $"{redirectUrl}{mobileSeparator}isMobileApp=true";
-            }
-            
+            // Redirect to standard login (will auto-complete)
+            string redirectUrl = $"{LoginUrl}{(LoginUrl.Contains('?') ? '&' : '?')}Account/Login";
             return new RedirectResult(redirectUrl);
         }
         catch
@@ -70,56 +64,70 @@ public partial class CloudLoginServer
     }
 
     /// <summary>
-    /// Handles user logout and cleanup
+    /// Logout: sign out then redirect back to base host (or provided referer if desired externally).
     /// </summary>
-    public async Task<string> Logout(HttpRequest request, HttpResponse response, bool isMobileApp = false)
+    public async Task<string> Logout(HttpRequest request, HttpResponse response, bool _ = false)
     {
         await request.HttpContext.SignOutAsync();
-
         response.Cookies.Delete("AutomaticSignIn");
         string baseUri = $"{request.Scheme}://{request.Host}";
-        string separator = LoginUrl.Contains('?') ? "&" : "?";
-        
-        string logoutUrl = $"{LoginUrl}CloudLogin/Logout{separator}redirectUri={HttpUtility.UrlEncode(baseUri)}";
-        
-        if (isMobileApp)
-        {
-            string mobileSeparator = logoutUrl.Contains('?') ? "&" : "?";
-            logoutUrl = $"{logoutUrl}{mobileSeparator}isMobileApp=true";
-        }
-        
+        string logoutUrl = $"{LoginUrl}CloudLogin/Logout{(LoginUrl.Contains('?') ? '&' : '?')}redirectUri={HttpUtility.UrlEncode(baseUri)}";
         return logoutUrl;
     }
 
     /// <summary>
-    /// Updated Login method to handle mobile app parameter
+    /// Entry point to start login. If a referer query parameter is present it is treated as the final destination.
+    /// A requestId will be appended to that referer after successful authentication.
     /// </summary>
-    public IActionResult Login(HttpRequest request, string? returnUrl, bool isMobileApp = false)
+    public IActionResult Login(HttpRequest request, string? returnUrl, bool _ = false)
     {
         string baseUrl = $"{request.Scheme}://{request.Host}";
 
-        string separator = LoginUrl.Contains('?') ? "&" : "?";
-
-        if (string.IsNullOrEmpty(returnUrl))
-            returnUrl = baseUrl;
-
-        string redirectUri = $"{baseUrl}/Account/LoginResult?ReturnUrl={HttpUtility.UrlEncode(returnUrl)}";
-        
-        if (isMobileApp)
-            redirectUri += "&isMobileApp=true";
-
-        string finalUrl = $"{LoginUrl}{separator}redirectUri={HttpUtility.UrlEncode(redirectUri)}";
-        
-        if (isMobileApp)
+        // Prefer explicit referer query parameter (custom scheme OR https OR any absolute target)
+        string? referer = request.Query["referer"];
+        if (!string.IsNullOrWhiteSpace(referer))
         {
-            string mobileSeparator = finalUrl.Contains('?') ? "&" : "?";
-            finalUrl = $"{finalUrl}{mobileSeparator}isMobileApp=true";
+            try { referer = HttpUtility.UrlDecode(referer); } catch { }
+            if (!string.IsNullOrWhiteSpace(referer))
+                returnUrl = referer;
         }
+
+        // Fallbacks
+        if (string.IsNullOrWhiteSpace(returnUrl))
+            returnUrl = baseUrl; // Root of host if nothing supplied
+
+        // Build redirect URI that CloudLogin will call after provider auth
+        string loginResultRedirect = $"{baseUrl}/Account/LoginResult?ReturnUrl={HttpUtility.UrlEncode(returnUrl)}";
+
+        // Compose final external provider bootstrap URL
+        string finalUrl = $"{LoginUrl}{(LoginUrl.Contains('?') ? '&' : '?')}redirectUri={HttpUtility.UrlEncode(loginResultRedirect)}";
 
         return new RedirectResult(finalUrl);
     }
 
     #region Private Helper Methods
+
+    private static string AppendQuery(string url, string key, string value)
+    {
+        if (string.IsNullOrEmpty(url)) return url;
+
+        // Preserve fragment (#...)
+        string? fragment = null;
+        int hashIndex = url.IndexOf('#');
+        if (hashIndex >= 0)
+        {
+            fragment = url.Substring(hashIndex);
+            url = url.Substring(0, hashIndex);
+        }
+
+        char separator = url.Contains('?') ? '&' : '?';
+        url = $"{url}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
+
+        if (!string.IsNullOrEmpty(fragment))
+            url += fragment;
+
+        return url;
+    }
 
     /// <summary>
     /// Resolves user from either request ID or serialized user data
@@ -173,7 +181,7 @@ public partial class CloudLoginServer
         response.Cookies.Delete("LoggingIn");
 
         if (keepMeSignedIn)
-            response.Cookies.Append("AutomaticSignIn", "True", new CookieOptions { 
+            response.Cookies.Append("AutomaticSignIn", "True", new CookieOptions {
                 Expires = DateTimeOffset.UtcNow.AddMonths(6),
                 HttpOnly = true,
                 Secure = true,

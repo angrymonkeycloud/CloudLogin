@@ -1,62 +1,160 @@
-.info {
+.account-section {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 32px;
+}
 
-    > div {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
+.section-header {
+    margin-bottom: 8px;
+
+    h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #212529;
+        margin: 0 0 4px 0;
     }
 
-    &-input {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+    .section-description {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 0;
+    }
+}
 
-        > div {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
 
-            label {
-                margin-left: 5px;
-                font-size: 1rem;
-                font-weight: bold;
-                color: var(--amc-accentColor);
-            }
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
-            input {
-                padding: 15px 20px;
-                outline: none;
-                border: 1px solid var(--amc-accentColor);
-                border-radius: 5px;
-            }
-        }
+.form-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    margin-left: 4px;
+}
+
+.form-input {
+    padding: 12px 16px;
+    font-size: 15px;
+    color: #212529;
+    background-color: #ffffff;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.2s ease;
+    width:100%;
+    &::placeholder {
+        color: #adb5bd;
     }
 
-    &-buttons {
-        width: 100%;
-        margin-top: 20px;
+    &:hover {
+        border-color: #ced4da;
+    }
 
-        button {
-            width: 100%;
-            padding: 10px;
-            text-transform: capitalize;
-            font-size: 1rem;
-            color: #fff;
-            cursor: pointer;
-            border-radius: 20px;
-            background-color: var(--amc-secondColor);
-            border: 1px solid var(--amc-secondColor);
-            transition: all .5s;
-            position: relative;
-            width: 100%;
+    &:focus {
+        border-color: var(--amc-accentColor);
+        box-shadow: 0 0 0 3px rgba(var(--amc-accentColor-rgb, 0, 123, 255), 0.1);
+    }
 
-            &:hover {
-                color: var(--amc-secondColor);
-                background-color: transparent;
-            }
-        }
+    &:disabled {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+}
+
+.form-actions {
+    margin-top: 8px;
+}
+
+.btn {
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.btn-primary {
+    background-color: var(--amc-accentColor);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    &:hover:not(:disabled) {
+        background-color: var(--amc-secondColor);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.alert-success {
+    padding: 16px 20px;
+    background-color: #d1e7dd;
+    border-left: 4px solid #0f5132;
+    color: #0f5132;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
+.alert-error {
+    padding: 16px 20px;
+    background-color: #f8d7da;
+    border-left: 4px solid #842029;
+    color: #842029;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
+@media only screen and (min-width: 600px) {
+    .form-container {
+        gap: 20px;
+    }
+
+    .btn {
+        width: auto;
+        min-width: 200px;
     }
 }

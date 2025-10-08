@@ -36,13 +36,13 @@
                    placeholder="Enter your display name" />
         </div>
 
-        <div class="form-group">
+     @*    <div class="form-group">
             <label for="dateOfBirth" class="form-label">Date of Birth:</label>
             <input type="date" 
                    id="dateOfBirth" 
                    class="form-input" 
                    @bind="CurrentUser.DateOfBirth" />
-        </div>
+        </div> *@
 
         <div class="form-actions">
             <button class="btn btn-primary" @onclick="UpdateUserInfo" disabled="@_isUpdating">
@@ -98,7 +98,7 @@
             }
 
             await cloudLogin.UpdateUser(CurrentUser);
-            
+
             _updateMessage = "Your information has been updated successfully.";
             _updateSuccess = true;
         }

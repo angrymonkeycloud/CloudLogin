@@ -1,101 +1,92 @@
 ﻿@using AngryMonkey.CloudLogin.Interfaces
+@using System.Globalization
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
 
-<div class="account-section">
-    <div class="section-header">
-        <h3>Account Information</h3>
-        <p class="section-description">Your current account details</p>
-    </div>
-    
-    <div class="info-grid">
-        <div class="info-item">
-            <div class="info-label">Display Name</div>
-            <div class="info-value">@(CurrentUser.DisplayName ?? "Not specified")</div>
-        </div>
-        
-        <div class="info-item">
-            <div class="info-label">First Name</div>
-            <div class="info-value">@(CurrentUser.FirstName ?? "Not specified")</div>
-        </div>
-        
-        <div class="info-item">
-            <div class="info-label">Last Name</div>
-            <div class="info-value">@(CurrentUser.LastName ?? "Not specified")</div>
-        </div>
+<div class="account-section ms-account">
+    <!-- Header card with avatar and name -->
+    <div class="header-card">
+        <div class="profile-block">
+            @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
+            {
+                <img class="avatar" src="@CurrentUser.ProfilePicture" alt="Profile picture" />
+            }
+            else
+            {
+                <div class="avatar initials" aria-hidden="true">@GetInitials()</div>
+            }
 
-        @if (CurrentUser.DateOfBirth.HasValue)
-        {
-            <div class="info-item">
-                <div class="info-label">Date of Birth</div>
-                <div class="info-value">@CurrentUser.DateOfBirth.Value.ToString("MMMM dd, yyyy")</div>
+            <div class="profile-copy">
+                <p class="subtitle">Personalize your account with a photo. Your profile photo may appear in apps and devices that use your account.</p>
+                <button class="btn btn-outline" disabled>Change photo</button>
             </div>
-        }
-
-        <div class="info-item">
-            <div class="info-label">Account Created</div>
-            <div class="info-value">@FormatDateTime(CurrentUser.CreatedOn)</div>
         </div>
 
-        <div class="info-item">
-            <div class="info-label">Last Sign In</div>
-            <div class="info-value">@FormatDateTime(CurrentUser.LastSignedIn)</div>
+        <div class="full-name-row">
+            <div class="full-name">@GetFullName()</div>
+            <button class="link-action" disabled>Edit name</button>
         </div>
     </div>
 
-    @if (CurrentUser.EmailAddresses.Any())
-    {
-        <div class="contact-section">
-            <h4>Email Addresses</h4>
-            <div class="contact-list">
-                @foreach (var email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
-                {
-                    <div class="contact-item">
-                        <span class="contact-text">@email.Input</span>
-                        <div class="contact-badges">
-                            @if (email.IsPrimary)
-                            {
-                                <span class="badge badge-primary">Primary</span>
-                            }
-                            <span class="badge badge-info">@FormatProviders(email.Providers)</span>
-                        </div>
-                    </div>
-                }
+    <!-- Profile info card -->
+    <div class="card info-card">
+        <div class="card-header">
+            <h4>Profile info</h4>
+            <button class="link-action" disabled>Edit profile info</button>
+        </div>
+        <div class="kv-list">
+            <div class="kv-row">
+                <div class="kv-key">Date of birth</div>
+                <div class="kv-value">@FormatDateOnly(CurrentUser.DateOfBirth)</div>
+            </div>
+            <div class="kv-row">
+                <div class="kv-key">Country or region</div>
+                <div class="kv-value">@FormatCountry(CurrentUser.Country)</div>
+            </div>
+            <div class="kv-row">
+                <div class="kv-key">Language</div>
+                <div class="kv-value">@FormatLanguage(CurrentUser.Locale)</div>
+            </div>
+            <div class="kv-row">
+                <div class="kv-key">Regional formats</div>
+                <div class="kv-value">@FormatRegionalFormats(CurrentUser.Locale)</div>
             </div>
         </div>
-    }
+    </div>
 
-    @if (CurrentUser.PhoneNumbers.Any())
-    {
-        <div class="contact-section">
-            <h4>Phone Numbers</h4>
-            <div class="contact-list">
-                @foreach (var phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
-                {
-                    <div class="contact-item">
-                        <span class="contact-text">@FormatPhoneNumber(phone.Input)</span>
-                        <div class="contact-badges">
-                            @if (phone.IsPrimary)
-                            {
-                                <span class="badge badge-primary">Primary</span>
-                            }
-                            @if (!string.IsNullOrEmpty(phone.PhoneNumberCountryCode))
-                            {
-                                <span class="badge badge-secondary">@phone.PhoneNumberCountryCode</span>
-                            }
-                            <span class="badge badge-info">@FormatProviders(phone.Providers)</span>
-                        </div>
-                    </div>
-                }
+    <!-- Account info card -->
+    <div class="card info-card">
+        <div class="card-header">
+            <h4>Account info</h4>
+            <button class="link-action" disabled>Edit account info</button>
+        </div>
+        <div class="kv-list">
+            <div class="kv-row">
+                <div class="kv-key">Email address</div>
+                <div class="kv-value">@GetPrimaryEmail()</div>
+            </div>
+            <div class="kv-row">
+                <div class="kv-key">Phone number</div>
+                <div class="kv-value">@GetPrimaryPhone()</div>
+            </div>
+            <div class="kv-row meta">
+                <div class="kv-key">Account created</div>
+                <div class="kv-value">@FormatDateTime(CurrentUser.CreatedOn)</div>
+            </div>
+            <div class="kv-row meta">
+                <div class="kv-key">Last sign in</div>
+                <div class="kv-value">@FormatDateTime(CurrentUser.LastSignedIn)</div>
             </div>
         </div>
-    }
+    </div>
 
     @if (CurrentUser.Providers.Any())
     {
-        <div class="providers-section">
-            <h4>Connected Providers</h4>
+        <div class="card providers-card">
+            <div class="card-header">
+                <h4>Connected providers</h4>
+            </div>
             <div class="providers-list">
                 @foreach (var provider in CurrentUser.Providers.Distinct())
                 {
@@ -116,6 +107,86 @@
 @code {
     [Parameter] public required User CurrentUser { get; set; }
 
+    private string GetFullName()
+    {
+        var full = CurrentUser.DisplayName;
+        if (string.IsNullOrWhiteSpace(full))
+        {
+            full = string.Join(" ", new[] { CurrentUser.FirstName, CurrentUser.LastName }
+                .Where(s => !string.IsNullOrWhiteSpace(s)));
+        }
+        return string.IsNullOrWhiteSpace(full) ? "Not specified" : full!;
+    }
+
+    private string GetInitials()
+    {
+        var parts = new[] { CurrentUser.FirstName, CurrentUser.LastName }
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s!.Trim());
+        var initials = string.Concat(parts.Select(p => char.ToUpperInvariant(p[0])));
+        if (string.IsNullOrWhiteSpace(initials) && !string.IsNullOrWhiteSpace(CurrentUser.DisplayName))
+            initials = new string(CurrentUser.DisplayName!.Where(char.IsLetter).Take(2).Select(char.ToUpperInvariant).ToArray());
+        return string.IsNullOrWhiteSpace(initials) ? "?" : initials;
+    }
+
+    private static string FormatDateOnly(DateOnly? date)
+        => date.HasValue ? date.Value.ToString("M/d/yyyy") : "Not specified";
+
+    private static string FormatCountry(string? countryCode)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(countryCode))
+                return "Not specified";
+            var ri = new RegionInfo(countryCode);
+            return ri.DisplayName;
+        }
+        catch
+        {
+            return countryCode ?? "Not specified";
+        }
+    }
+
+    private static string FormatLanguage(string? locale)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(locale))
+                return "Not specified";
+            var culture = CultureInfo.GetCultureInfo(locale);
+            return culture.DisplayName;
+        }
+        catch
+        {
+            return locale ?? "Not specified";
+        }
+    }
+
+    private static string FormatRegionalFormats(string? locale)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(locale))
+                return "Not specified";
+            var culture = CultureInfo.GetCultureInfo(locale);
+            var sample = DateTimeOffset.Now.ToString("f", culture);
+            return $"{culture.DisplayName}; {sample}";
+        }
+        catch
+        {
+            return locale ?? "Not specified";
+        }
+    }
+
+    private string GetPrimaryEmail()
+        => CurrentUser.PrimaryEmailAddress?.Input ?? "None";
+
+    private string GetPrimaryPhone()
+    {
+        var phone = CurrentUser.PrimaryPhoneNumber?.Input;
+        return string.IsNullOrWhiteSpace(phone) ? "None" : FormatPhoneNumber(phone);
+    }
+
     /// <summary>
     /// Formats DateTime for user-friendly display
     /// </summary>
@@ -128,19 +199,19 @@
 
         if (timeAgo.TotalDays < 1 && timeAgo.TotalHours < 1)
             return $"{(int)timeAgo.TotalMinutes} minutes ago";
-        
+
         if (timeAgo.TotalDays < 1)
             return $"{(int)timeAgo.TotalHours} hours ago";
-            
+
         if (timeAgo.TotalDays < 7)
             return $"{(int)timeAgo.TotalDays} days ago";
-            
+
         if (timeAgo.TotalDays < 30)
             return $"{(int)(timeAgo.TotalDays / 7)} weeks ago";
-            
+
         if (timeAgo.TotalDays < 365)
             return $"{(int)(timeAgo.TotalDays / 30)} months ago";
-            
+
         return dateTime.ToString("MMMM dd, yyyy");
     }
 
@@ -177,17 +248,5 @@
             "password" => "Password",
             _ => provider
         };
-    }
-
-    /// <summary>
-    /// Formats list of providers for display
-    /// </summary>
-    private static string FormatProviders(List<LoginProvider> providers)
-    {
-        if (!providers.Any())
-            return "None";
-
-        var providerNames = providers.Select(p => FormatProviderName(p.Code)).Distinct();
-        return string.Join(", ", providerNames);
     }
 }

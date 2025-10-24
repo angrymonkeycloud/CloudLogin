@@ -102,6 +102,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
         try
         {
             List<User> users = await _server.GetAllUsers();
+            users.ForEach(NormalizeUser);
             return Ok(users);
         }
         catch
@@ -116,6 +117,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
         try
         {
             List<User> user = await _server.GetAllUsers();
+            user.ForEach(NormalizeUser);
 
             return Ok(user);
         }
@@ -130,6 +132,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
         try
         {
             User? user = await _server.GetUserById(id);
+            NormalizeUser(user);
 
             return Ok(user);
         }
@@ -144,6 +147,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
         try
         {
             List<User> user = await _server.GetUsersByDisplayName(displayname);
+            user.ForEach(NormalizeUser);
             return Ok(user);
         }
         catch
@@ -157,6 +161,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
         try
         {
             User? user = await _server.GetUserByDisplayName(displayname);
+            NormalizeUser(user);
             return Ok(user);
         }
         catch
@@ -170,6 +175,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
         try
         {
             User? user = await _server.GetUserByInput(input);
+            NormalizeUser(user);
 
             return Ok(user);
         }
@@ -188,6 +194,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
             if (user == null)
                 return NotFound();
 
+            NormalizeUser(user);
             return Ok(user);
         }
         catch
@@ -205,6 +212,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
             if (user == null)
                 return NotFound();
 
+            NormalizeUser(user);
             return Ok(user);
         }
         catch
@@ -222,6 +230,7 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
             if (user == null)
                 return NotFound();
 
+            NormalizeUser(user);
             return Ok(user);
         }
         catch
@@ -243,5 +252,23 @@ public class UserController(CloudLoginConfiguration configuration, ICloudLogin s
         {
             return Problem();
         }
+    }
+
+    private void NormalizeUser(User? user)
+    {
+        if (user == null) return;
+        if (!string.IsNullOrWhiteSpace(user.ProfilePicture))
+            user.ProfilePicture = MakeAbsolute(user.ProfilePicture);
+    }
+
+    private string MakeAbsolute(string value)
+    {
+        if (Uri.TryCreate(value, UriKind.Absolute, out _))
+            return value;
+
+        string baseUrl = Configuration.AzureStorage?.PublicBaseUrl?.TrimEnd('/')!;
+
+        string path = value.TrimStart('/');
+        return new Uri(new Uri(baseUrl + "/"), path).ToString();
     }
 }

@@ -28,13 +28,29 @@ public class RequestController(CloudLoginConfiguration configuration, ICloudLogi
     {
         try
         {
-            User? User = await _server.GetUserByRequestId(requestId);
+            User? user = await _server.GetUserByRequestId(requestId);
 
-            return Ok(User);
+            if (user != null && !string.IsNullOrWhiteSpace(user.ProfilePicture))
+                user.ProfilePicture = MakeAbsolute(user.ProfilePicture);
+
+            return Ok(user);
         }
         catch
         {
             return Problem();
         }
+    }
+
+    private string MakeAbsolute(string value)
+    {
+        // Already absolute
+        if (Uri.TryCreate(value, UriKind.Absolute, out _))
+            return value;
+
+        // Prefer Azure Storage public base URL from configuration; fallback to current request base
+        string baseUrl = Configuration.AzureStorage?.PublicBaseUrl?.TrimEnd('/')!;
+
+        string path = value.TrimStart('/');
+        return new Uri(new Uri(baseUrl + "/"), path).ToString();
     }
 }

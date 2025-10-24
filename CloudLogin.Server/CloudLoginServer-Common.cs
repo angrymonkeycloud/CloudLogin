@@ -142,7 +142,17 @@ public partial class CloudLoginServer : ICloudLogin
         if (string.IsNullOrEmpty(loginIdentity))
             return null;
 
-        return JsonSerializer.Deserialize<User?>(loginIdentity, CloudLoginSerialization.Options);
+        User? user = JsonSerializer.Deserialize<User?>(loginIdentity, CloudLoginSerialization.Options);
+
+        if (user != null)
+        {
+            // normalize blob-stored filenames to public URLs when Azure Storage is configured
+            string? baseUrl = _configuration.AzureStorage?.PublicBaseUrl;
+            if (!string.IsNullOrWhiteSpace(user.ProfilePicture) && !user.ProfilePicture.Contains("://") && !string.IsNullOrWhiteSpace(baseUrl))
+                user.ProfilePicture = baseUrl!.TrimEnd('/') + "/" + user.ProfilePicture.TrimStart('/');
+        }
+
+        return user;
     }
 
     public async Task<bool> IsAuthenticated()

@@ -14,4 +14,15 @@ public record UserInfo : BaseRecord
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;
     public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
     public List<LoginInput> Inputs { get; set; } = [];
+
+    // New optional profile fields to persist from external providers
+    public string? ProfilePicture { get; set; }
+    /// <summary>
+    /// ISO3166-1 alpha-2 country code (e.g., "US", "GB").
+    /// </summary>
+    public string? Country { get; set; }
+    /// <summary>
+    /// Locale identifier from provider (e.g., "en-US", "fr-FR").
+    /// </summary>
+    public string? Locale { get; set; }
 }

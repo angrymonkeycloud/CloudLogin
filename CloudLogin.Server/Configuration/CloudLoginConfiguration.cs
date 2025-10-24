@@ -16,4 +16,5 @@ public class CloudLoginConfiguration
     public CloudLoginEmailConfiguration? EmailConfiguration { get; set; }
     public required Action<CloudWebConfig> WebConfig { get; set; }
     public string? Logo { get; set; }
+    public AzureStorageConfiguration? AzureStorage { get; set; } // Optional Azure Storage configuration
 }

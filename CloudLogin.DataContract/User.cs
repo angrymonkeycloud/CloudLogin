@@ -16,6 +16,18 @@ public record User
     public DateTimeOffset LastSignedIn { get; set; } = DateTimeOffset.MinValue;
     public List<LoginInput> Inputs { get; set; } = [];
 
+    // New optional profile fields populated from external providers (best-effort)
+    // Never overwritten on updates; only set when currently null.
+    public string? ProfilePicture { get; set; }
+    /// <summary>
+    /// ISO3166-1 alpha-2 country code (e.g., "US", "GB").
+    /// </summary>
+    public string? Country { get; set; }
+    /// <summary>
+    /// Locale identifier from provider (e.g., "en-US", "fr-FR").
+    /// </summary>
+    public string? Locale { get; set; }
+
     // Ignore
 
     [JsonIgnore] public List<LoginInput> EmailAddresses => Inputs.Where(key => key.Format == InputFormat.EmailAddress).ToList();

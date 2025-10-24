@@ -1,5 +1,7 @@
 ﻿using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
+using System.Linq;
+using System.Collections.Generic;
 
 public class DataParse
 {
@@ -18,7 +20,11 @@ public class DataParse
             DateOfBirth = user.DateOfBirth,
             LastSignedIn = user.LastSignedIn,
             Inputs = user.Inputs,
-            Username = user.Username
+            Username = user.Username,
+            // Added profile fields
+            ProfilePicture = user.ProfilePicture,
+            Country = user.Country,
+            Locale = user.Locale
         };
 
         userInformation.SetId(user.ID);
@@ -53,7 +59,11 @@ public class DataParse
             DateOfBirth = dbUser.DateOfBirth,
             LastSignedIn = dbUser.LastSignedIn,
             Inputs = dbUser.Inputs,
-            Username = dbUser.Username
+            Username = dbUser.Username,
+            // Added profile fields
+            ProfilePicture = dbUser.ProfilePicture,
+            Country = dbUser.Country,
+            Locale = dbUser.Locale
         };
     }
 

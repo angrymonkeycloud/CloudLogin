@@ -14,9 +14,9 @@ public class CosmosConfiguration
         // New: Include legacy fields alongside the modern schema
         IncludeLegacySchema = configurationSection.GetValue("IncludeLegacySchema", false)
                                 || configurationSection.GetValue("UseLegacySchema", false); // backward compat with old key
-        
+
         // New: control how the lowercase 'id' field is saved
-        var saveIdModeStr = configurationSection["SaveIdMode"] ?? configurationSection["IdFormat"]; // backward compat with IdFormat
+        string? saveIdModeStr = configurationSection["SaveIdMode"] ?? configurationSection["IdFormat"]; // backward compat with IdFormat
         if (!Enum.TryParse(saveIdModeStr, ignoreCase: true, out IdSaveMode saveMode))
             saveMode = IdSaveMode.Raw;
         SaveIdMode = saveMode;

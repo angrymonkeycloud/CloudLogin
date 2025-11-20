@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.4.32804.182
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11205.157 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Web", "CloudLogin.Web\CloudLogin.Web.csproj", "{4C7820DB-2118-4317-9C0B-4C969955B7A1}"
 EndProject
@@ -45,6 +45,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Login.Aspire.AppHost", "Demo.Login.Aspire\Demo.Login.Aspire.AppHost\Demo.Login.Aspire.AppHost.csproj", "{29EB3074-F84A-4392-A5A5-54EA5209BCDD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Login.Aspire.ServiceDefaults", "Demo.Login.Aspire\Demo.Login.Aspire.ServiceDefaults\Demo.Login.Aspire.ServiceDefaults.csproj", "{3321513A-7087-0A85-8105-5BADDEAA9D1A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{625F5114-01A0-495C-9A6C-35000D4B0AFD}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

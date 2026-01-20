@@ -21,7 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class MvcServiceCollectionExtensions
 {
-    public static void AddCloudLoginWeb(this IHostApplicationBuilder builder, CloudLoginConfiguration loginConfig)
+    public static void AddCloudLoginWeb(this IHostApplicationBuilder builder, CloudLoginWebConfiguration loginConfig)
     {
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
@@ -46,10 +46,10 @@ public static class MvcServiceCollectionExtensions
         ConfigureCloudWeb(builder.Services, loginConfig);
         ConfigureAuthentication(builder.Services, loginConfig);
 
-        builder.Services.AddCloudLoginServer(loginConfig);
+        builder.Services.AddCloudLoginWeb(loginConfig);
     }
 
-    private static void ConfigureCosmos(IHostApplicationBuilder builder, CloudLoginConfiguration loginConfig)
+    private static void ConfigureCosmos(IHostApplicationBuilder builder, CloudLoginWebConfiguration loginConfig)
     {
         if (!loginConfig.Cosmos.IsValid())
             return;
@@ -71,12 +71,12 @@ public static class MvcServiceCollectionExtensions
         builder.Services.AddScoped<CosmosMethods>();
         
         // Log the configured property names for debugging
-        var logger = builder.Services.BuildServiceProvider().GetService<ILogger<CloudLoginConfiguration>>();
+        var logger = builder.Services.BuildServiceProvider().GetService<ILogger<CloudLoginWebConfiguration>>();
         logger?.LogInformation("CloudLogin Cosmos Configuration: PartitionKey='{PartitionKey}', Type='{Type}'", 
             loginConfig.Cosmos.PartitionKeyName, loginConfig.Cosmos.TypeName);
     }
 
-    private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginConfiguration loginConfig)
+    private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginWebConfiguration loginConfig)
     {
         services.AddCloudWeb(config =>
         {
@@ -99,7 +99,7 @@ public static class MvcServiceCollectionExtensions
         services.AddSingleton(loginConfig);
     }
 
-    private static void ConfigureAuthentication(IServiceCollection services, CloudLoginConfiguration loginConfig)
+    private static void ConfigureAuthentication(IServiceCollection services, CloudLoginWebConfiguration loginConfig)
     {
         AuthenticationBuilder auth = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                             .AddCookie(options => ConfigureCookieAuth(options, loginConfig));
@@ -109,7 +109,7 @@ public static class MvcServiceCollectionExtensions
         providerService.ConfigureProviders(auth);
     }
 
-    private static void ConfigureCookieAuth(CookieAuthenticationOptions options, CloudLoginConfiguration loginConfig)
+    private static void ConfigureCookieAuth(CookieAuthenticationOptions options, CloudLoginWebConfiguration loginConfig)
     {
         options.Cookie.Name = "CloudLogin";
         options.Cookie.SameSite = SameSiteMode.None;
@@ -128,7 +128,7 @@ public static class MvcServiceCollectionExtensions
         };
     }
 
-    public static async Task ConfigCoconutSharp(this IHostApplicationBuilder builder, string[] args, CloudLoginConfiguration config)
+    public static async Task ConfigCoconutSharp(this IHostApplicationBuilder builder, string[] args, CloudLoginWebConfiguration config)
     {
         builder.Configuration.AddAzureKeyVault(new Uri(args[0]), new DefaultAzureCredential());
 

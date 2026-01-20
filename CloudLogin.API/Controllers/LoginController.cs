@@ -7,7 +7,7 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("CloudLogin")]
 [ApiController]
-public class LoginController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
+public class LoginController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpGet("Login/{identity}")]
     public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)

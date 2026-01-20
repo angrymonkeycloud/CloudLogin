@@ -1,29 +1,16 @@
-﻿using AngryMonkey.Cloud;
-using AngryMonkey.Cloud.Geography;
-using AngryMonkey.CloudLogin;
+﻿using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
-using AngryMonkey.CloudLogin.Sever.Providers;
 using AngryMonkey.CloudWeb;
-using Azure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Identity.Client;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class MvcServiceCollectionExtensions
+public static partial class MvcServiceCollectionExtensions
 {
-    public static IServiceCollection AddCloudLoginEmbedded(this IServiceCollection services, CloudLoginConfiguration loginConfig, IConfiguration builderConfiguration)
+    public static IServiceCollection AddCloudLoginEmbedded(this IServiceCollection services, CloudLoginWebConfiguration loginConfig, IConfiguration builderConfiguration)
     {
         ArgumentNullException.ThrowIfNull(services);
 
@@ -46,12 +33,12 @@ public static class MvcServiceCollectionExtensions
         ConfigureCloudWeb(services, loginConfig);
         ConfigureAuthentication(services, loginConfig);
 
-        services.AddCloudLoginServer(loginConfig);
+        services.AddCloudLoginWeb(loginConfig);
 
         return services;
     }
 
-    private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginConfiguration loginConfig)
+    private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginWebConfiguration loginConfig)
     {
         services.AddCloudWeb(config =>
         {
@@ -74,7 +61,7 @@ public static class MvcServiceCollectionExtensions
         services.AddSingleton(loginConfig);
 }
 
-    private static void ConfigureAuthentication(IServiceCollection services, CloudLoginConfiguration loginConfig)
+    private static void ConfigureAuthentication(IServiceCollection services, CloudLoginWebConfiguration loginConfig)
     {
         AuthenticationBuilder auth = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                             .AddCookie(options => ConfigureCookieAuth(options, loginConfig));
@@ -84,7 +71,7 @@ public static class MvcServiceCollectionExtensions
         providerService.ConfigureProviders(auth);
     }
 
-    private static void ConfigureCookieAuth(CookieAuthenticationOptions options, CloudLoginConfiguration loginConfig)
+    private static void ConfigureCookieAuth(CookieAuthenticationOptions options, CloudLoginWebConfiguration loginConfig)
     {
         options.Cookie.Name = "CloudLogin";
         options.Cookie.SameSite = SameSiteMode.None;

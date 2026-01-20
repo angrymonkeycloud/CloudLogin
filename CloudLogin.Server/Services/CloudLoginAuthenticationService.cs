@@ -385,7 +385,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
     private async Task<string?> IngestProfilePicture(string providerPictureUrl)
     {
         // Decide according to configuration: upload to Azure Storage or return URL
-        CloudLoginConfiguration? config = _serviceProvider.GetService<CloudLoginConfiguration>();
+        CloudLoginWebConfiguration? config = _serviceProvider.GetService<CloudLoginWebConfiguration>();
 
         if (config?.AzureStorage is null)
             return providerPictureUrl;

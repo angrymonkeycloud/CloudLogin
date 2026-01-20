@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("Request/{key}")]
 [ApiController]
-public class AppController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
+public class AppController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpGet]
     public IActionResult Get(string key)

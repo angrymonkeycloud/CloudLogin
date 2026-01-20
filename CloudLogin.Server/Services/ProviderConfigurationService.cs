@@ -16,9 +16,9 @@ namespace AngryMonkey.CloudLogin.Server;
 public class ProviderConfigurationService
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly CloudLoginConfiguration _configuration;
+    private readonly CloudLoginWebConfiguration _configuration;
 
-    public ProviderConfigurationService(IServiceProvider serviceProvider, CloudLoginConfiguration configuration)
+    public ProviderConfigurationService(IServiceProvider serviceProvider, CloudLoginWebConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _configuration = configuration;

@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("CloudLogin/Request")]
 [ApiController]
-public class RequestController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
+public class RequestController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpPost("CreateRequest")]
     public async Task<IActionResult> CreateRequest(Guid userId, Guid? requestId = null)

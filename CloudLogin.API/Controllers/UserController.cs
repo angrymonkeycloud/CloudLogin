@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("CloudLogin/User")]
 [ApiController]
-public class UserController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
+public class UserController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpPost("SendWhatsAppCode")]
     public async Task<ActionResult> SendWhatsAppCode(string receiver, string code)

@@ -3,7 +3,7 @@ using AngryMonkey.CloudWeb;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public class CloudLoginConfiguration
+public class CloudLoginWebConfiguration
 {
     public List<ProviderConfiguration> Providers { get; set; } = [];
     public string? BaseAddress { get; set; }

@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("api/Providers")]
 [ApiController]
-public class ProvidersController(CloudLoginConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
+public class ProvidersController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpGet("")]
     public async Task<ActionResult> GetProviders()

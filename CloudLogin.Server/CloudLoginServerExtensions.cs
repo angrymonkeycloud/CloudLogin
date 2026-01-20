@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public static class CloudLoginServerExtensions
 {
-    public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, Action<CloudLoginConfiguration> configureOptions)
+    public static IServiceCollection AddCloudLoginWeb(this IServiceCollection services, Action<CloudLoginWebConfiguration> configureOptions)
     {
         services.Configure(configureOptions);
 
@@ -20,11 +20,11 @@ public static class CloudLoginServerExtensions
         return services;
     }
 
-    public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, CloudLoginConfiguration configureOptions)
+    public static IServiceCollection AddCloudLoginWeb(this IServiceCollection services, CloudLoginWebConfiguration configureOptions)
     {
         // Configure BaseRecord with Cosmos configuration for property naming
         BaseRecord.CosmosConfiguration = configureOptions.Cosmos;
         
-        return AddCloudLoginServer(services, config => config = configureOptions);
+        return AddCloudLoginWeb(services, config => config = configureOptions);
     }
 }

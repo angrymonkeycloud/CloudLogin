@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.0.11205.157 d18.0
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36623.8 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Web", "CloudLogin.Web\CloudLogin.Web.csproj", "{4C7820DB-2118-4317-9C0B-4C969955B7A1}"
 EndProject
@@ -50,6 +50,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Shared", "CloudLogin.Shared\CloudLogin.Shared.csproj", "{4E1F981A-0557-BF93-DC69-550B47392139}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.WebService", "CloudLogin.WebService\CloudLogin.WebService.csproj", "{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.AppService", "CloudLogin.AppService\CloudLogin.AppService.csproj", "{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -160,6 +166,24 @@ Global
 		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3321513A-7087-0A85-8105-5BADDEAA9D1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E1F981A-0557-BF93-DC69-550B47392139}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E1F981A-0557-BF93-DC69-550B47392139}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E1F981A-0557-BF93-DC69-550B47392139}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{4E1F981A-0557-BF93-DC69-550B47392139}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{4E1F981A-0557-BF93-DC69-550B47392139}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E1F981A-0557-BF93-DC69-550B47392139}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

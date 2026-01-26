@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CloudLogin.Shared.NavigationServices;
+namespace AngryMonkey.CloudLogin;
 
 public abstract class NavigationServiceBase(NavigationManager navigationManager) : INavigationService
 {

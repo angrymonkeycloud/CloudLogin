@@ -78,7 +78,7 @@ public partial class CloudLoginServer
         };
     }
 
-    public async Task<IActionResult> CustomLogin(User user, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
+    public async Task<IActionResult> CustomLogin(UserModel user, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
     {
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
 
@@ -140,7 +140,7 @@ public partial class CloudLoginServer
         ClaimsIdentity userIdentity = _request.HttpContext.User.Identities.First();
         string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;
 
-        User user = (_configuration.Cosmos != null ? await _cosmosMethods.GetUserByInput(emailaddress) : new()) ?? new();
+        UserModel user = (_configuration.Cosmos != null ? await _cosmosMethods.GetUserByInput(emailaddress) : new()) ?? new();
 
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
 

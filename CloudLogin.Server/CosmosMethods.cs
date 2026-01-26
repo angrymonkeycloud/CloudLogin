@@ -86,7 +86,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     #endregion
 
-    public async Task<User?> GetUserByEmailAddress(string emailAddress)
+    public async Task<UserModel?> GetUserByEmailAddress(string emailAddress)
     {
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
         string typeCondition = BuildTypeCondition(userType);
@@ -111,9 +111,9 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return Parse(users.FirstOrDefault());
     }
 
-    public async Task<User?> GetUserByInput(string input)
+    public async Task<UserModel?> GetUserByInput(string input)
     {
-        User? user = await GetUserByEmailAddress(input);
+        UserModel? user = await GetUserByEmailAddress(input);
 
         if (user == null)
             return await GetUserByPhoneNumber(CloudGeography.PhoneNumbers.Get(input));
@@ -121,7 +121,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return user;
     }
 
-    public async Task<User?> GetUserByPhoneNumber(string number)
+    public async Task<UserModel?> GetUserByPhoneNumber(string number)
     {
         if (string.IsNullOrEmpty(number))
             return null;
@@ -129,7 +129,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return await GetUserByPhoneNumber(CloudGeography.PhoneNumbers.Get(number));
     }
 
-    public async Task<User?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
+    public async Task<UserModel?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
     {
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
         string typeCondition = BuildTypeCondition(userType);
@@ -154,7 +154,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return Parse(users.FirstOrDefault());
     }
 
-    public async Task<User?> GetUserByRequestId(Guid requestId)
+    public async Task<UserModel?> GetUserByRequestId(Guid requestId)
     {
         LoginRequest request = new();
         request.SetId(requestId);
@@ -172,7 +172,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return await GetUserById(selectedRequest.UserId.Value);
     }
 
-    public async Task<User?> GetUserByDisplayName(string displayName)
+    public async Task<UserModel?> GetUserByDisplayName(string displayName)
     {
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
         string typeCondition = BuildTypeCondition(userType);
@@ -196,7 +196,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return Parse(users.FirstOrDefault());
     }
 
-    public async Task<List<User>> GetUsersByDisplayName(string displayName)
+    public async Task<List<UserModel>> GetUsersByDisplayName(string displayName)
     {
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
         string typeCondition = BuildTypeCondition(userType);
@@ -220,7 +220,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return Parse(users) ?? [];
     }
 
-    public async Task<User?> GetUserById(Guid id)
+    public async Task<UserModel?> GetUserById(Guid id)
     {
         UserInfo user = new();
         user.SetId(id);
@@ -233,7 +233,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return Parse(response.Resource);
     }
 
-    public async Task<List<User>> GetUsers()
+    public async Task<List<UserModel>> GetUsers()
     {
         string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
         string typeCondition = BuildTypeCondition(userType);
@@ -266,7 +266,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return request;
     }
 
-    public async Task Update(User user)
+    public async Task Update(UserModel user)
     {
         // Do not generate a new ID on updates.
         if (user.ID == Guid.Empty)
@@ -278,7 +278,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
             if (!string.IsNullOrWhiteSpace(candidate))
             {
-                User? existing = await GetUserByInput(candidate);
+                UserModel? existing = await GetUserByInput(candidate);
                 if (existing != null)
                     user.ID = existing.ID;
             }
@@ -306,7 +306,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         await _container.PatchItemAsync<UserInfo>(documentId, partitionKey, patchOperations);
     }
 
-    public async Task Create(User user)
+    public async Task Create(UserModel user)
     {
         UserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
 
@@ -318,7 +318,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     public async Task AddInput(Guid userId, LoginInput Input)
     {
-        User user = await GetUserById(userId) ?? throw new Exception("User not found.");
+        UserModel user = await GetUserById(userId) ?? throw new Exception("User not found.");
         user.Inputs.Add(Input);
         
         UserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));

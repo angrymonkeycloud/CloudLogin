@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class DataParse
 {
-    public static UserInfo? Parse(User? user)
+    public static UserInfo? Parse(UserModel? user)
     {
         if (user == null)
             return null;
@@ -32,7 +32,7 @@ public class DataParse
         return userInformation;
     }
 
-    public static List<User>? Parse(List<UserInfo> Users)
+    public static List<UserModel>? Parse(List<UserInfo> Users)
     {
         if (Users == null)
             return [];
@@ -40,7 +40,7 @@ public class DataParse
         return Users.Select(Parse).Where(user => user != null).ToList()!;
     }
 
-    public static User? Parse(UserInfo? dbUser)
+    public static UserModel? Parse(UserInfo? dbUser)
     {
         if (dbUser == null)
             return null;
@@ -67,7 +67,7 @@ public class DataParse
         };
     }
 
-    public static List<UserInfo> Parse(List<User> Users)
+    public static List<UserInfo> Parse(List<UserModel> Users)
     {
         if (Users == null)
             return [];

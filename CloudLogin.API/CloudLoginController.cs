@@ -30,9 +30,9 @@ public class CloudLoginController(CloudLoginServer cloudLoginServer) : Controlle
     }
 
     [HttpGet("CurrentUser")]
-    public async Task<ActionResult<User?>> CurrentUser()
+    public async Task<ActionResult<UserModel?>> CurrentUser()
     {
-        User? user = await _cloudLoginServer.CurrentUser();
+        UserModel? user = await _cloudLoginServer.CurrentUser();
 
         if (user == null)
             return new NotFoundResult();

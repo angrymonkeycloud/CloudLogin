@@ -86,7 +86,7 @@
 </div>
 
 @code {
-    [Parameter] public required User CurrentUser { get; set; }
+    [Parameter] public required UserModel CurrentUser { get; set; }
 
     private string NewPhoneNumber { get; set; } = string.Empty;
     private bool _isProcessing = false;
@@ -119,7 +119,7 @@
             }
 
             // Check if phone exists in system for another user
-            User? existingUser = await cloudLogin.GetUserByPhoneNumber(normalizedPhone);
+            UserModel? existingUser = await cloudLogin.GetUserByPhoneNumber(normalizedPhone);
             if (existingUser != null && existingUser.ID != CurrentUser.ID)
             {
                 _statusMessage = "This phone number is already in use by another account.";

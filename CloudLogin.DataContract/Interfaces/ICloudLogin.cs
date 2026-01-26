@@ -9,21 +9,21 @@ public interface ICloudLogin
     List<Link>? FooterLinks { get; set; }
     InputFormat GetInputFormat(string input);
     Task<bool> AutomaticLogin();
-    Task<List<User>> GetAllUsers();
-    Task<User?> GetUserById(Guid userId);
-    Task<List<User>> GetUsersByDisplayName(string displayName);
-    Task<User?> GetUserByDisplayName(string displayName);
-    Task<User?> GetUserByInput(string input);
-    Task<User?> GetUserByEmailAddress(string email);
-    Task<User?> GetUserByPhoneNumber(string number);
-    Task<User?> GetUserByRequestId(Guid requestId);
+    Task<List<UserModel>> GetAllUsers();
+    Task<UserModel?> GetUserById(Guid userId);
+    Task<List<UserModel>> GetUsersByDisplayName(string displayName);
+    Task<UserModel?> GetUserByDisplayName(string displayName);
+    Task<UserModel?> GetUserByInput(string input);
+    Task<UserModel?> GetUserByEmailAddress(string email);
+    Task<UserModel?> GetUserByPhoneNumber(string number);
+    Task<UserModel?> GetUserByRequestId(Guid requestId);
     Task<Guid> CreateLoginRequest(Guid userId, Guid? requestId = null);
     Task SendWhatsAppCode(string receiver, string code);
     Task SendEmailCode(string receiver, string code);
-    Task UpdateUser(User user);
-    Task CreateUser(User user);
+    Task UpdateUser(UserModel user);
+    Task CreateUser(UserModel user);
     Task DeleteUser(Guid userId);
-    Task<User?> CurrentUser();
+    Task<UserModel?> CurrentUser();
     Task<bool> IsAuthenticated();
     Task AddUserInput(Guid userId, LoginInput input);
     Task<List<ProviderDefinition>> GetProviders();
@@ -32,8 +32,8 @@ public interface ICloudLogin
 
     // Authentication methods using models
     Task<bool> PasswordLogin(PasswordLoginRequest request);
-    Task<User> PasswordRegistration(PasswordRegistrationRequest request);
-    Task<User> CodeRegistration(CodeRegistrationRequest request);
+    Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request);
+    Task<UserModel> CodeRegistration(CodeRegistrationRequest request);
 
     bool IsValidPassword(string password);
 

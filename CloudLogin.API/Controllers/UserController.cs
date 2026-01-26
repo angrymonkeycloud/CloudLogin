@@ -39,7 +39,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("Update")]
-    public async Task<ActionResult> Update([FromBody] User user)
+    public async Task<ActionResult> Update([FromBody] UserModel user)
     {
         try
         {
@@ -54,7 +54,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("Create")]
-    public async Task<ActionResult> Create([FromBody] User user)
+    public async Task<ActionResult> Create([FromBody] UserModel user)
     {
         try
         {
@@ -97,11 +97,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("All")]
-    public async Task<ActionResult<List<User>>> All()
+    public async Task<ActionResult<List<UserModel>>> All()
     {
         try
         {
-            List<User> users = await _server.GetAllUsers();
+            List<UserModel> users = await _server.GetAllUsers();
             users.ForEach(NormalizeUser);
             return Ok(users);
         }
@@ -112,11 +112,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetAllUsers")]
-    public async Task<ActionResult<List<User>>> GetAllUsers()
+    public async Task<ActionResult<List<UserModel>>> GetAllUsers()
     {
         try
         {
-            List<User> user = await _server.GetAllUsers();
+            List<UserModel> user = await _server.GetAllUsers();
             user.ForEach(NormalizeUser);
 
             return Ok(user);
@@ -127,11 +127,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserById")]
-    public async Task<ActionResult<User?>> GetUserById(Guid id)
+    public async Task<ActionResult<UserModel?>> GetUserById(Guid id)
     {
         try
         {
-            User? user = await _server.GetUserById(id);
+            UserModel? user = await _server.GetUserById(id);
             NormalizeUser(user);
 
             return Ok(user);
@@ -142,11 +142,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUsersByDisplayName")]
-    public async Task<ActionResult<List<User>>> GetUsersByDisplayName(string displayname)
+    public async Task<ActionResult<List<UserModel>>> GetUsersByDisplayName(string displayname)
     {
         try
         {
-            List<User> user = await _server.GetUsersByDisplayName(displayname);
+            List<UserModel> user = await _server.GetUsersByDisplayName(displayname);
             user.ForEach(NormalizeUser);
             return Ok(user);
         }
@@ -156,11 +156,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByDisplayName")]
-    public async Task<ActionResult<User?>> GetUserByDisplayName(string displayname)
+    public async Task<ActionResult<UserModel?>> GetUserByDisplayName(string displayname)
     {
         try
         {
-            User? user = await _server.GetUserByDisplayName(displayname);
+            UserModel? user = await _server.GetUserByDisplayName(displayname);
             NormalizeUser(user);
             return Ok(user);
         }
@@ -170,11 +170,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByInput")]
-    public async Task<ActionResult<User>> GetUserByInput(string input)
+    public async Task<ActionResult<UserModel>> GetUserByInput(string input)
     {
         try
         {
-            User? user = await _server.GetUserByInput(input);
+            UserModel? user = await _server.GetUserByInput(input);
             NormalizeUser(user);
 
             return Ok(user);
@@ -185,11 +185,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByEmailAdress")]
-    public async Task<ActionResult<User>> GetUserByEmailAdress(string email)
+    public async Task<ActionResult<UserModel>> GetUserByEmailAdress(string email)
     {
         try
         {
-            User? user = await _server.GetUserByEmailAddress(email);
+            UserModel? user = await _server.GetUserByEmailAddress(email);
 
             if (user == null)
                 return NotFound();
@@ -203,11 +203,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByPhoneNumber")]
-    public async Task<ActionResult<User>> GetUsersByPhoneNumber(string number)
+    public async Task<ActionResult<UserModel>> GetUsersByPhoneNumber(string number)
     {
         try
         {
-            User? user = await _server.GetUserByPhoneNumber(number);
+            UserModel? user = await _server.GetUserByPhoneNumber(number);
 
             if (user == null)
                 return NotFound();
@@ -221,11 +221,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("CurrentUser")]
-    public async Task<ActionResult<User?>> CurrentUser()
+    public async Task<ActionResult<UserModel?>> CurrentUser()
     {
         try
         {
-            User? user = await _server.CurrentUser();
+            UserModel? user = await _server.CurrentUser();
 
             if (user == null)
                 return NotFound();
@@ -254,7 +254,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
 
-    private void NormalizeUser(User? user)
+    private void NormalizeUser(UserModel? user)
     {
         if (user == null) return;
         if (!string.IsNullOrWhiteSpace(user.ProfilePicture))

@@ -1,14 +1,10 @@
-﻿using AngryMonkey.CloudLogin;
-using CloudLogin.Shared;
-using CloudLogin.Shared.CloudLoginServices;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-
-namespace CloudLogin.WebService;
+namespace AngryMonkey.CloudLogin;
 
 public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntime js) : CloudLoginBaseService
 {
@@ -30,7 +26,7 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
         return _initTask;
     }
 
-    private async Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         try
         {

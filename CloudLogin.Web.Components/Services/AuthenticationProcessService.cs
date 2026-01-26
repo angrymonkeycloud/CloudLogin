@@ -301,7 +301,7 @@ namespace AngryMonkey.CloudLogin.Services
 
         public async Task<bool> CheckEmailHasRegister(string email)
         {
-            User? user = await _cloudLogin.GetUserByEmailAddress(email);
+            UserModel? user = await _cloudLogin.GetUserByEmailAddress(email);
 
             return user?.ID != Guid.Empty;
         }

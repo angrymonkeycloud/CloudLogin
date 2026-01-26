@@ -62,7 +62,7 @@ else
     [Parameter, SupplyParameterFromQuery(Name = "isMobileApp")]
     public bool IsMobileApp { get; set; } = false;
 
-    public User? CurrentUser { get; set; } = new();
+    public UserModel? CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool IsWorking { get; set; } = true;
 

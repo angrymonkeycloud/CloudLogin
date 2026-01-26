@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CloudLogin.Shared.NavigationServices;
+namespace AngryMonkey.CloudLogin;
 
 public interface INavigationService
 {

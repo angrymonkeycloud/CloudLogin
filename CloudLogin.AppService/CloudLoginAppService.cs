@@ -6,7 +6,7 @@ using Microsoft.Maui.Storage;
 using CloudLogin.Shared.CloudLoginServices;
 using CloudLogin.Shared.NavigationServices;
 
-namespace CloudLogin.AppService;
+namespace CloudLogin;
 
 public static class MobileAuthCallback
 {

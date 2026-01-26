@@ -128,7 +128,7 @@ public partial class CloudLoginServer : ICloudLogin
 
     public bool IsInputValidPhoneNumber(string input) => _cloudGeography.PhoneNumbers.IsValidPhoneNumber(input);
 
-    public async Task<User?> CurrentUser()
+    public async Task<UserModel?> CurrentUser()
     {
         string? userCookie = _request.Cookies["CloudLogin"];
 
@@ -142,7 +142,7 @@ public partial class CloudLoginServer : ICloudLogin
         if (string.IsNullOrEmpty(loginIdentity))
             return null;
 
-        User? user = JsonSerializer.Deserialize<User?>(loginIdentity, CloudLoginSerialization.Options);
+        UserModel? user = JsonSerializer.Deserialize<UserModel?>(loginIdentity, CloudLoginSerialization.Options);
 
         if (user != null)
         {
@@ -160,7 +160,7 @@ public partial class CloudLoginServer : ICloudLogin
         return _request.Cookies["CloudLogin"] != null;
     }
 
-    public async Task<List<User>> GetAllUsers()
+    public async Task<List<UserModel>> GetAllUsers()
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -168,7 +168,7 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUsers() ?? [];
     }
 
-    public async Task<User?> GetUserById(Guid userId)
+    public async Task<UserModel?> GetUserById(Guid userId)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -176,7 +176,7 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUserById(userId);
     }
 
-    public async Task<List<User>> GetUsersByDisplayName(string displayName)
+    public async Task<List<UserModel>> GetUsersByDisplayName(string displayName)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -184,7 +184,7 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUsersByDisplayName(displayName);
     }
 
-    public async Task<User?> GetUserByDisplayName(string displayName)
+    public async Task<UserModel?> GetUserByDisplayName(string displayName)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -192,7 +192,7 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUserByDisplayName(displayName);
     }
 
-    public async Task<User?> GetUserByInput(string input)
+    public async Task<UserModel?> GetUserByInput(string input)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -200,7 +200,7 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUserByInput(input);
     }
 
-    public async Task<User?> GetUserByEmailAddress(string email)
+    public async Task<UserModel?> GetUserByEmailAddress(string email)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -211,7 +211,7 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUserByEmailAddress(email);
     }
 
-    public async Task<User?> GetUserByPhoneNumber(string number)
+    public async Task<UserModel?> GetUserByPhoneNumber(string number)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -219,7 +219,7 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUserByPhoneNumber(number);
     }
 
-    public async Task<User?> GetUserByRequestId(Guid requestId)
+    public async Task<UserModel?> GetUserByRequestId(Guid requestId)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -311,7 +311,7 @@ public partial class CloudLoginServer : ICloudLogin
         }
     }
 
-    public async Task UpdateUser(User user)
+    public async Task UpdateUser(UserModel user)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -319,7 +319,7 @@ public partial class CloudLoginServer : ICloudLogin
         await _cosmosMethods.Update(user);
     }
 
-    public async Task CreateUser(User user)
+    public async Task CreateUser(UserModel user)
     {
         if (_cosmosMethods == null)
             throw new InvalidOperationException("CosmosMethods is not initialized");
@@ -370,7 +370,7 @@ public partial class CloudLoginServer : ICloudLogin
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             return false;
 
-        User? user = await ValidateEmailPassword(request.Email, request.Password);
+        UserModel? user = await ValidateEmailPassword(request.Email, request.Password);
         if (user == null)
             return false;
 
@@ -398,7 +398,7 @@ public partial class CloudLoginServer : ICloudLogin
         return true;
     }
 
-    public async Task<User> PasswordRegistration(PasswordRegistrationRequest request)
+    public async Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Input);
@@ -408,7 +408,7 @@ public partial class CloudLoginServer : ICloudLogin
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
 
         // Ensure user doesn't already exist
-        User? existing = request.InputFormat switch
+        UserModel? existing = request.InputFormat switch
         {
             InputFormat.EmailAddress => await GetUserByEmailAddress(request.Input),
             InputFormat.PhoneNumber => await GetUserByPhoneNumber(request.Input),
@@ -418,7 +418,7 @@ public partial class CloudLoginServer : ICloudLogin
         if (existing != null)
             throw new Exception("User already exists.");
 
-        User newUser = new()
+        UserModel newUser = new()
         {
             ID = Guid.NewGuid(),
             FirstName = request.FirstName,
@@ -452,7 +452,7 @@ public partial class CloudLoginServer : ICloudLogin
         return newUser;
     }
 
-    public async Task<User> CodeRegistration(CodeRegistrationRequest request)
+    public async Task<UserModel> CodeRegistration(CodeRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Input);
@@ -461,7 +461,7 @@ public partial class CloudLoginServer : ICloudLogin
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
 
         // Ensure user doesn't already exist
-        User? existing = request.InputFormat switch
+        UserModel? existing = request.InputFormat switch
         {
             InputFormat.EmailAddress => await GetUserByEmailAddress(request.Input),
             InputFormat.PhoneNumber => await GetUserByPhoneNumber(request.Input),
@@ -471,7 +471,7 @@ public partial class CloudLoginServer : ICloudLogin
         if (existing != null)
             throw new Exception("User already exists.");
 
-        User newUser = new()
+        UserModel newUser = new()
         {
             ID = Guid.NewGuid(),
             FirstName = request.FirstName,

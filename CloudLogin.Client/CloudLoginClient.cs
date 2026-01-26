@@ -185,7 +185,7 @@ public class CloudLoginClient : ICloudLogin
     }
 
     //Get user(s) information from db
-    public async Task<List<User>?> GetAllUsers()
+    public async Task<List<UserModel>?> GetAllUsers()
     {
         try
         {
@@ -193,7 +193,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            List<User>? selectedUser = await message.Content.ReadFromJsonAsync<List<User>?>(CloudLoginSerialization.Options);
+            List<UserModel>? selectedUser = await message.Content.ReadFromJsonAsync<List<UserModel>?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -205,7 +205,7 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
-    public async Task<User?> GetUserById(Guid userId)
+    public async Task<UserModel?> GetUserById(Guid userId)
     {
         try
         {
@@ -213,7 +213,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
+            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -224,7 +224,7 @@ public class CloudLoginClient : ICloudLogin
             throw;
         }
     }
-    public async Task<List<User>?> GetUsersByDisplayName(string displayName)
+    public async Task<List<UserModel>?> GetUsersByDisplayName(string displayName)
     {
         try
         {
@@ -232,7 +232,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            List<User>? selectedUsers = await message.Content.ReadFromJsonAsync<List<User>?>(CloudLoginSerialization.Options);
+            List<UserModel>? selectedUsers = await message.Content.ReadFromJsonAsync<List<UserModel>?>(CloudLoginSerialization.Options);
 
             if (selectedUsers == null) return null;
 
@@ -244,7 +244,7 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
-    public async Task<User?> GetUserByDisplayName(string displayName)
+    public async Task<UserModel?> GetUserByDisplayName(string displayName)
     {
         if (!UsingDatabase)
             return null;
@@ -253,13 +253,13 @@ public class CloudLoginClient : ICloudLogin
 
         if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-        User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
+        UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
         if (selectedUser == null) return null;
 
         return selectedUser;
     }
-    public async Task<User?> GetUserByInput(string input)
+    public async Task<UserModel?> GetUserByInput(string input)
     {
         if (!UsingDatabase)
             return null;
@@ -270,7 +270,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
+            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -282,7 +282,7 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
-    public async Task<User?> GetUserByEmailAddress(string email)
+    public async Task<UserModel?> GetUserByEmailAddress(string email)
     {
         if (!UsingDatabase)
             return null;
@@ -293,7 +293,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.InternalServerError) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
+            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -305,7 +305,7 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
-    public async Task<User?> GetUserByPhoneNumber(string number)
+    public async Task<UserModel?> GetUserByPhoneNumber(string number)
     {
         if (!UsingDatabase)
             return null;
@@ -316,7 +316,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.InternalServerError) return null;
 
-            User? selectedUser = await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
+            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -330,7 +330,7 @@ public class CloudLoginClient : ICloudLogin
     }
 
     //Request based functions
-    public async Task<User?> GetUserByRequestId(Guid requestId)
+    public async Task<UserModel?> GetUserByRequestId(Guid requestId)
     {
         if (!UsingDatabase)
             return null;
@@ -340,7 +340,7 @@ public class CloudLoginClient : ICloudLogin
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Request/GetUserByRequestId?requestId={HttpUtility.UrlEncode(requestId.ToString())}");
 
             if (message.IsSuccessStatusCode)
-                return await message.Content.ReadFromJsonAsync<User?>(CloudLoginSerialization.Options);
+                return await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
             return null;
         }
@@ -376,7 +376,7 @@ public class CloudLoginClient : ICloudLogin
     }
 
     //User configuration
-    public async Task UpdateUser(User user)
+    public async Task UpdateUser(UserModel user)
     {
         if (!UsingDatabase)
             return;
@@ -385,7 +385,7 @@ public class CloudLoginClient : ICloudLogin
 
         await HttpServer.PostAsync($"{UserRoute}/Update", content);
     }
-    public async Task CreateUser(User user)
+    public async Task CreateUser(UserModel user)
     {
         if (!UsingDatabase)
             return;
@@ -401,7 +401,7 @@ public class CloudLoginClient : ICloudLogin
 
         await HttpServer.DeleteAsync($"{UserRoute}/Delete?userId={userId}");
     }
-    public async Task<User?> CurrentUser()
+    public async Task<UserModel?> CurrentUser()
     {
         try
         {
@@ -410,7 +410,7 @@ public class CloudLoginClient : ICloudLogin
             if (message.StatusCode == HttpStatusCode.NoContent)
                 return null;
 
-            return await message.Content.ReadFromJsonAsync<User>(CloudLoginSerialization.Options);
+            return await message.Content.ReadFromJsonAsync<UserModel>(CloudLoginSerialization.Options);
         }
         catch
         {
@@ -472,7 +472,7 @@ public class CloudLoginClient : ICloudLogin
 
         if (!message.IsSuccessStatusCode)
         {
-            User? currentUser = await CurrentUser();
+            UserModel? currentUser = await CurrentUser();
 
             if (currentUser != null && currentUser.ID != Guid.Empty)
                 return true;
@@ -483,7 +483,7 @@ public class CloudLoginClient : ICloudLogin
         return true;
     }
 
-    public async Task<User> PasswordRegistration(PasswordRegistrationRequest request)
+    public async Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -502,10 +502,10 @@ public class CloudLoginClient : ICloudLogin
         if (!message.IsSuccessStatusCode)
             throw new Exception("Password registration failed");
 
-        return (await message.Content.ReadFromJsonAsync<User>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<UserModel>(CloudLoginSerialization.Options))!;
     }
 
-    public async Task<User> CodeRegistration(CodeRegistrationRequest request)
+    public async Task<UserModel> CodeRegistration(CodeRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -520,6 +520,6 @@ public class CloudLoginClient : ICloudLogin
 
         HttpResponseMessage message = await HttpServer.PostAsync("CloudLogin/Login/CodeRegistration", form);
         if (!message.IsSuccessStatusCode) throw new Exception("Code registration failed");
-        return (await message.Content.ReadFromJsonAsync<User>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<UserModel>(CloudLoginSerialization.Options))!;
     }
 }

@@ -1,14 +1,11 @@
-﻿using AngryMonkey.CloudLogin;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CloudLogin.Shared.CloudLoginServices;
+namespace AngryMonkey.CloudLogin;
 
 public abstract class CloudLoginBaseService : ICloudLoginService
 {

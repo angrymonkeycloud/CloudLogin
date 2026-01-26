@@ -81,7 +81,7 @@
 </div>
 
 @code {
-    [Parameter] public required User CurrentUser { get; set; }
+    [Parameter] public required UserModel CurrentUser { get; set; }
 
     private string NewEmail { get; set; } = string.Empty;
     private bool _isProcessing = false;
@@ -111,7 +111,7 @@
             }
 
             // Check if email exists in system for another user
-            User? existingUser = await cloudLogin.GetUserByEmailAddress(NewEmail.Trim().ToLowerInvariant());
+            UserModel? existingUser = await cloudLogin.GetUserByEmailAddress(NewEmail.Trim().ToLowerInvariant());
             if (existingUser != null && existingUser.ID != CurrentUser.ID)
             {
                 _statusMessage = "This email address is already in use by another account.";

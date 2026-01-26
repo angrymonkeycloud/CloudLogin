@@ -22,6 +22,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Update="AngryMonkeyCloudLogo-64x64.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>

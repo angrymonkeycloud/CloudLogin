@@ -16,7 +16,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
     [HttpGet("Login/CustomLogin")]
     public async Task<IActionResult> CustomLogin(string userInfo, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
     {
-        User user = JsonSerializer.Deserialize<User>(userInfo, CloudLoginSerialization.Options)!;
+        UserModel user = JsonSerializer.Deserialize<UserModel>(userInfo, CloudLoginSerialization.Options)!;
 
         return await _server.CustomLogin(user, keepMeSignedIn, referer, sameSite, isMobileApp);
     }
@@ -43,7 +43,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
             return BadRequest("Invalid input format.");
 
         PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(input, format, password, firstName, lastName, displayName);
-        User user = await _server.PasswordRegistration(request);
+        UserModel user = await _server.PasswordRegistration(request);
 
         if (user is null)
             return BadRequest("Registration failed.");
@@ -61,7 +61,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
             return BadRequest("Invalid input format.");
 
         CodeRegistrationRequest request = CodeRegistrationRequest.Create(input, format, firstName, lastName, displayName);
-        User user = await _server.CodeRegistration(request);
+        UserModel user = await _server.CodeRegistration(request);
 
         if (!string.IsNullOrEmpty(referer) && CloudLoginShared.IsValidRedirectUri(referer))
             return Redirect(referer);

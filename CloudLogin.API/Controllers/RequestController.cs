@@ -28,7 +28,7 @@ public class RequestController(CloudLoginWebConfiguration configuration, ICloudL
     {
         try
         {
-            User? user = await _server.GetUserByRequestId(requestId);
+            UserModel? user = await _server.GetUserByRequestId(requestId);
 
             if (user != null && !string.IsNullOrWhiteSpace(user.ProfilePicture))
                 user.ProfilePicture = MakeAbsolute(user.ProfilePicture);

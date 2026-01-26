@@ -37,7 +37,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         string providerName = GetProviderName(principal);
         string? providerIdentifier = GetProviderIdentifier(principal);
 
-        User? user = await GetExistingUser(cosmosMethods, input, formatValue);
+        UserModel? user = await GetExistingUser(cosmosMethods, input, formatValue);
 
         if (user != null)
         {
@@ -94,14 +94,14 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         return null;
     }
 
-    private static async Task<User?> GetExistingUser(CosmosMethods cosmosMethods, string input, InputFormat format)
+    private static async Task<UserModel?> GetExistingUser(CosmosMethods cosmosMethods, string input, InputFormat format)
     {
         return format == InputFormat.EmailAddress
         ? await cosmosMethods.GetUserByEmailAddress(input)
         : await cosmosMethods.GetUserByPhoneNumber(input);
     }
 
-    private async Task UpdateExistingUser(User user, ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private async Task UpdateExistingUser(UserModel user, ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
         // Update user information with latest from provider, but never override existing non-empty values
         user.FirstName = string.IsNullOrWhiteSpace(user.FirstName) ? (principal.FindFirst(ClaimTypes.GivenName)?.Value ?? user.FirstName) : user.FirstName;
@@ -213,7 +213,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         string? locale = NormalizeLocale(GetLocale(principal));
         DateOnly? dob = GetDateOfBirth(principal);
 
-        User user = new()
+        UserModel user = new()
         {
             ID = Guid.NewGuid(),
             FirstName = firstName,

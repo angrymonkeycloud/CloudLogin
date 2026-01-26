@@ -8,11 +8,11 @@ public class CloudLoginJS(IJSRuntime jsRuntime, NavigationManager navigationMana
     private readonly IJSRuntime _jsRuntime = jsRuntime;
     private readonly NavigationManager _navigationManager = navigationManager;
 
-    public async Task<User?> CurrentUser(string? baseUrl = null)
+    public async Task<UserModel?> CurrentUser(string? baseUrl = null)
     {
         try
         {
-            return await _jsRuntime.InvokeAsync<User>("cloudLogin.getCurrentUser", baseUrl ?? _navigationManager.BaseUri);
+            return await _jsRuntime.InvokeAsync<UserModel>("cloudLogin.getCurrentUser", baseUrl ?? _navigationManager.BaseUri);
         }
         catch (Exception ex)
         {

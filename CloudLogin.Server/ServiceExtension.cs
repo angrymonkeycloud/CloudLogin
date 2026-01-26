@@ -35,28 +35,28 @@ public static partial class MvcServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, Action<CloudLoginServerConfiguration> config)
-    {
-        ArgumentNullException.ThrowIfNull(services);
+    //public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, Action<CloudLoginServerConfiguration> config)
+    //{
+    //    ArgumentNullException.ThrowIfNull(services);
 
-        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-            {
-                options.LoginPath = "/auth/login";
-                options.LogoutPath = "/auth/logout";
-                options.AccessDeniedPath = "/auth/login";
-                options.ReturnUrlParameter = "returnUrl";
-                options.ExpireTimeSpan = TimeSpan.FromDays(30);
-                options.SlidingExpiration = true;
-                options.Cookie.Name = config..CookieName;
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                options.Cookie.SameSite = SameSiteMode.Lax;
-            });
+    //    services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    //        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+    //        {
+    //            options.LoginPath = "/auth/login";
+    //            options.LogoutPath = "/auth/logout";
+    //            options.AccessDeniedPath = "/auth/login";
+    //            options.ReturnUrlParameter = "returnUrl";
+    //            options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    //            options.SlidingExpiration = true;
+    //            options.Cookie.Name = config.CookieName;
+    //            options.Cookie.HttpOnly = true;
+    //            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    //            options.Cookie.SameSite = SameSiteMode.Lax;
+    //        });
 
-        // Add authorization services
-        services.AddAuthorization();
+    //    // Add authorization services
+    //    services.AddAuthorization();
 
-        return services;
-    }
+    //    return services;
+    //}
 }

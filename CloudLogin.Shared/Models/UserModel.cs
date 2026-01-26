@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace AngryMonkey.CloudLogin;
 
-public record User
+public record UserModel
 {
     public Guid ID { get; set; }
     public string? FirstName { get; set; }
@@ -36,11 +36,11 @@ public record User
     [JsonIgnore] public LoginInput? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault(key => key.IsPrimary);
     [JsonIgnore] public List<string> Providers => Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct().ToList();
 
-    public static User? Parse(string? decoded)
+    public static UserModel? Parse(string? decoded)
     {
         if (string.IsNullOrEmpty(decoded))
             return null;
 
-        return JsonSerializer.Deserialize<User>(decoded);
+        return JsonSerializer.Deserialize<UserModel>(decoded);
     }
 }

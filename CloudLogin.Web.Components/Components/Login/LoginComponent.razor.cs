@@ -141,7 +141,7 @@ public partial class LoginComponent
         Auth.StartLoading();
         InputValue = InputValue.ToLower();
 
-        User? user = await cloudLogin.GetUserByInput(InputValue);
+        UserModel? user = await cloudLogin.GetUserByInput(InputValue);
 
         if (user != null)
         {
@@ -201,7 +201,7 @@ public partial class LoginComponent
         Auth.StartLoading();
         InputValue = InputValue.ToLower();
 
-        User? user = await cloudLogin.GetUserByInput(InputValue);
+        UserModel? user = await cloudLogin.GetUserByInput(InputValue);
 
         if (user != null)
         {
@@ -327,7 +327,7 @@ public partial class LoginComponent
                 LastName,
                 DisplayName);
 
-            User newUser = await cloudLogin.CodeRegistration(request);
+            UserModel newUser = await cloudLogin.CodeRegistration(request);
             CustomSignInChallenge(newUser);
         }
         catch (Exception ex)
@@ -380,7 +380,7 @@ public partial class LoginComponent
                 LastName,
                 DisplayName);
 
-            User newUser = await cloudLogin.PasswordRegistration(request);
+            UserModel newUser = await cloudLogin.PasswordRegistration(request);
             CustomSignInChallenge(newUser);
         }
         catch (Exception ex)
@@ -410,7 +410,7 @@ public partial class LoginComponent
         }
 
         EndLoading();
-        User? checkUser = SelectedProvider?.Code?.ToLower() switch
+        UserModel? checkUser = SelectedProvider?.Code?.ToLower() switch
         {
             "whatsapp" => await cloudLogin.GetUserByPhoneNumber(InputValue),
             "custom" => await cloudLogin.GetUserByEmailAddress(InputValue),
@@ -456,7 +456,7 @@ public partial class LoginComponent
             return;
         }
 
-        User? checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
+        UserModel? checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
 
         if (checkUser == null || checkUser.ID == Guid.Empty)
         {
@@ -487,7 +487,7 @@ public partial class LoginComponent
 
         Auth.StartLoading();
 
-        User userValues = new()
+        UserModel userValues = new()
         {
             ID = Guid.NewGuid(),
             FirstName = FirstName,
@@ -634,7 +634,7 @@ public partial class LoginComponent
             }
 
             PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(Email, Password, FirstName, LastName);
-            User user = await cloudLogin.PasswordRegistration(request);
+            UserModel user = await cloudLogin.PasswordRegistration(request);
 
             PasswordLoginRequest loginRequest = PasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
             bool result = await cloudLogin.PasswordLogin(loginRequest);
@@ -656,7 +656,7 @@ public partial class LoginComponent
         }
     }
 
-    private void CustomSignInChallenge(User user)
+    private void CustomSignInChallenge(UserModel user)
     {
         Dictionary<string, object> userInfo = new()
         {

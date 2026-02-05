@@ -1,12 +1,9 @@
 ﻿using AngryMonkey.CloudLogin;
-using CloudLogin.Shared;
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
-using CloudLogin.Shared.CloudLoginServices;
-using CloudLogin.Shared.NavigationServices;
 
-namespace CloudLogin;
+namespace AngryMonkey.CloudLogin;
 
 public static class MobileAuthCallback
 {
@@ -130,7 +127,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 
                 if (!string.IsNullOrWhiteSpace(json))
                 {
-                    User = JsonSerializer.Deserialize<User>(json, JsonOptions);
+                    User = JsonSerializer.Deserialize<UserModel>(json, JsonOptions);
 
                     if (User != null)
                     {
@@ -163,7 +160,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
         }
     }
 
-    private async void OnUserChangedInternal(User? user)
+    private async void OnUserChangedInternal(UserModel? user)
     {
         if (user != null)
             await PersistUserSessionAsync(user);
@@ -171,7 +168,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
             await ClearStoredSessionAsync();
     }
 
-    private async Task PersistUserSessionAsync(User user)
+    private async Task PersistUserSessionAsync(UserModel user)
     {
         try
         {

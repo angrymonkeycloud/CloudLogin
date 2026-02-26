@@ -21,7 +21,7 @@ public class MultiProviderAuthenticationTest
         var currentDateTime = DateTimeOffset.UtcNow;
 
         // Simulate the user after first Code authentication
-        var existingUser = new User
+        var existingUser = new UserModel
         {
             ID = Guid.NewGuid(),
             FirstName = "John",
@@ -42,7 +42,7 @@ public class MultiProviderAuthenticationTest
         };
 
         // After Google authentication, the user should have both providers
-        var expectedUserAfterGoogle = new User
+        var expectedUserAfterGoogle = new UserModel
         {
             ID = existingUser.ID, // Same user ID
             FirstName = "John",
@@ -131,7 +131,7 @@ public class MultiProviderAuthenticationTest
         Assert.Equal("test@example.com", normalizedEmail);
         
         // 2. User lookup (simulated)
-        var existingUser = new User { ID = Guid.NewGuid() };
+        var existingUser = new UserModel { ID = Guid.NewGuid() };
         bool userExists = existingUser != null; // This simulates GetUserByEmailAddress returning a user
         
         if (userExists)
@@ -158,7 +158,7 @@ public class MultiProviderAuthenticationTest
         else
         {
             // 4. New user creation (simulated CreateNewUser)
-            var newUser = new User
+            var newUser = new UserModel
             {
                 ID = Guid.NewGuid(),
                 Inputs = 

@@ -22,7 +22,7 @@ public class SimpleAuthenticationFlowTest
         
         // Scenario 1: First time sign-in with Google
         // Expected: Creates ONE user with Google provider
-        var newUser = new User
+        var newUser = new UserModel
         {
             ID = Guid.NewGuid(),
             FirstName = "John",
@@ -73,7 +73,7 @@ public class SimpleAuthenticationFlowTest
         string email = "user@example.com";
         
         // First authentication creates user
-        var user1 = new User { ID = Guid.NewGuid() };
+        var user1 = new UserModel { ID = Guid.NewGuid() };
         
         // Second authentication with same email should get SAME user
         var user2 = user1; // Simulate finding existing user

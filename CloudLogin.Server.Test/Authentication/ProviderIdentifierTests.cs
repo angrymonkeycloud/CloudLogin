@@ -143,7 +143,7 @@ public class ProviderIdentifierTests
     public void User_Should_Have_Multiple_Providers_With_Different_Identifiers()
     {
         // Arrange & Act - Simulate a user with multiple external providers
-        var user = new User
+        var user = new UserModel
         {
             ID = Guid.NewGuid(),
             FirstName = "John",

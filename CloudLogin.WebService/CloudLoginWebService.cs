@@ -23,6 +23,7 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
 
         _initialized = true;
         _initTask = InitializeAsync();
+
         return _initTask;
     }
 
@@ -35,11 +36,13 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
 
             // Load any cached user from localStorage
             string? cached = await SafeLocalStorageGetString(LocalStorageUserKey);
+
             if (!string.IsNullOrWhiteSpace(cached))
             {
                 try
                 {
                     UserModel? loaded = JsonSerializer.Deserialize<UserModel>(cached, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
                     if (loaded is not null)
                     {
                         User = loaded;
@@ -122,17 +125,16 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
     public override async Task Login()
     {
         await EnsureInitializedAsync();
-        // If already signed in, do nothing
+
         if (User is not null)
             return;
 
-        // If current URL already is /signin, don't loop
-        var abs = _navigationManager.Uri;
-        if (abs.Contains("/signin", StringComparison.OrdinalIgnoreCase))
+        string abs = _navigationManager.Uri;
+        if (abs.Contains(LocalLoginPagePath, StringComparison.OrdinalIgnoreCase))
             return;
 
-        // Navigate to centralized sign-in page
-        var rel = "/";
+        string rel;
+
         try
         {
             var u = new Uri(abs);
@@ -141,7 +143,7 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
         }
         catch { rel = "/"; }
 
-        _navigationManager.NavigateTo($"/signin?returnUrl={Uri.EscapeDataString(rel)}");
+        _navigationManager.NavigateTo($"{LocalLoginPagePath}?returnUrl={Uri.EscapeDataString(rel)}");
         await Task.CompletedTask;
     }
 
@@ -150,8 +152,8 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
         await EnsureInitializedAsync();
         if (User != null)
             return;
-        var target = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
-        var authUrl = $"/auth/login?returnUrl={Uri.EscapeDataString(target)}";
+        string target = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl;
+        string authUrl = $"/auth/login?returnUrl={Uri.EscapeDataString(target)}";
         _navigationManager.NavigateTo(authUrl, forceLoad: true);
     }
 

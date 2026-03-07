@@ -1,0 +1,153 @@
+@page "/cloudlogin/login"
+
+@layout CloudLoginLayout
+
+@inject ICloudLoginService CloudLogin
+@inject INavigationService Navigation
+@inject NavigationManager Nav
+
+@using AngryMonkey.CloudApp
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Signing in</PageTitle>
+
+<div style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+    <div style="text-align:center;max-width:320px;padding:0 20px;">
+        <div class="spinner" style="width:48px;height:48px;margin:0 auto 16px;border:4px solid rgba(0,0,0,.1);border-top-color:var(--primary,#007bff);border-radius:50%;animation:spin 1s linear infinite;"></div>
+        <h3 style="margin:0 0 8px;font-size:1.1rem;font-weight:600;color:#222;">Signing in</h3>
+        <p style="margin:0 0 12px;color:#666;font-size:0.9rem;line-height:1.4;">Please wait while we complete your authentication.</p>
+        <button class="--button" @onclick="CancelAndGoBack">Cancel</button>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "r")] private string? RequestIdFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "rid")] private string? RequestIdFromQueryLegacy { get; set; }
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+
+    private bool _started;
+    private bool _disposed;
+    private bool _fetching;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // If already signed in, immediately leave this page
+        if (CloudLogin.User is not null)
+        {
+            await NavigateAfterSignInAsync();
+            return;
+        }
+
+        // If a request id comes in the URL, set it and clean the URL once
+        var rid = !string.IsNullOrWhiteSpace(RequestIdFromQuery)
+            ? RequestIdFromQuery
+            : (!string.IsNullOrWhiteSpace(RequestIdFromQueryLegacy) ? RequestIdFromQueryLegacy : null);
+
+        if (!string.IsNullOrWhiteSpace(rid))
+        {
+            CloudLogin.SetRequestId(rid);
+            // Clean URL so refresh/back won't retrigger
+            Nav.NavigateTo($"/signin{BuildReturnUrlQuery(ReturnUrl)}", replace: true);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        // Start login flow once if not signed in
+        if (CloudLogin.User is null && !_started)
+        {
+            _started = true;
+            _ = Task.Run(async () =>
+            {
+                try { await CloudLogin.BeginLoginAsync(NormalizeReturnUrl(ReturnUrl) ?? "/"); }
+                catch { }
+            });
+        }
+
+        // Poll for user or rid until done
+        _ = PollForCompletionAsync();
+    }
+
+    private async Task PollForCompletionAsync()
+    {
+        while (!_disposed)
+        {
+            try
+            {
+                if (CloudLogin.User is not null)
+                {
+                    await NavigateAfterSignInAsync();
+                    return;
+                }
+
+                // If request id is present but user not loaded yet, fetch it
+                if (!string.IsNullOrWhiteSpace(CloudLogin.RequestId) && !_fetching)
+                {
+                    _fetching = true;
+                    try { await CloudLogin.FetchUser(); }
+                    catch { }
+                    finally { _fetching = false; }
+
+                    // Loop will re-check User next iteration
+                }
+            }
+            catch { }
+
+            await Task.Delay(300);
+        }
+    }
+
+    private async Task CancelAndGoBack()
+    {
+        // Simple cancel behavior: go to return url if any, else back, else home
+        var target = NormalizeReturnUrl(ReturnUrl);
+
+        if (!string.IsNullOrEmpty(target))
+        {
+            await Navigation.NavigateToAsync(target);
+            return;
+        }
+
+        if (Navigation.TryNavigateBack())
+            return;
+
+        await Navigation.NavigateToAsync("/");
+    }
+
+    private async Task NavigateAfterSignInAsync()
+    {
+        var target = NormalizeReturnUrl(ReturnUrl);
+
+        if (!string.IsNullOrEmpty(target))
+        {
+            await Navigation.NavigateToAsync(target);
+            return;
+        }
+
+        if (Navigation.TryNavigateBack())
+            return;
+
+        await Navigation.NavigateToAsync("/");
+    }
+
+    private static string? NormalizeReturnUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        return url.StartsWith('/') ? url : null;
+    }
+
+    private static string BuildReturnUrlQuery(string? returnUrl)
+    {
+        string? normalized = NormalizeReturnUrl(returnUrl);
+
+        return string.IsNullOrEmpty(normalized) ? string.Empty : $"?returnUrl={Uri.EscapeDataString(normalized)}";
+    }
+
+    public void Dispose() => _disposed = true;
+}

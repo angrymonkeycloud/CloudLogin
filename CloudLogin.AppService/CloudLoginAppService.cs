@@ -221,7 +221,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 
         string current = _nav.CurrentUri;
         string relative = NormalizeToBaseRelative(current);
-        await _nav.NavigateToAsync($"/signin?returnUrl={Uri.EscapeDataString(relative)}");
+        await _nav.NavigateToAsync($"{LocalLoginPagePath}?returnUrl={Uri.EscapeDataString(relative)}");
     }
 
     public override async Task BeginLoginAsync(string? returnUrl)

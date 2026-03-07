@@ -15,6 +15,8 @@ public abstract class CloudLoginBaseService : ICloudLoginService
     public event Action<UserModel?>? UserChanged;
     public event Action<string>? RequestIdChanged;
 
+    protected readonly string LocalLoginPagePath = "/cloudlogin/login";
+
     private static string? _requestId;
     public string? RequestId
     {
@@ -39,7 +41,6 @@ public abstract class CloudLoginBaseService : ICloudLoginService
             RequestId = null;
         }
     }
-
 
     public abstract Task Login();
     public abstract Task BeginLoginAsync(string? returnUrl);

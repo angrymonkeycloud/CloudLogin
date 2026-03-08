@@ -656,6 +656,260 @@ public async Task<string> UploadAvatarAsync(Guid userId, Stream imageStream, str
 
 ## 9. Consuming From Other Projects
 
+### Recommended .NET Integration Pattern
+
+If `CloudLogin` is hosted as a separate login site and your application wants to keep its own app cookie/session, use this split:
+
+1. a shared Blazor project that references `AngryMonkey.CloudLogin.Shared`
+2. an ASP.NET Core host that owns the cookie and callback endpoints
+3. a web or MAUI client that uses `ICloudLoginService`
+
+### Step 1: Add the Required References
+
+```xml
+<!-- Shared Blazor/RCL project -->
+<ItemGroup>
+  <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin.Shared" Version="..." />
+</ItemGroup>
+
+<!-- ASP.NET Core host project -->
+<ItemGroup>
+  <PackageReference Include="AngryMonkey.CloudLogin.API" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
+</ItemGroup>
+
+<!-- .NET MAUI Blazor project -->
+<ItemGroup>
+  <PackageReference Include="AngryMonkey.CloudLogin.AppService" Version="..." />
+</ItemGroup>
+```
+
+### Step 2: Point Your App to the CloudLogin Site
+
+```json
+{
+  "LoginUrl": "https://login2.coverbox.app"
+}
+```
+
+`LoginUrl` must be the base address of the hosted `CloudLogin` site. It is used for redirects and for calling `/CloudLogin/Request/GetUserByRequestId`.
+
+### Step 3: Add the CloudLogin Route Assembly to Your Router
+
+`AngryMonkey.CloudLogin.Shared` ships the built-in `/cloudlogin/login` route. Add its assembly to your app router:
+
+```razor
+<Router AppAssembly="typeof(Layout.MainLayout).Assembly"
+        AdditionalAssemblies="AngryMonkey.CloudLogin.CloudLoginRouting.AdditionalAssemblies">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
+```
+
+### Step 4: Configure Cookie Authentication in the Host App
+
+```csharp
+using AngryMonkey.CloudLogin;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCloudLoginServer(new CloudLoginServerConfiguration
+{
+    CookieName = "MyAppAuth"
+});
+
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+```
+
+`AddCloudLoginServer` configures cookie auth with:
+
+- login path: `/auth/login`
+- logout path: `/auth/logout`
+- access denied path: `/auth/login`
+- a long-lived sliding cookie
+
+### Step 5: Add an Auth Bridge Controller
+
+Your host app should expose `/auth/login`, `/auth/callback`, and optionally `/auth/profile` and `/auth/logout`.
+
+The pattern is:
+
+1. build a callback URL in your app
+2. redirect the browser to `LoginUrl` with `referer={callbackUrl}`
+3. receive `requestId` from CloudLogin on the callback
+4. call `GET {LoginUrl}/CloudLogin/Request/GetUserByRequestId?requestId=...`
+5. map the returned `UserModel` into claims
+6. sign your local cookie
+7. redirect back to the original page and append `rid={requestId}`
+
+Minimal shape:
+
+```csharp
+[ApiController]
+[Route("auth")]
+public class AuthController(IConfiguration configuration) : ControllerBase
+{
+    [HttpGet("login")]
+    public IActionResult Login([FromQuery] string? returnUrl = null)
+    {
+        returnUrl ??= "/";
+
+        string state = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(returnUrl));
+        string? callbackUrl = Url.Action("Callback", "Auth", new { state }, Request.Scheme);
+
+        string loginBaseUrl = configuration["LoginUrl"]!;
+        string finalUrl = $"{loginBaseUrl}?referer={Uri.EscapeDataString(callbackUrl!)}";
+
+        return Redirect(finalUrl);
+    }
+
+    [HttpGet("callback")]
+    public async Task<IActionResult> Callback([FromQuery] string requestId, [FromQuery] string? state)
+    {
+        UserModel? user = await GetUserFromCloudLogin(requestId);
+        if (user == null)
+            return Redirect("/?error=user_not_found");
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.ID.ToString()),
+            new(ClaimTypes.Name, user.DisplayName ?? user.FirstName ?? "User"),
+            new(ClaimTypes.Email, user.PrimaryEmailAddress?.Input ?? string.Empty),
+            new("CloudLoginRequestId", requestId)
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
+
+        string returnUrl = string.IsNullOrEmpty(state)
+            ? "/"
+            : System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(state));
+
+        return Redirect($"{returnUrl}{(returnUrl.Contains('?') ? '&' : '?')}rid={Uri.EscapeDataString(requestId)}");
+    }
+
+    private async Task<UserModel?> GetUserFromCloudLogin(string requestId)
+    {
+        using HttpClient httpClient = new() { BaseAddress = new Uri(configuration["LoginUrl"]!) };
+        return await httpClient.GetFromJsonAsync<UserModel>($"/CloudLogin/Request/GetUserByRequestId?requestId={Uri.EscapeDataString(requestId)}");
+    }
+}
+```
+
+### Step 6: Expose Current-User and Logout Endpoints for the Browser Client
+
+`CloudLoginWebService` expects your site to provide these endpoints:
+
+- `GET /api/users/getUser`
+- `GET /api/users/logout`
+- `POST /api/users/logout`
+
+Minimal implementation:
+
+```csharp
+[ApiController]
+[Route("api/users")]
+public class UsersController : ControllerBase
+{
+    [HttpGet("getUser")]
+    public IActionResult GetUser()
+    {
+        if (!User.Identity?.IsAuthenticated ?? true)
+            return Ok((UserModel?)null);
+
+        string? userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
+            return Ok((UserModel?)null);
+
+        return Ok(new UserModel
+        {
+            ID = userId,
+            DisplayName = User.FindFirst(ClaimTypes.Name)?.Value,
+            FirstName = User.FindFirst(ClaimTypes.GivenName)?.Value,
+            LastName = User.FindFirst(ClaimTypes.Surname)?.Value,
+            ProfilePicture = User.FindFirst("picture")?.Value,
+            Inputs = []
+        });
+    }
+
+    [HttpGet("logout")]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync();
+        return Ok(new { success = true });
+    }
+}
+```
+
+### Step 7: Register the Browser-Side Service
+
+In a Blazor WebAssembly client hosted by your ASP.NET Core app:
+
+```csharp
+builder.Services.AddScoped<ICloudLoginService, CloudLoginWebService>();
+```
+
+Warm it up during startup so cached user state is restored and then refreshed from `/api/users/getUser`:
+
+```csharp
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var loginService = scope.ServiceProvider.GetRequiredService<ICloudLoginService>();
+
+    if (loginService is CloudLoginWebService webLoginService)
+    {
+        _ = webLoginService.User;
+        try { await webLoginService.RefreshUserAsync(); } catch { }
+    }
+}
+```
+
+### Step 8: Use `ICloudLoginService` from Components
+
+```razor
+@inject ICloudLoginService CloudLogin
+
+@if (CloudLogin.User is null)
+{
+    <button @onclick="SignIn">Sign in</button>
+}
+else
+{
+    <button @onclick="SignOut">Sign out</button>
+}
+
+@code {
+    private Task SignIn() => CloudLogin.Login();
+    private Task SignOut() => CloudLogin.Logout();
+}
+```
+
+`CloudLogin.Login()` navigates to the local `/cloudlogin/login` page first. That page then calls `BeginLoginAsync(returnUrl)` and completes the flow.
+
+### End-to-End Browser Flow
+
+1. user clicks sign-in in your app
+2. `CloudLoginWebService.Login()` navigates to `/cloudlogin/login?returnUrl=...`
+3. the shared sign-in page calls `BeginLoginAsync(...)`
+4. `CloudLoginWebService.BeginLoginAsync(...)` force-loads `/auth/login?returnUrl=...`
+5. your host app redirects to `LoginUrl?referer={callback}`
+6. CloudLogin authenticates the user and redirects back with `requestId`
+7. your callback endpoint fetches the user, signs your local cookie, and redirects back with `rid`
+8. the shared sign-in page sees `rid`, stores it as `RequestId`, calls `FetchUser()`, and navigates back to the original page
+
 ### Portal Integration (Program.cs)
 ```csharp
 using AngryMonkey.CloudLogin;
@@ -724,6 +978,18 @@ public class UserController : ControllerBase
 ```
 
 ## 10. Client-Side Integration
+
+### .NET Client Notes
+
+For .NET applications, prefer the `ICloudLoginService` pattern above over raw browser calls.
+
+- `CloudLoginWebService` restores cached user data from `localStorage`
+- `CloudLoginWebService.RefreshUserAsync()` calls `GET /api/users/getUser`
+- `CloudLoginWebService.Logout()` calls `GET /api/users/logout`
+- `CloudLoginBaseService.FetchUser()` calls `GET {LoginUrl}/CloudLogin/Request/GetUserByRequestId`
+- the built-in sign-in route is `/cloudlogin/login`
+
+The JavaScript and React examples below are lower-level alternatives when you are not using Blazor or .NET MAUI.
 
 ### JavaScript/TypeScript Client
 ```typescript
@@ -1173,73 +1439,101 @@ HttpContext.Response.Cookies.Append("AuthToken", newToken.AccessToken, new Cooki
 
 ## 16. Blazor Integration
 
-### Server-Side Blazor
+### Shared Blazor Router
+
+Always include the `AngryMonkey.CloudLogin.Shared` assembly in your router so the built-in `/cloudlogin/login` page is reachable:
+
 ```razor
-@page "/profile"
-@using AngryMonkey.CloudLogin.DataContract
-@inject CloudLoginClient LoginClient
-@inject AuthenticationStateProvider AuthStateProvider
+<Router AppAssembly="typeof(Layout.MainLayout).Assembly"
+        AdditionalAssemblies="AngryMonkey.CloudLogin.CloudLoginRouting.AdditionalAssemblies">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
+```
 
-<h3>My Profile</h3>
+The shared sign-in page:
 
-@if (user != null)
+- accepts `r` or `rid` from the callback URL
+- accepts `returnUrl`
+- calls `ICloudLoginService.BeginLoginAsync(...)`
+- waits for `RequestId`
+- calls `FetchUser()` once a request id is available
+- navigates back to the original page when `User` is loaded
+
+### Browser-Hosted Blazor
+
+```csharp
+builder.Services.AddScoped<ICloudLoginService, CloudLoginWebService>();
+```
+
+Use it directly from components:
+
+```razor
+@inject ICloudLoginService CloudLogin
+
+@if (CloudLogin.User is null)
 {
-    <EditForm Model="user" OnValidSubmit="HandleSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-        
-        <div class="form-group">
-            <label>First Name</label>
-            <InputText @bind-Value="user.FirstName" class="form-control" />
-        </div>
-        
-        <div class="form-group">
-            <label>Last Name</label>
-            <InputText @bind-Value="user.LastName" class="form-control" />
-        </div>
-        
-        <button type="submit">Save</button>
-    </EditForm>
+    <button @onclick="SignIn">Sign in</button>
+}
+else
+{
+    <button @onclick="OpenProfile">My profile</button>
+    <button @onclick="SignOut">Sign out</button>
 }
 
 @code {
-    private UserInfo? user;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
 
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var userId = authState.User.FindFirst("sub")?.Value;
-        
-        if (Guid.TryParse(userId, out var id))
-        {
-            user = await LoginClient.GetUserAsync(id);
-        }
-    }
+    private Task SignIn() => CloudLogin.Login();
+    private Task SignOut() => CloudLogin.Logout();
 
-    private async Task HandleSubmit()
+    private async Task OpenProfile()
     {
-        if (user != null)
-        {
-            await LoginClient.UpdateUserAsync(user.ID, user);
-        }
+        string profileUrl = await CloudLogin.ProfileUrl();
+        Navigation.NavigateTo(profileUrl, forceLoad: true);
     }
 }
 ```
 
-### WebAssembly Blazor
-```csharp
-// Program.cs (WASM)
-builder.Services.AddScoped<CloudLoginClient>(sp =>
-{
-    var httpClient = sp.GetRequiredService<HttpClient>();
-    httpClient.BaseAddress = new Uri(builder.Configuration["LoginUrl"]!);
-    
-    return new CloudLoginClient(httpClient);
-});
+### .NET MAUI Blazor Hybrid
 
-builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<AuthenticationStateProvider, CloudLoginAuthStateProvider>();
+Register the MAUI implementation:
+
+```csharp
+builder.Services.AddScoped<ICloudLoginService, CloudLoginAppService>();
 ```
+
+Initialize it during app startup so stored sessions are restored before the main UI is shown:
+
+```csharp
+protected override Window CreateWindow(IActivationState? activationState)
+{
+    Window window = new(new LoadingPage());
+    _ = InitializeAndShowMainPageAsync(window);
+    return window;
+}
+
+private async Task InitializeAndShowMainPageAsync(Window window)
+{
+    ICloudLoginService loginService = _services.GetRequiredService<ICloudLoginService>();
+
+    if (loginService is CloudLoginAppService mauiLoginService)
+    {
+        await mauiLoginService.InitializeAsync();
+
+        if (loginService.User != null)
+            _ = Task.Run(async () => await loginService.FetchUser());
+    }
+
+    MainThread.BeginInvokeOnMainThread(() => window.Page = new MainPage());
+}
+```
+
+`CloudLoginAppService.BeginLoginAsync(...)` uses `WebAuthenticator.Default.AuthenticateAsync(...)`, passes `referer={callback}` to the hosted CloudLogin site, receives `requestId` from the native callback, and then uses `FetchUser()` to hydrate `User`.
+
+`CloudLoginAppService` also persists the current session in `Preferences` and `SecureStorage`, so app restarts can restore the user before a fresh fetch.
 
 ## 17. API Integration
 

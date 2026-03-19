@@ -14,6 +14,13 @@
 
     <LoginHeaderComponent Logo="@Logo" />
 
+    @if (IsQrCodeRequest)
+    {
+        <div class="amc-cloudlogin-panel">
+            <div class="login-form-title">sign in to authorize another device</div>
+        </div>
+    }
+
     <div class="amc-cloudlogin-body">
 
         @if (Auth.Input != null)
@@ -318,6 +325,29 @@
                 </div>
             </div>
         }
+        else if (Auth.CurrentStep == ProcessStep.QrCodeLogin)
+        {
+            <div class="login-form _center">
+                <div class="login-form-title">sign in or create an account on another device</div>
+
+                @if (IsQrCodeLoading)
+                {
+                    <span>Loading QR code...</span>
+                }
+                else if (QrCodeError)
+                {
+                    <span>Unable to generate the QR code.</span>
+                    <button class="amc-cloudlogin-provider" @onclick="ShowQrCodeLoginAsync">Retry</button>
+                }
+                else if (!string.IsNullOrWhiteSpace(QrCodeMarkup))
+                {
+                    @((MarkupString)QrCodeMarkup)
+                    <div class="login-form-title">Scan this to complete sign in on another device</div>
+                }
+
+                <button class="amc-cloudlogin-provider" @onclick="HideQrCodeLoginAsync">Back</button>
+            </div>
+        }
         else
         {
             <div class="login-form">
@@ -356,6 +386,13 @@
                             <div class="amc-cloudlogin-provider-label">@provider.Label</div>
                         </button>
                     }
+
+                    @* @if (!IsQrCodeRequest)
+                    {
+                        <button class="amc-cloudlogin-provider @(Auth.IsLoading ? "--disable" : "")" @onclick="ShowQrCodeLoginAsync">
+                            <div class="amc-cloudlogin-provider-label">QR Code</div>
+                        </button>
+                    } *@
                 </div>
             </div>
         }

@@ -1,0 +1,72 @@
+@page "/Request/{RequestId:guid}"
+
+@using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Server
+@using AngryMonkey.CloudWeb
+@using System.Text.Json
+
+@inject ICloudLogin cloudLogin
+@inject NavigationManager nav
+@inject CloudLoginWebConfiguration configuration
+
+<CloudHeadContent />
+
+@if (IsAuthorized && CurrentUser != null)
+{
+    <section>
+        <article class="center">
+            @if (IsCompleted)
+            {
+                <h1>Signed In</h1>
+                <div>You can close this page and return to the other device.</div>
+            }
+            else if (HasError)
+            {
+                <h1>Error</h1>
+                <div>Something went wrong. Please try again.</div>
+            }
+            else
+            {
+                <div>Completing sign in...</div>
+            }
+        </article>
+    </section>
+}
+else
+{
+    <LoginPageComponent Logo="@configuration.Logo" RequestId="@RequestId" />
+}
+
+@code {
+    [Parameter] public Guid RequestId { get; set; }
+
+    public UserModel? CurrentUser { get; set; }
+    public bool IsAuthorized { get; set; } = false;
+    public bool IsCompleted { get; set; } = false;
+    public bool HasError { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthorized = await cloudLogin.IsAuthenticated();
+
+        if (!IsAuthorized)
+            return;
+
+        CurrentUser = await cloudLogin.CurrentUser();
+
+        if (CurrentUser == null)
+            return;
+
+        try
+        {
+            await cloudLogin.CreateLoginRequest(CurrentUser.ID, RequestId);
+            IsCompleted = true;
+        }
+        catch
+        {
+            HasError = true;
+        }
+
+        StateHasChanged();
+    }
+}

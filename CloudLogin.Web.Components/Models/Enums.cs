@@ -11,6 +11,7 @@ public enum ProcessStep
 {
     None,
     InputValue,          // Get input value from user (email/phone)
+    QrCodeLogin,
     Providers,           // Select authentication provider
     CodeVerification,    // Verify code (OTP)
     CodeEmailVerification,    // Verify code (OTP)

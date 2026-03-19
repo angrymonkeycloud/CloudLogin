@@ -101,6 +101,12 @@ namespace AngryMonkey.CloudLogin.Services
                     }
                     break;
 
+                case ProcessStep.QrCodeLogin:
+                    Title = "QR Code Login";
+                    Subtitle = "Scan the QR code on another device to sign in or create a new account.";
+                    DisplayInputValue = false;
+                    break;
+
                 case ProcessStep.RegistrationInput:
                     Title = "Create Account";
                     Subtitle = "Enter your email address or phone number";
@@ -246,6 +252,7 @@ namespace AngryMonkey.CloudLogin.Services
             {
                 return currentStep switch
                 {
+                    ProcessStep.QrCodeLogin => ProcessStep.InputValue,
                     ProcessStep.Providers => ProcessStep.InputValue,
                     ProcessStep.CodeVerification => ProcessStep.Providers,
                     ProcessStep.Registration => ProcessStep.CodeVerification,

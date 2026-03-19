@@ -10,7 +10,7 @@ else
 {
     <section>
         <article>
-            <LoginComponent Logo="@Logo" Referer="@Referer" Embedded="Embedded" />
+            <LoginComponent Logo="@Logo" Referer="@Referer" Embedded="Embedded" RequestId="@RequestId" />
         </article>
     </section>
 }
@@ -20,7 +20,8 @@ else
     [Parameter] public string? Logo { get; set; }
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? Referer { get; set; }
-    
+    [Parameter] public Guid? RequestId { get; set; }
+
     // Legacy support for backward compatibility
     [Parameter] public string? RedirectUri { get; set; }
     [Parameter] public string? ReferredUrl { get; set; }

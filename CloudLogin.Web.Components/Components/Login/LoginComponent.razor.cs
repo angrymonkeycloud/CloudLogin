@@ -1,6 +1,7 @@
 ﻿using AngryMonkey.CloudLogin.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using QRCoder;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -11,12 +12,16 @@ namespace AngryMonkey.CloudLogin;
 /// Main login component handling authentication flows
 /// This component focuses purely on authentication - user management is handled by separate Account components
 /// </summary>
-public partial class LoginComponent
+public partial class LoginComponent : IDisposable
 {
+
     #region Core Parameters
     [Parameter] public string? Logo { get; set; }
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? Referer { get; set; }
+    [Parameter] public Guid? RequestId { get; set; }
+
+    private bool IsQrCodeRequest => RequestId.HasValue && RequestId.Value != Guid.Empty;
     
     // Legacy support for backward compatibility
     [Parameter] public string? RedirectUri { get; set; }
@@ -82,6 +87,11 @@ public partial class LoginComponent
     public Action OnInput { get; set; } = () => { };
     protected bool Next { get; set; } = false;
     protected bool Preview { get; set; } = false;
+    protected bool IsQrCodeLoading { get; set; } = false;
+    protected bool QrCodeError { get; set; } = false;
+    protected string? QrCodeMarkup { get; set; }
+    protected Guid? QrCodeRequestId { get; set; }
+    private CancellationTokenSource? _qrCodePollingCancellationTokenSource;
     #endregion
 
     #region Provider Management
@@ -127,6 +137,12 @@ public partial class LoginComponent
 
         await Auth.SwitchStep(ProcessStep.InputValue);
         await base.OnInitializedAsync();
+    }
+
+    public void Dispose()
+    {
+        StopQrCodeLogin();
+        Auth.OnStateChanged -= StateHasChanged;
     }
     #endregion
 
@@ -656,8 +672,26 @@ public partial class LoginComponent
         }
     }
 
-    private void CustomSignInChallenge(UserModel user)
+    private async void CustomSignInChallenge(UserModel user)
     {
+        if (IsQrCodeRequest)
+        {
+            try
+            {
+                await cloudLogin.CreateLoginRequest(user.ID, RequestId);
+                navigationManager.NavigateTo($"/Request/{RequestId}", true);
+            }
+            catch
+            {
+                Auth.Errors.Add("Failed to complete the sign-in request for the other device.");
+                Auth.EndLoading();
+            }
+
+            return;
+        }
+
+        InputValue = user.PrimaryEmailAddress?.Input ?? user.PrimaryPhoneNumber?.Input ?? user.Username ?? InputValue;
+
         Dictionary<string, object> userInfo = new()
         {
             { "UserId", user.ID },
@@ -673,6 +707,146 @@ public partial class LoginComponent
         RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "login", KeepMeSignedIn, RefererValue, true, "login", userInfoJSON, InputValue);
 
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
+    }
+
+    private async Task ShowQrCodeLoginAsync()
+    {
+        StopQrCodeLogin();
+
+        Auth.Errors.Clear();
+        IsQrCodeLoading = true;
+        QrCodeError = false;
+        QrCodeMarkup = null;
+
+        if (Auth.CurrentStep != ProcessStep.QrCodeLogin)
+            await Auth.SwitchStep(ProcessStep.QrCodeLogin);
+
+        Guid requestId = Guid.NewGuid();
+        QrCodeRequestId = requestId;
+        string requestUrl = $"{cloudLogin.LoginUrl.TrimEnd('/')}/Request/{requestId}";
+
+        try
+        {
+            QrCodeMarkup = GenerateQrCodeSvg(requestUrl);
+            StartQrCodePolling(requestId);
+        }
+        catch
+        {
+            QrCodeError = true;
+            Auth.Errors.Add("Unable to generate the QR code right now.");
+        }
+        finally
+        {
+            IsQrCodeLoading = false;
+        }
+    }
+
+    private async Task HideQrCodeLoginAsync()
+    {
+        StopQrCodeLogin();
+
+        IsQrCodeLoading = false;
+        QrCodeError = false;
+        QrCodeMarkup = null;
+        QrCodeRequestId = null;
+
+        if (Auth.CurrentStep == ProcessStep.QrCodeLogin)
+            await Auth.SwitchStep(ProcessStep.InputValue);
+    }
+
+    private static string GenerateQrCodeSvg(string url)
+    {
+        using QRCodeGenerator qrGenerator = new();
+        using QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
+        using SvgQRCode svgQrCode = new(qrCodeData);
+
+        return svgQrCode.GetGraphic(4);
+    }
+
+    private void StopQrCodeLogin()
+    {
+        _qrCodePollingCancellationTokenSource?.Cancel();
+        _qrCodePollingCancellationTokenSource?.Dispose();
+        _qrCodePollingCancellationTokenSource = null;
+    }
+
+    private void StartQrCodePolling(Guid requestId)
+    {
+        StopQrCodeLogin();
+        _qrCodePollingCancellationTokenSource = new();
+        _ = PollQrCodeLoginAsync(requestId, _qrCodePollingCancellationTokenSource.Token);
+    }
+
+    private async Task PollQrCodeLoginAsync(Guid requestId, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            try
+            {
+                UserModel? user = await cloudLogin.GetUserByRequestId(requestId);
+
+                if (user == null)
+                    continue;
+
+                await InvokeAsync(async () =>
+                {
+                    StopQrCodeLogin();
+                    IsQrCodeLoading = false;
+                    QrCodeError = false;
+                    QrCodeMarkup = null;
+                    QrCodeRequestId = null;
+                    await QrCodeSignInAsync(user);
+                    StateHasChanged();
+                });
+
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    private async Task QrCodeSignInAsync(UserModel user)
+    {
+        string userInfoJson = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
+        string referer = RefererValue;
+        bool sameSite = true;
+
+        // For external referers, create a login request so the external app can look up the user
+        if (!string.IsNullOrEmpty(referer) && referer != "/" && Uri.TryCreate(referer, UriKind.Absolute, out Uri? refererUri))
+        {
+            string loginHost = new Uri(cloudLogin.LoginUrl).Host;
+
+            if (!string.Equals(refererUri.Host, loginHost, StringComparison.OrdinalIgnoreCase))
+            {
+                sameSite = false;
+
+                try
+                {
+                    Guid requestId = await cloudLogin.CreateLoginRequest(user.ID);
+                    string separator = referer.Contains('?') ? "&" : "?";
+                    referer = $"{referer}{separator}requestId={Uri.EscapeDataString(requestId.ToString())}";
+                }
+                catch { }
+            }
+        }
+
+        string url = $"{cloudLogin.LoginUrl.TrimEnd('/')}/CloudLogin/Login/CustomLogin?userInfo={Uri.EscapeDataString(userInfoJson)}&keepMeSignedIn={KeepMeSignedIn}&referer={Uri.EscapeDataString(referer)}&sameSite={sameSite}";
+        navigationManager.NavigateTo(url, true);
     }
     #endregion
 

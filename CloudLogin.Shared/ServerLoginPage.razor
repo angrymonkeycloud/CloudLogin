@@ -1,0 +1,16 @@
+@page "/cloudlogin/login"
+
+@layout CloudLoginLayout
+
+@using AngryMonkey.CloudApp
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Signing in</PageTitle>
+<ServerLoginComponent RequestIdFromQuery="@RequestIdFromQuery" RequestIdFromQueryLegacy="@RequestIdFromQueryLegacy" ReturnUrl="@ReturnUrl" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "r")] private string? RequestIdFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "rid")] private string? RequestIdFromQueryLegacy { get; set; }
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+}

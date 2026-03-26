@@ -157,7 +157,9 @@ public partial class CloudLoginServer : ICloudLogin
 
     public async Task<bool> IsAuthenticated()
     {
-        return _request.Cookies["CloudLogin"] != null;
+        UserModel? user = await CurrentUser();
+
+        return user != null;
     }
 
     public async Task<List<UserModel>> GetAllUsers()

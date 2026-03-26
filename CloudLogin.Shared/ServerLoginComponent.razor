@@ -1,16 +1,12 @@
-@page "/cloudlogin/login"
-
-@layout CloudLoginLayout
-
 @inject ICloudLoginService CloudLogin
 @inject INavigationService Navigation
 @inject NavigationManager Nav
 
+@rendermode @(new InteractiveWebAssemblyRenderMode(false))
+
 @using AngryMonkey.CloudApp
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Web
-
-<PageTitle>Signing in</PageTitle>
 
 <div style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
     <div style="text-align:center;max-width:320px;padding:0 20px;">
@@ -22,9 +18,9 @@
 </div>
 
 @code {
-    [SupplyParameterFromQuery(Name = "r")] private string? RequestIdFromQuery { get; set; }
-    [SupplyParameterFromQuery(Name = "rid")] private string? RequestIdFromQueryLegacy { get; set; }
-    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+    [Parameter] public required string? RequestIdFromQuery { get; set; }
+    [Parameter] public required string? RequestIdFromQueryLegacy { get; set; }
+    [Parameter] public required string? ReturnUrl { get; set; }
 
     private bool _started;
     private bool _disposed;

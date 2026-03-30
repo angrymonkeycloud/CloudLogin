@@ -32,9 +32,10 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
     private bool _initialized;
     private static CloudLoginBaseService? _activeSubscriber;
 
-    public CloudLoginAppService()
-       : base()
+    public CloudLoginAppService(INavigationService navigationService) : base()
     {
+        _nav = navigationService;
+
         // Lightweight constructor - just event subscriptions
         UserChanged += OnUserChangedInternal;
 
@@ -252,7 +253,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
                 return;
             }
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
             Debug.WriteLine("[AccountService] Login cancelled");
             return;

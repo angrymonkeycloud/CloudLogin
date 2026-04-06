@@ -58,7 +58,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.5" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.5" NoWarn="NU1605" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.5" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.7.0" />
 		<PackageReference Include="Microsoft.Graph" Version="5.103.0" />
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.0" />
 	</ItemGroup>

@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.6.5" />
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.7.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.9" />
 		<PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.5" />
 		<PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.5" />

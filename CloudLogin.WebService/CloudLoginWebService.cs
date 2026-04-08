@@ -144,7 +144,6 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
         catch { rel = "/"; }
 
         _navigationManager.NavigateTo($"{LocalLoginPagePath}?returnUrl={Uri.EscapeDataString(rel)}");
-        await Task.CompletedTask;
     }
 
     public override async Task BeginLoginAsync(string? returnUrl)
@@ -169,7 +168,6 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
         // 2. Redirect to the standalone CloudLogin service to clear its session
         // Using forceLoad ensures a full server round-trip for proper cookie handling.
         _navigationManager.NavigateTo("/auth/logout?returnUrl=/", forceLoad: true);
-        await Task.CompletedTask;
     }
 
     public override async Task<string> ProfileUrl()

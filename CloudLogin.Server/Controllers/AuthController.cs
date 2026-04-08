@@ -14,7 +14,7 @@ namespace AngryMonkey.CloudLogin.Server.Controllers;
 [Route("auth")]
 public class AuthController(IConfiguration configuration, ILogger<AuthController> logger) : ControllerBase
 {
-    private readonly IConfiguration _configuration = configuration;
+    private readonly string _loginBaseUrl = configuration["LoginUrl"] ?? throw new InvalidOperationException("LoginUrl configuration is missing.");
     private readonly ILogger<AuthController> _logger = logger;
 
     [HttpGet("login")]
@@ -22,29 +22,14 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
     {
         try
         {
-            // Store the original return URL in a secure way
             returnUrl ??= "/";
 
-            // Create the callback URL for this controller
-            string? callbackUrl = Url.Action("Callback", "Auth", new { state = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(returnUrl)) }, Request.Scheme);
+            string? callbackUrl = Url.Action("Callback", "Auth", new { state = EncodeReturnUrl(returnUrl) }, Request.Scheme);
 
-            // Build the CloudLogin URL with our callback
-            string loginBaseUrl = _configuration["LoginUrl"]!;
-            //string cloudLoginUrl = $"{loginBaseUrl}/account/login";
-
-            if (string.IsNullOrEmpty(loginBaseUrl))
-            {
-                _logger.LogError("LoginUrl configuration is missing");
-                return BadRequest("Login configuration error");
-            }
-
-            string cloudLoginUrl = $"{loginBaseUrl}";
-
-            // Add query parameters
             NameValueCollection queryParams = HttpUtility.ParseQueryString(string.Empty);
             queryParams["referer"] = callbackUrl;
 
-            string finalUrl = $"{cloudLoginUrl}?{queryParams}";
+            string finalUrl = $"{_loginBaseUrl}?{queryParams}";
 
             return Redirect(finalUrl);
         }
@@ -60,24 +45,15 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
     {
         try
         {
-            // Check if user is authenticated
             if (!User.Identity?.IsAuthenticated ?? true)
-            {
-                // If not authenticated, redirect to login with return URL to profile
                 return Login($"/auth/profile?returnUrl={HttpUtility.UrlEncode(returnUrl ?? "/")}");
-            }
 
-            // Store the original return URL in a secure way
             returnUrl ??= "/";
 
-            // Create the callback URL for this controller
-            string? callbackUrl = Url.Action("ProfileCallback", "Auth", new { state = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(returnUrl)) }, Request.Scheme);
+            string? callbackUrl = Url.Action("ProfileCallback", "Auth", new { state = EncodeReturnUrl(returnUrl) }, Request.Scheme);
 
-            // Build the CloudLogin profile URL with our callback
-            string loginBaseUrl = _configuration["LoginUrl"]!;
-            string profileUrl = $"{loginBaseUrl}/Account";
+            string profileUrl = $"{_loginBaseUrl}/Account";
 
-            // Add query parameters
             NameValueCollection queryParams = HttpUtility.ParseQueryString(string.Empty);
             queryParams["referer"] = callbackUrl;
 
@@ -97,22 +73,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
     {
         try
         {
-            // Decode the original return URL from state
-            string returnUrl = "/";
-            if (!string.IsNullOrEmpty(state))
-            {
-                try
-                {
-                    returnUrl = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(state));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to decode state parameter");
-                }
-            }
-
-            // Redirect back to the original URL
-            return Redirect(returnUrl);
+            return Redirect(DecodeReturnUrl(state));
         }
         catch (Exception ex)
         {
@@ -138,19 +99,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
                 return Redirect("/?error=invalid_callback");
             }
 
-            // Decode the original return URL from state
-            string returnUrl = "/";
-            if (!string.IsNullOrEmpty(state))
-            {
-                try
-                {
-                    returnUrl = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(state));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to decode state parameter");
-                }
-            }
+            string returnUrl = DecodeReturnUrl(state);
 
             // Get user information from CloudLogin
             UserModel? user = await GetUserFromCloudLogin(requestId);
@@ -231,14 +180,8 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
 
             // Redirect to the standalone CloudLogin service logout to clear its session too,
             // otherwise the user remains signed in on the login service and cannot switch accounts.
-            string? loginBaseUrl = _configuration["LoginUrl"];
-            if (!string.IsNullOrEmpty(loginBaseUrl))
-            {
-                string cloudLoginLogoutUrl = $"{loginBaseUrl.TrimEnd('/')}/CloudLogin/Logout?referer={Uri.EscapeDataString(absoluteReturnUrl)}";
-                return Redirect(cloudLoginLogoutUrl);
-            }
-
-            return Redirect(returnUrl);
+            string cloudLoginLogoutUrl = $"{_loginBaseUrl.TrimEnd('/')}/CloudLogin/Logout?referer={Uri.EscapeDataString(absoluteReturnUrl)}";
+            return Redirect(cloudLoginLogoutUrl);
         }
         catch (Exception ex)
         {
@@ -251,10 +194,8 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
     {
         try
         {
-            string loginBaseUrl = _configuration["LoginUrl"]!;
-
             using HttpClient httpClient = new();
-            httpClient.BaseAddress = new Uri(loginBaseUrl);
+            httpClient.BaseAddress = new Uri(_loginBaseUrl);
 
             // Call CloudLogin API to get user by request ID
             HttpResponseMessage response = await httpClient.GetAsync($"/CloudLogin/Request/GetUserByRequestId?requestId={requestId}");
@@ -286,5 +227,25 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
 
         string separator = beforeFragment.Contains('?') ? "&" : "?";
         return $"{beforeFragment}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}{fragment}";
+    }
+
+    private static string EncodeReturnUrl(string returnUrl)
+        => Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(returnUrl));
+
+    private string DecodeReturnUrl(string? state)
+    {
+        if (!string.IsNullOrEmpty(state))
+        {
+            try
+            {
+                return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(state));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to decode state parameter");
+            }
+        }
+
+        return "/";
     }
 }

@@ -160,19 +160,15 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
     public override async Task Logout()
     {
         await EnsureInitializedAsync();
-        try
-        {
-            using HttpClient httpClient = new() { BaseAddress = new Uri(_navigationManager.BaseUri) };
-            await httpClient.GetAsync("api/users/logout");
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[Web AccountService] Error during logout: {ex.Message}");
-        }
 
         OnUserSignedOut();
         RaiseUserChanged(null);
-        _navigationManager.NavigateTo("/", forceLoad: true);
+
+        // Navigate the browser to the auth/logout endpoint so the server can:
+        // 1. Clear the local authentication cookie (in the browser's context)
+        // 2. Redirect to the standalone CloudLogin service to clear its session
+        // Using forceLoad ensures a full server round-trip for proper cookie handling.
+        _navigationManager.NavigateTo("/auth/logout?returnUrl=/", forceLoad: true);
         await Task.CompletedTask;
     }
 

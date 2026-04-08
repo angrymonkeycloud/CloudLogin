@@ -222,6 +222,22 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
             _logger.LogInformation("User logged out successfully");
 
             returnUrl ??= "/";
+
+            // Build absolute return URL for the consumer website
+            string baseUrl = $"{Request.Scheme}://{Request.Host}";
+            string absoluteReturnUrl = returnUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? returnUrl
+                : $"{baseUrl}{(returnUrl.StartsWith('/') ? "" : "/")}{returnUrl}";
+
+            // Redirect to the standalone CloudLogin service logout to clear its session too,
+            // otherwise the user remains signed in on the login service and cannot switch accounts.
+            string? loginBaseUrl = _configuration["LoginUrl"];
+            if (!string.IsNullOrEmpty(loginBaseUrl))
+            {
+                string cloudLoginLogoutUrl = $"{loginBaseUrl.TrimEnd('/')}/CloudLogin/Logout?referer={Uri.EscapeDataString(absoluteReturnUrl)}";
+                return Redirect(cloudLoginLogoutUrl);
+            }
+
             return Redirect(returnUrl);
         }
         catch (Exception ex)

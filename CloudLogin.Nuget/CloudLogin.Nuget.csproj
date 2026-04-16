@@ -10,13 +10,13 @@
 		<Version>1.3.4</Version>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+		<PackageIcon>amc-logo.png</PackageIcon>
 		<UserSecretsId>9d2adc67-bf55-4756-816f-6279d9a3b594</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.CloudMate" Version="1.2.4" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.6" />
 	</ItemGroup>
 
 	<ItemGroup>

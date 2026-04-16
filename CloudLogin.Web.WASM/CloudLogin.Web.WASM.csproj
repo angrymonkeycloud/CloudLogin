@@ -13,7 +13,7 @@
 		<Version>1.3.4</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
-		<PackageIcon>AngryMonkeyCloudLogo-64x64.png</PackageIcon>
+		<PackageIcon>amc-logo.png</PackageIcon>
 		<Product>Cloud Login Web WASM</Product>
 		<Configurations>Debug;Release</Configurations>
 		<Description />
@@ -31,8 +31,8 @@
 
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.5" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.5" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.6" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.6" PrivateAssets="all" />
 	</ItemGroup>
 
 
@@ -42,9 +42,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="AngryMonkeyCloudLogo-64x64.png">
-			<PackagePath>\</PackagePath>
+		<None Update="amc-logo.png">
 			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
 

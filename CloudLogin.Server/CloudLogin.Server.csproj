@@ -19,7 +19,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.CloudWeb.Server" Version="2.4.3" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.7.0" />
+		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.7.1" />
 		<PackageReference Include="Azure.Identity" Version="1.21.0" />
 		<PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="10.0.6" />
 		<PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.8.0" />

@@ -3,17 +3,18 @@
     direction: ltr !important;
     background-color: transparent;
     min-height: 100vh;
-    padding-inline:0;
-    article {
+    padding-inline: 0;
+
+    > div {
         display: grid;
         max-width: 900px;
         width: 100%;
         margin-inline: auto;
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 3fr;
         gap: 0;
         background-color: #ffffff;
         border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 0px 8px rgba(0, 0, 0, .1);
         overflow: hidden;
     }
 

@@ -11,8 +11,8 @@
 {
     @if (CurrentUser != null)
     {
-        <section class="account-management">
-            <article>
+        <div class="account-management">
+            <div>
                 <div class="tabs">
                     @foreach (var tab in Tabs)
                     {
@@ -38,8 +38,8 @@
                         <AccountComponent_UserInfo CurrentUser="CurrentUser" />
                     }
                 </div>
-            </article>
-        </section>
+            </div>
+        </div>
     }
 
 }

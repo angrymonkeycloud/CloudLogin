@@ -7,7 +7,7 @@
 		<Product>Cloud Login API</Product>
 		<AssemblyName>AngryMonkey.CloudLogin.API</AssemblyName>
 		<RootNamespace>AngryMonkey.CloudLogin.API</RootNamespace>
-		<Version>1.3.4</Version>
+		<Version>1.3.6</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>

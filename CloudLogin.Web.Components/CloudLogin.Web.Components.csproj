@@ -23,11 +23,11 @@
 	<ItemGroup>
 		<SupportedPlatform Include="browser" />
 	</ItemGroup>
-
+	
 	<ItemGroup>
 		<Content Remove="compilerconfig.json" />
 	</ItemGroup>
-
+	
 
 	<ItemGroup>
 		<None Include="compilerconfig.json" />

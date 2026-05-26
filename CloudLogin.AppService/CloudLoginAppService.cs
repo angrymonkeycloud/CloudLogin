@@ -50,6 +50,9 @@ public static class MobileAuthCallback
 public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 {
     public const string CallbackUrl = "mahloole://auth/callback";
+    public const string CallbackScheme = "mahloole";
+    public const string CallbackHost = "auth";
+    public const string CallbackPath = "/callback";
 
     // Secure storage keys
     private const string SecureUserIdKey = "coverbox_secure_user_id";

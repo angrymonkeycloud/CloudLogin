@@ -333,8 +333,10 @@ public partial class LoginComponent : IDisposable
 
         try
         {
+            string email = GenerateTestEmail(DisplayName, TestUsers);
+
             PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
-                $"test-{Guid.NewGuid():N}@testmode.local",
+                email,
                 InputFormat.EmailAddress,
                 password: null,
                 FirstName,
@@ -349,6 +351,36 @@ public partial class LoginComponent : IDisposable
             Auth.Errors.Add(ex.Message);
             Auth.EndLoading();
         }
+    }
+
+    private static string GenerateTestEmail(string displayName, List<UserModel> existingTestUsers)
+    {
+        string slug = new string(displayName.ToLowerInvariant()
+            .Select(c => char.IsLetterOrDigit(c) ? c : '_')
+            .ToArray()).Trim('_').Replace("_", string.Empty);
+
+        if (string.IsNullOrEmpty(slug))
+            slug = "user";
+
+        string baseEmail = $"test_{slug}@testmode.local";
+
+        HashSet<string> existingEmails = [.. existingTestUsers
+            .SelectMany(u => u.Inputs)
+            .Select(i => i.Input.ToLowerInvariant())];
+
+        if (!existingEmails.Contains(baseEmail))
+            return baseEmail;
+
+        int counter = 1;
+        string candidate;
+        do
+        {
+            candidate = $"test_{slug}{counter}@testmode.local";
+            counter++;
+        }
+        while (existingEmails.Contains(candidate));
+
+        return candidate;
     }
 
     private async Task OnTestModeClickedAsync()

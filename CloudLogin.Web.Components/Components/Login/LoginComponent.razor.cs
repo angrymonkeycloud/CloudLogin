@@ -119,6 +119,12 @@ public partial class LoginComponent : IDisposable
         p.Code.Equals("password", StringComparison.OrdinalIgnoreCase)).ToList();
     public bool HasCodeProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("code", StringComparison.OrdinalIgnoreCase));
     public bool HasPasswordProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase));
+    /// <summary>
+    /// True when the configured Password provider is running in test mode.
+    /// In this case registration skips the password & verification-code steps and creates the user immediately.
+    /// </summary>
+    public bool IsPasswordProviderTestMode => AvailableRegistrationProviders
+        .Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase) && p.IsTest);
     public string? SelectedRegistrationMethod { get; set; }
     #endregion
 
@@ -310,8 +316,40 @@ public partial class LoginComponent : IDisposable
         }
         else if (SelectedRegistrationMethod == "password")
         {
+            // Test-mode password provider: no password prompt, no verification code.
+            // Server enforces the shared test password and flags IsTestMode in storage.
+            if (IsPasswordProviderTestMode)
+            {
+                await CompleteTestModePasswordRegistration();
+                return;
+            }
+
             await RefreshVerificationCode();
             await Auth.SwitchStep(ProcessStep.RegistrationPasswordVerification);
+        }
+    }
+
+    private async Task CompleteTestModePasswordRegistration()
+    {
+        Auth.StartLoading();
+
+        try
+        {
+            PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
+                Auth.Input!.Input,
+                InputValueFormat,
+                password: null,
+                FirstName,
+                LastName,
+                DisplayName);
+
+            UserModel newUser = await cloudLogin.PasswordRegistration(request);
+            CustomSignInChallenge(newUser);
+        }
+        catch (Exception ex)
+        {
+            Auth.Errors.Add(ex.Message);
+            Auth.EndLoading();
         }
     }
 
@@ -609,6 +647,24 @@ public partial class LoginComponent : IDisposable
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
 
+    /// <summary>
+    /// Navigates back to the page that initiated the sign-in by honoring the
+    /// <c>referer</c> query parameter. Falls back to "/Account" when none is supplied.
+    /// </summary>
+    private void NavigateToReferer()
+    {
+        string? target = Referer ?? ReferredUrl ?? RedirectUri;
+
+        if (string.IsNullOrWhiteSpace(target) || target == "/")
+            target = "/Account";
+        else
+        {
+            try { target = System.Net.WebUtility.UrlDecode(target); } catch { }
+        }
+
+        navigationManager.NavigateTo(target, forceLoad: true);
+    }
+
     private async Task OnEmailPasswordLoginClicked()
     {
         try
@@ -623,7 +679,7 @@ public partial class LoginComponent : IDisposable
 
             if (result)
             {
-                navigationManager.NavigateTo("/", true);
+                NavigateToReferer();
                 return;
             }
 
@@ -659,7 +715,7 @@ public partial class LoginComponent : IDisposable
 
             if (result)
             {
-                navigationManager.NavigateTo("/", true);
+                NavigateToReferer();
                 return;
             }
 
@@ -692,21 +748,43 @@ public partial class LoginComponent : IDisposable
 
         InputValue = user.PrimaryEmailAddress?.Input ?? user.PrimaryPhoneNumber?.Input ?? user.Username ?? InputValue;
 
-        Dictionary<string, object> userInfo = new()
+        // Send the user through the server-side CustomLogin endpoint which:
+        //  1. Creates the authenticated session cookie.
+        //  2. Redirects the browser back to `referer` (the page that initiated the login).
+        // This guarantees we land on the original referer (e.g. /auth/callback?state=...) instead
+        // of the internal /cloudlogin/login page.
+        string userInfoJson = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
+        string referer = RefererValue;
+        bool sameSite = true;
+
+        // Cross-site referer: hand the user info to the external app via a one-time requestId.
+        if (!string.IsNullOrEmpty(referer)
+            && referer != "/"
+            && Uri.TryCreate(referer, UriKind.Absolute, out Uri? refererUri))
         {
-            { "UserId", user.ID },
-            { "FirstName", user.FirstName ?? string.Empty },
-            { "LastName", user.LastName ?? string.Empty },
-            { "DisplayName", user.DisplayName ?? string.Empty },
-            { "Input", InputValue },
-            { "Type", InputValueFormat },
-        };
+            string loginHost = new Uri(cloudLogin.LoginUrl).Host;
 
-        string userInfoJSON = JsonSerializer.Serialize(userInfo, CloudLoginSerialization.Options);
+            if (!string.Equals(refererUri.Host, loginHost, StringComparison.OrdinalIgnoreCase))
+            {
+                sameSite = false;
 
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", "login", KeepMeSignedIn, RefererValue, true, "login", userInfoJSON, InputValue);
+                try
+                {
+                    Guid requestId = await cloudLogin.CreateLoginRequest(user.ID);
+                    string separator = referer.Contains('?') ? "&" : "?";
+                    referer = $"{referer}{separator}requestId={Uri.EscapeDataString(requestId.ToString())}";
+                }
+                catch { }
+            }
+        }
 
-        navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
+        string url = $"{cloudLogin.LoginUrl.TrimEnd('/')}/CloudLogin/Login/CustomLogin"
+                   + $"?userInfo={Uri.EscapeDataString(userInfoJson)}"
+                   + $"&keepMeSignedIn={KeepMeSignedIn.ToString().ToLowerInvariant()}"
+                   + $"&referer={Uri.EscapeDataString(referer ?? string.Empty)}"
+                   + $"&sameSite={sameSite.ToString().ToLowerInvariant()}";
+
+        navigationManager.NavigateTo(url, true);
     }
 
     private async Task ShowQrCodeLoginAsync()

@@ -491,7 +491,7 @@ public class CloudLoginClient : ICloudLogin
         {
             { new StringContent(request.Input), "input" },
             { new StringContent(request.InputFormat.ToString()), "inputFormat" },
-            { new StringContent(request.Password), "password" },
+            { new StringContent(request.Password ?? string.Empty), "password" },
             { new StringContent(request.FirstName), "firstName" },
             { new StringContent(request.LastName), "lastName" },
             { new StringContent(request.DisplayName), "displayName" }

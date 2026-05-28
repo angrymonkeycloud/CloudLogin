@@ -10,6 +10,11 @@ public record UserModel
     public string? LastName { get; set; }
     public string? DisplayName { get; set; }
     public bool IsLocked { get; set; } = false;
+    /// <summary>
+    /// Indicates that the user was created via the LoginTest shared-password flow.
+    /// Such users authenticate against the configured LoginTest password.
+    /// </summary>
+    public bool IsTest { get; set; } = false;
     public string? Username { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;

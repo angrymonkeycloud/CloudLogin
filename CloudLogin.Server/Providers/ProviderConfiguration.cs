@@ -25,7 +25,7 @@ public abstract class ProviderConfiguration
     // Should Be private
     public string CssClass => string.Join(" ", [$"_{Code.ToLower()}"]);
 
-    public ProviderDefinition ToModel()
+    public virtual ProviderDefinition ToModel()
     {
         return new ProviderDefinition(Code, HandleUpdateOnly, Label)
         {

@@ -37,7 +37,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
     }
 
     [HttpPost("Login/PasswordRegistration")]
-    public async Task<IActionResult> PasswordRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string password, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? referer = null)
+    public async Task<IActionResult> PasswordRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string? password, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? referer = null)
     {
         if (!Enum.TryParse<InputFormat>(inputFormat, true, out InputFormat format))
             return BadRequest("Invalid input format.");

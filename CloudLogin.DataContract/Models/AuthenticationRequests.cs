@@ -53,9 +53,9 @@ public sealed record PasswordRegistrationRequest
     public required InputFormat InputFormat { get; init; }
 
     /// <summary>
-    /// User's password
+    /// User's password. Optional when the server-side Password provider is configured in test mode.
     /// </summary>
-    public required string Password { get; init; }
+    public string? Password { get; init; }
 
     /// <summary>
     /// User's first name
@@ -82,7 +82,7 @@ public sealed record PasswordRegistrationRequest
     /// <param name="lastName">User's last name</param>
     /// <param name="displayName">User's display name (optional)</param>
     /// <returns>A new PasswordRegistrationRequest instance</returns>
-    public static PasswordRegistrationRequest Create(string input, InputFormat inputFormat, string password, string firstName, string lastName, string? displayName = null)
+    public static PasswordRegistrationRequest Create(string input, InputFormat inputFormat, string? password, string firstName, string lastName, string? displayName = null)
         => new()
         {
             Input = input,
@@ -102,7 +102,7 @@ public sealed record PasswordRegistrationRequest
     /// <param name="lastName">User's last name</param>
     /// <param name="displayName">User's display name (optional)</param>
     /// <returns>A new PasswordRegistrationRequest instance</returns>
-    public static PasswordRegistrationRequest Create(string email, string password, string firstName, string lastName, string? displayName = null)
+    public static PasswordRegistrationRequest Create(string email, string? password, string firstName, string lastName, string? displayName = null)
         => new()
         {
             Input = email,

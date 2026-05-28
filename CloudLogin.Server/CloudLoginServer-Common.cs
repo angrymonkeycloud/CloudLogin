@@ -404,10 +404,20 @@ public partial class CloudLoginServer : ICloudLogin
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Input);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.FirstName);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.LastName);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
+
+        // When the test-mode password provider is registered & enabled, registration can proceed
+        // without a caller-supplied password; the configured shared password is hashed and stored,
+        // and the user is flagged as a test user.
+        LoginTestProviders.PasswordProviderTestConfiguration? testProvider = _configuration.Providers
+            .OfType<LoginTestProviders.PasswordProviderTestConfiguration>()
+            .FirstOrDefault();
+        bool isTestEnabled = testProvider?.IsTestEnabled == true;
+
+        if (!isTestEnabled)
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
 
         // Ensure user doesn't already exist
         UserModel? existing = request.InputFormat switch
@@ -420,12 +430,15 @@ public partial class CloudLoginServer : ICloudLogin
         if (existing != null)
             throw new Exception("User already exists.");
 
+        string passwordToHash = isTestEnabled ? testProvider!.Password! : request.Password!;
+
         UserModel newUser = new()
         {
             ID = Guid.NewGuid(),
             FirstName = request.FirstName,
             LastName = request.LastName,
             DisplayName = request.DisplayName,
+            IsTest = isTestEnabled,
             CreatedOn = DateTimeOffset.UtcNow,
             LastSignedIn = DateTimeOffset.UtcNow,
             Inputs = [new() {
@@ -442,7 +455,7 @@ public partial class CloudLoginServer : ICloudLogin
                     new()
                     {
                         Code = "Password",
-                        PasswordHash = await HashPassword(request.Password),
+                        PasswordHash = await HashPassword(passwordToHash),
                         Identifier = null // Internal providers don't have external identifiers
                     }
                 ]

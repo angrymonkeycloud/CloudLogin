@@ -1,6 +1,7 @@
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36623.8 d17.14
+VisualStudioVersion = 17.14.36623.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Web", "CloudLogin.Web\CloudLogin.Web.csproj", "{4C7820DB-2118-4317-9C0B-4C969955B7A1}"
 EndProject
@@ -13,10 +14,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Client", "CloudLogin.Client\CloudLogin.Client.csproj", "{DF322387-3D0C-449D-AC3F-590749FB4518}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{4D59EC91-C6EB-47E7-99A6-D4445488CE88}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLogin.WebAssembly", "SharedLogin.WebAssembly\SharedLogin.WebAssembly.csproj", "{893CDE09-BF78-4370-BC08-FA4F714EC29E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLogin.BlazorServer", "SharedLogin.BlazorServer\SharedLogin.BlazorServer.csproj", "{8F7327BE-A995-415C-860E-3437918926A2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MainNewSharedLogin", "MainNewSharedLogin", "{E4BF81A4-7079-4894-B91D-815C8CEEA0BA}"
 EndProject
@@ -189,8 +186,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{893CDE09-BF78-4370-BC08-FA4F714EC29E} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
-		{8F7327BE-A995-415C-860E-3437918926A2} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
 		{E4BF81A4-7079-4894-B91D-815C8CEEA0BA} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
 		{C304F6A8-99A1-4909-B44D-E362230527D6} = {E4BF81A4-7079-4894-B91D-815C8CEEA0BA}
 		{E8A97AEE-7C66-4942-B69A-0046597D7A0C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}

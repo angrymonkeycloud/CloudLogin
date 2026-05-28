@@ -1,5 +1,6 @@
 ﻿using AngryMonkey.CloudLogin;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
 using AngryMonkey.CloudApp;
@@ -9,12 +10,49 @@ namespace AngryMonkey.CloudLogin;
 public static class MobileAuthCallback
 {
     public static event Action<string>? RequestIdReceived;
-    public static void Raise(string requestId) => RequestIdReceived?.Invoke(requestId);
+
+    private static string? _pendingRequestId;
+    private static readonly object _lock = new();
+
+    public static void Raise(string requestId)
+    {
+        lock (_lock)
+        {
+            if (RequestIdReceived is not null)
+            {
+                _pendingRequestId = null;
+                RequestIdReceived.Invoke(requestId);
+            }
+            else
+            {
+                // No subscriber yet — buffer it so it can be consumed later
+                _pendingRequestId = requestId;
+                Debug.WriteLine($"[MobileAuthCallback] Buffered requestId (no subscriber): {requestId}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Consumes any buffered request ID that arrived before a subscriber was attached.
+    /// Returns null if nothing was buffered.
+    /// </summary>
+    public static string? ConsumePending()
+    {
+        lock (_lock)
+        {
+            var id = _pendingRequestId;
+            _pendingRequestId = null;
+            return id;
+        }
+    }
 }
 
 public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 {
     public const string CallbackUrl = "mahloole://auth/callback";
+    public const string CallbackScheme = "mahloole";
+    public const string CallbackHost = "auth";
+    public const string CallbackPath = "/callback";
 
     // Secure storage keys
     private const string SecureUserIdKey = "coverbox_secure_user_id";
@@ -48,6 +86,14 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 
             MobileAuthCallback.RequestIdReceived += OnRequestIdReceived;
             _activeSubscriber = this;
+
+            // Check if a requestId arrived before we subscribed
+            string? pending = MobileAuthCallback.ConsumePending();
+            if (!string.IsNullOrWhiteSpace(pending))
+            {
+                Debug.WriteLine($"[CloudLoginAppService] Consuming buffered requestId: {pending}");
+                OnRequestIdReceived(pending);
+            }
         }
         catch { }
     }
@@ -240,6 +286,9 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
         string callbackWithReturn = $"{CallbackUrl}?return={Uri.EscapeDataString(relative)}";
         string startUrl = $"{LoginBaseUrl}?referer={Uri.EscapeDataString(callbackWithReturn)}";
 
+        // Store the return URL so OnRequestIdReceived can navigate back after login
+        try { Preferences.Default.Set(PostLoginRouteKey, relative); } catch { }
+
         try
         {
             WebAuthenticatorResult result = await WebAuthenticator.Default.AuthenticateAsync(
@@ -249,9 +298,32 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
             if (result?.Properties?.TryGetValue("requestId", out string? requestId) == true
                 && !string.IsNullOrWhiteSpace(requestId))
             {
+                Debug.WriteLine($"[AccountService] WebAuthenticator returned requestId: {requestId}");
                 RequestId = requestId;
+                await FetchUser();
+
+                if (User != null)
+                {
+                    Debug.WriteLine($"[AccountService] User fetched after WebAuthenticator: {User.DisplayName}");
+                    string target = "/";
+                    try
+                    {
+                        if (!string.IsNullOrWhiteSpace(Preferences.Default.Get<string>(PostLoginRouteKey, null)))
+                        {
+                            target = NormalizeToBaseRelative(Preferences.Default.Get<string>(PostLoginRouteKey, null));
+                            Preferences.Default.Remove(PostLoginRouteKey);
+                        }
+                    }
+                    catch { }
+                    await ForceReloadTo(target);
+                }
+
                 return;
             }
+
+            // WebAuthenticator returned no requestId — log what we got
+            Debug.WriteLine($"[AccountService] WebAuthenticator result had no requestId. Properties: {(result?.Properties == null ? "null" : string.Join(", ", result.Properties.Select(p => $"{p.Key}={p.Value}")))}");
+
         }
         catch (TaskCanceledException ex)
         {
@@ -282,7 +354,36 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 
     private async void OnRequestIdReceived(string requestId)
     {
+        Debug.WriteLine($"[CloudLoginAppService] OnRequestIdReceived: {requestId}");
         RequestId = requestId;
+
+        try
+        {
+            await FetchUser();
+
+            if (User != null)
+            {
+                Debug.WriteLine($"[CloudLoginAppService] User fetched after callback: {User.DisplayName}");
+
+                // Navigate away from the login page
+                string target = "/";
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(Preferences.Default.Get<string>(PostLoginRouteKey, null)))
+                    {
+                        target = NormalizeToBaseRelative(Preferences.Default.Get<string>(PostLoginRouteKey, null));
+                        Preferences.Default.Remove(PostLoginRouteKey);
+                    }
+                }
+                catch { }
+
+                await ForceReloadTo(target);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[CloudLoginAppService] FetchUser after callback failed: {ex.Message}");
+        }
     }
 
     private async Task ForceReloadTo(string target)

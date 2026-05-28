@@ -22,15 +22,8 @@ public partial class CloudLoginServer
         if (user == null)
             return null;
 
-        // Test-mode fast-path: a user flagged as test authenticates against the shared
-        // password configured on the LoginTestProviders.PasswordProviderTestConfiguration.
-        LoginTestProviders.PasswordProviderTestConfiguration? testProvider = _configuration.Providers
-            .OfType<LoginTestProviders.PasswordProviderTestConfiguration>()
-            .FirstOrDefault();
-
-        if (user.IsTest
-            && testProvider?.IsTestEnabled == true
-            && string.Equals(password, testProvider.Password, StringComparison.Ordinal))
+        // Test-mode fast-path: a test user authenticates without password verification.
+        if (user.IsTest)
         {
             user.LastSignedIn = DateTimeOffset.UtcNow;
             await UpdateUser(user);

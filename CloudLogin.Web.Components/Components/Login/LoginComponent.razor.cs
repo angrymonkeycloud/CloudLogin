@@ -119,13 +119,13 @@ public partial class LoginComponent : IDisposable
         p.Code.Equals("password", StringComparison.OrdinalIgnoreCase)).ToList();
     public bool HasCodeProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("code", StringComparison.OrdinalIgnoreCase));
     public bool HasPasswordProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase));
-    /// <summary>
-    /// True when the configured Password provider is running in test mode.
-    /// In this case registration skips the password & verification-code steps and creates the user immediately.
-    /// </summary>
-    public bool IsPasswordProviderTestMode => AvailableRegistrationProviders
-        .Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase) && p.IsTest);
+    private bool HasMultipleRegistrationMethods => new[] { HasCodeProvider, HasPasswordProvider }.Count(x => x) > 1;
     public string? SelectedRegistrationMethod { get; set; }
+    #endregion
+
+    #region Test Mode State
+    private List<UserModel> TestUsers { get; set; } = [];
+    private ProviderDefinition? TestModeProvider => Providers.FirstOrDefault(p => p.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase));
     #endregion
 
     #region Lifecycle Methods
@@ -253,7 +253,7 @@ public partial class LoginComponent : IDisposable
 
         Auth.StartLoading();
 
-        if (HasCodeProvider && HasPasswordProvider)
+        if (HasMultipleRegistrationMethods)
         {
             await Auth.SwitchStep(ProcessStep.RegistrationProviders);
         }
@@ -282,6 +282,12 @@ public partial class LoginComponent : IDisposable
         if (provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase))
         {
             await Auth.SwitchStep(ProcessStep.EmailPasswordLogin);
+            return;
+        }
+
+        if (provider.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase))
+        {
+            await OnTestModeClickedAsync();
             return;
         }
 
@@ -316,28 +322,20 @@ public partial class LoginComponent : IDisposable
         }
         else if (SelectedRegistrationMethod == "password")
         {
-            // Test-mode password provider: no password prompt, no verification code.
-            // Server enforces the shared test password and flags IsTestMode in storage.
-            if (IsPasswordProviderTestMode)
-            {
-                await CompleteTestModePasswordRegistration();
-                return;
-            }
-
             await RefreshVerificationCode();
             await Auth.SwitchStep(ProcessStep.RegistrationPasswordVerification);
         }
     }
 
-    private async Task CompleteTestModePasswordRegistration()
+    private async Task CompleteTestModeRegistration()
     {
         Auth.StartLoading();
 
         try
         {
             PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
-                Auth.Input!.Input,
-                InputValueFormat,
+                $"test-{Guid.NewGuid():N}@testmode.local",
+                InputFormat.EmailAddress,
                 password: null,
                 FirstName,
                 LastName,
@@ -351,6 +349,45 @@ public partial class LoginComponent : IDisposable
             Auth.Errors.Add(ex.Message);
             Auth.EndLoading();
         }
+    }
+
+    private async Task OnTestModeClickedAsync()
+    {
+        Auth.StartLoading();
+        TestUsers = await cloudLogin.GetTestUsers();
+        FirstName = string.Empty;
+        LastName = string.Empty;
+        DisplayName = string.Empty;
+        await Auth.SwitchStep(ProcessStep.TestMode);
+        Auth.EndLoading();
+    }
+
+    private async Task OnTestModeSignInAsync(UserModel user)
+    {
+        Auth.StartLoading();
+        CustomSignInChallenge(user);
+        await Task.CompletedTask;
+    }
+
+    private async Task OnTestModeCreateNewClicked()
+    {
+        FirstName = string.Empty;
+        LastName = string.Empty;
+        DisplayName = string.Empty;
+        await Auth.SwitchStep(ProcessStep.TestModeCreate);
+    }
+
+    private async Task OnTestModeCreateConfirmedAsync()
+    {
+        Auth.Errors.Clear();
+
+        if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName) || string.IsNullOrWhiteSpace(DisplayName))
+        {
+            Auth.Errors.Add("Please fill in all required fields.");
+            return;
+        }
+
+        await CompleteTestModeRegistration();
     }
 
     private async Task OnRegistrationCodeVerifyClicked()

@@ -180,6 +180,18 @@ namespace AngryMonkey.CloudLogin.Services
                     Title = "Forget Password";
                     break;
 
+                case ProcessStep.TestMode:
+                    Title = "Test Mode";
+                    Subtitle = "Sign in as an existing test user or create a new one";
+                    DisplayInputValue = false;
+                    break;
+
+                case ProcessStep.TestModeCreate:
+                    Title = "New Test Account";
+                    Subtitle = "Enter a name for the test user";
+                    DisplayInputValue = false;
+                    break;
+
                 default:
                     Title = "Untitled!!!";
                     Subtitle = string.Empty;

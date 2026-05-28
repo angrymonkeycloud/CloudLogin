@@ -24,6 +24,8 @@ public enum ProcessStep
     RegistrationProviders, // Step 3: Choose registration method (Code/Password/Both)
     RegistrationCodeVerification, // Step 4a: Code-only registration verification
     RegistrationPasswordVerification, // Step 4b: Password+Code registration verification
+    TestMode,           // Test mode: list existing test users + create new
+    TestModeCreate,     // Test mode: fill name details for a new test user
 }
 
 public enum AuthenticationProcess

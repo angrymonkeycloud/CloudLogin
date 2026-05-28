@@ -170,6 +170,12 @@ public partial class CloudLoginServer : ICloudLogin
         return await _cosmosMethods.GetUsers() ?? [];
     }
 
+    public async Task<List<UserModel>> GetTestUsers()
+    {
+        List<UserModel> all = await GetAllUsers();
+        return [.. all.Where(u => u.IsTest)];
+    }
+
     public async Task<UserModel?> GetUserById(Guid userId)
     {
         if (_cosmosMethods == null)
@@ -408,15 +414,12 @@ public partial class CloudLoginServer : ICloudLogin
         ArgumentException.ThrowIfNullOrWhiteSpace(request.LastName);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
 
-        // When the test-mode password provider is registered & enabled, registration can proceed
-        // without a caller-supplied password; the configured shared password is hashed and stored,
-        // and the user is flagged as a test user.
-        LoginTestProviders.PasswordProviderTestConfiguration? testProvider = _configuration.Providers
-            .OfType<LoginTestProviders.PasswordProviderTestConfiguration>()
+        LoginTestProviders.TestModeConfiguration? testProvider = _configuration.Providers
+            .OfType<LoginTestProviders.TestModeConfiguration>()
             .FirstOrDefault();
-        bool isTestEnabled = testProvider?.IsTestEnabled == true;
+        bool isTestModeRegistration = testProvider?.IsEnabled == true && string.IsNullOrWhiteSpace(request.Password);
 
-        if (!isTestEnabled)
+        if (!isTestModeRegistration)
             ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
 
         // Ensure user doesn't already exist
@@ -430,33 +433,31 @@ public partial class CloudLoginServer : ICloudLogin
         if (existing != null)
             throw new Exception("User already exists.");
 
-        string passwordToHash = isTestEnabled ? testProvider!.Password! : request.Password!;
-
         UserModel newUser = new()
         {
             ID = Guid.NewGuid(),
             FirstName = request.FirstName,
             LastName = request.LastName,
             DisplayName = request.DisplayName,
-            IsTest = isTestEnabled,
+            IsTest = isTestModeRegistration,
             CreatedOn = DateTimeOffset.UtcNow,
             LastSignedIn = DateTimeOffset.UtcNow,
             Inputs = [new() {
                 Input = request.InputFormat == InputFormat.EmailAddress ? request.Input.Trim().ToLowerInvariant() : request.Input,
                 Format = request.InputFormat,
                 IsPrimary = true,
-                Providers = 
+                Providers = isTestModeRegistration ? [] :
                 [
                     new()
                     {
                         Code = "Code",
-                        Identifier = null // Internal providers don't have external identifiers
+                        Identifier = null
                     },
                     new()
                     {
                         Code = "Password",
-                        PasswordHash = await HashPassword(passwordToHash),
-                        Identifier = null // Internal providers don't have external identifiers
+                        PasswordHash = await HashPassword(request.Password!),
+                        Identifier = null
                     }
                 ]
             }]

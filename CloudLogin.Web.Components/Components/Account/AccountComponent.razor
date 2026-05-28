@@ -18,7 +18,11 @@
                     {
                         <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
                     }
-                    <button class="tab-button" @onclick="SignOut">Log out</button>
+                    <button class="tab-button tab-button--logout" @onclick="SignOut">Log out</button>
+                    @if (CurrentUser.IsTest)
+                    {
+                        <button class="tab-button tab-button--delete" @onclick="DeleteAccount">Delete account</button>
+                    }
                 </div>
                 <div class="tab-content">
                     @if (activeTab == "Manage")
@@ -90,6 +94,16 @@ else
 
     private void SignOut()
     {
+        navigationManager.NavigateTo("/CloudLogin/Logout", true);
+    }
+
+    private async Task DeleteAccount()
+    {
+        if (CurrentUser == null)
+            return;
+
+        await cloudLogin.DeleteUser(CurrentUser.ID);
+
         navigationManager.NavigateTo("/CloudLogin/Logout", true);
     }
 }

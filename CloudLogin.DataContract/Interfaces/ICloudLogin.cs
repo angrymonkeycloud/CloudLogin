@@ -10,6 +10,7 @@ public interface ICloudLogin
     InputFormat GetInputFormat(string input);
     Task<bool> AutomaticLogin();
     Task<List<UserModel>> GetAllUsers();
+    Task<List<UserModel>> GetTestUsers();
     Task<UserModel?> GetUserById(Guid userId);
     Task<List<UserModel>> GetUsersByDisplayName(string displayName);
     Task<UserModel?> GetUserByDisplayName(string displayName);

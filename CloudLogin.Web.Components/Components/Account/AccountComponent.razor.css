@@ -49,13 +49,20 @@
   color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
-.account-management .tabs .tab-button:last-child {
+.account-management .tabs .tab-button--logout {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #e9ecef;
   color: #dc3545;
 }
-.account-management .tabs .tab-button:last-child:hover {
+.account-management .tabs .tab-button--logout:hover {
+  background-color: #fff5f5;
+  color: #c92a2a;
+}
+.account-management .tabs .tab-button--delete {
+  color: #dc3545;
+}
+.account-management .tabs .tab-button--delete:hover {
   background-color: #fff5f5;
   color: #c92a2a;
 }

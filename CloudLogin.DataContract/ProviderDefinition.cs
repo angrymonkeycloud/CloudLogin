@@ -21,12 +21,6 @@ public class ProviderDefinition
     public required bool InputRequired { get; set; }
     public required bool IsExternal { get; set; }
 
-    /// <summary>
-    /// True when this provider is configured in test mode (e.g. Password provider with a shared test password).
-    /// In this mode the client should skip credential/verification steps and create the user directly.
-    /// </summary>
-    public bool IsTest { get; set; }
-
     [JsonIgnore]
     public string CssClass // Should Be private
     {

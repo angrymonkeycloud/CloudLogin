@@ -126,6 +126,23 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
             return Problem();
         }
     }
+
+    [HttpGet("GetTestUsers")]
+    public async Task<ActionResult<List<UserModel>>> GetTestUsers()
+    {
+        try
+        {
+            List<UserModel> users = await _server.GetTestUsers();
+            users.ForEach(NormalizeUser);
+
+            return Ok(users);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+
     [HttpGet("GetUserById")]
     public async Task<ActionResult<UserModel?>> GetUserById(Guid id)
     {

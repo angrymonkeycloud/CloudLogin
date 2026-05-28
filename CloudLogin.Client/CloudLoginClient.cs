@@ -205,6 +205,25 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
+
+    public async Task<List<UserModel>> GetTestUsers()
+    {
+        try
+        {
+            HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/GetTestUsers");
+
+            if (message.StatusCode == HttpStatusCode.NoContent) return [];
+
+            List<UserModel>? users = await message.Content.ReadFromJsonAsync<List<UserModel>>(CloudLoginSerialization.Options);
+
+            return users ?? [];
+        }
+        catch
+        {
+            throw;
+        }
+    }
+
     public async Task<UserModel?> GetUserById(Guid userId)
     {
         try

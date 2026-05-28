@@ -348,6 +348,54 @@
                 <button class="amc-cloudlogin-provider" @onclick="HideQrCodeLoginAsync">Back</button>
             </div>
         }
+        else if (Auth.CurrentStep == ProcessStep.TestMode)
+        {
+            <div class="login-form _center">
+                @if (TestUsers.Count > 0)
+                {
+                    <div class="login-form-title">Sign in as a test user</div>
+                    <div class="amc-cloudlogin-providers">
+                        @foreach (UserModel testUser in TestUsers)
+                        {
+                            <button class="amc-cloudlogin-provider _testmode @(Auth.IsLoading ? "--disable" : "")" @onclick="() => OnTestModeSignInAsync(testUser)">
+                                <div class="amc-cloudlogin-provider-label">@testUser.DisplayName</div>
+                            </button>
+                        }
+                    </div>
+                    <div class="login-form-title">or</div>
+                }
+                <button class="amc-cloudlogin-provider _testmode @(Auth.IsLoading ? "--disable" : "")" @onclick="OnTestModeCreateNewClicked">
+                    <div class="amc-cloudlogin-provider-label">Create new test account</div>
+                </button>
+                <button class="amc-cloudlogin-button" @onclick="() => Auth.SwitchStep(ProcessStep.InputValue)">Back</button>
+            </div>
+        }
+        else if (Auth.CurrentStep == ProcessStep.TestModeCreate)
+        {
+            <div class="login-form _center">
+                <div class="login-form-register">
+                    <div class="amc-cloudlogin-input">
+                        <label for="firstName">First Name</label>
+                        <input @onkeydown="OnInputKeyPressed" autofocus type="text" id="firstName" class="@(!string.IsNullOrEmpty(FirstName) ? "active" : "")" @bind-value="FirstName" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                    <div class="amc-cloudlogin-input">
+                        <label for="lastName">Last Name</label>
+                        <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class="@(!string.IsNullOrEmpty(LastName) ? "active" : "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
+                    </div>
+                    <div class="amc-cloudlogin-input">
+                        <label for="displayName">Display Name</label>
+                        <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class="@(!string.IsNullOrEmpty(DisplayName) ? "active" : "")" @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
+                    </div>
+                </div>
+                <div class="login-form-finish">
+                    <button class="amc-cloudlogin-button _solid @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnTestModeCreateConfirmedAsync">
+                        <span>Create &amp; Sign In</span>
+                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                    </button>
+                </div>
+                <button class="amc-cloudlogin-button" @onclick="() => Auth.SwitchStep(ProcessStep.TestMode)">Back</button>
+            </div>
+        }
         else
         {
             <div class="login-form">
@@ -378,22 +426,27 @@
                     }
                 }
 
-                <div class="login-form-title">or sign in with</div>
-                <div class="amc-cloudlogin-providers">
-                    @foreach (ProviderDefinition provider in ExternalProviders)
-                    {
-                        <button class="amc-cloudlogin-provider @provider.CssClass @(Auth.IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
-                            <div class="amc-cloudlogin-provider-label">@provider.Label</div>
-                        </button>
-                    }
+                @if (ExternalProviders.Count > 0)
+                {
+                    <div class="login-form-title">or sign in with</div>
+                    <div class="amc-cloudlogin-providers">
+                        @foreach (ProviderDefinition provider in ExternalProviders)
+                        {
+                            <button class="amc-cloudlogin-provider @provider.CssClass @(Auth.IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
+                                <div class="amc-cloudlogin-provider-label">@provider.Label</div>
+                            </button>
+                        }
+                    </div>
+                }
 
-                    @* @if (!IsQrCodeRequest)
-                    {
-                        <button class="amc-cloudlogin-provider @(Auth.IsLoading ? "--disable" : "")" @onclick="ShowQrCodeLoginAsync">
-                            <div class="amc-cloudlogin-provider-label">QR Code</div>
+                @if (TestModeProvider != null)
+                {
+                    <div class="amc-cloudlogin-providers">
+                        <button class="amc-cloudlogin-provider _testmode @(Auth.IsLoading ? "--disable" : "")" @onclick="() => OnProviderClickedAsync(TestModeProvider)">
+                            <div class="amc-cloudlogin-provider-label">@TestModeProvider.Label</div>
                         </button>
-                    } *@
-                </div>
+                    </div>
+                }
             </div>
         }
 

@@ -13,7 +13,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.4.0</Version>
+		<Version>1.4.1</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<Description />
 		<Configurations>Debug;Release</Configurations>
@@ -23,8 +23,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.CloudApp.Mobile" Version="1.1.0" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.51" />
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.51" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.70" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.70" />
 	</ItemGroup>
 
 	<ItemGroup>

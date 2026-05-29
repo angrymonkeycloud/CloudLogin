@@ -96,7 +96,7 @@ public partial class LoginComponent : IDisposable
 
     #region Provider Management
     List<ProviderDefinition> Providers { get; set; } = [];
-    List<ProviderDefinition> ExternalProviders => Providers.Where(key => key.IsExternal).ToList();
+    List<ProviderDefinition> ExternalProviders => [.. Providers.Where(key => key.IsExternal)];
     public bool EmailAddressEnabled => Providers.Any(key => key.HandlesEmailAddress);
     public bool PhoneNumberEnabled => Providers.Any(key => key.HandlesPhoneNumber);
     public ProviderDefinition? SelectedProvider { get; set; }
@@ -113,10 +113,10 @@ public partial class LoginComponent : IDisposable
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
-    public List<ProviderDefinition> NonExternalProviders => Providers.Where(key => !key.IsExternal).ToList();
-    public List<ProviderDefinition> AvailableRegistrationProviders => NonExternalProviders.Where(p =>
+    public List<ProviderDefinition> NonExternalProviders => [.. Providers.Where(key => !key.IsExternal)];
+    public List<ProviderDefinition> AvailableRegistrationProviders => [.. NonExternalProviders.Where(p =>
         p.Code.Equals("code", StringComparison.OrdinalIgnoreCase) ||
-        p.Code.Equals("password", StringComparison.OrdinalIgnoreCase)).ToList();
+        p.Code.Equals("password", StringComparison.OrdinalIgnoreCase))];
     public bool HasCodeProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("code", StringComparison.OrdinalIgnoreCase));
     public bool HasPasswordProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase));
     private bool HasMultipleRegistrationMethods => new[] { HasCodeProvider, HasPasswordProvider }.Count(x => x) > 1;
@@ -355,14 +355,12 @@ public partial class LoginComponent : IDisposable
 
     private static string GenerateTestEmail(string displayName, List<UserModel> existingTestUsers)
     {
-        string slug = new string(displayName.ToLowerInvariant()
-            .Select(c => char.IsLetterOrDigit(c) ? c : '_')
-            .ToArray()).Trim('_').Replace("_", string.Empty);
+        string slug = new string([.. displayName.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '_')]).Trim('_').Replace("_", string.Empty);
 
         if (string.IsNullOrEmpty(slug))
             slug = "user";
 
-        string baseEmail = $"test_{slug}@testmode.local";
+        string baseEmail = $"{slug}@test.cloud";
 
         HashSet<string> existingEmails = [.. existingTestUsers
             .SelectMany(u => u.Inputs)
@@ -375,7 +373,7 @@ public partial class LoginComponent : IDisposable
         string candidate;
         do
         {
-            candidate = $"test_{slug}{counter}@testmode.local";
+            candidate = $"{slug}{counter}@test.cloud";
             counter++;
         }
         while (existingEmails.Contains(candidate));

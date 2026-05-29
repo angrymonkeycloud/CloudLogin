@@ -12,7 +12,7 @@
   color: #212529;
   margin: 0 0 4px 0;
 }
-.section-header .section-description {
+.section-header-description {
   font-size: 14px;
   color: #6c757d;
   margin: 0;
@@ -33,14 +33,14 @@
   transition: all 0.2s ease;
 }
 .info-label {
-  font-size: 13px;
+  font-size: 0.7rem;
   font-weight: 600;
   color: #6c757d;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .info-value {
-  font-size: 16px;
+  font-size: 0.8rem;
   color: #212529;
   font-weight: 500;
 }
@@ -65,7 +65,7 @@
   flex-direction: column;
   gap: 10px;
   padding: 16px 20px;
-  background-color: #ffffff;
+  background-color: #fff;
   border: 1px solid #e9ecef;
   border-radius: 8px;
   transition: all 0.2s ease;
@@ -95,11 +95,11 @@
 }
 .badge-primary {
   background-color: var(--amc-accentColor);
-  color: #ffffff;
+  color: #fff;
 }
 .badge-secondary {
   background-color: var(--amc-secondColor);
-  color: #ffffff;
+  color: #fff;
 }
 .badge-info {
   background-color: #e9ecef;
@@ -120,10 +120,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  padding: 12px 16px;
+}
+.providers-card {
+  padding-bottom: 8px;
 }
 .provider-badge {
-  padding: 10px 18px;
-  background-color: #ffffff;
+  padding: 8px 14px;
+  background-color: #fff;
   border: 2px solid var(--amc-accentColor);
   color: var(--amc-accentColor);
   border-radius: 8px;
@@ -162,8 +166,14 @@
 }
 .profile-block {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
+  flex-direction: column;
+}
+.profile-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .avatar {
   width: 96px;
@@ -172,6 +182,7 @@
   object-fit: cover;
   border: 2px solid #dee2e6;
   display: none;
+  aspect-ratio: 1;
 }
 .avatar.initials {
   display: flex;
@@ -182,11 +193,6 @@
   font-weight: 700;
   font-size: 32px;
 }
-.profile-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 .subtitle {
   margin: 0;
   color: #6c757d;
@@ -196,7 +202,7 @@
   background: transparent;
   border: 1px solid #ced4da;
   color: #495057;
-  padding: 8px14px;
+  padding: 8px 14px;
   border-radius: 6px;
   font-weight: 600;
 }
@@ -204,17 +210,17 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+.full-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #212529;
+}
 .full-name-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-top: 8px;
   border-top: 1px solid #f1f3f5;
-}
-.full-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #212529;
 }
 .link-action {
   background: none;
@@ -233,7 +239,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px16px;
+  padding-block: 10px;
+  margin-bottom: 10px;
   border-bottom: 1px solid #f1f3f5;
 }
 .card-header h4 {
@@ -247,9 +254,9 @@
 }
 .kv-row {
   display: grid;
-  grid-template-columns: 240px1fr;
-  gap: 16px;
-  padding: 14px16px;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  padding: 14px 0;
   border-top: 1px solid #f8f9fa;
 }
 .kv-row:first-child {
@@ -261,50 +268,23 @@
 .kv-key {
   color: #6c757d;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 0.9rem;
 }
 .kv-value {
   color: #212529;
-  font-size: 14px;
+  font-size: 0.8rem;
 }
-.providers-card {
-  padding-bottom: 8px;
-}
-.providers-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 12px16px;
-}
-.provider-badge {
-  padding: 8px14px;
-  background-color: #ffffff;
-  border: 2px solid var(--amc-accentColor);
-  color: var(--amc-accentColor);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-}
-.alert {
-  padding: 16px20px;
-  border-radius: 8px;
-  font-size: 14px;
-  line-height: 1.5;
-}
-.alert-warning {
-  background-color: #fff3cd;
-  border-left: 4px solid #ffc107;
-  color: #856404;
-}
-.alert-warning strong {
-  font-weight: 600;
-  color: #664d03;
-}
-@media (max-width: 640px) {
-  .kv-row {
-    grid-template-columns: 1fr;
-  }
+@media only screen and (min-width: 640px) {
   .profile-block {
-    align-items: flex-start;
+    align-items: center;
+  }
+  .kv-row {
+    grid-template-columns: 240px 1fr;
+    gap: 16px;
+  }
+}
+@media only screen and (min-width: 800px) {
+  .profile-block {
+    flex-direction: row;
   }
 }

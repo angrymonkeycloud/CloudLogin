@@ -1,23 +1,28 @@
+// ?? AccountComponent-Emails ??????????????????????????????
+// Mobile-first · Tablet @600px
+
 .account-section {
     display: flex;
     flex-direction: column;
     gap: 32px;
 }
 
-.section-header {
-    margin-bottom: 8px;
+.section {
+    &-header {
+        margin-bottom: 8px;
 
-    h3 {
-        font-size: 24px;
-        font-weight: 600;
-        color: #212529;
-        margin: 0 0 4px 0;
-    }
+        h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #212529;
+            margin: 0 0 4px 0;
+        }
 
-    .section-description {
-        font-size: 14px;
-        color: #6c757d;
-        margin: 0;
+        &-description {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 0;
+        }
     }
 }
 
@@ -29,8 +34,8 @@
 
 .input-group {
     display: flex;
-    gap: 12px;
     flex-direction: column;
+    gap: 12px;
 }
 
 .form-input {
@@ -38,20 +43,15 @@
     padding: 12px 16px;
     font-size: 15px;
     color: #212529;
-    background-color: #ffffff;
+    background-color: #fff;
     border: 2px solid #e9ecef;
     border-radius: 8px;
     outline: none;
     transition: all 0.2s ease;
     width: 100%;
 
-    &::placeholder {
-        color: #adb5bd;
-    }
-
-    &:hover:not(:disabled) {
-        border-color: #ced4da;
-    }
+    &::placeholder { color: #adb5bd; }
+    &:hover:not(:disabled) { border-color: #ced4da; }
 
     &:focus {
         border-color: var(--amc-accentColor);
@@ -83,62 +83,56 @@
         opacity: 0.5;
         cursor: not-allowed;
     }
-}
 
-.btn-secondary {
-    background-color: var(--amc-secondColor);
-    color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    &-secondary {
+        background-color: var(--amc-secondColor);
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
-    &:hover:not(:disabled) {
-        background-color: var(--amc-accentColor);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        transform: translateY(-1px);
+        &:hover:not(:disabled) {
+            background-color: var(--amc-accentColor);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
+        }
+
+        &:active:not(:disabled) { transform: translateY(0); }
     }
 
-    &:active:not(:disabled) {
-        transform: translateY(0);
+    &-outline {
+        background-color: transparent;
+        color: var(--amc-accentColor);
+        border: 2px solid var(--amc-accentColor);
+
+        &:hover:not(:disabled) {
+            background-color: var(--amc-accentColor);
+            color: #fff;
+        }
     }
-}
 
-.btn-outline {
-    background-color: transparent;
-    color: var(--amc-accentColor);
-    border: 2px solid var(--amc-accentColor);
+    &-danger {
+        background-color: #dc3545;
+        color: #fff;
 
-    &:hover:not(:disabled) {
-        background-color: var(--amc-accentColor);
-        color: #ffffff;
+        &:hover:not(:disabled) { background-color: #c82333; }
     }
-}
 
-.btn-danger {
-    background-color: #dc3545;
-    color: #ffffff;
-
-    &:hover:not(:disabled) {
-        background-color: #c82333;
+    &-sm {
+        padding: 8px 16px;
+        font-size: 13px;
     }
-}
-
-.btn-sm {
-    padding: 8px 16px;
-    font-size: 13px;
 }
 
 .loading-spinner {
     width: 14px;
     height: 14px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #ffffff;
+    border-top-color: #fff;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
 
 .items-list {
@@ -147,40 +141,42 @@
     gap: 12px;
 }
 
-.item-row {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px 20px;
-    background-color: #ffffff;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+.item {
+    &-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px 20px;
+        background-color: #fff;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        transition: all 0.2s ease;
 
-    &:hover {
-        border-color: #ced4da;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        &:hover {
+            border-color: #ced4da;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
     }
-}
 
-.item-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
+    &-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
 
-.item-text {
-    font-size: 15px;
-    color: #212529;
-    font-weight: 500;
-    overflow-wrap: anywhere;
-}
+    &-text {
+        font-size: 15px;
+        color: #212529;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
 
-.item-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    &-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
 }
 
 .badge {
@@ -189,11 +185,11 @@
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.3px;
-}
 
-.badge-primary {
-    background-color: var(--amc-accentColor);
-    color: #ffffff;
+    &-primary {
+        background-color: var(--amc-accentColor);
+        color: #fff;
+    }
 }
 
 .empty-state {
@@ -210,26 +206,26 @@
     }
 }
 
-.alert-success {
+.alert {
     padding: 16px 20px;
-    background-color: #d1e7dd;
-    border-left: 4px solid #0f5132;
-    color: #0f5132;
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.5;
+
+    &-success {
+        background-color: #d1e7dd;
+        border-left: 4px solid #0f5132;
+        color: #0f5132;
+    }
+
+    &-error {
+        background-color: #f8d7da;
+        border-left: 4px solid #842029;
+        color: #842029;
+    }
 }
 
-.alert-error {
-    padding: 16px 20px;
-    background-color: #f8d7da;
-    border-left: 4px solid #842029;
-    color: #842029;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
+// ?? Tablet ??
 @media only screen and (min-width: 600px) {
     .input-group {
         flex-direction: row;
@@ -241,13 +237,15 @@
         min-width: 140px;
     }
 
-    .item-row {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-    }
+    .item {
+        &-row {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-    .item-actions {
-        justify-content: flex-end;
+        &-actions {
+            justify-content: flex-end;
+        }
     }
 }

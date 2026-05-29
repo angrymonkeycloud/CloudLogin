@@ -50,5 +50,9 @@
   {
     "outputFile": "Components/Login/LoginHeaderComponent.razor.css",
     "inputFile": "Components/Login/LoginHeaderComponent.razor.less"
+  },
+  {
+    "outputFile": "Components/Account/AccountPageComponent.razor.css",
+    "inputFile": "Components/Account/AccountPageComponent.razor.less"
   }
 ]

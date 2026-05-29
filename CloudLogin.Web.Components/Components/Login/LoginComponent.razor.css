@@ -4,28 +4,28 @@
   font-style: normal;
   font-weight: 300;
   font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v11/Iurf6YBj_oCad4k1l5qjLrY.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iurf6YBj_oCad4k1l5qjLrY.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Tajawal';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v11/Iura6YBj_oCad4k1rzY.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iura6YBj_oCad4k1rzY.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Tajawal';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v11/Iurf6YBj_oCad4k1l8KiLrY.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iurf6YBj_oCad4k1l8KiLrY.ttf) format('truetype');
 }
 @font-face {
   font-family: 'Tajawal';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v11/Iurf6YBj_oCad4k1l4qkLrY.ttf) format('truetype');
+  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iurf6YBj_oCad4k1l4qkLrY.ttf) format('truetype');
 }
 /*var(--amc-accentColor): #4569D4;*/
 .disableProvider ::deep svg:first-child {
@@ -97,7 +97,7 @@
   gap: 10px;
   justify-content: center;
   align-items: center;
-  margin: 30px 0;
+  margin: 15px 0;
   width: 100%;
 }
 .amc-cloudlogin-provider {
@@ -145,6 +145,7 @@
   margin-right: auto;
   transform: translateX(0);
   max-width: 500px;
+  margin-top: 20px;
 }
 .amc-cloudlogin-body .login-form {
   display: flex;
@@ -195,6 +196,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
 }
 .amc-cloudlogin-body .login-form-next {
   margin-top: 10px;
@@ -297,11 +299,11 @@
 .amc-cloudlogin-input {
   display: flex;
   flex-direction: column;
-  gap: 0px;
+  gap: 2px;
 }
 .amc-cloudlogin-input label {
   margin-left: 5px;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: bold;
   color: var(--amc-accentColor);
 }

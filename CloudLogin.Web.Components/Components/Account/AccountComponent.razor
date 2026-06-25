@@ -11,12 +11,19 @@
 {
     @if (CurrentUser != null)
     {
-        <div class="account-management">
+        <div class="account-management @(activeTab == "Admin" ? "_admin" : "")">
             <div>
                 <div class="tabs">
                     @foreach (var tab in Tabs)
                     {
                         <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
+                    }
+                    @if (CurrentUser.IsGlobalAdmin)
+                    {
+                        <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")'>
+                            Admin
+                            <span class="admin-tab-badge">★</span>
+                        </button>
                     }
                     <button class="tab-button tab-button--logout" @onclick="SignOut">Log out</button>
                     @if (CurrentUser.IsTest)
@@ -36,6 +43,10 @@
                     else if (activeTab == "PhoneNumbers")
                     {
                         <AccountComponent_Numbers CurrentUser="CurrentUser" />
+                    }
+                    else if (activeTab == "Admin" && CurrentUser.IsGlobalAdmin)
+                    {
+                        <AdminComponent />
                     }
                     else
                     {

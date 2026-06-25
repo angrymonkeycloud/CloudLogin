@@ -1,0 +1,66 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+@inject NavigationManager navigationManager
+
+@namespace AngryMonkey.CloudLogin
+
+<div class="admin-panel">
+    <div class="admin-header">
+        <div class="admin-header-title">
+            <span class="admin-badge">Global Admin</span>
+            <h2>Administration Panel</h2>
+        </div>
+        <p class="admin-subtitle">Manage all users and system settings.</p>
+    </div>
+
+    <div class="admin-tabs">
+        <button class="admin-tab @(activeTab == "Users" ? "active" : "")" @onclick='() => activeTab = "Users"'>
+            Users
+            @if (_userCount > 0)
+            {
+                <span class="admin-count-badge">@_userCount</span>
+            }
+        </button>
+    </div>
+
+    <div class="admin-content">
+        @if (activeTab == "Users")
+        {
+            @if (_selectedUser == null)
+            {
+                <AdminComponent_UserList OnUserSelected="SelectUser" />
+            }
+            else
+            {
+                <AdminComponent_UserDetail User="_selectedUser" OnBack="ClearUser" OnUserUpdated="HandleUserUpdated" />
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private string activeTab = "Users";
+    private UserModel? _selectedUser;
+    private int _userCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _userCount = await cloudLogin.GetUserCount();
+    }
+
+    private void SelectUser(UserModel user)
+    {
+        _selectedUser = user;
+    }
+
+    private void ClearUser()
+    {
+        _selectedUser = null;
+    }
+
+    private async Task HandleUserUpdated()
+    {
+        _selectedUser = null;
+        _userCount = await cloudLogin.GetUserCount();
+    }
+}

@@ -271,6 +271,104 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
 
+    [HttpGet("GetUserCount")]
+    public async Task<ActionResult<int>> GetUserCount()
+    {
+        try
+        {
+            return Ok(await _server.GetUserCount());
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+
+    // ── Admin endpoints ───────────────────────────────────────────────
+
+    [HttpPost("Admin/SetLocked")]
+    public async Task<ActionResult> AdminSetLocked(Guid userId, bool locked)
+    {
+        try
+        {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
+            await _server.SetUserLocked(userId, locked);
+            
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return Problem(e.Message);
+        }
+    }
+
+    [HttpPost("Admin/ResetPassword")]
+    public async Task<ActionResult> AdminResetPassword(Guid userId, [FromBody] string newPassword)
+    {
+        try
+        {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
+            await _server.AdminResetPassword(userId, newPassword);
+            
+            return Ok();
+        }
+        catch (ArgumentException e)
+        {
+            return BadRequest(e.Message);
+        }
+        catch (Exception e)
+        {
+            return Problem(e.Message);
+        }
+    }
+
+    [HttpPost("Admin/SetGlobalAdmin")]
+    public async Task<ActionResult> AdminSetGlobalAdmin(Guid userId, bool isAdmin)
+    {
+        try
+        {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
+            await _server.SetGlobalAdmin(userId, isAdmin);
+            
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return Problem(e.Message);
+        }
+    }
+
+    [HttpDelete("Admin/DeleteUser")]
+    public async Task<ActionResult> AdminDeleteUser(Guid userId)
+    {
+        try
+        {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
+            await _server.DeleteUser(userId);
+           
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return Problem(e.Message);
+        }
+    }
+
+    private async Task<bool> IsGlobalAdminAsync()
+    {
+        UserModel? currentUser = await _server.CurrentUser();
+       
+        return currentUser?.IsGlobalAdmin == true;
+    }
+
     private void NormalizeUser(UserModel? user)
     {
         if (user == null) return;

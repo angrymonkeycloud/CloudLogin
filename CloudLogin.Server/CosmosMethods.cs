@@ -306,8 +306,43 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         await _container.PatchItemAsync<UserInfo>(documentId, partitionKey, patchOperations);
     }
 
+    public async Task<int> GetUserCount()
+    {
+        string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string typeCondition = BuildTypeCondition(userType);
+
+        string sql = $"SELECT VALUE COUNT(1) FROM root WHERE {typeCondition}";
+
+        QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType);
+
+        FeedIterator<int> iterator = _container.GetItemQueryIterator<int>(
+            queryDefinition,
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userType) });
+
+        int count = 0;
+        
+        while (iterator.HasMoreResults)
+        {
+            FeedResponse<int> response = await iterator.ReadNextAsync();
+            
+            foreach (int value in response)
+                count += value;
+        }
+
+        return count;
+    }
+
     public async Task Create(UserModel user)
     {
+        // The first user ever created becomes a Global Admin
+        if (!user.IsGlobalAdmin)
+        {
+            int existingCount = await GetUserCount();
+
+            if (existingCount == 0)
+                user.IsGlobalAdmin = true;
+        }
+
         UserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
 
         if (dbUser.GetId() == Guid.Empty)

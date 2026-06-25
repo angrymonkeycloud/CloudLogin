@@ -31,6 +31,12 @@ public interface ICloudLogin
 
     string GetPhoneNumber(string input);
 
+    // Admin management methods (require caller to be a Global Admin)
+    Task SetUserLocked(Guid userId, bool locked);
+    Task AdminResetPassword(Guid userId, string newPassword);
+    Task SetGlobalAdmin(Guid userId, bool isAdmin);
+    Task<int> GetUserCount();
+
     // Authentication methods using models
     Task<bool> PasswordLogin(PasswordLoginRequest request);
     Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request);

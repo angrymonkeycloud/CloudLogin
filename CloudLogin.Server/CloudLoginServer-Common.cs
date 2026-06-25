@@ -351,6 +351,62 @@ public partial class CloudLoginServer : ICloudLogin
         await _cosmosMethods.AddInput(userId, input);
     }
 
+    // ── Admin methods ──────────────────────────────────────────────────
+
+    public async Task SetUserLocked(Guid userId, bool locked)
+    {
+        if (_cosmosMethods == null)
+            throw new InvalidOperationException("CosmosMethods is not initialized");
+
+        UserModel user = await _cosmosMethods.GetUserById(userId)
+            ?? throw new Exception($"User {userId} not found.");
+
+        user.IsLocked = locked;
+        await _cosmosMethods.Update(user);
+    }
+
+    public async Task AdminResetPassword(Guid userId, string newPassword)
+    {
+        if (_cosmosMethods == null)
+            throw new InvalidOperationException("CosmosMethods is not initialized");
+
+        if (!IsValidPassword(newPassword))
+            throw new ArgumentException("Password does not meet requirements.", nameof(newPassword));
+
+        UserModel user = await _cosmosMethods.GetUserById(userId) ?? throw new Exception($"User {userId} not found.");
+
+        string hashed = await HashPassword(newPassword);
+
+        foreach (LoginInput input in user.Inputs)
+        {
+            LoginProvider? provider = input.Providers.FirstOrDefault(p => p.Code.Equals("Password", StringComparison.OrdinalIgnoreCase));
+
+            if (provider != null)
+                provider.PasswordHash = hashed;
+        }
+
+        await _cosmosMethods.Update(user);
+    }
+
+    public async Task SetGlobalAdmin(Guid userId, bool isAdmin)
+    {
+        if (_cosmosMethods == null)
+            throw new InvalidOperationException("CosmosMethods is not initialized");
+
+        UserModel user = await _cosmosMethods.GetUserById(userId) ?? throw new Exception($"User {userId} not found.");
+
+        user.IsGlobalAdmin = isAdmin;
+        await _cosmosMethods.Update(user);
+    }
+
+    public async Task<int> GetUserCount()
+    {
+        if (_cosmosMethods == null)
+            throw new InvalidOperationException("CosmosMethods is not initialized");
+
+        return await _cosmosMethods.GetUserCount();
+    }
+
     public async Task<bool> AutomaticLogin()
     {
         throw new NotImplementedException("AutomaticLogin feature is not yet implemented");
@@ -499,7 +555,7 @@ public partial class CloudLoginServer : ICloudLogin
                 Input = request.InputFormat == InputFormat.EmailAddress ? request.Input.Trim().ToLowerInvariant() : request.Input,
                 Format = request.InputFormat,
                 IsPrimary = true,
-                Providers = 
+                Providers =
                 [
                     new()
                     {

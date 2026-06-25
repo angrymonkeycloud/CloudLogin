@@ -13,6 +13,10 @@ public record UserInfo : BaseRecord
     /// Indicates that the user was created via the LoginTest shared-password flow.
     /// </summary>
     public bool IsTest { get; set; } = false;
+    /// <summary>
+    /// Indicates this user has Global Admin privileges, granted automatically to the first registered user.
+    /// </summary>
+    public bool IsGlobalAdmin { get; set; } = false;
     public string? Username { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;

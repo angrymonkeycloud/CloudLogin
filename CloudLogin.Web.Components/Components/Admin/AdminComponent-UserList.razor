@@ -1,0 +1,158 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+@namespace AngryMonkey.CloudLogin
+
+<CloudGrid @ref="_grid"
+           Columns="_columns"
+           DataProvider="GetDataAsync"
+           OnActionClicked="OnActionClicked"
+           Header="_header"
+           RowsPerPage="15" />
+
+@code {
+    [Parameter] public EventCallback<UserModel> OnUserSelected { get; set; }
+
+    private CloudGrid? _grid;
+    private List<UserModel> _allUsers = [];
+    private string _statusFilter = "";
+    private string _roleFilter = "";
+
+    private readonly List<CloudGridColumn> _columns =
+    [
+        new() { Label = "Name",       Key = "name",       Width = 220 },
+        new() { Label = "Email",      Key = "email",      Width = 220 },
+        new() { Label = "Status",     Key = "status",     Width = 110 },
+        new() { Label = "Role",       Key = "role",       Width = 110 },
+        new() { Label = "Last Login", Key = "lastlogin",  Width = 140 },
+    ];
+
+    private CloudGridHeaderOptions _header = default!;
+
+    protected override void OnInitialized()
+    {
+        _header = new CloudGridHeaderOptions
+        {
+            Label        = "All Users",
+            AllowSearch  = true,
+            AllowRefresh = true,
+            ExtraActions = @<div class="admin-grid-filters">
+                <select class="admin-filter-select" @bind="_statusFilter" @bind:after="ReloadGridAsync">
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Locked">Locked</option>
+                </select>
+                <select class="admin-filter-select" @bind="_roleFilter" @bind:after="ReloadGridAsync">
+                    <option value="">All Roles</option>
+                    <option value="Admin">Admin</option>
+                    <option value="User">User</option>
+                    <option value="Test">Test</option>
+                </select>
+            </div>
+        };
+    }
+
+    private async Task<CloudGridDataResult?> GetDataAsync(CloudGridDataRequest request)
+    {
+        // Fetch from API on initial load, sort change, search change, or explicit refresh
+        // (identified by page 1 with no previously known total)
+        if (_allUsers.Count == 0 || (request.Page == 1 && request.Total == 0))
+            _allUsers = (await cloudLogin.GetAllUsers()) ?? [];
+
+        IEnumerable<UserModel> filtered = _allUsers;
+
+        // Search
+        if (!string.IsNullOrWhiteSpace(request.Search))
+            filtered = filtered.Where(u =>
+                (u.DisplayName  ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
+                (u.FirstName    ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
+                (u.LastName     ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
+                u.Inputs.Any(i => i.Input.Contains(request.Search, StringComparison.OrdinalIgnoreCase)));
+
+        // Status filter
+        filtered = _statusFilter switch
+        {
+            "Active" => filtered.Where(u => !u.IsLocked),
+            "Locked" => filtered.Where(u => u.IsLocked),
+            _ => filtered
+        };
+
+        // Role filter
+        filtered = _roleFilter switch
+        {
+            "Admin" => filtered.Where(u => u.IsGlobalAdmin),
+            "User"  => filtered.Where(u => !u.IsGlobalAdmin && !u.IsTest),
+            "Test"  => filtered.Where(u => u.IsTest),
+            _ => filtered
+        };
+
+        // Sort
+        filtered = (request.Sort?.Key, request.Sort?.Direction) switch
+        {
+            ("name",      CloudGridSortDirection.Ascending)  => filtered.OrderBy(u => u.DisplayName),
+            ("name",      CloudGridSortDirection.Descending) => filtered.OrderByDescending(u => u.DisplayName),
+            ("lastlogin", CloudGridSortDirection.Ascending)  => filtered.OrderBy(u => u.LastSignedIn),
+            ("lastlogin", CloudGridSortDirection.Descending) => filtered.OrderByDescending(u => u.LastSignedIn),
+            _ => filtered.OrderByDescending(u => u.IsGlobalAdmin).ThenBy(u => u.DisplayName)
+        };
+
+        List<UserModel> sorted = [.. filtered];
+        int total = sorted.Count;
+
+        List<CloudGridRow> rows = [.. sorted
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(UserToRow)];
+
+        return new CloudGridDataResult
+        {
+            Rows     = rows,
+            Page     = request.Page,
+            PageSize = request.PageSize,
+            Total    = total,
+        };
+    }
+
+    private CloudGridRow UserToRow(UserModel user) => new()
+    {
+        Id = user.ID,
+        Attributes = new Dictionary<string, object>
+        {
+            { "onclick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, _ => OnUserSelected.InvokeAsync(user)) },
+            { "style", "cursor: pointer;" }
+        },
+        Cells =
+        [
+            BuildName(user),
+            user.PrimaryEmailAddress?.Input ?? user.PrimaryPhoneNumber?.Input ?? "—",
+            user.IsLocked ? "Locked" : "Active",
+            user.IsGlobalAdmin ? "Admin" : (user.IsTest ? "Test" : "User"),
+            FormatDate(user.LastSignedIn),
+        ]
+    };
+
+    private async Task OnActionClicked(CloudGridActionEventArgs args)
+    {
+        Guid userId = args.RecordIds.FirstOrDefault();
+        if (userId == Guid.Empty) return;
+        UserModel? user = _allUsers.FirstOrDefault(u => u.ID == userId);
+        if (user != null) await OnUserSelected.InvokeAsync(user);
+    }
+
+    private async Task ReloadGridAsync()
+    {
+        if (_grid != null)
+            await _grid.ReloadAsync();
+    }
+
+    private static string BuildName(UserModel user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.DisplayName)) return user.DisplayName;
+        string full = string.Join(" ", new[] { user.FirstName, user.LastName }
+            .Where(s => !string.IsNullOrWhiteSpace(s)));
+        return string.IsNullOrWhiteSpace(full) ? "(no name)" : full;
+    }
+
+    private static string FormatDate(DateTimeOffset dt) =>
+        dt == DateTimeOffset.MinValue ? "—" : dt.ToString("MMM d, yyyy");
+}

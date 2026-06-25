@@ -1,0 +1,254 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+@namespace AngryMonkey.CloudLogin
+
+<div class="admin-detail">
+
+    <!-- Back + page title -->
+    <div class="admin-detail-nav">
+        <button class="admin-detail-back" @onclick="OnBack">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back to Users
+        </button>
+    </div>
+
+    <!-- Profile hero -->
+    <div class="admin-detail-hero">
+        <div class="admin-detail-avatar">@GetInitials()</div>
+        <div class="admin-detail-identity">
+            <h2 class="admin-detail-name">@(User.DisplayName ?? $"{User.FirstName} {User.LastName}")</h2>
+            <p class="admin-detail-contact">@(User.PrimaryEmailAddress?.Input ?? User.PrimaryPhoneNumber?.Input ?? "No contact info")</p>
+            <div class="admin-detail-chips">
+                @if (User.IsGlobalAdmin)  { <span class="chip chip--admin">Global Admin</span> }
+                @if (User.IsTest)         { <span class="chip chip--test">Test</span> }
+                @if (User.IsLocked)       { <span class="chip chip--locked">Locked</span> }
+                else                      { <span class="chip chip--active">Active</span> }
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="admin-detail-alert @(_isError ? "_error" : "_success")">@_message</div>
+    }
+
+    <!-- Two-column body -->
+    <div class="admin-detail-body">
+
+        <!-- Left column: info + lock + admin -->
+        <div class="admin-detail-col">
+
+            <!-- Account info -->
+            <div class="admin-detail-card">
+                <div class="admin-detail-card-title">Account Info</div>
+                <dl class="admin-detail-dl">
+                    <div class="admin-detail-dl-row">
+                        <dt>Email</dt>
+                        <dd>@(User.PrimaryEmailAddress?.Input ?? "—")</dd>
+                    </div>
+                    <div class="admin-detail-dl-row">
+                        <dt>Phone</dt>
+                        <dd>@(User.PrimaryPhoneNumber?.Input ?? "—")</dd>
+                    </div>
+                    <div class="admin-detail-dl-row">
+                        <dt>Created</dt>
+                        <dd>@FormatDate(User.CreatedOn)</dd>
+                    </div>
+                    <div class="admin-detail-dl-row">
+                        <dt>Last Sign In</dt>
+                        <dd>@FormatDate(User.LastSignedIn)</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Lock / Unlock -->
+            <div class="admin-detail-card admin-detail-card--action">
+                <div>
+                    <div class="admin-detail-card-title">Account Lock</div>
+                    <p class="admin-detail-card-desc">
+                        @(User.IsLocked
+                            ? "This account is currently locked. The user cannot sign in."
+                            : "This account is active and the user can sign in.")
+                    </p>
+                </div>
+                <button class="admin-action-btn @(User.IsLocked ? "admin-action-btn--primary" : "admin-action-btn--danger")"
+                        @onclick="ToggleLock" disabled="@_isBusy">
+                    @if (_isBusy && _busyAction == "lock") { <span class="loading-spinner"></span> }
+                    @(User.IsLocked ? "Unlock Account" : "Lock Account")
+                </button>
+            </div>
+
+            <!-- Global Admin toggle -->
+            <div class="admin-detail-card admin-detail-card--action">
+                <div>
+                    <div class="admin-detail-card-title">Global Admin Role</div>
+                    <p class="admin-detail-card-desc">
+                        @(User.IsGlobalAdmin
+                            ? "This user has Global Admin privileges and can manage all users."
+                            : "This user does not have admin privileges.")
+                    </p>
+                </div>
+                <button class="admin-action-btn @(User.IsGlobalAdmin ? "admin-action-btn--muted" : "admin-action-btn--outline")"
+                        @onclick="ToggleAdmin" disabled="@_isBusy">
+                    @if (_isBusy && _busyAction == "admin") { <span class="loading-spinner"></span> }
+                    @(User.IsGlobalAdmin ? "Remove Admin" : "Grant Admin")
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Right column: password reset + delete -->
+        <div class="admin-detail-col">
+
+            @if (HasPasswordProvider)
+            {
+                <div class="admin-detail-card">
+                    <div class="admin-detail-card-title">Reset Password</div>
+                    <p class="admin-detail-card-desc">Set a new password for this user.</p>
+                    <div class="admin-detail-form">
+                        <div class="admin-detail-field">
+                            <label>New Password</label>
+                            <input type="password" class="form-input" @bind="_newPassword" placeholder="New password" />
+                            <span class="admin-detail-hint">Min. 8 chars, upper, lower, digit &amp; special char</span>
+                        </div>
+                        <div class="admin-detail-field">
+                            <label>Confirm Password</label>
+                            <input type="password" class="form-input" @bind="_confirmPassword" placeholder="Confirm password" />
+                        </div>
+                        <button class="admin-action-btn admin-action-btn--primary" @onclick="ResetPassword" disabled="@_isBusy">
+                            @if (_isBusy && _busyAction == "password") { <span class="loading-spinner"></span> }
+                            Reset Password
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <!-- Delete account -->
+            <div class="admin-detail-card admin-detail-card--danger">
+                <div>
+                    <div class="admin-detail-card-title">Delete Account</div>
+                    <p class="admin-detail-card-desc">Permanently delete this user and all associated data. This action cannot be undone.</p>
+                </div>
+                @if (!_confirmDelete)
+                {
+                    <button class="admin-action-btn admin-action-btn--danger" @onclick="() => _confirmDelete = true" disabled="@_isBusy">
+                        Delete Account
+                    </button>
+                }
+                else
+                {
+                    <div class="admin-detail-confirm">
+                        <span>Are you sure?</span>
+                        <button class="admin-action-btn admin-action-btn--danger admin-action-btn--sm" @onclick="DeleteUser" disabled="@_isBusy">
+                            @if (_isBusy && _busyAction == "delete") { <span class="loading-spinner"></span> }
+                            Yes, Delete
+                        </button>
+                        <button class="admin-action-btn admin-action-btn--muted admin-action-btn--sm" @onclick="() => _confirmDelete = false">
+                            Cancel
+                        </button>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public required UserModel User { get; set; }
+    [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public EventCallback OnUserUpdated { get; set; }
+
+    private bool _isBusy = false;
+    private string _busyAction = string.Empty;
+    private string _message = string.Empty;
+    private bool _isError = false;
+    private bool _confirmDelete = false;
+    private string _newPassword = string.Empty;
+    private string _confirmPassword = string.Empty;
+
+    private bool HasPasswordProvider =>
+        User.Inputs.Any(i => i.Providers.Any(p => p.Code.Equals("Password", StringComparison.OrdinalIgnoreCase)));
+
+    private string GetInitials()
+    {
+        var parts = new[] { User.FirstName, User.LastName }
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => char.ToUpperInvariant(s![0]));
+        string initials = string.Concat(parts);
+        if (string.IsNullOrEmpty(initials) && !string.IsNullOrWhiteSpace(User.DisplayName))
+            initials = new string(User.DisplayName!.Where(char.IsLetter).Take(2).Select(char.ToUpperInvariant).ToArray());
+        return string.IsNullOrEmpty(initials) ? "?" : initials;
+    }
+
+    private async Task ToggleLock()
+    {
+        await RunAction("lock", async () =>
+        {
+            await cloudLogin.SetUserLocked(User.ID, !User.IsLocked);
+            User = User with { IsLocked = !User.IsLocked };
+            ShowMessage(User.IsLocked ? "Account has been locked." : "Account has been unlocked.", false);
+        });
+    }
+
+    private async Task ToggleAdmin()
+    {
+        await RunAction("admin", async () =>
+        {
+            await cloudLogin.SetGlobalAdmin(User.ID, !User.IsGlobalAdmin);
+            User = User with { IsGlobalAdmin = !User.IsGlobalAdmin };
+            ShowMessage(User.IsGlobalAdmin ? "Global Admin role granted." : "Global Admin role removed.", false);
+        });
+    }
+
+    private async Task ResetPassword()
+    {
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            ShowMessage("Please enter a new password.", true);
+            return;
+        }
+        if (_newPassword != _confirmPassword)
+        {
+            ShowMessage("Passwords do not match.", true);
+            return;
+        }
+        await RunAction("password", async () =>
+        {
+            await cloudLogin.AdminResetPassword(User.ID, _newPassword);
+            _newPassword = string.Empty;
+            _confirmPassword = string.Empty;
+            ShowMessage("Password has been reset successfully.", false);
+        });
+    }
+
+    private async Task DeleteUser()
+    {
+        await RunAction("delete", async () =>
+        {
+            await cloudLogin.DeleteUser(User.ID);
+            await OnUserUpdated.InvokeAsync();
+        });
+    }
+
+    private async Task RunAction(string actionName, Func<Task> action)
+    {
+        _isBusy = true;
+        _busyAction = actionName;
+        _message = string.Empty;
+        try { await action(); }
+        catch (Exception ex) { ShowMessage($"Error: {ex.Message}", true); }
+        finally
+        {
+            _isBusy = false;
+            _busyAction = string.Empty;
+        }
+    }
+
+    private void ShowMessage(string msg, bool isError) { _message = msg; _isError = isError; }
+
+    private static string FormatDate(DateTimeOffset dt) =>
+        dt == DateTimeOffset.MinValue ? "—" : dt.ToString("MMM d, yyyy · HH:mm");
+}
+

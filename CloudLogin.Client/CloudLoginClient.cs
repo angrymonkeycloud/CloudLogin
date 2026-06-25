@@ -541,4 +541,42 @@ public class CloudLoginClient : ICloudLogin
         if (!message.IsSuccessStatusCode) throw new Exception("Code registration failed");
         return (await message.Content.ReadFromJsonAsync<UserModel>(CloudLoginSerialization.Options))!;
     }
+
+    // ── Admin methods ──────────────────────────────────────────────────
+
+    public async Task<int> GetUserCount()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/GetUserCount");
+        
+        if (!message.IsSuccessStatusCode) 
+            return 0;
+        
+        return await message.Content.ReadFromJsonAsync<int>(CloudLoginSerialization.Options);
+    }
+
+    public async Task SetUserLocked(Guid userId, bool locked)
+    {
+        HttpResponseMessage message = await HttpServer.PostAsync(
+            $"{UserRoute}/Admin/SetLocked?userId={userId}&locked={locked}", null);
+        
+        if (!message.IsSuccessStatusCode)
+            throw new Exception($"SetUserLocked failed: {message.StatusCode}");
+    }
+
+    public async Task AdminResetPassword(Guid userId, string newPassword)
+    {
+        HttpContent content = JsonContent.Create(newPassword);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{UserRoute}/Admin/ResetPassword?userId={userId}", content);
+        
+        if (!message.IsSuccessStatusCode)
+            throw new Exception($"AdminResetPassword failed: {await message.Content.ReadAsStringAsync()}");
+    }
+
+    public async Task SetGlobalAdmin(Guid userId, bool isAdmin)
+    {
+        HttpResponseMessage message = await HttpServer.PostAsync($"{UserRoute}/Admin/SetGlobalAdmin?userId={userId}&isAdmin={isAdmin}", null);
+        
+        if (!message.IsSuccessStatusCode)
+            throw new Exception($"SetGlobalAdmin failed: {message.StatusCode}");
+    }
 }

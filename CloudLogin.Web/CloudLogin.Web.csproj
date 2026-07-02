@@ -17,6 +17,7 @@
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<Configurations>Debug;Release</Configurations>
+		<StaticWebAssetsCacheDefineStaticWebAssetsEnabled>false</StaticWebAssetsCacheDefineStaticWebAssetsEnabled>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -144,10 +144,21 @@ public partial class CloudLoginServer : ICloudLogin
 
         UserModel? user = JsonSerializer.Deserialize<UserModel?>(loginIdentity, CloudLoginSerialization.Options);
 
+        // Refresh from Cosmos DB so that DB-managed flags (e.g. IsGlobalAdmin, IsLocked) are
+        // always current, even when the auth cookie pre-dates the last DB change.
+        if (user != null && _cosmosMethods != null)
+        {
+            UserModel? freshUser = await _cosmosMethods.GetUserById(user.ID);
+
+            if (freshUser != null)
+                user = freshUser;
+        }
+
         if (user != null)
         {
             // normalize blob-stored filenames to public URLs when Azure Storage is configured
             string? baseUrl = _configuration.AzureStorage?.PublicBaseUrl;
+
             if (!string.IsNullOrWhiteSpace(user.ProfilePicture) && !user.ProfilePicture.Contains("://") && !string.IsNullOrWhiteSpace(baseUrl))
                 user.ProfilePicture = baseUrl!.TrimEnd('/') + "/" + user.ProfilePicture.TrimStart('/');
         }

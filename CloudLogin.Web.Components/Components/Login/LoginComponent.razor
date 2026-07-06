@@ -142,7 +142,7 @@
                 <div class="login-form-finish">
                     <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnRegisterClicked">
                         <span>Register</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
@@ -215,7 +215,7 @@
                     <div class="login-form-next">
                         <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || InputValueFormat == InputFormat.EmailAddress) ? "" : "--disable")" @onclick="OnRegistrationInputNextClicked">
                             <span>Next</span>
-                            <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                            <AngryMonkey.CloudComponents.Icons.LoadingButton />
                         </button>
                     </div>
                 }
@@ -242,7 +242,7 @@
                 <div class="login-form-finish">
                     <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnRegistrationDetailsNextClicked">
                         <span>Next</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
@@ -289,7 +289,7 @@
                 <div class="login-form-verify">
                     <button class="amc-cloudlogin-button _solid @(string.IsNullOrEmpty(VerificationValue) ? "--disable" : "")" @onclick="OnRegistrationCodeVerifyClicked">
                         <span>Complete Registration</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
@@ -320,7 +320,7 @@
                 <div class="login-form-verify">
                     <button class="amc-cloudlogin-button _solid @(string.IsNullOrEmpty(VerificationValue) || string.IsNullOrEmpty(Password) || string.IsNullOrEmpty(ConfirmPassword) ? "--disable" : "")" @onclick="OnRegistrationPasswordVerifyClicked">
                         <span>Complete Registration</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>
                 </div>
             </div>
@@ -390,7 +390,7 @@
                 <div class="login-form-finish">
                     <button class="amc-cloudlogin-button _solid @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnTestModeCreateConfirmedAsync">
                         <span>Create &amp; Sign In</span>
-                        <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                        <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>
                 </div>
                 <button class="amc-cloudlogin-button" @onclick="() => Auth.SwitchStep(ProcessStep.TestMode)">Back</button>
@@ -409,7 +409,7 @@
                         <div class="login-form-next ">
                             <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress)) ? "" : "--disable")" @onclick="OnInputNextClicked">
                                 <span>Next</span>
-                                <AngryMonkey.Cloud.Components.Icons.LoadingButton />
+                                <AngryMonkey.CloudComponents.Icons.LoadingButton />
                             </button>
                         </div>
                     }

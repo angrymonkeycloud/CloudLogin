@@ -1,0 +1,323 @@
+﻿.admin-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+.admin-detail-nav {
+  display: flex;
+}
+.admin-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+.admin-detail-back svg {
+  width: 16px;
+  height: 16px;
+}
+.admin-detail-back:hover {
+  background-color: #f8f9fa;
+  color: var(--amc-accentColor);
+}
+.admin-detail-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+}
+.admin-detail-avatar {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--amc-accentColor);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.admin-detail-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.admin-detail-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #212529;
+}
+.admin-detail-contact {
+  margin: 0;
+  font-size: 14px;
+  color: #6c757d;
+  overflow-wrap: anywhere;
+}
+.admin-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.admin-detail-alert {
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.admin-detail-alert._error {
+  background-color: #fef2f2;
+  border-left: 4px solid #dc2626;
+  color: #b91c1c;
+}
+.admin-detail-alert._success {
+  background-color: #ecfdf5;
+  border-left: 4px solid #047857;
+  color: #047857;
+}
+.admin-detail-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+.admin-detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.admin-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+}
+.admin-detail-card--action {
+  justify-content: space-between;
+}
+.admin-detail-card--danger {
+  border-color: rgba(220, 38, 38, 0.3);
+  background-color: #fef2f2;
+}
+.admin-detail-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #212529;
+}
+.admin-detail-card-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6c757d;
+}
+.admin-detail-dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.admin-detail-dl-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  padding: 12px 0;
+  border-top: 1px solid #f8f9fa;
+}
+.admin-detail-dl-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.admin-detail-dl-row dt {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.admin-detail-dl-row dd {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #212529;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.admin-detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.admin-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-detail-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+.admin-detail-field input {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  outline: none;
+  padding: 10px;
+  color: #212529;
+  transition: all 0.3s ease-in-out;
+}
+.admin-detail-field input:focus {
+  border-color: var(--amc-accentColor);
+}
+.admin-detail-hint {
+  font-size: 0.72rem;
+  color: #6c757d;
+}
+.admin-detail-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.admin-detail-confirm span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #b91c1c;
+}
+.chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.chip--admin {
+  background-color: var(--amc-accentColor);
+  color: #fff;
+}
+.chip--test {
+  background-color: var(--amc-secondColor);
+  color: #fff;
+}
+.chip--active {
+  background-color: #ecfdf5;
+  color: #047857;
+}
+.chip--locked {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+.admin-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.admin-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.admin-action-btn--primary {
+  background-color: var(--amc-accentColor);
+  color: #fff;
+}
+.admin-action-btn--primary:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+.admin-action-btn--danger {
+  background-color: #dc2626;
+  color: #fff;
+}
+.admin-action-btn--danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+.admin-action-btn--outline {
+  background-color: transparent;
+  border-color: var(--amc-accentColor);
+  color: var(--amc-accentColor);
+}
+.admin-action-btn--outline:hover:not(:disabled) {
+  background-color: var(--amc-accentColor);
+  color: #fff;
+}
+.admin-action-btn--muted {
+  background-color: transparent;
+  border-color: #ced4da;
+  color: #495057;
+}
+.admin-action-btn--muted:hover:not(:disabled) {
+  background-color: #f8f9fa;
+}
+.admin-action-btn--sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: admin-spin 0.6s linear infinite;
+}
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media only screen and (min-width: 640px) {
+  .admin-detail-hero {
+    flex-direction: row;
+    text-align: left;
+  }
+  .admin-detail-identity {
+    align-items: flex-start;
+  }
+  .admin-detail-chips {
+    justify-content: flex-start;
+  }
+  .admin-detail-dl-row {
+    grid-template-columns: 160px 1fr;
+    gap: 16px;
+    align-items: center;
+  }
+  .admin-detail-card--action {
+    flex-direction: row;
+    align-items: center;
+  }
+  .admin-detail-card--action .admin-action-btn {
+    flex-shrink: 0;
+  }
+}
+@media only screen and (min-width: 900px) {
+  .admin-detail-body {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}

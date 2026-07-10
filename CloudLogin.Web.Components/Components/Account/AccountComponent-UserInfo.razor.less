@@ -1,26 +1,27 @@
-﻿// ── AccountComponent-UserInfo ────────────────────────────
+﻿@import (reference) "../../Src/variable.less";
+
+// ── AccountComponent-UserInfo ────────────────────────────
 // Mobile-first · Tablet @640px
 
 .account-section {
     display: flex;
     flex-direction: column;
-    gap: 32px;
 }
 
 .section {
     &-header {
         margin-bottom: 8px;
 
-        h3 {
+        h3 { 
             font-size: 24px;
             font-weight: 600;
-            color: #212529;
+            color: @text;
             margin: 0 0 4px 0;
         }
 
         &-description {
             font-size: 14px;
-            color: #6c757d;
+            color: @muted;
             margin: 0;
         }
     }
@@ -38,7 +39,7 @@
         flex-direction: column;
         gap: 6px;
         padding: 16px;
-        background-color: #f8f9fa;
+        background-color: @surface;
         border-radius: 8px;
         border-left: 3px solid var(--amc-accentColor);
         transition: all 0.2s ease;
@@ -47,14 +48,14 @@
     &-label {
         font-size: .7rem;
         font-weight: 600;
-        color: #6c757d;
+        color: @muted;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     &-value {
         font-size: .8rem;
-        color: #212529;
+        color: @text;
         font-weight: 500;
     }
 }
@@ -68,7 +69,7 @@
         h4 {
             font-size: 18px;
             font-weight: 600;
-            color: #212529;
+            color: @text;
             margin: 0;
         }
     }
@@ -84,8 +85,8 @@
         flex-direction: column;
         gap: 10px;
         padding: 16px 20px;
-        background-color: #fff;
-        border: 1px solid #e9ecef;
+        background-color: @white;
+        border: 1px solid @border;
         border-radius: 8px;
         transition: all 0.2s ease;
 
@@ -97,7 +98,7 @@
 
     &-text {
         font-size: 15px;
-        color: #212529;
+        color: @text;
         font-weight: 500;
         overflow-wrap: anywhere;
     }
@@ -119,17 +120,17 @@
 
     &-primary {
         background-color: var(--amc-accentColor);
-        color: #fff;
+        color: @white;
     }
 
     &-secondary {
         background-color: var(--amc-secondColor);
-        color: #fff;
+        color: @white;
     }
 
     &-info {
-        background-color: #e9ecef;
-        color: #495057;
+        background-color: @border;
+        color: @text-soft;
     }
 }
 
@@ -142,7 +143,7 @@
         h4 {
             font-size: 18px;
             font-weight: 600;
-            color: #212529;
+            color: @text;
             margin: 0;
         }
     }
@@ -161,7 +162,7 @@
 
 .provider-badge {
     padding: 8px 14px;
-    background-color: #fff;
+    background-color: @white;
     border: 2px solid var(--amc-accentColor);
     color: var(--amc-accentColor);
     border-radius: 8px;
@@ -177,7 +178,7 @@
     line-height: 1.5;
 
     &-warning {
-        background-color: #fff3cd;
+        background-color: @white3cd;
         border-left: 4px solid #ffc107;
         color: #856404;
 
@@ -197,8 +198,8 @@
 }
 
 .header-card {
-    background: #fff;
-    border: 1px solid #e9ecef;
+    background: @white;
+    border: 1px solid @border;
     border-radius: 12px;
     padding: 24px;
     display: flex;
@@ -226,7 +227,7 @@
     height: 96px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #dee2e6;
+    border: 2px solid @border-dashed;
     display: none;
     aspect-ratio: 1;
 
@@ -234,8 +235,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f1f3f5;
-        color: #495057;
+        background: @surface-alt;
+        color: @text-soft;
         font-weight: 700;
         font-size: 32px;
     }
@@ -243,14 +244,14 @@
 
 .subtitle {
     margin: 0;
-    color: #6c757d;
+    color: @muted;
     font-size: 14px;
 }
 
 .btn.btn-outline {
     background: transparent;
-    border: 1px solid #ced4da;
-    color: #495057;
+    border: 1px solid @border-strong;
+    color: @text-soft;
     padding: 8px 14px;
     border-radius: 6px;
     font-weight: 600;
@@ -267,12 +268,12 @@
         align-items: center;
         justify-content: space-between;
         padding-top: 8px;
-        border-top: 1px solid #f1f3f5;
+        border-top: 1px solid @surface-alt;
     }
 
     font-size: 16px;
     font-weight: 600;
-    color: #212529;
+    color: @text;
 }
 
 .link-action {
@@ -284,8 +285,8 @@
 }
 
 .card {
-    background: #fff;
-    border: 1px solid #e9ecef;
+    background: @white;
+    border: 1px solid @border;
     border-radius: 12px;
     padding: 20px;
 
@@ -295,7 +296,7 @@
         justify-content: space-between;
         padding-block: 10px;
         margin-bottom: 10px;
-        border-bottom: 1px solid #f1f3f5;
+        border-bottom: 1px solid @surface-alt;
 
         h4 {
             margin: 0;
@@ -316,23 +317,23 @@
         grid-template-columns: 1fr;
         gap: 4px;
         padding: 14px 0;
-        border-top: 1px solid #f8f9fa;
+        border-top: 1px solid @surface;
 
         &:first-child { border-top: none; }
 
         &.meta {
-            .kv-key { color: #6c757d; }
+            .kv-key { color: @muted; }
         }
     }
 
     &-key {
-        color: #6c757d;
+        color: @muted;
         font-weight: 600;
         font-size: .9rem;
     }
 
     &-value {
-        color: #212529;
+        color: @text;
         font-size: .8rem;
     }
 }

@@ -33,21 +33,28 @@
     {
         _header = new CloudGridHeaderOptions
         {
-            Label        = "All Users",
-            AllowSearch  = true,
+            Label = "All Users",
+            AllowSearch = true,
             AllowRefresh = true,
             ExtraActions = @<div class="admin-grid-filters">
-                <select class="admin-filter-select" @bind="_statusFilter" @bind:after="ReloadGridAsync">
-                    <option value="">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Locked">Locked</option>
-                </select>
-                <select class="admin-filter-select" @bind="_roleFilter" @bind:after="ReloadGridAsync">
+                <div class="admin-select">
+                    <select class="admin-filter-select" @bind="_statusFilter" @bind:after="ReloadGridAsync">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Locked">Locked</option>
+                    </select>
+                    <AngryMonkey.CloudComponents.Icons.Arrow />
+                </div>
+                <div class="admin-select">
+                    <select class="admin-filter-select" @bind="_roleFilter" @bind:after="ReloadGridAsync">
                     <option value="">All Roles</option>
                     <option value="Admin">Admin</option>
                     <option value="User">User</option>
                     <option value="Test">Test</option>
-                </select>
+                    </select>
+                    <AngryMonkey.CloudComponents.Icons.Arrow />
+                </div>
+               
             </div>
         };
     }
@@ -64,9 +71,9 @@
         // Search
         if (!string.IsNullOrWhiteSpace(request.Search))
             filtered = filtered.Where(u =>
-                (u.DisplayName  ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
-                (u.FirstName    ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
-                (u.LastName     ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
+                (u.DisplayName ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
+                (u.FirstName ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
+                (u.LastName ?? string.Empty).Contains(request.Search, StringComparison.OrdinalIgnoreCase) ||
                 u.Inputs.Any(i => i.Input.Contains(request.Search, StringComparison.OrdinalIgnoreCase)));
 
         // Status filter
@@ -81,17 +88,17 @@
         filtered = _roleFilter switch
         {
             "Admin" => filtered.Where(u => u.IsGlobalAdmin),
-            "User"  => filtered.Where(u => !u.IsGlobalAdmin && !u.IsTest),
-            "Test"  => filtered.Where(u => u.IsTest),
+            "User" => filtered.Where(u => !u.IsGlobalAdmin && !u.IsTest),
+            "Test" => filtered.Where(u => u.IsTest),
             _ => filtered
         };
 
         // Sort
         filtered = (request.Sort?.Key, request.Sort?.Direction) switch
         {
-            ("name",      CloudGridSortDirection.Ascending)  => filtered.OrderBy(u => u.DisplayName),
-            ("name",      CloudGridSortDirection.Descending) => filtered.OrderByDescending(u => u.DisplayName),
-            ("lastlogin", CloudGridSortDirection.Ascending)  => filtered.OrderBy(u => u.LastSignedIn),
+            ("name", CloudGridSortDirection.Ascending) => filtered.OrderBy(u => u.DisplayName),
+            ("name", CloudGridSortDirection.Descending) => filtered.OrderByDescending(u => u.DisplayName),
+            ("lastlogin", CloudGridSortDirection.Ascending) => filtered.OrderBy(u => u.LastSignedIn),
             ("lastlogin", CloudGridSortDirection.Descending) => filtered.OrderByDescending(u => u.LastSignedIn),
             _ => filtered.OrderByDescending(u => u.IsGlobalAdmin).ThenBy(u => u.DisplayName)
         };
@@ -106,10 +113,10 @@
 
         return new CloudGridDataResult
         {
-            Rows     = rows,
-            Page     = request.Page,
+            Rows = rows,
+            Page = request.Page,
             PageSize = request.PageSize,
-            Total    = total,
+            Total = total,
         };
     }
 

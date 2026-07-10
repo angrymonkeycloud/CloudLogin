@@ -1,7 +1,7 @@
 ﻿.account-section {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 10px;
 }
 .section-header {
   margin-bottom: 8px;

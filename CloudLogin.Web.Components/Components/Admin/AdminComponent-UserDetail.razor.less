@@ -1,0 +1,393 @@
+// ── AdminComponent-UserDetail ────────────────────────────
+// Mobile-first · Tablet @640px · Desktop @900px
+
+@import (reference) "../../Src/variable.less";
+
+.admin-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+    // ── Back navigation ──
+    &-nav {
+        display: flex;
+    }
+
+    &-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        color: @muted;
+        font-size: .85rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        &:hover {
+            background-color: @surface;
+            color: var(--amc-accentColor);
+        }
+    }
+    // ── Profile hero ──
+    &-hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+        padding: 24px;
+        background: @white;
+        border: 1px solid @border;
+        border-radius: @radius;
+    }
+
+    &-avatar {
+        flex-shrink: 0;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--amc-accentColor);
+        color: @white;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    &-identity {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &-name {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 600;
+        color: @text;
+    }
+
+    &-contact {
+        margin: 0;
+        font-size: 14px;
+        color: @muted;
+        overflow-wrap: anywhere;
+    }
+
+    &-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    // ── Alert banner ──
+    &-alert {
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 14px;
+        line-height: 1.5;
+
+        &._error {
+            background-color: @danger-soft;
+            border-left: 4px solid @danger;
+            color: @danger-dark;
+        }
+
+        &._success {
+            background-color: @success-soft;
+            border-left: 4px solid @success;
+            color: @success;
+        }
+    }
+    // ── Two-column body ──
+    &-body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    &-col {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    // ── Cards ──
+    &-card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 20px;
+        background: @white;
+        border: 1px solid @border;
+        border-radius: @radius;
+
+        &--action {
+            justify-content: space-between;
+        }
+
+        &--danger {
+            border-color: fade(@danger, 30%);
+            background-color: @danger-soft;
+        }
+
+        &-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: @text;
+        }
+
+        &-desc {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: @muted;
+        }
+    }
+    // ── Definition list ──
+    &-dl {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+
+        &-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+            padding: 12px 0;
+            border-top: 1px solid @surface;
+
+            &:first-child {
+                border-top: none;
+                padding-top: 0;
+            }
+
+            dt {
+                font-size: .72rem;
+                font-weight: 600;
+                color: @muted;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            dd {
+                margin: 0;
+                font-size: .85rem;
+                color: @text;
+                font-weight: 500;
+                overflow-wrap: anywhere;
+            }
+        }
+    }
+    // ── Password form ──
+    &-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    &-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        label {
+            font-size: .8rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input {
+            border: 1px solid @border;
+            border-radius: @radius;
+            outline: none;
+            padding: 10px;
+            color: @text;
+            transition: all .3s ease-in-out;
+
+            &:focus {
+                border-color: var(--amc-accentColor);
+            }
+        }
+    }
+
+    &-hint {
+        font-size: .72rem;
+        color: @muted;
+    }
+    // ── Delete confirmation ──
+    &-confirm {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+
+        span {
+            font-size: 14px;
+            font-weight: 600;
+            color: @danger-dark;
+        }
+    }
+}
+
+// ── Status chips ──
+.chip {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+
+    &--admin {
+        background-color: var(--amc-accentColor);
+        color: @white;
+    }
+
+    &--test {
+        background-color: var(--amc-secondColor);
+        color: @white;
+    }
+
+    &--active {
+        background-color: @success-soft;
+        color: @success;
+    }
+
+    &--locked {
+        background-color: @danger-soft;
+        color: @danger-dark;
+    }
+}
+
+// ── Action buttons ──
+.admin-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    &--primary {
+        background-color: var(--amc-accentColor);
+        color: @white;
+
+        &:hover:not(:disabled) {
+            filter: brightness(0.92);
+        }
+    }
+
+    &--danger {
+        background-color: @danger;
+        color: @white;
+
+        &:hover:not(:disabled) {
+            background-color: @danger-dark;
+        }
+    }
+
+    &--outline {
+        background-color: transparent;
+        border-color: var(--amc-accentColor);
+        color: var(--amc-accentColor);
+
+        &:hover:not(:disabled) {
+            background-color: var(--amc-accentColor);
+            color: @white;
+        }
+    }
+
+    &--muted {
+        background-color: transparent;
+        border-color: #ced4da;
+        color: #495057;
+
+        &:hover:not(:disabled) {
+            background-color: @surface;
+        }
+    }
+
+    &--sm {
+        padding: 6px 12px;
+        font-size: .8rem;
+    }
+}
+
+// ── Loading spinner ──
+.loading-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: admin-spin 0.6s linear infinite;
+}
+
+@keyframes admin-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// ── Tablet ──
+@media only screen and (min-width: 640px) {
+    .admin-detail {
+        &-hero {
+            flex-direction: row;
+            text-align: left;
+        }
+
+        &-identity {
+            align-items: flex-start;
+        }
+
+        &-chips {
+            justify-content: flex-start;
+        }
+
+        &-dl-row {
+            grid-template-columns: 160px 1fr;
+            gap: 16px;
+            align-items: center;
+        }
+
+        &-card--action {
+            flex-direction: row;
+            align-items: center;
+
+            .admin-action-btn {
+                flex-shrink: 0;
+            }
+        }
+    }
+}
+
+// ── Desktop ──
+@media only screen and (min-width: 900px) {
+    .admin-detail-body {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+}

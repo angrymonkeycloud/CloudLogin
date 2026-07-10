@@ -37,16 +37,15 @@
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.8" />
 		<PackageReference Include="QRCoder" Version="1.8.0" />
 		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
-		<PackageReference Include="AngryMonkey.CloudComponents.Grid" Version="4.1.2" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\CloudComponents\CloudComponents.Grid\CloudComponents.Grid.csproj" />
 	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="Components\ForgetPassword\" />
-	  <Folder Include="Src\" />
 	  <Folder Include="Services\" />
 	</ItemGroup>
 

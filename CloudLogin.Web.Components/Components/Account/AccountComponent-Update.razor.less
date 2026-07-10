@@ -1,10 +1,12 @@
+﻿@import (reference) "../../Src/variable.less";
+
 // ?? AccountComponent-Update ??????????????????????????????
-// Mobile-first � Tablet @600px
+// Mobile-first · Tablet @600px
 
 .account-section {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 10px;
 }
 
 .section {
@@ -14,13 +16,13 @@
         h3 {
             font-size: 24px;
             font-weight: 600;
-            color: #212529;
+            color: @text;
             margin: 0 0 4px 0;
         }
 
         &-description {
             font-size: 14px;
-            color: #6c757d;
+            color: @muted;
             margin: 0;
         }
     }
@@ -42,23 +44,23 @@
     &-label {
         font-size: 14px;
         font-weight: 600;
-        color: #495057;
+        color: @text-soft;
         margin-left: 4px;
     }
 
     &-input {
         padding: 12px 16px;
         font-size: 15px;
-        color: #212529;
-        background-color: #fff;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
+        color: @text;
+        background-color: @white;
+        border: 2px solid @border;
+        border-radius: @radius-sm;
         outline: none;
         transition: all 0.2s ease;
         width: 100%;
 
-        &::placeholder { color: #adb5bd; }
-        &:hover { border-color: #ced4da; }
+        &::placeholder { color: @placeholder; }
+        &:hover { border-color: @border-strong; }
 
         &:focus {
             border-color: var(--amc-accentColor);
@@ -66,7 +68,7 @@
         }
 
         &:disabled {
-            background-color: #f8f9fa;
+            background-color: @surface;
             cursor: not-allowed;
             opacity: 0.6;
         }
@@ -81,7 +83,7 @@
     padding: 14px 24px;
     font-size: 15px;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: @radius-sm;
     border: none;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -98,7 +100,7 @@
 
     &-primary {
         background-color: var(--amc-accentColor);
-        color: #fff;
+        color: @white;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
         &:hover:not(:disabled) {
@@ -117,7 +119,7 @@
     width: 16px;
     height: 16px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
+    border-top-color: @white;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
 }
@@ -128,21 +130,21 @@
 
 .alert {
     padding: 16px 20px;
-    border-radius: 8px;
+    border-radius: @radius-sm;
     font-size: 14px;
     line-height: 1.5;
     margin-top: 8px;
 
     &-success {
-        background-color: #d1e7dd;
-        border-left: 4px solid #0f5132;
-        color: #0f5132;
+        background-color: @success-alt-soft;
+        border-left: 4px solid @success-alt;
+        color: @success-alt;
     }
 
     &-error {
-        background-color: #f8d7da;
-        border-left: 4px solid #842029;
-        color: #842029;
+        background-color: @error-alt-soft;
+        border-left: 4px solid @error-alt;
+        color: @error-alt;
     }
 }
 

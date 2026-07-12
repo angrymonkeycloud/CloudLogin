@@ -3,7 +3,7 @@
 
 @namespace AngryMonkey.CloudLogin
 
-<CloudGrid @ref="_grid"
+<CloudDataGrid @ref="_grid"
            Columns="_columns"
            DataProvider="GetDataAsync"
            OnActionClicked="OnActionClicked"
@@ -13,12 +13,12 @@
 @code {
     [Parameter] public EventCallback<UserModel> OnUserSelected { get; set; }
 
-    private CloudGrid? _grid;
+    private CloudDataGrid? _grid;
     private List<UserModel> _allUsers = [];
     private string _statusFilter = "";
     private string _roleFilter = "";
 
-    private readonly List<CloudGridColumn> _columns =
+    private readonly List<CloudDataGridColumn> _columns =
     [
         new() { Label = "Name",       Key = "name",       Width = 220 },
         new() { Label = "Email",      Key = "email",      Width = 220 },
@@ -27,11 +27,11 @@
         new() { Label = "Last Login", Key = "lastlogin",  Width = 140 },
     ];
 
-    private CloudGridHeaderOptions _header = default!;
+    private CloudDataGridHeaderOptions _header = default!;
 
     protected override void OnInitialized()
     {
-        _header = new CloudGridHeaderOptions
+        _header = new CloudDataGridHeaderOptions
         {
             Label        = "All Users",
             AllowSearch  = true,
@@ -52,7 +52,7 @@
         };
     }
 
-    private async Task<CloudGridDataResult?> GetDataAsync(CloudGridDataRequest request)
+    private async Task<CloudDataGridDataResult?> GetDataAsync(CloudDataGridDataRequest request)
     {
         // Fetch from API on initial load, sort change, search change, or explicit refresh
         // (identified by page 1 with no previously known total)
@@ -89,22 +89,22 @@
         // Sort
         filtered = (request.Sort?.Key, request.Sort?.Direction) switch
         {
-            ("name",      CloudGridSortDirection.Ascending)  => filtered.OrderBy(u => u.DisplayName),
-            ("name",      CloudGridSortDirection.Descending) => filtered.OrderByDescending(u => u.DisplayName),
-            ("lastlogin", CloudGridSortDirection.Ascending)  => filtered.OrderBy(u => u.LastSignedIn),
-            ("lastlogin", CloudGridSortDirection.Descending) => filtered.OrderByDescending(u => u.LastSignedIn),
+            ("name",      CloudDataGridSortDirection.Ascending)  => filtered.OrderBy(u => u.DisplayName),
+            ("name",      CloudDataGridSortDirection.Descending) => filtered.OrderByDescending(u => u.DisplayName),
+            ("lastlogin", CloudDataGridSortDirection.Ascending)  => filtered.OrderBy(u => u.LastSignedIn),
+            ("lastlogin", CloudDataGridSortDirection.Descending) => filtered.OrderByDescending(u => u.LastSignedIn),
             _ => filtered.OrderByDescending(u => u.IsGlobalAdmin).ThenBy(u => u.DisplayName)
         };
 
         List<UserModel> sorted = [.. filtered];
         int total = sorted.Count;
 
-        List<CloudGridRow> rows = [.. sorted
+        List<CloudDataGridRow> rows = [.. sorted
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(UserToRow)];
 
-        return new CloudGridDataResult
+        return new CloudDataGridDataResult
         {
             Rows     = rows,
             Page     = request.Page,
@@ -113,7 +113,7 @@
         };
     }
 
-    private CloudGridRow UserToRow(UserModel user) => new()
+    private CloudDataGridRow UserToRow(UserModel user) => new()
     {
         Id = user.ID,
         Attributes = new Dictionary<string, object>
@@ -131,7 +131,7 @@
         ]
     };
 
-    private async Task OnActionClicked(CloudGridActionEventArgs args)
+    private async Task OnActionClicked(CloudDataGridActionEventArgs args)
     {
         Guid userId = args.RecordIds.FirstOrDefault();
         if (userId == Guid.Empty) return;

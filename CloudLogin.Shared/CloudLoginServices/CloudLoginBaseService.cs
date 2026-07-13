@@ -9,7 +9,21 @@ namespace AngryMonkey.CloudLogin;
 
 public abstract class CloudLoginBaseService : ICloudLoginService
 {
-    protected const string LoginBaseUrl = "https://login2.coverbox.app";
+    private static string? _loginBaseUrl { get; set; }
+
+    /// <summary>
+    /// Base address of the CloudLogin server that issues user identities for this app.
+    /// It MUST match the <c>LoginUrl</c> that the app's backend and portal are configured with:
+    /// every CloudLogin deployment has its own user store, so pointing an app at a different
+    /// server hands it user IDs that the backend's role/security tables know nothing about.
+    /// Set once during startup, before any login flow begins.
+    /// </summary>
+    public static string? LoginBaseUrl
+    {
+        get => _loginBaseUrl;
+        set => _loginBaseUrl = value?.TrimEnd('/');
+    }
+
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     public event Action<UserModel?>? UserChanged;

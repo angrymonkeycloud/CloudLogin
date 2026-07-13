@@ -11,8 +11,16 @@ public static class MauiAppBuilderExtensions
     /// Registers CloudLogin services and automatically wires platform auth-callback
     /// interception for Android and iOS. No platform code needed in the host app.
     /// </summary>
-    public static MauiAppBuilder AddMobileCloudLogin(this MauiAppBuilder builder)
+    /// <param name="loginUrl">
+    /// Base address of the CloudLogin server that issues this app's user identities. Pass the
+    /// same value the app's backend uses for <c>LoginUrl</c>, otherwise the app signs in against
+    /// a different user store and the ids it receives will not match the backend's role tables.
+    /// When null, <see cref="CloudLoginBaseService.LoginBaseUrl"/> keeps its default.
+    /// </param>
+    public static MauiAppBuilder AddMobileCloudLogin(this MauiAppBuilder builder, string loginUrl)
     {
+        CloudLoginBaseService.LoginBaseUrl = loginUrl;
+
         builder.Services.AddScoped<ICloudLoginService, CloudLoginAppService>();
 
         builder.ConfigureLifecycleEvents(events =>

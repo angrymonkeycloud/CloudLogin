@@ -32,7 +32,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.8" />
-		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.60.0" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.61.0" />
 		<PackageReference Include="Microsoft.Graph" Version="6.2.0" />
 		<PackageReference Include="Microsoft.Kiota.Abstractions" Version="2.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

@@ -10,7 +10,7 @@
 		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.4.4</Version>
+		<Version>1.4.6</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<PackageIcon>amc-logo.png</PackageIcon>
@@ -40,7 +40,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\CloudComponents\CloudComponents.Grid\CloudComponents.Grid.csproj" />
+	  <ProjectReference Include="..\..\CloudComponents\CloudComponents.DataGrid\CloudComponents.DataGrid.csproj" />
 	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
 	</ItemGroup>
 

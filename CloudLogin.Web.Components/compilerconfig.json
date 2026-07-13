@@ -58,5 +58,17 @@
   {
     "outputFile": "wwwroot/cloudlogin-account.css",
     "inputFile": "Src/cloudlogin-account.less"
+  },
+  {
+    "outputFile": "Components/Admin/AdminComponent.razor.css",
+    "inputFile": "Components/Admin/AdminComponent.razor.less"
+  },
+  {
+    "outputFile": "Components/Admin/AdminComponent-UserList.razor.css",
+    "inputFile": "Components/Admin/AdminComponent-UserList.razor.less"
+  },
+  {
+    "outputFile": "Components/Admin/AdminComponent-UserDetail.razor.css",
+    "inputFile": "Components/Admin/AdminComponent-UserDetail.razor.less"
   }
 ]

@@ -1,3 +1,5 @@
+@import (reference) "../Src/variable.less";
+
 @keyframes PageloadingProgress {
     0% {
         transform: translateX(-110%);
@@ -41,7 +43,7 @@
         left: 0;
         bottom: 0;
         width: 50%;
-        background-color: #6d0034;
+        background-color: var(--amc-accentColor);
         animation: PageloadingProgress 3s ease-in-out infinite;
         border-radius: 100px;
     }

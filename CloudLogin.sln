@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.6.11828.311 oobstable
+VisualStudioVersion = 18.6.11828.311
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Web", "CloudLogin.Web\CloudLogin.Web.csproj", "{4C7820DB-2118-4317-9C0B-4C969955B7A1}"
 EndProject
@@ -56,6 +56,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".libraries", ".libraries", "{DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents.Grid", "..\CloudComponents\CloudComponents.Grid\CloudComponents.Grid.csproj", "{9AB2F90B-611A-E837-B0A0-8780BDDACEF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents.Icons", "..\CloudComponents\CloudComponents.Icons\CloudComponents.Icons.csproj", "{D644C638-790A-AD74-D0F0-BDADC13C361D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents.Maps", "..\CloudComponents\CloudComponents.Maps\CloudComponents.Maps.csproj", "{63977663-E14A-115A-D5C5-D21455F431B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents.Maps.Web", "..\CloudComponents\CloudComponents.Maps.Web\CloudComponents.Maps.Web.csproj", "{3D347489-D11A-CC05-4524-28461F9B36BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -178,6 +184,24 @@ Global
 		{9AB2F90B-611A-E837-B0A0-8780BDDACEF5}.Release_Server|Any CPU.Build.0 = Release_Server|Any CPU
 		{9AB2F90B-611A-E837-B0A0-8780BDDACEF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AB2F90B-611A-E837-B0A0-8780BDDACEF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63977663-E14A-115A-D5C5-D21455F431B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63977663-E14A-115A-D5C5-D21455F431B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63977663-E14A-115A-D5C5-D21455F431B6}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{63977663-E14A-115A-D5C5-D21455F431B6}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{63977663-E14A-115A-D5C5-D21455F431B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63977663-E14A-115A-D5C5-D21455F431B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D347489-D11A-CC05-4524-28461F9B36BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D347489-D11A-CC05-4524-28461F9B36BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D347489-D11A-CC05-4524-28461F9B36BE}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{3D347489-D11A-CC05-4524-28461F9B36BE}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{3D347489-D11A-CC05-4524-28461F9B36BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D347489-D11A-CC05-4524-28461F9B36BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -194,6 +218,9 @@ Global
 		{29EB3074-F84A-4392-A5A5-54EA5209BCDD} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
 		{3321513A-7087-0A85-8105-5BADDEAA9D1A} = {4D59EC91-C6EB-47E7-99A6-D4445488CE88}
 		{9AB2F90B-611A-E837-B0A0-8780BDDACEF5} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
+		{D644C638-790A-AD74-D0F0-BDADC13C361D} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
+		{63977663-E14A-115A-D5C5-D21455F431B6} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
+		{3D347489-D11A-CC05-4524-28461F9B36BE} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4F149D60-85D2-4D27-A307-7201B420B208}

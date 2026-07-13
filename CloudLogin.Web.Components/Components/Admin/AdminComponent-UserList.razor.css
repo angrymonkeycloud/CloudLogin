@@ -1,6 +1,6 @@
 ﻿::deep .admin-select {
   position: relative;
-  border: 1px solid #d1d5db;
+  border: 1px solid #ced4da;
   background-color: #fff;
   border-radius: 5px;
   cursor: pointer;
@@ -26,7 +26,7 @@
   fill: #374151;
 }
 ::deep .admin-select:has(select:focus) {
-  border-color: #7c3aed;
+  border-color: var(--amc-accentColor);
 }
 ::deep .admin-select:has(select:focus) select {
   outline: none;

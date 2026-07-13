@@ -41,12 +41,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\..\CloudComponents\CloudComponents.Grid\CloudComponents.Grid.csproj" />
 	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="Components\ForgetPassword\" />
-	  <Folder Include="Src\" />
 	  <Folder Include="Services\" />
 	</ItemGroup>
 

@@ -25,6 +25,8 @@ public class DataParse
             Username = user.Username,
             // Added profile fields
             ProfilePicture = user.ProfilePicture,
+            IsCustomProfilePicture = user.IsCustomProfilePicture,
+            ProviderProfilePicture = user.ProviderProfilePicture,
             Country = user.Country,
             Locale = user.Locale
         };
@@ -66,6 +68,8 @@ public class DataParse
             Username = dbUser.Username,
             // Added profile fields
             ProfilePicture = dbUser.ProfilePicture,
+            IsCustomProfilePicture = dbUser.IsCustomProfilePicture,
+            ProviderProfilePicture = dbUser.ProviderProfilePicture,
             Country = dbUser.Country,
             Locale = dbUser.Locale
         };

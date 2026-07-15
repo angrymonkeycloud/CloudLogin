@@ -25,7 +25,10 @@
                             <span class="admin-tab-badge">★</span>
                         </button>
                     }
-                    <button class="tab-button tab-button--logout" @onclick="SignOut">Log out</button>
+                    @if (string.IsNullOrEmpty(Referer))
+                    {
+                        <button class="tab-button tab-button--logout" @onclick="SignOut">Log out</button>
+                    }
                     @if (CurrentUser.IsTest)
                     {
                         <button class="tab-button tab-button--delete" @onclick="DeleteAccount">Delete account</button>
@@ -79,9 +82,10 @@ else
     </section>
 }
 
-@code {
-    private UserModel? CurrentUser { get; set; }
 
+@code {
+    [Parameter] public string? Referer { get; set; }
+    private UserModel? CurrentUser { get; set; }
 
     protected override async Task OnInitializedAsync() => CurrentUser = await cloudLogin.CurrentUser();
 

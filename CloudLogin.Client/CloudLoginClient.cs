@@ -310,7 +310,7 @@ public class CloudLoginClient : ICloudLogin
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/GetUserByEmailAdress?email={HttpUtility.UrlEncode(email)}");
 
-            if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.InternalServerError) return null;
+            if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.NotFound || message.StatusCode == HttpStatusCode.InternalServerError) return null;
 
             UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
@@ -333,7 +333,7 @@ public class CloudLoginClient : ICloudLogin
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/GetUserByPhoneNumber?number={HttpUtility.UrlEncode(number)}");
 
-            if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.InternalServerError) return null;
+            if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.NotFound || message.StatusCode == HttpStatusCode.InternalServerError) return null;
 
             UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
 
@@ -412,6 +412,18 @@ public class CloudLoginClient : ICloudLogin
         HttpContent content = JsonContent.Create(user);
 
         await HttpServer.PostAsync($"{UserRoute}/Create", content);
+    }
+    public async Task<string> UploadProfilePicture(Guid userId, byte[] content, string contentType)
+    {
+        ByteArrayContent body = new(content);
+        body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+
+        HttpResponseMessage message = await HttpServer.PostAsync(
+            $"{UserRoute}/UploadProfilePicture?userId={userId}&contentType={HttpUtility.UrlEncode(contentType)}", body);
+
+        message.EnsureSuccessStatusCode();
+
+        return await message.Content.ReadAsStringAsync();
     }
     public async Task DeleteUser(Guid userId)
     {
@@ -547,10 +559,10 @@ public class CloudLoginClient : ICloudLogin
     public async Task<int> GetUserCount()
     {
         HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/GetUserCount");
-        
-        if (!message.IsSuccessStatusCode) 
+
+        if (!message.IsSuccessStatusCode)
             return 0;
-        
+
         return await message.Content.ReadFromJsonAsync<int>(CloudLoginSerialization.Options);
     }
 
@@ -558,7 +570,7 @@ public class CloudLoginClient : ICloudLogin
     {
         HttpResponseMessage message = await HttpServer.PostAsync(
             $"{UserRoute}/Admin/SetLocked?userId={userId}&locked={locked}", null);
-        
+
         if (!message.IsSuccessStatusCode)
             throw new Exception($"SetUserLocked failed: {message.StatusCode}");
     }
@@ -567,7 +579,7 @@ public class CloudLoginClient : ICloudLogin
     {
         HttpContent content = JsonContent.Create(newPassword);
         HttpResponseMessage message = await HttpServer.PostAsync($"{UserRoute}/Admin/ResetPassword?userId={userId}", content);
-        
+
         if (!message.IsSuccessStatusCode)
             throw new Exception($"AdminResetPassword failed: {await message.Content.ReadAsStringAsync()}");
     }
@@ -575,7 +587,7 @@ public class CloudLoginClient : ICloudLogin
     public async Task SetGlobalAdmin(Guid userId, bool isAdmin)
     {
         HttpResponseMessage message = await HttpServer.PostAsync($"{UserRoute}/Admin/SetGlobalAdmin?userId={userId}&isAdmin={isAdmin}", null);
-        
+
         if (!message.IsSuccessStatusCode)
             throw new Exception($"SetGlobalAdmin failed: {message.StatusCode}");
     }

@@ -18,7 +18,11 @@ else
 {
     <section>
         <article>
-            <AngryMonkey.CloudLogin.AccountComponent />
+            <AngryMonkey.CloudLogin.AccountComponent  Referer="@Referer"/>
         </article>
     </section>
+}
+
+@code{
+    [Parameter] public string? Referer { get; set; }
 }

@@ -4,4 +4,9 @@
 
 <CloudHeadContent />
 
-<AngryMonkey.CloudLogin.AccountPageComponent />
+<AngryMonkey.CloudLogin.AccountPageComponent Referer="@Referer" />
+
+@code{
+    [SupplyParameterFromQuery]
+    public string? Referer { get; set; }
+}

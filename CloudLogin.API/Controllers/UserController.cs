@@ -82,6 +82,24 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
 
+    [HttpPost("UploadProfilePicture")]
+    public async Task<ActionResult<string>> UploadProfilePicture(Guid userId, [FromQuery] string contentType)
+    {
+        try
+        {
+            using MemoryStream ms = new();
+            await Request.Body.CopyToAsync(ms);
+            byte[] content = ms.ToArray();
+
+            string url = await _server.UploadProfilePicture(userId, content, contentType);
+            return Content(url, "text/plain");
+        }
+        catch (Exception e)
+        {
+            return Problem(e.Message);
+        }
+    }
+
     [HttpDelete("Delete")]
     public async Task<ActionResult> Delete(Guid userId)
     {
@@ -295,7 +313,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
                 return Forbid();
 
             await _server.SetUserLocked(userId, locked);
-            
+
             return Ok();
         }
         catch (Exception e)
@@ -313,7 +331,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
                 return Forbid();
 
             await _server.AdminResetPassword(userId, newPassword);
-            
+
             return Ok();
         }
         catch (ArgumentException e)
@@ -335,7 +353,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
                 return Forbid();
 
             await _server.SetGlobalAdmin(userId, isAdmin);
-            
+
             return Ok();
         }
         catch (Exception e)
@@ -353,7 +371,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
                 return Forbid();
 
             await _server.DeleteUser(userId);
-           
+
             return Ok();
         }
         catch (Exception e)
@@ -365,7 +383,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     private async Task<bool> IsGlobalAdminAsync()
     {
         UserModel? currentUser = await _server.CurrentUser();
-       
+
         return currentUser?.IsGlobalAdmin == true;
     }
 
@@ -374,6 +392,8 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         if (user == null) return;
         if (!string.IsNullOrWhiteSpace(user.ProfilePicture))
             user.ProfilePicture = MakeAbsolute(user.ProfilePicture);
+        if (!string.IsNullOrWhiteSpace(user.ProviderProfilePicture))
+            user.ProviderProfilePicture = MakeAbsolute(user.ProviderProfilePicture);
     }
 
     private string MakeAbsolute(string value)

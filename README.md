@@ -1,30 +1,51 @@
-﻿# Cloud Login Integration Guide
+# CloudLogin
+[![Website](https://img.shields.io/badge/Website-angrymonkeycloud.com-0B5FFF?style=flat-square&logo=googlechrome&logoColor=white)](https://angrymonkeycloud.com/cloudlogin)
+[![GitHub repository](https://img.shields.io/badge/GitHub-CloudLogin-181717?style=flat-square&logo=github)](https://github.com/angrymonkeycloud/CloudLogin)
+[![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client)
+[![NuGet downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![License](https://img.shields.io/badge/License-MIT-2F855A?style=flat-square)](LICENSE)
 
-This document summarizes how Cloud Login is integrated into the Coverbox Fix solution and how to add it to other projects for authentication and user management.
+Authentication, identity, user-profile, and session-management building blocks for .NET applications.
+
+## Packages
+
+| Package | Version | Downloads |
+| --- | --- | --- |
+| `AngryMonkey.CloudLogin.API` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) |
+| `AngryMonkey.CloudLogin.AppService` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.AppService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.AppService) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.AppService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.AppService) |
+| `AngryMonkey.CloudLogin.Client` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) |
+| `AngryMonkey.CloudLogin.DataContract` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.DataContract?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.DataContract) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.DataContract?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.DataContract) |
+| `AngryMonkey.CloudLogin.Server` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) |
+| `AngryMonkey.CloudLogin.Shared` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Shared?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Shared) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Shared?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Shared) |
+| `AngryMonkey.CloudLogin.Web` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) |
+| `AngryMonkey.CloudLogin.Components` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) |
+| `AngryMonkey.CloudLogin.WASM` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WASM?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WASM) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WASM?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WASM) |
+| `AngryMonkey.CloudLogin.WebService` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WebService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebService) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WebService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebService) |
 
 ## Table of Contents
-1. [Overview](#1-overview)
-2. [Architecture](#2-architecture)
-3. [Required Packages / References](#3-required-packages--references)
-4. [Configuration](#4-configuration)
-5. [Web App Bootstrap](#5-web-app-bootstrap)
-6. [Authentication Providers](#6-authentication-providers)
-7. [Cosmos DB Configuration](#7-cosmos-db-configuration)
-8. [Storage Configuration](#8-storage-configuration)
-9. [Consuming From Other Projects](#9-consuming-from-other-projects)
-10. [Client-Side Integration](#10-client-side-integration)
-11. [User Management](#11-user-management)
-12. [Session Management](#12-session-management)
-13. [Role-Based Authorization](#13-role-based-authorization)
-14. [Custom Claims & Profile Data](#14-custom-claims--profile-data)
-15. [Security Best Practices](#15-security-best-practices)
-16. [Blazor Integration](#16-blazor-integration)
-17. [API Integration](#17-api-integration)
-18. [Troubleshooting](#18-troubleshooting)
-19. [Migration & Legacy Support](#19-migration--legacy-support)
-20. [Production Deployment](#20-production-deployment)
+1. [Overview](#overview)
+2. [Architecture](#architecture)
+3. [Required Packages / References](#required-packages--references)
+4. [Configuration](#configuration)
+5. [Web App Bootstrap](#web-app-bootstrap)
+6. [Authentication Providers](#authentication-providers)
+7. [Cosmos DB Configuration](#cosmos-db-configuration)
+8. [Storage Configuration](#storage-configuration)
+9. [Consuming From Other Projects](#consuming-from-other-projects)
+10. [Client-Side Integration](#client-side-integration)
+11. [User Management](#user-management)
+12. [Session Management](#session-management)
+13. [Role-Based Authorization](#role-based-authorization)
+14. [Custom Claims & Profile Data](#custom-claims--profile-data)
+15. [Security Best Practices](#security-best-practices)
+16. [Blazor Integration](#blazor-integration)
+17. [API Integration](#api-integration)
+18. [Troubleshooting](#troubleshooting)
+19. [Migration & Legacy Support](#migration--legacy-support)
+20. [Production Deployment](#production-deployment)
 
-## 1. Overview
+## Overview
 
 Cloud Login provides comprehensive authentication and user management services including:
 - **Multi-Provider Authentication**: Microsoft, Google, Facebook, Twitter, and custom providers
@@ -42,7 +63,7 @@ Cloud Login provides comprehensive authentication and user management services i
 - **`CloudLogin.Web.Components`**: Reusable Blazor UI components
 - **`CloudLogin.Web.WASM`**: WebAssembly-specific components
 
-## 2. Architecture
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -87,7 +108,7 @@ External Dependencies (NuGet):
 └── CloudLogin.Web.Components          # UI components
 ```
 
-## 3. Required Packages / References
+## Required Packages / References
 
 ### Login Service (Standalone)
 ```xml
@@ -115,7 +136,7 @@ External Dependencies (NuGet):
 </ItemGroup>
 ```
 
-## 4. Configuration
+## Configuration
 
 ### Complete appsettings.json
 ```json
@@ -217,7 +238,7 @@ External Dependencies (NuGet):
 }
 ```
 
-## 5. Web App Bootstrap
+## Web App Bootstrap
 
 ### Complete Program.cs Implementation
 ```csharp
@@ -393,7 +414,7 @@ builder.AddCloudLoginWeb(new CloudLoginConfiguration()
 await CloudLoginWeb.InitApp(builder);
 ```
 
-## 6. Authentication Providers
+## Authentication Providers
 
 ### Microsoft (Azure AD / Entra ID) Setup
 
@@ -507,7 +528,7 @@ builder.AddCloudLoginWeb(new CloudLoginConfiguration()
 });
 ```
 
-## 7. Cosmos DB Configuration
+## Cosmos DB Configuration
 
 ### Schema Design
 
@@ -594,7 +615,7 @@ Partition Key: /PartitionKey (value: "User")
 - Consider user segmentation (by country, tenant) for larger scale
 ```
 
-## 8. Storage Configuration
+## Storage Configuration
 
 ### Container Setup
 ```csharp
@@ -654,7 +675,7 @@ public async Task<string> UploadAvatarAsync(Guid userId, Stream imageStream, str
 }
 ```
 
-## 9. Consuming From Other Projects
+## Consuming From Other Projects
 
 ### Recommended .NET Integration Pattern
 
@@ -977,7 +998,7 @@ public class UserController : ControllerBase
 }
 ```
 
-## 10. Client-Side Integration
+## Client-Side Integration
 
 ### .NET Client Notes
 
@@ -1105,7 +1126,7 @@ function App() {
 }
 ```
 
-## 11. User Management
+## User Management
 
 ### Create User
 ```csharp
@@ -1171,7 +1192,7 @@ foreach (var user in users.Results)
 }
 ```
 
-## 12. Session Management
+## Session Management
 
 ### Token-Based Authentication
 ```csharp
@@ -1230,7 +1251,7 @@ await _cloudLoginClient.RevokeSessionAsync(sessionId);
 await _cloudLoginClient.RevokeAllSessionsAsync(userId);
 ```
 
-## 13. Role-Based Authorization
+## Role-Based Authorization
 
 ### Define Roles
 ```csharp
@@ -1305,7 +1326,7 @@ public async Task<IActionResult> DeleteVendor(Guid id)
 </AuthorizeView>
 ```
 
-## 14. Custom Claims & Profile Data
+## Custom Claims & Profile Data
 
 ### Store Custom Data
 ```csharp
@@ -1358,7 +1379,7 @@ if (user.CustomData.TryGetValue("Preferences", out var prefJson))
 }
 ```
 
-## 15. Security Best Practices
+## Security Best Practices
 
 ### Environment Variables for Secrets
 ```bash
@@ -1437,7 +1458,7 @@ HttpContext.Response.Cookies.Append("AuthToken", newToken.AccessToken, new Cooki
 });
 ```
 
-## 16. Blazor Integration
+## Blazor Integration
 
 ### Shared Blazor Router
 
@@ -1535,7 +1556,7 @@ private async Task InitializeAndShowMainPageAsync(Window window)
 
 `CloudLoginAppService` also persists the current session in `Preferences` and `SecureStorage`, so app restarts can restore the user before a fresh fetch.
 
-## 17. API Integration
+## API Integration
 
 ### Minimal API Endpoints
 ```csharp
@@ -1566,7 +1587,7 @@ app.MapPost("/api/auth/logout", async (CloudLoginClient loginClient, HttpContext
 });
 ```
 
-## 18. Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -1624,7 +1645,7 @@ builder.Services.Configure<CosmosClientOptions>(options =>
 });
 ```
 
-## 19. Migration & Legacy Support
+## Migration & Legacy Support
 
 ### Upgrade from Old Schema
 ```csharp
@@ -1674,7 +1695,7 @@ public async Task MigrateUsersAsync()
 }
 ```
 
-## 20. Production Deployment
+## Production Deployment
 
 ### Azure App Service
 ```bash
@@ -1766,3 +1787,9 @@ Events.OnUserLoggedIn += async (user, provider) =>
 ---
 *Last Updated: 2025*
 *Version: 1.0*
+
+---
+
+## Angry Monkey Cloud
+
+This project is part of the [Angry Monkey Cloud](https://angrymonkeycloud.com) open-source ecosystem. Follow the shared [AI development instructions](https://github.com/angrymonkeycloud/CloudDocs/blob/main/docs/ai/instructions.md) and browse the [project catalog](https://angrymonkeycloud.com) and [GitHub organization](https://github.com/angrymonkeycloud).

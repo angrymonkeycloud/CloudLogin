@@ -13,12 +13,12 @@
 	  <FileVersion>$(PackageVersion)</FileVersion>
 	  <Version>1.4.6</Version>
 	  <PackageIcon>amc-logo.png</PackageIcon>
+	  <PackageReadmeFile>README.md</PackageReadmeFile>
 	  <Description />
 	  <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AngryMonkey.CloudApp.Web" Version="1.1.0" />
 	  <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.8" />
 	  <PackageReference Include="Microsoft.JSInterop" Version="10.0.8" />
   </ItemGroup>
@@ -32,6 +32,7 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
+		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
 	</ItemGroup>
 
 </Project>

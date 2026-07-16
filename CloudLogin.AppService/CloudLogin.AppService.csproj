@@ -15,6 +15,7 @@
 		<FileVersion>$(PackageVersion)</FileVersion>
 		<Version>1.4.6</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description />
 		<Configurations>Debug;Release</Configurations>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
@@ -22,7 +23,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngryMonkey.CloudApp.Mobile" Version="1.1.0" />
+		<PackageReference Include="AngryMonkey.CloudApp.Maui" Version="1.2.1" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.70" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.70" />
 	</ItemGroup>
@@ -38,4 +39,4 @@
 	  </None>
 	</ItemGroup>
 
-<ItemGroup><None Update="amc-logo.png"><Pack>True</Pack><PackagePath>\</PackagePath></None></ItemGroup></Project>
+<ItemGroup><None Update="amc-logo.png"><Pack>True</Pack><PackagePath>\</PackagePath></None><None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" /></ItemGroup></Project>

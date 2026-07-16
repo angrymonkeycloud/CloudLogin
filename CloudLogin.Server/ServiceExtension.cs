@@ -14,6 +14,9 @@ public static partial class MvcServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        services.AddControllers()
+            .AddApplicationPart(typeof(global::AngryMonkey.CloudLogin.Server.Controllers.AuthController).Assembly);
+
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
             {

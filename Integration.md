@@ -8,7 +8,7 @@ There are 3 nuget packages for cloud login to work, each should be included in t
 
     AngryMonkey.CloudLogin
     AngryMonkey.CloudLogin.Server
-    AngryMonkey.CloudLogin.Shared
+    AngryMonkey.CloudLogin
     AngryMonkey.CloudLogin.ServiceClient
 
 ## Blazor Webassembly Hosted Integration
@@ -20,7 +20,7 @@ We will start this by the integrating cloud login to Blazor Webassembly Hosted S
     A. To the WebAssemply Project:
     ```csharp
     AngryMonkey.CloudLogin
-    AngryMonkey.CloudLogin.Shared
+    AngryMonkey.CloudLogin
     ```
     
     B. To the BlazorServer Project:
@@ -49,7 +49,7 @@ We will start this by the integrating cloud login to Blazor Webassembly Hosted S
 4. Add the Cloud Login login functionalities to the razor.cs of the page.
 
     ```csharp
-    using AngryMonkey.CloudLogin.DataContract; // in the start of the file
+    using AngryMonkey.CloudLogin; // in the start of the file
     
     public CloudUser CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;

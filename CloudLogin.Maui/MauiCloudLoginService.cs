@@ -47,7 +47,7 @@ public static class MobileAuthCallback
     }
 }
 
-public class CloudLoginAppService : CloudLoginBaseService, IDisposable
+public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 {
     public const string CallbackUrl = "mahloole://auth/callback";
     public const string CallbackScheme = "mahloole";
@@ -70,7 +70,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
     private bool _initialized;
     private static CloudLoginBaseService? _activeSubscriber;
 
-    public CloudLoginAppService(INavigationService navigationService) : base()
+    public MauiCloudLoginService(INavigationService navigationService) : base()
     {
         _nav = navigationService;
 
@@ -91,7 +91,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
             string? pending = MobileAuthCallback.ConsumePending();
             if (!string.IsNullOrWhiteSpace(pending))
             {
-                Debug.WriteLine($"[CloudLoginAppService] Consuming buffered requestId: {pending}");
+                Debug.WriteLine($"[MauiCloudLoginService] Consuming buffered requestId: {pending}");
                 OnRequestIdReceived(pending);
             }
         }
@@ -354,7 +354,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 
     private async void OnRequestIdReceived(string requestId)
     {
-        Debug.WriteLine($"[CloudLoginAppService] OnRequestIdReceived: {requestId}");
+        Debug.WriteLine($"[MauiCloudLoginService] OnRequestIdReceived: {requestId}");
         RequestId = requestId;
 
         try
@@ -363,7 +363,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
 
             if (User != null)
             {
-                Debug.WriteLine($"[CloudLoginAppService] User fetched after callback: {User.DisplayName}");
+                Debug.WriteLine($"[MauiCloudLoginService] User fetched after callback: {User.DisplayName}");
 
                 // Navigate away from the login page
                 string target = "/";
@@ -382,7 +382,7 @@ public class CloudLoginAppService : CloudLoginBaseService, IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[CloudLoginAppService] FetchUser after callback failed: {ex.Message}");
+            Debug.WriteLine($"[MauiCloudLoginService] FetchUser after callback failed: {ex.Message}");
         }
     }
 

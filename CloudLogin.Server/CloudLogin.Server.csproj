@@ -40,7 +40,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\CloudLogin.DataContract\CloudLogin.DataContract.csproj" />
+		<ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

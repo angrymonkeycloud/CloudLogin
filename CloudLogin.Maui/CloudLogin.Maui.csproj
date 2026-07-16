@@ -6,9 +6,9 @@
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<AssemblyName>AngryMonkey.CloudLogin.AppService</AssemblyName>
+		<AssemblyName>AngryMonkey.CloudLogin.Maui</AssemblyName>
 		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-		<Product>Cloud Login App Service</Product>
+		<Product>Cloud Login for .NET MAUI</Product>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
@@ -29,7 +29,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
+		<ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

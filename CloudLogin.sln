@@ -4,30 +4,28 @@ VisualStudioVersion = 18.6.11828.311
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Web", "CloudLogin.Web\CloudLogin.Web.csproj", "{4C7820DB-2118-4317-9C0B-4C969955B7A1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.DataContract", "CloudLogin.DataContract\CloudLogin.DataContract.csproj", "{7D15B4CC-065C-42E3-9279-15003ADFB2C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Contracts", "CloudLogin.Contracts\CloudLogin.Contracts.csproj", "{7D15B4CC-065C-42E3-9279-15003ADFB2C1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Server", "CloudLogin.Server\CloudLogin.Server.csproj", "{296A98B3-B131-4610-A895-2C9991D3B0DE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Web.Components", "CloudLogin.Web.Components\CloudLogin.Web.Components.csproj", "{4B3C5EB9-041A-48D7-AA19-845F37FCBC50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Components", "CloudLogin.Components\CloudLogin.Components.csproj", "{4B3C5EB9-041A-48D7-AA19-845F37FCBC50}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Client", "CloudLogin.Client\CloudLogin.Client.csproj", "{DF322387-3D0C-449D-AC3F-590749FB4518}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Nuget", "CloudLogin.Nuget\CloudLogin.Nuget.csproj", "{B8E4B7D0-FC56-4959-857D-26E9950E37A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CloudLogin.Packing", "CloudLogin.Packing\CloudLogin.Packing.csproj", "{B8E4B7D0-FC56-4959-857D-26E9950E37A7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.API", "CloudLogin.API\CloudLogin.API.csproj", "{8B126BCE-5159-4036-90F3-F51241E6AA53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Web.WASM", "CloudLogin.Web.WASM\CloudLogin.Web.WASM.csproj", "{C11BA7E7-7143-321C-49A1-E59697C6E02F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.WebAssembly", "CloudLogin.WebAssembly\CloudLogin.WebAssembly.csproj", "{C11BA7E7-7143-321C-49A1-E59697C6E02F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{625F5114-01A0-495C-9A6C-35000D4B0AFD}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Shared", "CloudLogin.Shared\CloudLogin.Shared.csproj", "{4E1F981A-0557-BF93-DC69-550B47392139}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin", "CloudLogin\CloudLogin.csproj", "{4E1F981A-0557-BF93-DC69-550B47392139}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.WebService", "CloudLogin.WebService\CloudLogin.WebService.csproj", "{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.AppService", "CloudLogin.AppService\CloudLogin.AppService.csproj", "{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Maui", "CloudLogin.Maui\CloudLogin.Maui.csproj", "{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".libraries", ".libraries", "{DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}"
 EndProject
@@ -98,12 +96,6 @@ Global
 		{4E1F981A-0557-BF93-DC69-550B47392139}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{4E1F981A-0557-BF93-DC69-550B47392139}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E1F981A-0557-BF93-DC69-550B47392139}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
-		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release_Server|Any CPU.Build.0 = Release|Any CPU
-		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8EFCFE32-632D-E34E-731B-DDE27E3EA0DE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU

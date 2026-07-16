@@ -13,15 +13,14 @@ Authentication, identity, user-profile, and session-management building blocks f
 | Package | Version | Downloads |
 | --- | --- | --- |
 | `AngryMonkey.CloudLogin.API` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) |
-| `AngryMonkey.CloudLogin.AppService` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.AppService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.AppService) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.AppService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.AppService) |
+| `AngryMonkey.CloudLogin.Maui` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) |
 | `AngryMonkey.CloudLogin.Client` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) |
-| `AngryMonkey.CloudLogin.DataContract` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.DataContract?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.DataContract) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.DataContract?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.DataContract) |
+| `AngryMonkey.CloudLogin.Contracts` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) |
 | `AngryMonkey.CloudLogin.Server` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) |
-| `AngryMonkey.CloudLogin.Shared` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Shared?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Shared) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Shared?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Shared) |
+| `AngryMonkey.CloudLogin` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin) |
 | `AngryMonkey.CloudLogin.Web` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) |
 | `AngryMonkey.CloudLogin.Components` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) |
-| `AngryMonkey.CloudLogin.WASM` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WASM?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WASM) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WASM?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WASM) |
-| `AngryMonkey.CloudLogin.WebService` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WebService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebService) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WebService?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebService) |
+| `AngryMonkey.CloudLogin.WebAssembly` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) |
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -59,9 +58,9 @@ Cloud Login provides comprehensive authentication and user management services i
 - **`CloudLoginWeb`**: Full-featured login web application with UI
 - **`CloudLoginClient`**: Client SDK for consuming authentication services
 - **`CloudLogin.Server`**: Server-side helpers and middleware
-- **`CloudLogin.DataContract`**: Shared models and contracts
-- **`CloudLogin.Web.Components`**: Reusable Blazor UI components
-- **`CloudLogin.Web.WASM`**: WebAssembly-specific components
+- **`CloudLogin.Contracts`**: Shared models and contracts
+- **`CloudLogin.Components`**: Reusable Blazor UI components
+- **`CloudLogin.WebAssembly`**: WebAssembly-specific runtime and components
 
 ## Architecture
 
@@ -104,8 +103,8 @@ External Dependencies (NuGet):
 ├── CloudLogin.Web                     # Web app framework
 ├── CloudLogin.Server                  # Server helpers
 ├── CloudLogin.Client                  # Client SDK
-├── CloudLogin.DataContract            # Shared models
-└── CloudLogin.Web.Components          # UI components
+├── CloudLogin.Contracts               # Shared models and contracts
+└── CloudLogin.Components              # UI components
 ```
 
 ## Required Packages / References
@@ -115,8 +114,8 @@ External Dependencies (NuGet):
 <ItemGroup>
   <PackageReference Include="AngryMonkey.CloudLogin.Web" Version="..." />
   <PackageReference Include="AngryMonkey.CloudLogin.Server" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.DataContract" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Web.Components" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin.Contracts" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin.Components" Version="..." />
 </ItemGroup>
 ```
 
@@ -124,7 +123,7 @@ External Dependencies (NuGet):
 ```xml
 <ItemGroup>
   <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.DataContract" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin.Contracts" Version="..." />
 </ItemGroup>
 ```
 
@@ -132,7 +131,7 @@ External Dependencies (NuGet):
 ```xml
 <ItemGroup>
   <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Web.WASM" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin.WebAssembly" Version="..." />
 </ItemGroup>
 ```
 
@@ -681,7 +680,7 @@ public async Task<string> UploadAvatarAsync(Guid userId, Stream imageStream, str
 
 If `CloudLogin` is hosted as a separate login site and your application wants to keep its own app cookie/session, use this split:
 
-1. a shared Blazor project that references `AngryMonkey.CloudLogin.Shared`
+1. a shared Blazor project that references `AngryMonkey.CloudLogin`
 2. an ASP.NET Core host that owns the cookie and callback endpoints
 3. a web or MAUI client that uses `ICloudLoginService`
 
@@ -691,7 +690,7 @@ If `CloudLogin` is hosted as a separate login site and your application wants to
 <!-- Shared Blazor/RCL project -->
 <ItemGroup>
   <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Shared" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin" Version="..." />
 </ItemGroup>
 
 <!-- ASP.NET Core host project -->
@@ -702,7 +701,7 @@ If `CloudLogin` is hosted as a separate login site and your application wants to
 
 <!-- .NET MAUI Blazor project -->
 <ItemGroup>
-  <PackageReference Include="AngryMonkey.CloudLogin.AppService" Version="..." />
+  <PackageReference Include="AngryMonkey.CloudLogin.Maui" Version="..." />
 </ItemGroup>
 ```
 
@@ -718,7 +717,7 @@ If `CloudLogin` is hosted as a separate login site and your application wants to
 
 ### Step 3: Add the CloudLogin Route Assembly to Your Router
 
-`AngryMonkey.CloudLogin.Shared` ships the built-in `/cloudlogin/login` route. Add its assembly to your app router:
+`AngryMonkey.CloudLogin` ships the built-in `/cloudlogin/login` route. Add its assembly to your app router:
 
 ```razor
 <Router AppAssembly="typeof(Layout.MainLayout).Assembly"
@@ -1462,7 +1461,7 @@ HttpContext.Response.Cookies.Append("AuthToken", newToken.AccessToken, new Cooki
 
 ### Shared Blazor Router
 
-Always include the `AngryMonkey.CloudLogin.Shared` assembly in your router so the built-in `/cloudlogin/login` page is reachable:
+Always include the `AngryMonkey.CloudLogin` assembly in your router so the built-in `/cloudlogin/login` page is reachable:
 
 ```razor
 <Router AppAssembly="typeof(Layout.MainLayout).Assembly"
@@ -1523,7 +1522,7 @@ else
 Register the MAUI implementation:
 
 ```csharp
-builder.Services.AddScoped<ICloudLoginService, CloudLoginAppService>();
+builder.Services.AddScoped<ICloudLoginService, MauiCloudLoginService>();
 ```
 
 Initialize it during app startup so stored sessions are restored before the main UI is shown:
@@ -1540,7 +1539,7 @@ private async Task InitializeAndShowMainPageAsync(Window window)
 {
     ICloudLoginService loginService = _services.GetRequiredService<ICloudLoginService>();
 
-    if (loginService is CloudLoginAppService mauiLoginService)
+    if (loginService is MauiCloudLoginService mauiLoginService)
     {
         await mauiLoginService.InitializeAsync();
 
@@ -1552,9 +1551,9 @@ private async Task InitializeAndShowMainPageAsync(Window window)
 }
 ```
 
-`CloudLoginAppService.BeginLoginAsync(...)` uses `WebAuthenticator.Default.AuthenticateAsync(...)`, passes `referer={callback}` to the hosted CloudLogin site, receives `requestId` from the native callback, and then uses `FetchUser()` to hydrate `User`.
+`MauiCloudLoginService.BeginLoginAsync(...)` uses `WebAuthenticator.Default.AuthenticateAsync(...)`, passes `referer={callback}` to the hosted CloudLogin site, receives `requestId` from the native callback, and then uses `FetchUser()` to hydrate `User`.
 
-`CloudLoginAppService` also persists the current session in `Preferences` and `SecureStorage`, so app restarts can restore the user before a fresh fetch.
+`MauiCloudLoginService` also persists the current session in `Preferences` and `SecureStorage`, so app restarts can restore the user before a fresh fetch.
 
 ## API Integration
 

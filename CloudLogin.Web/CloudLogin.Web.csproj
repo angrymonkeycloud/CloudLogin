@@ -61,7 +61,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\CloudLogin.API\CloudLogin.API.csproj" />
-		<ProjectReference Include="..\CloudLogin.Web.WASM\CloudLogin.Web.WASM.csproj" />
+		<ProjectReference Include="..\CloudLogin.WebAssembly\CloudLogin.WebAssembly.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,12 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<AssemblyName>AngryMonkey.CloudLogin.DataContract</AssemblyName>
+		<AssemblyName>AngryMonkey.CloudLogin</AssemblyName>
 		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
-		<Product>Cloud Login Data Contract</Product>
+		<Product>Cloud Login</Product>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
@@ -17,13 +17,14 @@
 		<Description />
 		<Configurations>Debug;Release</Configurations>
 	</PropertyGroup>
-
 	<ItemGroup>
-	  <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.8" />
+		<PackageReference Include="Microsoft.JSInterop" Version="10.0.8" />
+		<PackageReference Include="AngryMonkey.CloudApp" Version="1.2.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\CloudLogin.Shared\CloudLogin.Shared.csproj" />
+		<ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -33,5 +34,4 @@
 		</None>
 		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
 	</ItemGroup>
-
 </Project>

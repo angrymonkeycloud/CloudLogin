@@ -10,8 +10,8 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 public class LoginController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpGet("Login/{identity}")]
-    public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)
-        => _server.Login(identity, keepMeSignedIn, sameSite, primaryEmail, input, referer, isMobileApp);
+    public async Task<IActionResult> Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)
+        => await _server.Login(identity, keepMeSignedIn, sameSite, primaryEmail, input, referer, isMobileApp);
 
     [HttpGet("Login/CustomLogin")]
     public async Task<IActionResult> CustomLogin(string userInfo, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)

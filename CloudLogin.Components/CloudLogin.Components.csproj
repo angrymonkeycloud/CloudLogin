@@ -15,7 +15,7 @@
 		<Company>Angry Monkey</Company>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Product>Cloud Login Web Components</Product>
+		<Product>Cloud Login Components</Product>
 		<Configurations>Debug;Release</Configurations>
 		<Description />
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>

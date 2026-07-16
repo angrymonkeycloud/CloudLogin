@@ -17,11 +17,11 @@ public static class MauiAppBuilderExtensions
     /// a different user store and the ids it receives will not match the backend's role tables.
     /// When null, <see cref="CloudLoginBaseService.LoginBaseUrl"/> keeps its default.
     /// </param>
-    public static MauiAppBuilder AddMobileCloudLogin(this MauiAppBuilder builder, string loginUrl)
+    public static MauiAppBuilder AddMauiCloudLogin(this MauiAppBuilder builder, string loginUrl)
     {
         CloudLoginBaseService.LoginBaseUrl = loginUrl;
 
-        builder.Services.AddScoped<ICloudLoginService, CloudLoginAppService>();
+        builder.Services.AddScoped<ICloudLoginService, MauiCloudLoginService>();
 
         builder.ConfigureLifecycleEvents(events =>
         {
@@ -68,9 +68,9 @@ public static class MauiAppBuilderExtensions
     /// </summary>
     public static bool HandleCallbackUri(Uri uri)
     {
-        if (!string.Equals(uri.Scheme, CloudLoginAppService.CallbackScheme, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(uri.Host, CloudLoginAppService.CallbackHost, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(uri.AbsolutePath, CloudLoginAppService.CallbackPath, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(uri.Scheme, MauiCloudLoginService.CallbackScheme, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(uri.Host, MauiCloudLoginService.CallbackHost, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(uri.AbsolutePath, MauiCloudLoginService.CallbackPath, StringComparison.OrdinalIgnoreCase))
             return false;
 
         var query = HttpUtility.ParseQueryString(uri.Query);

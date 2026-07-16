@@ -14,7 +14,7 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public partial class CloudLoginServer
 {
-    public IActionResult Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)
+    public async Task<IActionResult> Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)
     {
         // Validate referer to prevent open redirect attacks
         if (!string.IsNullOrEmpty(referer))
@@ -65,7 +65,16 @@ public partial class CloudLoginServer
             if (string.IsNullOrEmpty(referer) || referer == "/" || referer == baseUrl || referer == $"{baseUrl}/")
                 return new RedirectResult($"{baseUrl}/Account");
 
-            return new RedirectResult(referer);
+            UserModel? currentUser = await CurrentUser();
+
+            if (currentUser is not null && currentUser.ID != Guid.Empty)
+            {
+                Guid requestId = await CreateLoginRequest(currentUser.ID);
+                referer = AppendQuery(referer, "requestId", requestId.ToString());
+                return new RedirectResult(referer);
+            }
+
+            await _accessor.HttpContext.SignOutAsync();
         }
 
         return identity.Trim().ToLower() switch

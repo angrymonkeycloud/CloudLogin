@@ -718,7 +718,7 @@ public partial class LoginComponent : IDisposable
     /// Navigates back to the page that initiated the sign-in by honoring the
     /// <c>referer</c> query parameter. Falls back to "/Account" when none is supplied.
     /// </summary>
-    private void NavigateToReferer()
+    private async Task NavigateToRefererAsync()
     {
         string? target = Referer ?? ReferredUrl ?? RedirectUri;
 
@@ -729,7 +729,30 @@ public partial class LoginComponent : IDisposable
             try { target = System.Net.WebUtility.UrlDecode(target); } catch { }
         }
 
+        if (Uri.TryCreate(target, UriKind.Absolute, out Uri? targetUri)
+            && Uri.TryCreate(cloudLogin.LoginUrl, UriKind.Absolute, out Uri? loginUri)
+            && !string.Equals(targetUri.Host, loginUri.Host, StringComparison.OrdinalIgnoreCase))
+        {
+            UserModel? currentUser = await cloudLogin.CurrentUser();
+
+            if (currentUser is null || currentUser.ID == Guid.Empty)
+                throw new InvalidOperationException("The signed-in user could not be loaded for the external website.");
+
+            Guid requestId = await cloudLogin.CreateLoginRequest(currentUser.ID);
+            target = AppendQueryParameter(target, "requestId", requestId.ToString());
+        }
+
         navigationManager.NavigateTo(target, forceLoad: true);
+    }
+
+    private static string AppendQueryParameter(string url, string name, string value)
+    {
+        int fragmentIndex = url.IndexOf('#');
+        string pathAndQuery = fragmentIndex >= 0 ? url[..fragmentIndex] : url;
+        string fragment = fragmentIndex >= 0 ? url[fragmentIndex..] : string.Empty;
+        string separator = pathAndQuery.Contains('?') ? "&" : "?";
+
+        return $"{pathAndQuery}{separator}{Uri.EscapeDataString(name)}={Uri.EscapeDataString(value)}{fragment}";
     }
 
     private async Task OnEmailPasswordLoginClicked()
@@ -746,7 +769,7 @@ public partial class LoginComponent : IDisposable
 
             if (result)
             {
-                NavigateToReferer();
+                await NavigateToRefererAsync();
                 return;
             }
 
@@ -782,7 +805,7 @@ public partial class LoginComponent : IDisposable
 
             if (result)
             {
-                NavigateToReferer();
+                await NavigateToRefererAsync();
                 return;
             }
 

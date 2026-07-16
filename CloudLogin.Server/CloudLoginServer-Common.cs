@@ -56,7 +56,7 @@ public partial class CloudLoginServer : ICloudLogin
         List<string> parameters = [];
 
         if (!string.IsNullOrEmpty(referer))
-            parameters.Add($"referer={referer}");
+            parameters.Add($"referer={HttpUtility.UrlEncode(referer)}");
 
         if (isMobileApp)
             parameters.Add("isMobileApp=true");
@@ -85,7 +85,7 @@ public partial class CloudLoginServer : ICloudLogin
         List<string> parameters = [];
 
         if (!string.IsNullOrEmpty(referer))
-            parameters.Add($"referer={referer}");
+            parameters.Add($"referer={HttpUtility.UrlEncode(referer)}");
 
         if (isMobileApp)
             parameters.Add("isMobileApp=true");

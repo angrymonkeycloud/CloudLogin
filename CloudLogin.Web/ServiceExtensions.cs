@@ -1,5 +1,6 @@
 using AngryMonkey.Cloud;
 using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin.API.Controllers;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Server.Serialization;
 using AngryMonkey.CloudLogin.Sever.Providers;
@@ -26,6 +27,9 @@ public static class MvcServiceCollectionExtensions
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
+
+        builder.Services.AddControllers()
+            .AddApplicationPart(typeof(ProvidersController).Assembly);
 
         //CloudWebConfig? webConfig = builderConfiguration.Get<CloudWebConfig>();
 
@@ -91,7 +95,7 @@ public static class MvcServiceCollectionExtensions
 
             config.PageDefaults.AppendBundle(new CloudBundle()
             {
-                Source = "AngryMonkey.CloudLogin.WASM.styles.css",
+                Source = "AngryMonkey.CloudLogin.WebAssembly.styles.css",
                 MinOnRelease = false
             });
         });
@@ -167,7 +171,7 @@ public class CloudLoginWeb
 
         app.MapRazorComponents<AngryMonkey.CloudLogin.Main.App>()
             .AddInteractiveWebAssemblyRenderMode()
-            .AddAdditionalAssemblies(typeof(AngryMonkey.CloudLogin.WASM._Imports).Assembly);
+            .AddAdditionalAssemblies(typeof(AngryMonkey.CloudLogin.WebAssembly._Imports).Assembly);
 
         await app.RunAsync();
     }

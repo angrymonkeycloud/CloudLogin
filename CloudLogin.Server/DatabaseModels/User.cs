@@ -25,6 +25,17 @@ public record UserInfo : BaseRecord
 
     // New optional profile fields to persist from external providers
     public string? ProfilePicture { get; set; }
+
+    /// <summary>
+    /// Indicates the profile picture was uploaded by the user (stored in blob storage)
+    /// rather than coming from an external provider.
+    /// </summary>
+    public bool IsCustomProfilePicture { get; set; } = false;
+
+    /// <summary>
+    /// The original provider (Microsoft/Google) profile picture, preserved when a custom picture is uploaded.
+    /// </summary>
+    public string? ProviderProfilePicture { get; set; }
     /// <summary>
     /// ISO3166-1 alpha-2 country code (e.g., "US", "GB").
     /// </summary>

@@ -1,5 +1,6 @@
 ﻿@using AngryMonkey.CloudLogin.Interfaces
 @using System.Globalization
+@using Microsoft.AspNetCore.Components.Forms
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
@@ -8,45 +9,129 @@
     <!-- Header card with avatar and name -->
     <div class="header-card">
         <div class="profile-block">
-            @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
-            {
-                <img class="avatar" src="@CurrentUser.ProfilePicture" alt="Profile picture" />
-            }
-            else
-            {
-                <div class="avatar initials" aria-hidden="true">@GetInitials()</div>
-            }
+            <div class="avatar-wrap">
+                @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
+                {
+                    <img class="avatar" src="@CurrentUser.ProfilePicture" alt="Profile picture" />
+                }
+                else
+                {
+                    <div class="avatar initials" aria-hidden="true">@GetInitials()</div>
+                }
+                @if (_isUploadingPhoto)
+                {
+                    <div class="avatar-overlay">
+                        <span class="loading-spinner"></span>
+                    </div>
+                }
+            </div>
 
             <div class="profile-copy">
                 <p class="subtitle">Personalize your account with a photo. Your profile photo may appear in apps and devices that use your account.</p>
-                <button class="btn btn-outline" disabled>Change photo</button>
+                <div class="photo-actions">
+                    <label class="btn btn-outline @(_isUploadingPhoto ? "is-disabled" : "")">
+                        @if (_isUploadingPhoto)
+                        {
+                            <span class="loading-spinner"></span>
+                            <span>Uploading...</span>
+                        }
+                        else
+                        {
+                            <span>Change photo</span>
+                        }
+                        <InputFile OnChange="OnPhotoSelected" accept="image/*" disabled="@_isUploadingPhoto" hidden />
+                    </label>
+                    @if (CurrentUser.IsCustomProfilePicture && !string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
+                    {
+                        <button class="link-action link-danger" @onclick="RemovePhoto" disabled="@_isUploadingPhoto">Remove photo</button>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(_photoMessage))
+                {
+                    <div class="@(_photoSuccess ? "alert-success" : "alert-error") photo-message">
+                        @_photoMessage
+                    </div>
+                }
             </div>
         </div>
 
         <div class="full-name-row">
-            <div class="full-name">@GetFullName()</div>
-            <button class="link-action" disabled>Edit name</button>
+            @if (_isEditingName)
+            {
+                <div class="edit-fields">
+                    <input class="form-input" @bind="_editFirstName" placeholder="First name" />
+                    <input class="form-input" @bind="_editLastName" placeholder="Last name" />
+                    <input class="form-input" @bind="_editDisplayName" placeholder="Display name" />
+                    <div class="edit-actions">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveName" disabled="@_isSaving">Save</button>
+                        <button class="btn btn-outline btn-sm" @onclick="CancelEditName" disabled="@_isSaving">Cancel</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="full-name">@GetFullName()</div>
+                <button class="link-action" @onclick="StartEditName">Edit name</button>
+            }
         </div>
     </div>
+
 
     <!-- Profile info card -->
     <div class="card info-card">
         <div class="card-header">
             <h4>Profile info</h4>
-            <button class="link-action" disabled>Edit profile info</button>
+            @if (_isEditingProfile)
+            {
+                <div class="edit-actions">
+                    <button class="btn btn-primary btn-sm" @onclick="SaveProfile" disabled="@_isSaving">Save</button>
+                    <button class="btn btn-outline btn-sm" @onclick="CancelEditProfile" disabled="@_isSaving">Cancel</button>
+                </div>
+            }
+            else
+            {
+                <button class="link-action" @onclick="StartEditProfile">Edit profile info</button>
+            }
         </div>
         <div class="kv-list">
             <div class="kv-row">
                 <div class="kv-key">Date of birth</div>
-                <div class="kv-value">@FormatDateOnly(CurrentUser.DateOfBirth)</div>
+                <div class="kv-value">
+                    @if (_isEditingProfile)
+                    {
+                        <input type="date" class="form-input" @bind="_editDateOfBirth" />
+                    }
+                    else
+                    {
+                        @FormatDateOnly(CurrentUser.DateOfBirth)
+                    }
+                </div>
             </div>
             <div class="kv-row">
                 <div class="kv-key">Country or region</div>
-                <div class="kv-value">@FormatCountry(CurrentUser.Country)</div>
+                <div class="kv-value">
+                    @if (_isEditingProfile)
+                    {
+                        <input class="form-input" @bind="_editCountry" placeholder="Country code (e.g., US)" />
+                    }
+                    else
+                    {
+                        @FormatCountry(CurrentUser.Country)
+                    }
+                </div>
             </div>
             <div class="kv-row">
                 <div class="kv-key">Language</div>
-                <div class="kv-value">@FormatLanguage(CurrentUser.Locale)</div>
+                <div class="kv-value">
+                    @if (_isEditingProfile)
+                    {
+                        <input class="form-input" @bind="_editLocale" placeholder="Locale (e.g., en-US)" />
+                    }
+                    else
+                    {
+                        @FormatLanguage(CurrentUser.Locale)
+                    }
+                </div>
             </div>
             <div class="kv-row">
                 <div class="kv-key">Regional formats</div>
@@ -55,11 +140,11 @@
         </div>
     </div>
 
+
     <!-- Account info card -->
     <div class="card info-card">
         <div class="card-header">
             <h4>Account info</h4>
-            <button class="link-action" disabled>Edit account info</button>
         </div>
         <div class="kv-list">
             <div class="kv-row">
@@ -102,10 +187,247 @@
             <strong>Account Status:</strong> This account is currently locked.
         </div>
     }
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="@(_operationSuccess ? "alert-success" : "alert-error")">
+            @_statusMessage
+        </div>
+    }
 </div>
 
 @code {
     [Parameter] public required UserModel CurrentUser { get; set; }
+
+    // Photo upload state
+    private bool _isUploadingPhoto = false;
+    private string _photoMessage = string.Empty;
+    private bool _photoSuccess = false;
+
+    // Name editing state
+    private bool _isEditingName = false;
+    private string? _editFirstName;
+    private string? _editLastName;
+    private string? _editDisplayName;
+
+    // Profile editing state
+    private bool _isEditingProfile = false;
+    private DateTime? _editDateOfBirth;
+    private string? _editCountry;
+    private string? _editLocale;
+
+    private bool _isSaving = false;
+    private string _statusMessage = string.Empty;
+    private bool _operationSuccess = false;
+
+    private const long MaxPhotoBytes = 5 * 1024 * 1024; // 5 MB
+
+    /// <summary>
+    /// Handles selection of a new profile photo and uploads it to blob storage.
+    /// </summary>
+    private async Task OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        if (_isUploadingPhoto)
+            return;
+
+        IBrowserFile file = e.File;
+
+        if (file.Size > MaxPhotoBytes)
+        {
+            _photoMessage = "The selected image is too large (max 5 MB).";
+            _photoSuccess = false;
+            return;
+        }
+
+        try
+        {
+            _isUploadingPhoto = true;
+            _photoMessage = string.Empty;
+            StateHasChanged();
+
+            using MemoryStream ms = new();
+            await file.OpenReadStream(MaxPhotoBytes).CopyToAsync(ms);
+            byte[] content = ms.ToArray();
+
+            string contentType = string.IsNullOrWhiteSpace(file.ContentType) ? "image/jpeg" : file.ContentType;
+            string url = await cloudLogin.UploadProfilePicture(CurrentUser.ID, content, contentType);
+
+            CurrentUser.ProfilePicture = url;
+            CurrentUser.IsCustomProfilePicture = true;
+
+            _photoMessage = "Profile photo updated successfully.";
+            _photoSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _photoMessage = $"Failed to update profile photo: {ex.Message}";
+            _photoSuccess = false;
+        }
+        finally
+        {
+            _isUploadingPhoto = false;
+            StateHasChanged();
+
+            if (_photoSuccess)
+            {
+                await Task.Delay(3000);
+                _photoMessage = string.Empty;
+                StateHasChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Removes the custom profile photo and reverts to the default provider image.
+    /// </summary>
+    private async Task RemovePhoto()
+    {
+        if (_isUploadingPhoto)
+            return;
+
+        try
+        {
+            _isUploadingPhoto = true;
+            _photoMessage = string.Empty;
+            StateHasChanged();
+
+            CurrentUser.ProfilePicture = CurrentUser.ProviderProfilePicture;
+            CurrentUser.IsCustomProfilePicture = false;
+
+            await cloudLogin.UpdateUser(CurrentUser);
+
+            // Re-fetch to get the normalized default picture URL from the server.
+            UserModel? refreshed = await cloudLogin.CurrentUser();
+            if (refreshed != null)
+            {
+                CurrentUser.ProfilePicture = refreshed.ProfilePicture;
+                CurrentUser.ProviderProfilePicture = refreshed.ProviderProfilePicture;
+                CurrentUser.IsCustomProfilePicture = refreshed.IsCustomProfilePicture;
+            }
+
+            _photoMessage = string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture)
+                ? "Profile photo removed."
+                : "Your default photo has been restored.";
+            _photoSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _photoMessage = $"Failed to remove profile photo: {ex.Message}";
+            _photoSuccess = false;
+        }
+        finally
+        {
+            _isUploadingPhoto = false;
+            StateHasChanged();
+
+            if (_photoSuccess)
+            {
+                await Task.Delay(3000);
+                _photoMessage = string.Empty;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void StartEditName()
+    {
+        _editFirstName = CurrentUser.FirstName;
+        _editLastName = CurrentUser.LastName;
+        _editDisplayName = CurrentUser.DisplayName;
+        _isEditingName = true;
+    }
+
+    private void CancelEditName() => _isEditingName = false;
+
+    private async Task SaveName()
+    {
+        if (_isSaving)
+            return;
+
+        try
+        {
+            _isSaving = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            CurrentUser.FirstName = _editFirstName?.Trim();
+            CurrentUser.LastName = _editLastName?.Trim();
+            CurrentUser.DisplayName = string.IsNullOrWhiteSpace(_editDisplayName)
+                ? string.Join(" ", new[] { CurrentUser.FirstName, CurrentUser.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)))
+                : _editDisplayName.Trim();
+
+            await cloudLogin.UpdateUser(CurrentUser);
+
+            _isEditingName = false;
+            _statusMessage = "Name updated successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to update name: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
+    }
+
+    private void StartEditProfile()
+    {
+        _editDateOfBirth = CurrentUser.DateOfBirth?.ToDateTime(TimeOnly.MinValue);
+        _editCountry = CurrentUser.Country;
+        _editLocale = CurrentUser.Locale;
+        _isEditingProfile = true;
+    }
+
+    private void CancelEditProfile() => _isEditingProfile = false;
+
+    private async Task SaveProfile()
+    {
+        if (_isSaving)
+            return;
+
+        try
+        {
+            _isSaving = true;
+            _statusMessage = string.Empty;
+            StateHasChanged();
+
+            CurrentUser.DateOfBirth = _editDateOfBirth.HasValue ? DateOnly.FromDateTime(_editDateOfBirth.Value) : null;
+            CurrentUser.Country = string.IsNullOrWhiteSpace(_editCountry) ? null : _editCountry.Trim();
+            CurrentUser.Locale = string.IsNullOrWhiteSpace(_editLocale) ? null : _editLocale.Trim();
+
+            await cloudLogin.UpdateUser(CurrentUser);
+
+            _isEditingProfile = false;
+            _statusMessage = "Profile info updated successfully.";
+            _operationSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Failed to update profile info: {ex.Message}";
+            _operationSuccess = false;
+        }
+        finally
+        {
+            _isSaving = false;
+            StateHasChanged();
+            await ClearStatusMessageAfterDelay();
+        }
+    }
+
+    private async Task ClearStatusMessageAfterDelay()
+    {
+        if (_operationSuccess)
+        {
+            await Task.Delay(3000);
+            _statusMessage = string.Empty;
+            StateHasChanged();
+        }
+    }
 
     private string GetFullName()
     {
@@ -179,11 +501,11 @@
     }
 
     private string GetPrimaryEmail()
-        => CurrentUser.PrimaryEmailAddress?.Input ?? "None";
+        => (CurrentUser.PrimaryEmailAddress ?? CurrentUser.EmailAddresses.FirstOrDefault())?.Input ?? "None";
 
     private string GetPrimaryPhone()
     {
-        var phone = CurrentUser.PrimaryPhoneNumber?.Input;
+        var phone = (CurrentUser.PrimaryPhoneNumber ?? CurrentUser.PhoneNumbers.FirstOrDefault())?.Input;
         return string.IsNullOrWhiteSpace(phone) ? "None" : FormatPhoneNumber(phone);
     }
 

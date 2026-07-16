@@ -12,7 +12,7 @@
     &-header {
         margin-bottom: 8px;
 
-        h3 { 
+        h3 {
             font-size: 24px;
             font-weight: 600;
             color: @text;
@@ -212,7 +212,7 @@
         display: flex;
         align-items: flex-start;
         gap: 20px;
-        flex-direction:column;
+        flex-direction: column;
     }
 
     &-copy {
@@ -223,13 +223,32 @@
 }
 
 .avatar {
+    &-wrap {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        flex-shrink: 0;
+    }
+
+    &-overlay {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: @white;
+    }
+
     width: 96px;
     height: 96px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid @border-dashed;
-    display: none;
+    display: block;
     aspect-ratio: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
     &.initials {
         display: flex;
@@ -240,6 +259,17 @@
         font-weight: 700;
         font-size: 32px;
     }
+}
+
+.photo-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.link-danger {
+    color: #dc3545;
 }
 
 .subtitle {
@@ -281,8 +311,121 @@
     border: none;
     color: var(--amc-accentColor);
     font-weight: 600;
-    cursor: not-allowed;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
 }
+
+// ── Inline editing controls ──
+.btn.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    &.is-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+}
+
+.form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid @border-strong;
+    border-radius: 6px;
+    font-size: 14px;
+    color: @text;
+
+    &:focus {
+        outline: none;
+        border-color: var(--amc-accentColor);
+    }
+}
+
+.edit {
+    &-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+
+    &-actions {
+        display: flex;
+        gap: 8px;
+    }
+}
+
+.btn {
+    &.btn-primary {
+        background: var(--amc-accentColor);
+        border: 1px solid var(--amc-accentColor);
+        color: @white;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    &.btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
+
+.alert-success {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #d1e7dd;
+    border-left: 4px solid #198754;
+    color: #0f5132;
+}
+
+.alert-error {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #f8d7da;
+    border-left: 4px solid #dc3545;
+    color: #842029;
+}
+
+.photo-message {
+    margin-top: 8px;
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
+.loading-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    display: inline-block;
+    animation: uinfo-spin 0.7s linear infinite;
+}
+
+@keyframes uinfo-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 
 .card {
     background: @white;
@@ -319,10 +462,14 @@
         padding: 14px 0;
         border-top: 1px solid @surface;
 
-        &:first-child { border-top: none; }
+        &:first-child {
+            border-top: none;
+        }
 
         &.meta {
-            .kv-key { color: @muted; }
+            .kv-key {
+                color: @muted;
+            }
         }
     }
 
@@ -355,6 +502,5 @@
         &-block {
             flex-direction: row;
         }
-       
     }
 }

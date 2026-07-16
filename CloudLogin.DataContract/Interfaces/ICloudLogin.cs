@@ -29,6 +29,15 @@ public interface ICloudLogin
     Task AddUserInput(Guid userId, LoginInput input);
     Task<List<ProviderDefinition>> GetProviders();
 
+    /// <summary>
+    /// Uploads a custom profile picture for the user to blob storage and updates the user record.
+    /// </summary>
+    /// <param name="userId">The user to update.</param>
+    /// <param name="content">The raw image bytes.</param>
+    /// <param name="contentType">The image content type (e.g., "image/png").</param>
+    /// <returns>The public URL of the uploaded profile picture.</returns>
+    Task<string> UploadProfilePicture(Guid userId, byte[] content, string contentType);
+
     string GetPhoneNumber(string input);
 
     // Admin management methods (require caller to be a Global Admin)

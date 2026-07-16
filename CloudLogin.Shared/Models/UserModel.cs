@@ -10,13 +10,13 @@ public record UserModel
     public string? LastName { get; set; }
     public string? DisplayName { get; set; }
     public bool IsLocked { get; set; } = false;
-    
+
     /// <summary>
     /// Indicates that the user was created via the LoginTest shared-password flow.
     /// Such users authenticate against the configured LoginTest password.
     /// </summary>
     public bool IsTest { get; set; } = false;
-    
+
     /// <summary>
     /// Indicates this user has Global Admin privileges, granted automatically to the first registered user.
     /// </summary>
@@ -30,6 +30,18 @@ public record UserModel
     // New optional profile fields populated from external providers (best-effort)
     // Never overwritten on updates; only set when currently null.
     public string? ProfilePicture { get; set; }
+
+    /// <summary>
+    /// Indicates the profile picture was uploaded by the user (stored in blob storage)
+    /// rather than coming from an external provider. When true, provider pictures do not overwrite it.
+    /// </summary>
+    public bool IsCustomProfilePicture { get; set; } = false;
+
+    /// <summary>
+    /// The original provider (Microsoft/Google) profile picture, preserved when a custom picture is uploaded
+    /// so it can be restored when the custom picture is removed.
+    /// </summary>
+    public string? ProviderProfilePicture { get; set; }
     /// <summary>
     /// ISO3166-1 alpha-2 country code (e.g., "US", "GB").
     /// </summary>

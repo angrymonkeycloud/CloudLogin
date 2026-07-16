@@ -161,6 +161,9 @@ public partial class CloudLoginServer : ICloudLogin
 
             if (!string.IsNullOrWhiteSpace(user.ProfilePicture) && !user.ProfilePicture.Contains("://") && !string.IsNullOrWhiteSpace(baseUrl))
                 user.ProfilePicture = baseUrl!.TrimEnd('/') + "/" + user.ProfilePicture.TrimStart('/');
+
+            if (!string.IsNullOrWhiteSpace(user.ProviderProfilePicture) && !user.ProviderProfilePicture.Contains("://") && !string.IsNullOrWhiteSpace(baseUrl))
+                user.ProviderProfilePicture = baseUrl!.TrimEnd('/') + "/" + user.ProviderProfilePicture.TrimStart('/');
         }
 
         return user;
@@ -360,6 +363,57 @@ public partial class CloudLoginServer : ICloudLogin
             throw new InvalidOperationException("CosmosMethods is not initialized");
 
         await _cosmosMethods.AddInput(userId, input);
+    }
+
+    public async Task<string> UploadProfilePicture(Guid userId, byte[] content, string contentType)
+    {
+        if (_cosmosMethods == null)
+            throw new InvalidOperationException("CosmosMethods is not initialized");
+
+        if (_configuration.AzureStorage is null)
+            throw new InvalidOperationException("Azure Storage is not configured.");
+
+        if (content == null || content.Length == 0)
+            throw new ArgumentException("Image content is empty.", nameof(content));
+
+        UserModel user = await _cosmosMethods.GetUserById(userId)
+            ?? throw new Exception($"User {userId} not found.");
+
+        string ext = contentType switch
+        {
+            "image/png" => ".png",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            "image/bmp" => ".bmp",
+            "image/svg+xml" => ".svg",
+            "image/jpg" or "image/jpeg" => ".jpg",
+            _ => ".jpg"
+        };
+
+        string fileName = $"{Guid.NewGuid():N}{ext}";
+
+        Azure.Storage.Blobs.BlobContainerClient container = new(_configuration.AzureStorage.ConnectionString, _configuration.AzureStorage.ContainerName);
+        await container.CreateIfNotExistsAsync();
+
+        Azure.Storage.Blobs.BlobClient blob = container.GetBlobClient(fileName);
+        Azure.Storage.Blobs.Models.BlobHttpHeaders headers = new() { ContentType = contentType };
+
+        using MemoryStream stream = new(content);
+        await blob.UploadAsync(stream, headers);
+
+        // Preserve the current provider picture (if not already a custom one) so it can be restored later.
+        if (!user.IsCustomProfilePicture && !string.IsNullOrWhiteSpace(user.ProfilePicture))
+            user.ProviderProfilePicture = user.ProfilePicture;
+
+        user.ProfilePicture = fileName;
+        user.IsCustomProfilePicture = true;
+        await _cosmosMethods.Update(user);
+
+        string? baseUrl = _configuration.AzureStorage.PublicBaseUrl;
+
+        return !string.IsNullOrWhiteSpace(baseUrl)
+            ? baseUrl!.TrimEnd('/') + "/" + fileName
+            : fileName;
     }
 
     // ── Admin methods ──────────────────────────────────────────────────

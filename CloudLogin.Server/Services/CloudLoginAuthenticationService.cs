@@ -108,12 +108,21 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         user.LastName = string.IsNullOrWhiteSpace(user.LastName) ? (principal.FindFirst(ClaimTypes.Surname)?.Value ?? user.LastName) : user.LastName;
         user.DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? (principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}") : user.DisplayName;
 
-        // Profile picture: only set when missing
-        if (string.IsNullOrWhiteSpace(user.ProfilePicture))
+        // Profile picture: only set when missing and not a user-uploaded custom picture
+        if (string.IsNullOrWhiteSpace(user.ProfilePicture) && !user.IsCustomProfilePicture)
         {
             string? providerPictureUrl = GetProfilePictureUrl(principal);
             if (!string.IsNullOrWhiteSpace(providerPictureUrl))
-                user.ProfilePicture = await IngestProfilePicture(providerPictureUrl);
+            {
+                string? stored = await IngestProfilePicture(providerPictureUrl);
+                user.ProfilePicture = stored;
+                user.ProviderProfilePicture = stored;
+            }
+        }
+        else if (!user.IsCustomProfilePicture)
+        {
+            // Keep the preserved provider picture in sync with the current live picture.
+            user.ProviderProfilePicture = user.ProfilePicture;
         }
 
         string? country = NormalizeCountry(GetCountry(principal));
@@ -222,6 +231,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             CreatedOn = currentDateTime,
             LastSignedIn = currentDateTime,
             ProfilePicture = storedPicture,
+            ProviderProfilePicture = storedPicture,
             Country = country,
             Locale = locale,
             DateOfBirth = dob,

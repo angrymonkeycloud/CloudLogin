@@ -3,8 +3,11 @@ using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudWeb;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -13,6 +16,13 @@ public static partial class MvcServiceCollectionExtensions
     public static IServiceCollection AddCloudLoginEmbedded(this IServiceCollection services, CloudLoginWebConfiguration loginConfig, IConfiguration builderConfiguration)
     {
         ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(loginConfig);
+
+        bool isDevelopment = string.Equals(
+            builderConfiguration["ASPNETCORE_ENVIRONMENT"],
+            "Development",
+            StringComparison.OrdinalIgnoreCase);
+        CloudLoginConfigurationValidator.Validate(loginConfig, isDevelopment);
 
         services.AddRazorComponents()
             .AddInteractiveWebAssemblyComponents();
@@ -29,6 +39,21 @@ public static partial class MvcServiceCollectionExtensions
         services.AddAuthenticationCore();
         services.AddScoped<CustomAuthenticationStateProvider>();
         services.AddScoped<ProviderConfigurationService>();
+        services.AddDataProtection();
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy, httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = loginConfig.Security.AuthenticationPermitLimit,
+                        Window = loginConfig.Security.AuthenticationWindow,
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    }));
+        });
 
         ConfigureCloudWeb(services, loginConfig);
         ConfigureAuthentication(services, loginConfig);
@@ -66,19 +91,24 @@ public static partial class MvcServiceCollectionExtensions
         AuthenticationBuilder auth = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                             .AddCookie(options => ConfigureCookieAuth(options, loginConfig));
 
-        ProviderConfigurationService providerService = services.BuildServiceProvider().GetRequiredService<ProviderConfigurationService>();
-
-        providerService.ConfigureProviders(auth);
+        new ProviderConfigurationService(loginConfig).ConfigureProviders(auth);
     }
 
     private static void ConfigureCookieAuth(CookieAuthenticationOptions options, CloudLoginWebConfiguration loginConfig)
     {
-        options.Cookie.Name = "CloudLogin";
-        options.Cookie.SameSite = SameSiteMode.None;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.Name = loginConfig.CookieName;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = loginConfig.Security.RequireHttps
+            ? CookieSecurePolicy.Always
+            : CookieSecurePolicy.SameAsRequest;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.Path = "/";
+        options.Cookie.IsEssential = true;
+        options.ExpireTimeSpan = loginConfig.Security.SessionIdleTimeout;
+        options.SlidingExpiration = true;
 
-        if (!string.IsNullOrEmpty(loginConfig.BaseAddress) && loginConfig.BaseAddress != "localhost")
-            options.Cookie.Domain = $".{loginConfig.BaseAddress}";
+        if (!string.IsNullOrWhiteSpace(loginConfig.CookieDomain))
+            options.Cookie.Domain = loginConfig.CookieDomain;
 
         options.Events = new CookieAuthenticationEvents
         {

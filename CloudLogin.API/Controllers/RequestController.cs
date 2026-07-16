@@ -1,6 +1,7 @@
 ﻿using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AngryMonkey.CloudLogin.API.Controllers;
 
@@ -9,6 +10,7 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 public class RequestController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpPost("CreateRequest")]
+    [Authorize]
     public async Task<IActionResult> CreateRequest(Guid userId, Guid? requestId = null)
     {
         try
@@ -36,6 +38,7 @@ public class RequestController(CloudLoginWebConfiguration configuration, ICloudL
         try
         {
             UserModel? user = await _server.GetUserByRequestId(requestId);
+            user = CloudLoginTransportSecurity.ForTransport(user);
 
             if (user != null && !string.IsNullOrWhiteSpace(user.ProfilePicture))
                 user.ProfilePicture = MakeAbsolute(user.ProfilePicture);

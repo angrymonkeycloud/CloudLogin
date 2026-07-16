@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.4.6</Version>
+		<Version>1.5.0</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description />
@@ -31,7 +31,6 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.8" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.61.0" />
 		<PackageReference Include="Microsoft.Graph" Version="6.2.0" />
@@ -41,6 +40,10 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 
 	<ItemGroup>

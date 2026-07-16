@@ -72,7 +72,7 @@ internal sealed class LoginTestFixture
 
     public async Task<UserModel> AddPasswordUserAsync(
         string email = "person@example.com",
-        string password = "Valid#123",
+        string password = "Valid#123456",
         bool isTest = false)
     {
         UserModel user = CreateUser(email, isTest);

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.DataProtection;
 using System.Collections.Specialized;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -17,12 +18,14 @@ public class AuthController(
     IConfiguration configuration,
     CloudLoginServerConfiguration serverConfiguration,
     IHttpClientFactory httpClientFactory,
-    ILogger<AuthController> logger) : ControllerBase
+    ILogger<AuthController> logger,
+    IDataProtectionProvider dataProtectionProvider) : ControllerBase
 {
-    private readonly string _loginBaseUrl = configuration["LoginUrl"] ?? throw new InvalidOperationException("LoginUrl configuration is missing.");
+    private readonly string _loginBaseUrl = serverConfiguration.LoginUrl ?? configuration["LoginUrl"] ?? throw new InvalidOperationException("LoginUrl configuration is missing.");
     private readonly TimeSpan _sessionDuration = serverConfiguration.SessionDuration;
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly ILogger<AuthController> _logger = logger;
+    private readonly IDataProtector _stateProtector = dataProtectionProvider.CreateProtector("AngryMonkey.CloudLogin.Consumer.ReturnState.v1");
 
     [HttpGet("login")]
     public IActionResult Login([FromQuery] string? returnUrl = null)
@@ -113,7 +116,7 @@ public class AuthController(
 
             if (user == null)
             {
-                _logger.LogWarning("Failed to retrieve user information for requestId: {RequestId}", requestId);
+                _logger.LogWarning("Failed to retrieve user information for a login callback");
                 return Redirect("/?error=user_not_found");
             }
 
@@ -153,7 +156,7 @@ public class AuthController(
                 ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(_sessionDuration) : null
             });
 
-            _logger.LogInformation("User {UserId} ({DisplayName}) authenticated successfully", user.ID, user.DisplayName);
+            _logger.LogInformation("Login callback completed successfully");
 
             // Append requestId to return URL so WASM client can fetch and persist user
             string finalReturnUrl = CloudLoginShared.AppendQueryParameter(returnUrl, "rid", parsedRequestId.ToString());
@@ -185,7 +188,7 @@ public class AuthController(
 
             // Redirect to the standalone CloudLogin service logout to clear its session too,
             // otherwise the user remains signed in on the login service and cannot switch accounts.
-            string cloudLoginLogoutUrl = $"{_loginBaseUrl.TrimEnd('/')}/CloudLogin/Logout?referer={Uri.EscapeDataString(absoluteReturnUrl)}";
+            string cloudLoginLogoutUrl = CloudLoginShared.BuildLogoutUrl(_loginBaseUrl, absoluteReturnUrl);
             return Redirect(cloudLoginLogoutUrl);
         }
         catch (Exception ex)
@@ -221,8 +224,7 @@ public class AuthController(
         }
     }
 
-    private static string EncodeReturnUrl(string returnUrl)
-        => Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(returnUrl));
+    private string EncodeReturnUrl(string returnUrl) => _stateProtector.Protect(returnUrl);
 
     private string DecodeReturnUrl(string? state)
     {
@@ -230,7 +232,7 @@ public class AuthController(
         {
             try
             {
-                return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(state));
+                return _stateProtector.Unprotect(state);
             }
             catch (Exception ex)
             {

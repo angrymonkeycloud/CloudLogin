@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
     <ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
     <ProjectReference Include="..\CloudLogin.Server\CloudLogin.Server.csproj" />
     <ProjectReference Include="..\CloudLogin.API\CloudLogin.API.csproj" />

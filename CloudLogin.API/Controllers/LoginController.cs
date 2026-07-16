@@ -1,22 +1,38 @@
 ﻿using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin.API.Controllers;
 
 [Route("CloudLogin")]
 [ApiController]
-public class LoginController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
+public class LoginController(CloudLoginWebConfiguration configuration, CloudLoginServer server) : CloudLoginBaseController(configuration, server)
 {
+    private const int MaximumLegacyUserInfoLength = 16 * 1024;
+
     [HttpGet("Login/{identity}")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)
         => await _server.Login(identity, keepMeSignedIn, sameSite, primaryEmail, input, referer, isMobileApp);
 
     [HttpGet("Login/CustomLogin")]
-    public async Task<IActionResult> CustomLogin(Guid userId, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
-        => await _server.CustomLogin(userId, keepMeSignedIn, referer, sameSite, isMobileApp);
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
+    public async Task<IActionResult> CustomLogin(Guid userId, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false, string? userInfo = null)
+    {
+        if (userId == Guid.Empty && TryReadLegacyUserId(userInfo, out Guid legacyUserId))
+            return await server.CompleteLegacyTestLogin(
+                legacyUserId,
+                keepMeSignedIn,
+                referer,
+                isMobileApp);
+
+        return await _server.CustomLogin(userId, keepMeSignedIn, referer, sameSite, isMobileApp);
+    }
 
     [HttpPost("Login/TestSignIn")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> TestSignIn([FromForm] Guid userId, [FromForm] bool keepMeSignedIn = false)
         => await _server.TestLogin(userId, keepMeSignedIn) ? Ok() : Unauthorized();
 
@@ -38,6 +54,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
     }
 
     [HttpPost("Login/PasswordSignIn")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> PasswordSignIn([FromForm] string email, [FromForm] string password, [FromForm] bool keepMeSignedIn = false, [FromForm] string? referer = null)
     {
         PasswordLoginRequest request = PasswordLoginRequest.Create(email, password, keepMeSignedIn);
@@ -62,6 +79,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
     }
 
     [HttpPost("Login/PasswordRegistration")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> PasswordRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string? password, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? referer = null)
     {
         if (!Enum.TryParse<InputFormat>(inputFormat, true, out InputFormat format))
@@ -73,19 +91,23 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
         if (user is null)
             return BadRequest("Registration failed.");
 
-        return Ok(user);
+        return Ok(CloudLoginTransportSecurity.ForTransport(user));
     }
 
     [HttpPost("Login/CodeRegistration")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> CodeRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? referer = null)
     {
+        if (!Configuration.Security.EnableLegacyClientVerificationCodes)
+            return NotFound();
+
         if (!Enum.TryParse(inputFormat, true, out InputFormat format))
             return BadRequest("Invalid input format.");
 
         CodeRegistrationRequest request = CodeRegistrationRequest.Create(input, format, firstName, lastName, displayName);
         UserModel user = await _server.CodeRegistration(request);
 
-        return Ok(user);
+        return Ok(CloudLoginTransportSecurity.ForTransport(user));
     }
 
     /// <summary>
@@ -133,4 +155,31 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
     [HttpGet("GetCustomLoginUrl")]
     public ActionResult<string> GetCustomLoginUrl(string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false, string? userHint = null)
         => Ok(_server.GetCustomLoginUrl(referer, isMobileApp, keepMeSignedIn, userHint));
+
+    private static bool TryReadLegacyUserId(string? userInfo, out Guid userId)
+    {
+        userId = Guid.Empty;
+
+        if (string.IsNullOrWhiteSpace(userInfo) || userInfo.Length > MaximumLegacyUserInfoLength)
+            return false;
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(userInfo);
+
+            foreach (JsonProperty property in document.RootElement.EnumerateObject())
+            {
+                if (!property.Name.Equals("id", StringComparison.OrdinalIgnoreCase) ||
+                    property.Value.ValueKind != JsonValueKind.String)
+                    continue;
+
+                return Guid.TryParse(property.Value.GetString(), out userId) && userId != Guid.Empty;
+            }
+        }
+        catch (JsonException)
+        {
+        }
+
+        return false;
+    }
 }

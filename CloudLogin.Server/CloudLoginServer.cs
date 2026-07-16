@@ -73,9 +73,9 @@ public partial class CloudLoginServer
     {
         await request.HttpContext.SignOutAsync();
         response.Cookies.Delete("AutomaticSignIn");
+
         string baseUri = $"{request.Scheme}://{request.Host}";
-        string logoutUrl = $"{LoginUrl}CloudLogin/Logout{(LoginUrl.Contains('?') ? '&' : '?')}redirectUri={HttpUtility.UrlEncode(baseUri)}";
-        return logoutUrl;
+        return CloudLoginShared.BuildLogoutUrl(LoginUrl, baseUri);
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ public partial class CloudLoginServer
             new Claim(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
             new Claim(ClaimTypes.Surname, user.LastName ?? string.Empty),
             new Claim(ClaimTypes.Name, user.DisplayName ?? string.Empty),
-            new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+            new Claim(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
         ], "CloudLogin");
 
         // Add email claim - prefer primary email, fallback to first input

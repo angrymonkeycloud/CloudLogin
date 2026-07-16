@@ -1,5 +1,10 @@
+using AngryMonkey.CloudLogin.Sever.Providers;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Web;
 
@@ -15,7 +20,7 @@ public class CloudLoginServerLoginTests
         DateTimeOffset beforeLogin = DateTimeOffset.UtcNow;
 
         bool result = await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("  PERSON@EXAMPLE.COM ", "Valid#123", true));
+            PasswordLoginRequest.Create("  PERSON@EXAMPLE.COM ", "Valid#123456", true));
 
         Assert.True(result);
         Assert.Equal(1, fixture.Authentication.SignInCount);
@@ -38,11 +43,25 @@ public class CloudLoginServerLoginTests
         await fixture.AddPasswordUserAsync();
 
         bool result = await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "Wrong#123"));
+            PasswordLoginRequest.Create("person@example.com", "Wrong#123456"));
 
         Assert.False(result);
         Assert.Equal(0, fixture.Authentication.SignInCount);
         Assert.Equal(0, fixture.Store.UpdateCount);
+    }
+
+    [Fact]
+    public async Task PasswordLogin_LockedAccount_DoesNotSignIn()
+    {
+        LoginTestFixture fixture = new();
+        UserModel user = await fixture.AddPasswordUserAsync();
+        user.IsLocked = true;
+
+        bool result = await fixture.Server.PasswordLogin(
+            PasswordLoginRequest.Create("person@example.com", "Valid#123456"));
+
+        Assert.False(result);
+        Assert.Equal(0, fixture.Authentication.SignInCount);
     }
 
     [Fact]
@@ -53,7 +72,7 @@ public class CloudLoginServerLoginTests
         await Assert.ThrowsAnyAsync<ArgumentException>(() => fixture.Server.PasswordLogin(
             PasswordLoginRequest.Create("person@example.com", "")));
         await Assert.ThrowsAnyAsync<ArgumentException>(() => fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("", "Valid#123")));
+            PasswordLoginRequest.Create("", "Valid#123456")));
         Assert.Equal(0, fixture.Authentication.SignInCount);
     }
 
@@ -65,11 +84,11 @@ public class CloudLoginServerLoginTests
         user.Inputs[0].Providers.Add(new LoginProvider
         {
             Code = "Password",
-            PasswordHash = await fixture.Server.HashPassword("Valid#123")
+            PasswordHash = await fixture.Server.HashPassword("Valid#123456")
         });
 
         bool result = await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "Valid#123"));
+            PasswordLoginRequest.Create("person@example.com", "Valid#123456"));
 
         Assert.False(result);
         Assert.Equal(0, fixture.Authentication.SignInCount);
@@ -82,7 +101,7 @@ public class CloudLoginServerLoginTests
         await fixture.AddPasswordUserAsync();
 
         Assert.True(await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "Valid#123")));
+            PasswordLoginRequest.Create("person@example.com", "Valid#123456")));
 
         Assert.False(fixture.Authentication.SignedInProperties!.IsPersistent);
         Assert.Null(fixture.Authentication.SignedInProperties.ExpiresUtc);
@@ -111,6 +130,36 @@ public class CloudLoginServerLoginTests
 
         Assert.False(await fixture.Server.TestLogin(testUser.ID));
         Assert.Equal(0, fixture.Authentication.SignInCount);
+    }
+
+    [Fact]
+    public async Task GetProviders_WhenTestModeEnabled_IncludesTestMode()
+    {
+        LoginTestFixture fixture = new(testModeEnabled: true);
+
+        List<ProviderDefinition> providers = await fixture.Server.GetProviders();
+
+        Assert.Contains(providers,
+            provider => provider.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task GetProviders_WhenTestModeDisabled_HidesTestMode()
+    {
+        IConfiguration configurationValues = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["TestMode:IsEnabled"] = "false"
+            })
+            .Build();
+        LoginTestFixture fixture = new();
+        fixture.Configuration.Providers.Add(new LoginTestProviders.TestModeConfiguration(
+            configurationValues.GetSection("TestMode")));
+
+        List<ProviderDefinition> providers = await fixture.Server.GetProviders();
+
+        Assert.DoesNotContain(providers,
+            provider => provider.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -321,6 +370,39 @@ public class CloudLoginServerLoginTests
     }
 
     [Fact]
+    public async Task Logout_MobileAuthoritySession_ReturnsToAllowedAppCallback()
+    {
+        LoginTestFixture fixture = new(allowedMobileSchemes: ["blusky"]);
+
+        IActionResult result = await fixture.Server.Logout(
+            "blusky://auth/callback?operation=logout#complete",
+            isMobileApp: true);
+
+        RedirectResult redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Equal(
+            "blusky://auth/callback?operation=logout&isMobileApp=true#complete",
+            redirect.Url);
+        Assert.Equal(1, fixture.Authentication.SignOutCount);
+    }
+
+    [Fact]
+    public async Task Logout_ConsumerSession_ReturnsAuthorityLogoutUrl()
+    {
+        LoginTestFixture fixture = new();
+        fixture.HttpContext.Request.Scheme = "https";
+        fixture.HttpContext.Request.Host = new HostString("app.example");
+
+        string result = await fixture.Server.Logout(
+            fixture.HttpContext.Request,
+            fixture.HttpContext.Response);
+
+        Assert.Equal(
+            "https://login.example:443/CloudLogin/Logout?referer=https%3A%2F%2Fapp.example",
+            result);
+        Assert.Equal(1, fixture.Authentication.SignOutCount);
+    }
+
+    [Fact]
     public async Task PasswordRegistration_CreatesNormalizedPasswordUser()
     {
         LoginTestFixture fixture = new();
@@ -329,7 +411,7 @@ public class CloudLoginServerLoginTests
             PasswordRegistrationRequest.Create(
                 "  NEW@EXAMPLE.COM ",
                 InputFormat.EmailAddress,
-                "Valid#123",
+                "Valid#123456",
                 "New",
                 "Person",
                 "New Person"));
@@ -337,9 +419,9 @@ public class CloudLoginServerLoginTests
         Assert.False(user.IsTest);
         Assert.Equal("new@example.com", user.PrimaryEmailAddress!.Input);
         LoginProvider passwordProvider = Assert.Single(user.Inputs[0].Providers, provider => provider.Code == "Password");
-        Assert.NotEqual("Valid#123", passwordProvider.PasswordHash);
+        Assert.NotEqual("Valid#123456", passwordProvider.PasswordHash);
         Assert.True(await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("new@example.com", "Valid#123")));
+            PasswordLoginRequest.Create("new@example.com", "Valid#123456")));
     }
 
     [Fact]
@@ -357,5 +439,44 @@ public class CloudLoginServerLoginTests
         Assert.True(testUser.IsTest);
         Assert.Empty(testUser.Inputs[0].Providers);
         Assert.True(await testFixture.Server.TestLogin(testUser.ID));
+    }
+
+    [Fact]
+    public async Task PasswordHash_UsesVersionedEnterpriseWorkFactor()
+    {
+        LoginTestFixture fixture = new();
+
+        string hash = await fixture.Server.HashPassword("correct horse battery staple");
+
+        Assert.StartsWith("pbkdf2-sha256$600000$", hash);
+        Assert.True(fixture.Server.IsValidPassword("correct horse battery staple"));
+        Assert.False(fixture.Server.IsValidPassword("short"));
+        Assert.False(fixture.Server.IsValidPassword("password123"));
+    }
+
+    [Fact]
+    public async Task PasswordLogin_UpgradesLegacyHashAfterSuccessfulVerification()
+    {
+        const string password = "Legacy#123456";
+        LoginTestFixture fixture = new();
+        UserModel user = LoginTestFixture.CreateUser();
+        byte[] salt = RandomNumberGenerator.GetBytes(16);
+        byte[] legacyHash = KeyDerivation.Pbkdf2(
+            password,
+            salt,
+            KeyDerivationPrf.HMACSHA256,
+            100_000,
+            32);
+        LoginProvider provider = new()
+        {
+            Code = "Password",
+            PasswordHash = Convert.ToBase64String(salt.Concat(legacyHash).ToArray())
+        };
+        user.Inputs[0].Providers.Add(provider);
+        fixture.Store.Users[user.ID] = user;
+
+        Assert.True(await fixture.Server.PasswordLogin(
+            PasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, password)));
+        Assert.StartsWith("pbkdf2-sha256$600000$", provider.PasswordHash);
     }
 }

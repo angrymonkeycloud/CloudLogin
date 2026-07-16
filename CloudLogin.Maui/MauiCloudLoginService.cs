@@ -56,6 +56,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     private string UserDataKey => _options.StorageKey("user-data");
     private string PostLoginRouteKey => _options.StorageKey("post-login-route");
     private string LastLoginTimestampKey => _options.StorageKey("last-login-timestamp");
+    private string PendingAuthorityLogoutKey => _options.StorageKey("pending-authority-logout");
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -271,6 +272,13 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         if (User != null)
             return;
 
+        // A cancelled/offline logout may have cleared the local app while leaving
+        // the authority cookie intact. Finish that logout before allowing another
+        // sign-in, otherwise the old account could be returned automatically.
+        if (Preferences.Default.Get(PendingAuthorityLogoutKey, false) &&
+            !await TryLogoutAuthorityAsync())
+            return;
+
         if (_nav == null)
         {
             Debug.WriteLine("[AccountService] BeginLogin failed: NavigationService not initialized");
@@ -333,12 +341,44 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 
     public override async Task Logout()
     {
+        Preferences.Default.Set(PendingAuthorityLogoutKey, true);
+
+        await TryLogoutAuthorityAsync();
+
         await ClearStoredSessionAsync();
         await base.Logout();
 
         if (_nav != null)
-        {
             await ForceReloadTo("/");
+    }
+
+    private async Task<bool> TryLogoutAuthorityAsync()
+    {
+        try
+        {
+            // Use the same browser authentication session used for sign-in so the
+            // authority's cookie is cleared as well as the app's local session.
+            string logoutUrl = CloudLoginShared.BuildLogoutUrl(
+                _options.LoginUrl,
+                CallbackUrl,
+                isMobileApp: true);
+
+            await WebAuthenticator.Default.AuthenticateAsync(
+                new Uri(logoutUrl),
+                new Uri(CallbackUrl));
+
+            Preferences.Default.Remove(PendingAuthorityLogoutKey);
+            return true;
+        }
+        catch (TaskCanceledException)
+        {
+            Debug.WriteLine("[AccountService] Authority logout was cancelled");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AccountService] Authority logout failed: {ex.Message}");
+            return false;
         }
     }
 

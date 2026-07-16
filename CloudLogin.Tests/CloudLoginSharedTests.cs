@@ -2,6 +2,40 @@ namespace AngryMonkey.CloudLogin.Tests;
 
 public class CloudLoginSharedTests
 {
+    [Fact]
+    public void BuildLogoutUrl_EncodesWebsiteReturnUrl()
+    {
+        string result = CloudLoginShared.BuildLogoutUrl(
+            "https://login.example/",
+            "https://app.example/signed-out?from=menu#done");
+
+        Assert.Equal(
+            "https://login.example/CloudLogin/Logout?referer=https%3A%2F%2Fapp.example%2Fsigned-out%3Ffrom%3Dmenu%23done",
+            result);
+    }
+
+    [Fact]
+    public void BuildLogoutUrl_ForMobile_AddsCallbackAndMobileFlag()
+    {
+        string result = CloudLoginShared.BuildLogoutUrl(
+            "https://login.example",
+            "blusky://auth/callback",
+            isMobileApp: true);
+
+        Assert.Equal(
+            "https://login.example/CloudLogin/Logout?referer=blusky%3A%2F%2Fauth%2Fcallback&isMobileApp=true",
+            result);
+    }
+
+    [Theory]
+    [InlineData("relative-login")]
+    [InlineData("javascript:alert(1)")]
+    public void BuildLogoutUrl_RejectsInvalidAuthority(string loginUrl)
+    {
+        Assert.Throws<ArgumentException>(() =>
+            CloudLoginShared.BuildLogoutUrl(loginUrl, "https://app.example"));
+    }
+
     [Theory]
     [InlineData("https://localhost:7116/login", "https://localhost:7116", true)]
     [InlineData("https://localhost:7116/login", "https://localhost:51671", false)]

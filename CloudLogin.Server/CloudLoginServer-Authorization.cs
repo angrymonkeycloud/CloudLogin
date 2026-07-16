@@ -23,16 +23,45 @@ public partial class CloudLoginServer
             throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
 
         UserModel? currentUser = await CurrentUser();
-        if (currentUser is null || currentUser.ID == Guid.Empty)
+        if (currentUser is null || currentUser.ID == Guid.Empty || currentUser.IsLocked)
             throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
 
+        return await BuildCompletedLoginRedirect(currentUser.ID, referer, isMobileApp);
+    }
+
+    /// <summary>
+    /// Safely completes test sign-in requests emitted by CloudLogin clients that
+    /// predate the POST-based TestSignIn flow. The caller-provided user payload is
+    /// never trusted; the supplied identifier is reloaded and validated by
+    /// <see cref="TestLogin(Guid, bool)"/>.
+    /// </summary>
+    public async Task<IActionResult> CompleteLegacyTestLogin(
+        Guid userId,
+        bool keepMeSignedIn,
+        string? referer = null,
+        bool isMobileApp = false)
+    {
+        if (!IsAllowedRedirect(referer))
+            return new BadRequestObjectResult("The requested return URL is not allowed.");
+
+        if (!await TestLogin(userId, keepMeSignedIn))
+            return new UnauthorizedResult();
+
+        return new RedirectResult(await BuildCompletedLoginRedirect(userId, referer, isMobileApp));
+    }
+
+    private async Task<string> BuildCompletedLoginRedirect(
+        Guid userId,
+        string? referer,
+        bool isMobileApp)
+    {
         string target = string.IsNullOrWhiteSpace(referer) || referer == "/" ? "/Account" : referer;
         bool isExternal = Uri.TryCreate(target, UriKind.Absolute, out _) &&
                           !CloudLoginShared.IsSameOrigin(target, LoginUrl);
 
         if (isExternal)
         {
-            Guid requestId = await CreateLoginRequest(currentUser.ID);
+            Guid requestId = await CreateLoginRequest(userId);
             target = CloudLoginShared.AppendQueryParameter(target, "requestId", requestId.ToString());
         }
 
@@ -86,7 +115,7 @@ public partial class CloudLoginServer
 
             UserModel? currentUser = await CurrentUser();
 
-            if (currentUser is not null && currentUser.ID != Guid.Empty)
+            if (currentUser is not null && currentUser.ID != Guid.Empty && !currentUser.IsLocked)
             {
                 Guid requestId = await CreateLoginRequest(currentUser.ID);
                 referer = AppendQuery(referer, "requestId", requestId.ToString());
@@ -115,7 +144,7 @@ public partial class CloudLoginServer
             return new BadRequestObjectResult("The requested return URL is not allowed.");
 
         UserModel? user = await GetUserById(userId);
-        if (user is null || user.IsTest)
+        if (user is null || user.IsTest || user.IsLocked)
             return new UnauthorizedResult();
 
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
@@ -148,7 +177,7 @@ public partial class CloudLoginServer
                 new Claim(ClaimTypes.GivenName, firstName),
                 new Claim(ClaimTypes.Surname, lastName),
                 new Claim(ClaimTypes.Name, displayName),
-                new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+                new Claim(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
             ], "CloudLogin");
 
         if (user.Inputs.FirstOrDefault()?.Format == InputFormat.PhoneNumber)
@@ -270,6 +299,12 @@ public partial class CloudLoginServer
         if (user == null)
             return new RedirectResult(referer ?? "/");
 
+        if (user.IsLocked)
+        {
+            await _request.HttpContext.SignOutAsync();
+            return new ForbidResult();
+        }
+
         // Create request ID for the external website
         Guid requestId = Guid.NewGuid();
         if (_configuration.Cosmos != null && user.ID != Guid.Empty)
@@ -277,7 +312,7 @@ public partial class CloudLoginServer
 
         ClaimsIdentity claimsIdentity = new([
             new Claim(ClaimTypes.Hash, "CloudLogin"),
-            new Claim(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+            new Claim(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
         ], "CloudLogin");
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
@@ -346,10 +381,7 @@ public partial class CloudLoginServer
 
         string logoutUrl = !string.IsNullOrEmpty(referer) ? referer : "/";
         if (isMobileApp)
-        {
-            string separator = logoutUrl.Contains('?') ? "&" : "?";
-            logoutUrl = $"{logoutUrl}{separator}isMobileApp=true";
-        }
+            logoutUrl = CloudLoginShared.AppendQueryParameter(logoutUrl, "isMobileApp", "true");
 
         return new RedirectResult(logoutUrl);
     }

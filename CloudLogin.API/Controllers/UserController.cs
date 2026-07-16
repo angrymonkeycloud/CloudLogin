@@ -1,6 +1,9 @@
 ﻿using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace AngryMonkey.CloudLogin.API.Controllers;
 
@@ -9,8 +12,12 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 public class UserController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
     [HttpPost("SendWhatsAppCode")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<ActionResult> SendWhatsAppCode(string receiver, string code)
     {
+        if (!Configuration.Security.EnableLegacyClientVerificationCodes)
+            return NotFound();
+
         try
         {
             await _server.SendWhatsAppCode(receiver, code);
@@ -24,8 +31,12 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("SendEmailCode")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> SendEmailCode(string receiver, string code)
     {
+        if (!Configuration.Security.EnableLegacyClientVerificationCodes)
+            return NotFound();
+
         try
         {
             await _server.SendEmailCode(receiver, code);
@@ -39,11 +50,30 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("Update")]
+    [Authorize]
     public async Task<ActionResult> Update([FromBody] UserModel user)
     {
         try
         {
-            await _server.UpdateUser(user);
+            UserModel? currentUser = await _server.CurrentUser();
+            if (currentUser is null || (currentUser.ID != user.ID && !currentUser.IsGlobalAdmin))
+                return Forbid();
+
+            UserModel? storedUser = await _server.GetUserById(user.ID);
+            if (storedUser is null)
+                return NotFound();
+
+            // Only profile fields are accepted here. Privileges, providers,
+            // identifiers, password hashes, and lock state are server-managed.
+            storedUser.FirstName = user.FirstName;
+            storedUser.LastName = user.LastName;
+            storedUser.DisplayName = user.DisplayName;
+            storedUser.Username = user.Username;
+            storedUser.DateOfBirth = user.DateOfBirth;
+            storedUser.Country = user.Country;
+            storedUser.Locale = user.Locale;
+
+            await _server.UpdateUser(storedUser);
 
             return Ok();
         }
@@ -54,10 +84,14 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("Create")]
+    [Authorize]
     public async Task<ActionResult> Create([FromBody] UserModel user)
     {
         try
         {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
             await _server.CreateUser(user);
 
             return Ok();
@@ -69,10 +103,17 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("AddUserInput")]
+    [Authorize]
     public async Task<ActionResult> AddInput(Guid userId, [FromBody] LoginInput Input)
     {
         try
         {
+            if (!Configuration.Security.EnableLegacyClientVerificationCodes)
+                return NotFound();
+
+            if (!await CanAccessUserAsync(userId))
+                return Forbid();
+
             await _server.AddUserInput(userId, Input);
             return Ok();
         }
@@ -83,12 +124,29 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("UploadProfilePicture")]
+    [Authorize]
     public async Task<ActionResult<string>> UploadProfilePicture(Guid userId, [FromQuery] string contentType)
     {
         try
         {
-            using MemoryStream ms = new();
-            await Request.Body.CopyToAsync(ms);
+            if (!await CanAccessUserAsync(userId))
+                return Forbid();
+
+            int maximumBytes = Configuration.Security.MaximumProfileImageBytes;
+            if (Request.ContentLength is > 0 && Request.ContentLength > maximumBytes)
+                return StatusCode(StatusCodes.Status413PayloadTooLarge);
+
+            using MemoryStream ms = new(Math.Min(maximumBytes, 64 * 1024));
+            byte[] buffer = new byte[64 * 1024];
+            int bytesRead;
+            while ((bytesRead = await Request.Body.ReadAsync(buffer, HttpContext.RequestAborted)) > 0)
+            {
+                if (ms.Length + bytesRead > maximumBytes)
+                    return StatusCode(StatusCodes.Status413PayloadTooLarge);
+
+                await ms.WriteAsync(buffer.AsMemory(0, bytesRead), HttpContext.RequestAborted);
+            }
+
             byte[] content = ms.ToArray();
 
             string url = await _server.UploadProfilePicture(userId, content, contentType);
@@ -101,10 +159,14 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpDelete("Delete")]
+    [Authorize]
     public async Task<ActionResult> Delete(Guid userId)
     {
         try
         {
+            if (!await CanAccessUserAsync(userId))
+                return Forbid();
+
             await _server.DeleteUser(userId);
             return Ok();
         }
@@ -115,12 +177,16 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("All")]
+    [Authorize]
     public async Task<ActionResult<List<UserModel>>> All()
     {
         try
         {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
             List<UserModel> users = await _server.GetAllUsers();
-            users.ForEach(NormalizeUser);
+            users = [.. users.Select(NormalizeUser)];
             return Ok(users);
         }
         catch
@@ -130,12 +196,15 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetAllUsers")]
+    [Authorize]
     public async Task<ActionResult<List<UserModel>>> GetAllUsers()
     {
         try
         {
-            List<UserModel> user = await _server.GetAllUsers();
-            user.ForEach(NormalizeUser);
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
+            List<UserModel> user = [.. (await _server.GetAllUsers()).Select(NormalizeUser)];
 
             return Ok(user);
         }
@@ -146,12 +215,13 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetTestUsers")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<ActionResult<List<UserModel>>> GetTestUsers()
     {
         try
         {
             List<UserModel> users = await _server.GetTestUsers();
-            users.ForEach(NormalizeUser);
+            users = [.. users.Select(NormalizeUser)];
 
             return Ok(users);
         }
@@ -162,12 +232,19 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetUserById")]
+    [Authorize]
     public async Task<ActionResult<UserModel?>> GetUserById(Guid id)
     {
         try
         {
+            if (!await CanAccessUserAsync(id))
+                return Forbid();
+
             UserModel? user = await _server.GetUserById(id);
-            NormalizeUser(user);
+            if (user is null)
+                return NotFound();
+
+            user = NormalizeUser(user);
 
             return Ok(user);
         }
@@ -177,12 +254,15 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUsersByDisplayName")]
+    [Authorize]
     public async Task<ActionResult<List<UserModel>>> GetUsersByDisplayName(string displayname)
     {
         try
         {
-            List<UserModel> user = await _server.GetUsersByDisplayName(displayname);
-            user.ForEach(NormalizeUser);
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
+            List<UserModel> user = [.. (await _server.GetUsersByDisplayName(displayname)).Select(NormalizeUser)];
             return Ok(user);
         }
         catch
@@ -191,12 +271,19 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByDisplayName")]
+    [Authorize]
     public async Task<ActionResult<UserModel?>> GetUserByDisplayName(string displayname)
     {
         try
         {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
             UserModel? user = await _server.GetUserByDisplayName(displayname);
-            NormalizeUser(user);
+            if (user is null)
+                return NotFound();
+
+            user = NormalizeUser(user);
             return Ok(user);
         }
         catch
@@ -205,12 +292,13 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByInput")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<ActionResult<UserModel>> GetUserByInput(string input)
     {
         try
         {
-            UserModel? user = await _server.GetUserByInput(input);
-            NormalizeUser(user);
+            UserModel? user = CloudLoginTransportSecurity.ForAnonymousDiscovery(
+                await _server.GetUserByInput(input));
 
             return Ok(user);
         }
@@ -220,6 +308,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByEmailAdress")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<ActionResult<UserModel>> GetUserByEmailAdress(string email)
     {
         try
@@ -229,7 +318,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
             if (user == null)
                 return NotFound();
 
-            NormalizeUser(user);
+            user = CloudLoginTransportSecurity.ForAnonymousDiscovery(user);
             return Ok(user);
         }
         catch
@@ -238,6 +327,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("GetUserByPhoneNumber")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<ActionResult<UserModel>> GetUsersByPhoneNumber(string number)
     {
         try
@@ -247,7 +337,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
             if (user == null)
                 return NotFound();
 
-            NormalizeUser(user);
+            user = CloudLoginTransportSecurity.ForAnonymousDiscovery(user);
             return Ok(user);
         }
         catch
@@ -256,6 +346,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         }
     }
     [HttpGet("CurrentUser")]
+    [Authorize]
     public async Task<ActionResult<UserModel?>> CurrentUser()
     {
         try
@@ -265,7 +356,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
             if (user == null)
                 return NotFound();
 
-            NormalizeUser(user);
+            user = NormalizeUser(user);
             return Ok(user);
         }
         catch
@@ -290,10 +381,14 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetUserCount")]
+    [Authorize]
     public async Task<ActionResult<int>> GetUserCount()
     {
         try
         {
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
             return Ok(await _server.GetUserCount());
         }
         catch
@@ -305,6 +400,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     // ── Admin endpoints ───────────────────────────────────────────────
 
     [HttpPost("Admin/SetLocked")]
+    [Authorize]
     public async Task<ActionResult> AdminSetLocked(Guid userId, bool locked)
     {
         try
@@ -323,6 +419,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("Admin/ResetPassword")]
+    [Authorize]
     public async Task<ActionResult> AdminResetPassword(Guid userId, [FromBody] string newPassword)
     {
         try
@@ -345,6 +442,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpPost("Admin/SetGlobalAdmin")]
+    [Authorize]
     public async Task<ActionResult> AdminSetGlobalAdmin(Guid userId, bool isAdmin)
     {
         try
@@ -363,6 +461,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpDelete("Admin/DeleteUser")]
+    [Authorize]
     public async Task<ActionResult> AdminDeleteUser(Guid userId)
     {
         try
@@ -387,13 +486,20 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         return currentUser?.IsGlobalAdmin == true;
     }
 
-    private void NormalizeUser(UserModel? user)
+    private async Task<bool> CanAccessUserAsync(Guid userId)
     {
-        if (user == null) return;
+        UserModel? currentUser = await _server.CurrentUser();
+        return currentUser is not null && (currentUser.ID == userId || currentUser.IsGlobalAdmin);
+    }
+
+    private UserModel NormalizeUser(UserModel user)
+    {
+        user = CloudLoginTransportSecurity.ForTransport(user)!;
         if (!string.IsNullOrWhiteSpace(user.ProfilePicture))
             user.ProfilePicture = MakeAbsolute(user.ProfilePicture);
         if (!string.IsNullOrWhiteSpace(user.ProviderProfilePicture))
             user.ProviderProfilePicture = MakeAbsolute(user.ProviderProfilePicture);
+        return user;
     }
 
     private string MakeAbsolute(string value)

@@ -82,6 +82,28 @@ public sealed record AuthParameters
 public static class CloudLoginShared
 {
     /// <summary>
+    /// Builds a logout URL for the authentication authority. The authority clears
+    /// its own cookie and then returns to the supplied website or mobile callback.
+    /// </summary>
+    public static string BuildLogoutUrl(string loginBaseUrl, string returnUrl, bool isMobileApp = false)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(loginBaseUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(returnUrl);
+
+        if (!Uri.TryCreate(loginBaseUrl, UriKind.Absolute, out Uri? loginUri) ||
+            (loginUri.Scheme != Uri.UriSchemeHttps && loginUri.Scheme != Uri.UriSchemeHttp))
+            throw new ArgumentException("The login base URL must be an absolute HTTP or HTTPS URL.", nameof(loginBaseUrl));
+
+        string logoutUrl = $"{loginBaseUrl.TrimEnd('/')}/CloudLogin/Logout";
+        logoutUrl = AppendQueryParameter(logoutUrl, "referer", returnUrl);
+
+        if (isMobileApp)
+            logoutUrl = AppendQueryParameter(logoutUrl, "isMobileApp", "true");
+
+        return logoutUrl;
+    }
+
+    /// <summary>
     /// Appends an encoded query parameter while preserving a URL fragment.
     /// </summary>
     public static string AppendQueryParameter(string url, string name, string value)

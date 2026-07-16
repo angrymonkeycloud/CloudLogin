@@ -16,6 +16,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -23,9 +25,18 @@ public static class MvcServiceCollectionExtensions
 {
     public static void AddCloudLoginWeb(this IHostApplicationBuilder builder, CloudLoginWebConfiguration loginConfig)
     {
+        CloudLoginConfigurationValidator.Validate(loginConfig, builder.Environment.IsDevelopment());
+
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
+
+        builder.Services.AddHsts(options =>
+        {
+            options.MaxAge = TimeSpan.FromDays(365);
+            options.IncludeSubDomains = true;
+            options.Preload = true;
+        });
 
         builder.Services.AddControllers()
             .AddApplicationPart(typeof(ProvidersController).Assembly);
@@ -48,8 +59,37 @@ public static class MvcServiceCollectionExtensions
         ConfigureCosmos(builder, loginConfig);
         ConfigureCloudWeb(builder.Services, loginConfig);
         ConfigureAuthentication(builder.Services, loginConfig);
+        ConfigureSecurity(builder.Services, loginConfig);
 
         builder.Services.AddCloudLoginWeb(loginConfig);
+    }
+
+    /// <summary>Registers CloudLogin using a concise options callback.</summary>
+    public static void AddCloudLoginWeb(this IHostApplicationBuilder builder, Action<CloudLoginWebConfiguration> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        CloudLoginWebConfiguration configuration = new();
+        configure(configuration);
+        builder.AddCloudLoginWeb(configuration);
+    }
+
+    private static void ConfigureSecurity(IServiceCollection services, CloudLoginWebConfiguration configuration)
+    {
+        services.AddDataProtection();
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy, httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = configuration.Security.AuthenticationPermitLimit,
+                        Window = configuration.Security.AuthenticationWindow,
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    }));
+        });
     }
 
     private static void ConfigureCosmos(IHostApplicationBuilder builder, CloudLoginWebConfiguration loginConfig)
@@ -111,8 +151,14 @@ public static class MvcServiceCollectionExtensions
     {
         options.Cookie.Name = loginConfig.CookieName;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = loginConfig.Security.RequireHttps
+            ? CookieSecurePolicy.Always
+            : CookieSecurePolicy.SameAsRequest;
         options.Cookie.HttpOnly = true;
+        options.Cookie.Path = "/";
+        options.Cookie.IsEssential = true;
+        options.ExpireTimeSpan = loginConfig.Security.SessionIdleTimeout;
+        options.SlidingExpiration = true;
 
         if (!string.IsNullOrWhiteSpace(loginConfig.CookieDomain))
             options.Cookie.Domain = loginConfig.CookieDomain;
@@ -159,6 +205,7 @@ public class CloudLoginWeb
         app.UseHttpsRedirection();
         app.MapStaticAssets();
         app.UseRouting();
+        app.UseCloudLoginSecurity();
         app.UseAuthentication();
         app.UseAntiforgery();
         app.UseAuthorization();

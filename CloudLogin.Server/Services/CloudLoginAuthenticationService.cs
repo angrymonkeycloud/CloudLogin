@@ -394,20 +394,51 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
     private async Task<string?> IngestProfilePicture(string providerPictureUrl)
     {
-        // Decide according to configuration: upload to Azure Storage or return URL
         CloudLoginWebConfiguration? config = _serviceProvider.GetService<CloudLoginWebConfiguration>();
+        if (!Uri.TryCreate(providerPictureUrl, UriKind.Absolute, out Uri? pictureUri) ||
+            pictureUri.Scheme != Uri.UriSchemeHttps)
+            return null;
 
-        if (config?.AzureStorage is null)
+        if (config?.AzureStorage is null || config.Security.AllowedProfileImageHosts.Count == 0)
+            return providerPictureUrl;
+
+        if (!config.Security.AllowedProfileImageHosts.Contains(pictureUri.Host))
             return providerPictureUrl;
 
         try
         {
-            // Download the image
-            HttpClient httpClient = _serviceProvider.GetService<IHttpClientFactory>()?.CreateClient() ?? new HttpClient();
-            using HttpResponseMessage resp = await httpClient.GetAsync(providerPictureUrl);
+            IHttpClientFactory? clientFactory = _serviceProvider.GetService<IHttpClientFactory>();
+            using HttpClient? ownedClient = clientFactory is null ? new HttpClient() : null;
+            HttpClient httpClient = clientFactory?.CreateClient() ?? ownedClient!;
+            using HttpResponseMessage resp = await httpClient.GetAsync(providerPictureUrl, HttpCompletionOption.ResponseHeadersRead);
             resp.EnsureSuccessStatusCode();
-            await using Stream stream = await resp.Content.ReadAsStreamAsync();
-            string? contentType = resp.Content.Headers.ContentType?.MediaType;
+
+            Uri? finalUri = resp.RequestMessage?.RequestUri;
+            if (finalUri?.Scheme != Uri.UriSchemeHttps ||
+                !config.Security.AllowedProfileImageHosts.Contains(finalUri.Host))
+                return providerPictureUrl;
+
+            int maximumBytes = config.Security.MaximumProfileImageBytes;
+            if (resp.Content.Headers.ContentLength is > 0 && resp.Content.Headers.ContentLength > maximumBytes)
+                return providerPictureUrl;
+
+            await using Stream responseStream = await resp.Content.ReadAsStreamAsync();
+            using MemoryStream contentStream = new(Math.Min(maximumBytes, 64 * 1024));
+            byte[] buffer = new byte[64 * 1024];
+            int bytesRead;
+            while ((bytesRead = await responseStream.ReadAsync(buffer)) > 0)
+            {
+                if (contentStream.Length + bytesRead > maximumBytes)
+                    return providerPictureUrl;
+
+                await contentStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+            }
+
+            byte[] content = contentStream.ToArray();
+            string? contentType = resp.Content.Headers.ContentType?.MediaType?.ToLowerInvariant();
+            if (contentType is null || !CloudLoginServer.HasValidImageSignature(content, contentType))
+                return providerPictureUrl;
+
             string ext = GuessExtension(providerPictureUrl, contentType);
             string fileName = $"{Guid.NewGuid():N}{ext}";
 
@@ -416,7 +447,8 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             await container.CreateIfNotExistsAsync();
             BlobClient blob = container.GetBlobClient(fileName);
             BlobHttpHeaders headers = new() { ContentType = contentType ?? "image/jpeg" };
-            await blob.UploadAsync(stream, headers);
+            await using MemoryStream uploadStream = new(content);
+            await blob.UploadAsync(uploadStream, headers);
 
             // Persist only the file name
             return fileName;
@@ -436,13 +468,11 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             "image/png" => ".png",
             "image/gif" => ".gif",
             "image/webp" => ".webp",
-            "image/bmp" => ".bmp",
-            "image/svg+xml" => ".svg",
             "image/jpg" or "image/jpeg" => ".jpg",
             _ =>
  Path.GetExtension(new Uri(url).LocalPath) switch
  {
-     ".png" or ".gif" or ".webp" or ".bmp" or ".svg" or ".jpg" or ".jpeg" => Path.GetExtension(new Uri(url).LocalPath).ToLowerInvariant(),
+     ".png" or ".gif" or ".webp" or ".jpg" or ".jpeg" => Path.GetExtension(new Uri(url).LocalPath).ToLowerInvariant(),
      _ => ".jpg"
  }
         };

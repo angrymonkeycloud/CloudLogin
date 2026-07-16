@@ -130,14 +130,13 @@ public partial class CloudLoginServer : ICloudLogin
 
     public async Task<UserModel?> CurrentUser()
     {
-        string? userCookie = _request.Cookies["CloudLogin"];
-
-        if (userCookie == null)
+        if (_request.HttpContext.User.Identity?.IsAuthenticated != true)
             return null;
 
-        ClaimsIdentity userIdentity = _request.HttpContext.User.Identities.First();
+        ClaimsIdentity? userIdentity = _request.HttpContext.User.Identities
+            .FirstOrDefault(identity => identity.IsAuthenticated);
 
-        string? loginIdentity = userIdentity.FindFirst(ClaimTypes.UserData)?.Value;
+        string? loginIdentity = userIdentity?.FindFirst(ClaimTypes.UserData)?.Value;
 
         if (string.IsNullOrEmpty(loginIdentity))
             return null;
@@ -383,6 +382,13 @@ public partial class CloudLoginServer : ICloudLogin
         if (content == null || content.Length == 0)
             throw new ArgumentException("Image content is empty.", nameof(content));
 
+        if (content.Length > _configuration.Security.MaximumProfileImageBytes)
+            throw new ArgumentException("Image content exceeds the configured size limit.", nameof(content));
+
+        contentType = contentType.Trim().ToLowerInvariant();
+        if (!HasValidImageSignature(content, contentType))
+            throw new ArgumentException("Unsupported image type or invalid image content.", nameof(contentType));
+
         UserModel user = await _cosmosMethods.GetUserById(userId)
             ?? throw new Exception($"User {userId} not found.");
 
@@ -391,10 +397,8 @@ public partial class CloudLoginServer : ICloudLogin
             "image/png" => ".png",
             "image/gif" => ".gif",
             "image/webp" => ".webp",
-            "image/bmp" => ".bmp",
-            "image/svg+xml" => ".svg",
             "image/jpg" or "image/jpeg" => ".jpg",
-            _ => ".jpg"
+            _ => throw new ArgumentException("Unsupported image type.", nameof(contentType))
         };
 
         string fileName = $"{Guid.NewGuid():N}{ext}";
@@ -422,6 +426,17 @@ public partial class CloudLoginServer : ICloudLogin
             ? baseUrl!.TrimEnd('/') + "/" + fileName
             : fileName;
     }
+
+    internal static bool HasValidImageSignature(byte[] content, string contentType) => contentType switch
+    {
+        "image/png" => content.AsSpan().StartsWith(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
+        "image/jpg" or "image/jpeg" => content.AsSpan().StartsWith(new byte[] { 0xFF, 0xD8, 0xFF }),
+        "image/gif" => content.AsSpan().StartsWith("GIF87a"u8) || content.AsSpan().StartsWith("GIF89a"u8),
+        "image/webp" => content.Length >= 12 &&
+                         content.AsSpan(0, 4).SequenceEqual("RIFF"u8) &&
+                         content.AsSpan(8, 4).SequenceEqual("WEBP"u8),
+        _ => false
+    };
 
     // ── Admin methods ──────────────────────────────────────────────────
 
@@ -489,7 +504,9 @@ public partial class CloudLoginServer : ICloudLogin
         if (_configuration.Providers == null)
             throw new InvalidOperationException("Providers configuration is not initialized");
 
-        List<ProviderDefinition> providers = [.. _configuration.Providers.Select(key => key.ToModel())];
+        List<ProviderDefinition> providers = [.. _configuration.Providers
+            .Where(provider => provider is not LoginTestProviders.TestModeConfiguration testMode || testMode.IsEnabled)
+            .Select(provider => provider.ToModel())];
 
         return providers;
     }
@@ -520,7 +537,7 @@ public partial class CloudLoginServer : ICloudLogin
             return false;
 
         UserModel? user = await GetUserById(userId);
-        if (user?.IsTest != true)
+        if (user?.IsTest != true || user.IsLocked)
             return false;
 
         user.LastSignedIn = DateTimeOffset.UtcNow;
@@ -531,13 +548,16 @@ public partial class CloudLoginServer : ICloudLogin
 
     private async Task SignInUserAsync(UserModel user, bool keepMeSignedIn, string authenticationType)
     {
+        if (user.IsLocked)
+            throw new UnauthorizedAccessException("The account is locked.");
+
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, user.ID.ToString()),
             new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
             new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
             new(ClaimTypes.Surname, user.LastName ?? string.Empty),
-            new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
+            new(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
         ];
 
         string? email = user.PrimaryEmailAddress?.Input;
@@ -568,7 +588,14 @@ public partial class CloudLoginServer : ICloudLogin
         bool isTestModeRegistration = testProvider?.IsEnabled == true && string.IsNullOrWhiteSpace(request.Password);
 
         if (!isTestModeRegistration)
+        {
             ArgumentException.ThrowIfNullOrWhiteSpace(request.Password);
+
+            if (!IsValidPassword(request.Password!))
+                throw new ArgumentException(
+                    $"Password must be between {_configuration.Security.MinimumPasswordLength} and {_configuration.Security.MaximumPasswordLength} characters and must not be blocked.",
+                    nameof(request.Password));
+        }
 
         // Ensure user doesn't already exist
         UserModel? existing = request.InputFormat switch
@@ -663,7 +690,7 @@ public partial class CloudLoginServer : ICloudLogin
         return newUser;
     }
 
-    public async Task<string> HashPassword(string password)
+    public Task<string> HashPassword(string password)
     {
         if (string.IsNullOrEmpty(password))
             throw new ArgumentException("Password cannot be null or empty", nameof(password));
@@ -673,40 +700,41 @@ public partial class CloudLoginServer : ICloudLogin
             password,
             salt,
             KeyDerivationPrf.HMACSHA256,
-            iterationCount: 100000,
+            iterationCount: _configuration.Security.PasswordHashIterations,
             numBytesRequested: 32);
 
-        // Return as base64(salt + hash)
-        return Convert.ToBase64String(salt.Concat(hashed).ToArray());
+        string encoded = $"pbkdf2-sha256${_configuration.Security.PasswordHashIterations}${Convert.ToBase64String(salt)}${Convert.ToBase64String(hashed)}";
+        return Task.FromResult(encoded);
     }
 
     public bool IsValidPassword(string password)
     {
-        if (string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrEmpty(password))
             return false;
 
-        // Password must be at least 8 characters long
-        if (password.Length < 8)
+        if (password.Length < _configuration.Security.MinimumPasswordLength ||
+            password.Length > _configuration.Security.MaximumPasswordLength)
             return false;
 
-        // Password must contain at least one lowercase letter
-        if (!password.Any(char.IsLower))
+        if (password.Any(char.IsControl))
             return false;
 
-        // Password must contain at least one uppercase letter
-        if (!password.Any(char.IsUpper))
-            return false;
+        return !_configuration.Security.PasswordBlocklist.Contains(password);
+    }
 
-        // Password must contain at least one digit
-        if (!password.Any(char.IsDigit))
-            return false;
+    private static string SerializeUserForAuthenticationTicket(UserModel user)
+    {
+        UserModel safeUser = user with
+        {
+            Inputs = [.. user.Inputs.Select(input => input with
+            {
+                Providers = [.. input.Providers.Select(provider => provider with
+                {
+                    PasswordHash = null
+                })]
+            })]
+        };
 
-        // Password must contain at least one special character
-        string specialChars = "!@#$%^&*()_+-=[]{}|;:,.<>?";
-
-        if (!password.Any(specialChars.Contains))
-            return false;
-
-        return true;
+        return JsonSerializer.Serialize(safeUser, CloudLoginSerialization.Options);
     }
 }

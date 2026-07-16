@@ -532,8 +532,12 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Login/Complete?{string.Join("&", parameters)}");
         message.EnsureSuccessStatusCode();
 
-        return (await message.Content.ReadFromJsonAsync<string>(CloudLoginSerialization.Options))
-            ?? throw new InvalidOperationException("CloudLogin returned an empty redirect target.");
+        string target = (await message.Content.ReadAsStringAsync()).Trim();
+
+        if (string.IsNullOrWhiteSpace(target))
+            throw new InvalidOperationException("CloudLogin returned an empty redirect target.");
+
+        return target;
     }
 
     public async Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request)

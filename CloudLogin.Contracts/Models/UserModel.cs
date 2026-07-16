@@ -53,11 +53,11 @@ public record UserModel
 
     // Ignore
 
-    [JsonIgnore] public List<LoginInput> EmailAddresses => Inputs.Where(key => key.Format == InputFormat.EmailAddress).ToList();
-    [JsonIgnore] public List<LoginInput> PhoneNumbers => Inputs.Where(key => key.Format == InputFormat.PhoneNumber).ToList();
+    [JsonIgnore] public List<LoginInput> EmailAddresses => [.. Inputs.Where(key => key.Format == InputFormat.EmailAddress)];
+    [JsonIgnore] public List<LoginInput> PhoneNumbers => [.. Inputs.Where(key => key.Format == InputFormat.PhoneNumber)];
     [JsonIgnore] public LoginInput? PrimaryEmailAddress => EmailAddresses?.FirstOrDefault(key => key.IsPrimary);
     [JsonIgnore] public LoginInput? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault(key => key.IsPrimary);
-    [JsonIgnore] public List<string> Providers => Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct().ToList();
+    [JsonIgnore] public List<string> Providers => [.. Inputs.SelectMany(input => input.Providers).Select(key => key.Code).Distinct()];
 
     public static UserModel? Parse(string? decoded)
     {

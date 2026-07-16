@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 namespace AngryMonkey.CloudLogin.Sever.Providers;
 
 /// <summary>
-/// Test/dev providers intended for local / staging environments only.
+/// Explicitly configured test-user authentication providers.
 /// </summary>
 public class LoginTestProviders
 {
@@ -17,7 +17,8 @@ public class LoginTestProviders
     public class TestModeConfiguration : ProviderConfiguration
     {
         /// <summary>
-        /// When true, the provider operates in test mode.
+        /// When true, the provider operates in test mode in the current host
+        /// environment. The default is false.
         /// </summary>
         public bool IsEnabled { get; init; }
 

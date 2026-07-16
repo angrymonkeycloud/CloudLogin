@@ -19,11 +19,17 @@ public static partial class MvcServiceCollectionExtensions
         if (config.SessionDuration <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(config.SessionDuration));
 
+        if (!string.IsNullOrWhiteSpace(config.LoginUrl) &&
+            (!Uri.TryCreate(config.LoginUrl, UriKind.Absolute, out Uri? loginUri) ||
+             (loginUri.Scheme != Uri.UriSchemeHttps && loginUri.Scheme != Uri.UriSchemeHttp)))
+            throw new ArgumentException("LoginUrl must be an absolute HTTP or HTTPS URL.", nameof(config));
+
         services.AddControllers()
             .AddApplicationPart(typeof(global::AngryMonkey.CloudLogin.Server.Controllers.AuthController).Assembly);
 
         services.AddSingleton(config);
         services.AddHttpClient();
+        services.AddDataProtection();
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
@@ -36,8 +42,12 @@ public static partial class MvcServiceCollectionExtensions
                 options.SlidingExpiration = true;
                 options.Cookie.Name = config.CookieName;
                 options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.Cookie.SecurePolicy = config.RequireHttps
+                    ? CookieSecurePolicy.Always
+                    : CookieSecurePolicy.SameAsRequest;
                 options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.Path = "/";
+                options.Cookie.IsEssential = true;
             });
 
         // Add authorization services
@@ -46,28 +56,20 @@ public static partial class MvcServiceCollectionExtensions
         return services;
     }
 
-    //public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, Action<CloudLoginServerConfiguration> config)
-    //{
-    //    ArgumentNullException.ThrowIfNull(services);
+    /// <summary>
+    /// Registers a consumer website with secure defaults. This is the shortest
+    /// integration form when the login authority URL is known in code.
+    /// </summary>
+    public static IServiceCollection AddCloudLoginServer(
+        this IServiceCollection services,
+        string loginUrl,
+        Action<CloudLoginServerConfiguration>? configure = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(loginUrl);
 
-    //    services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    //        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-    //        {
-    //            options.LoginPath = "/auth/login";
-    //            options.LogoutPath = "/auth/logout";
-    //            options.AccessDeniedPath = "/auth/login";
-    //            options.ReturnUrlParameter = "returnUrl";
-    //            options.ExpireTimeSpan = TimeSpan.FromDays(30);
-    //            options.SlidingExpiration = true;
-    //            options.Cookie.Name = config.CookieName;
-    //            options.Cookie.HttpOnly = true;
-    //            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    //            options.Cookie.SameSite = SameSiteMode.Lax;
-    //        });
+        CloudLoginServerConfiguration configuration = new() { LoginUrl = loginUrl };
+        configure?.Invoke(configuration);
+        return services.AddCloudLoginServer(configuration);
+    }
 
-    //    // Add authorization services
-    //    services.AddAuthorization();
-
-    //    return services;
-    //}
 }

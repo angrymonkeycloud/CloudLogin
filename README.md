@@ -1,1794 +1,418 @@
 # CloudLogin
 [![Website](https://img.shields.io/badge/Website-angrymonkeycloud.com-0B5FFF?style=flat-square&logo=googlechrome&logoColor=white)](https://angrymonkeycloud.com/cloudlogin)
 [![GitHub repository](https://img.shields.io/badge/GitHub-CloudLogin-181717?style=flat-square&logo=github)](https://github.com/angrymonkeycloud/CloudLogin)
+[![Tests](https://github.com/angrymonkeycloud/CloudLogin/actions/workflows/tests.yml/badge.svg)](https://github.com/angrymonkeycloud/CloudLogin/actions/workflows/tests.yml)
 [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client)
 [![NuGet downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client)
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-2F855A?style=flat-square)](LICENSE)
 
-Authentication, identity, user-profile, and session-management building blocks for .NET applications.
+Authentication, account, profile, and coordinated-session packages for .NET 10, Blazor, and .NET MAUI.
 
-## Packages
+CloudLogin is secure by default: HTTPS-only cookies, exact redirect allowlists, encrypted authentication tickets and return state, rate-limited authentication endpoints, protected profile mutations, modern password hashing, and coordinated authority logout are enabled by the standard registration methods.
 
-| Package | Version | Downloads |
-| --- | --- | --- |
-| `AngryMonkey.CloudLogin.API` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) |
-| `AngryMonkey.CloudLogin.Maui` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) |
-| `AngryMonkey.CloudLogin.Client` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) |
-| `AngryMonkey.CloudLogin.Contracts` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) |
-| `AngryMonkey.CloudLogin.Server` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) |
-| `AngryMonkey.CloudLogin` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin) |
-| `AngryMonkey.CloudLogin.Web` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) |
-| `AngryMonkey.CloudLogin.Components` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) |
-| `AngryMonkey.CloudLogin.WebAssembly` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) |
+## Table of contents
 
-## Table of Contents
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Required Packages / References](#required-packages--references)
-4. [Configuration](#configuration)
-5. [Web App Bootstrap](#web-app-bootstrap)
-6. [Authentication Providers](#authentication-providers)
-7. [Cosmos DB Configuration](#cosmos-db-configuration)
-8. [Storage Configuration](#storage-configuration)
-9. [Consuming From Other Projects](#consuming-from-other-projects)
-10. [Client-Side Integration](#client-side-integration)
-11. [User Management](#user-management)
-12. [Session Management](#session-management)
-13. [Role-Based Authorization](#role-based-authorization)
-14. [Custom Claims & Profile Data](#custom-claims--profile-data)
-15. [Security Best Practices](#security-best-practices)
-16. [Blazor Integration](#blazor-integration)
-17. [API Integration](#api-integration)
-18. [Troubleshooting](#troubleshooting)
-19. [Migration & Legacy Support](#migration--legacy-support)
-20. [Production Deployment](#production-deployment)
+- [Projects and packages](#projects-and-packages)
+- [Architecture](#architecture)
+- [Standalone login website](#standalone-login-website)
+- [Consumer website](#consumer-website)
+- [Embedded website](#embedded-website)
+- [.NET MAUI](#net-maui)
+- [Feature overview](#feature-overview)
+- [Authentication providers](#authentication-providers)
+- [Configuration reference](#configuration-reference)
+- [Endpoints developers commonly use](#endpoints-developers-commonly-use)
+- [Developer implementation checklist](#developer-implementation-checklist)
+- [Secure defaults](#secure-defaults)
+- [Production key and secret management](#production-key-and-secret-management)
+- [Production startup troubleshooting](#production-startup-troubleshooting)
+- [Migration notes](#migration-notes)
+- [Security scope](#security-scope)
+- [Additional guidance](#additional-guidance)
 
-## Overview
+## Projects and packages
 
-Cloud Login provides comprehensive authentication and user management services including:
-- **Multi-Provider Authentication**: Microsoft, Google, Facebook, Twitter, and custom providers
-- **User Profile Management**: Store and retrieve user data in Cosmos DB
-- **Avatar Storage**: Azure Blob Storage for user profile images
-- **Session Management**: Secure token-based authentication
-- **Role-Based Access Control**: Fine-grained permissions
-- **Legacy Schema Support**: Backward compatibility with existing systems
-
-### Key Components
-- **`CloudLoginWeb`**: Full-featured login web application with UI
-- **`CloudLoginClient`**: Client SDK for consuming authentication services
-- **`CloudLogin.Server`**: Server-side helpers and middleware
-- **`CloudLogin.Contracts`**: Shared models and contracts
-- **`CloudLogin.Components`**: Reusable Blazor UI components
-- **`CloudLogin.WebAssembly`**: WebAssembly-specific runtime and components
+| Package | Version | Downloads | Use |
+| --- | --- | --- | --- |
+| `AngryMonkey.CloudLogin.Web` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) | Standalone CloudLogin website |
+| `AngryMonkey.CloudLogin.Server` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) | Consumer website or embedded server integration |
+| `AngryMonkey.CloudLogin.Maui` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) | Native .NET MAUI authentication |
+| `AngryMonkey.CloudLogin.WebAssembly` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) | WebAssembly runtime used by the standalone UI package |
+| `AngryMonkey.CloudLogin.Client` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) | Typed CloudLogin HTTP client |
+| `AngryMonkey.CloudLogin.Contracts` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) | Shared models and URL contracts |
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    User Applications                          │
-│        (Portal, API, Console, Mobile Apps)                    │
-└────────────────────┬─────────────────────────────────────────┘
-                     │
-                     ▼
-┌──────────────────────────────────────────────────────────────┐
-│               CloudLogin Client SDK                           │
-│          (Authentication, Profile Access)                     │
-└────────────────────┬─────────────────────────────────────────┘
-                     │
-                     ▼
-┌──────────────────────────────────────────────────────────────┐
-│              CloudLogin Web Service                           │
-│     (Coverbox.Login or Standalone Service)                    │
-│  - OAuth Flow   - Token Management   - Profile CRUD           │
-└────────────────────┬─────────────────────────────────────────┘
-                     │
-                     ├──────────────┬──────────────┐
-                     ▼              ▼              ▼
-┌──────────────┐  ┌─────────────┐  ┌──────────────┐
-│ Auth Provider│  │  Cosmos DB  │  │Azure Storage │
-│ (MS/Google)  │  │(User Data)  │  │ (Avatars)    │
-└──────────────┘  └─────────────┘  └──────────────┘
-```
+CloudLogin is organized into a few clear layers:
 
-### Project Structure
-```
-Coverbox.Login/
-├── Coverbox.Login/                    # Main login web app
-│   └── Program.cs                     # Bootstrap & configuration
-├── Coverbox.Login.Client/             # Client-side components
-└── appsettings.json                   # Configuration
+- **Contracts layer** (`AngryMonkey.CloudLogin.Contracts`): shared DTOs, request/response models, provider definitions, and routing helpers.
+- **Authority runtime layer** (`AngryMonkey.CloudLogin.Server` + `AngryMonkey.CloudLogin.API`): authentication orchestration, provider wiring, account/user/request endpoints, and security enforcement.
+- **Authority host/UI layer** (`AngryMonkey.CloudLogin.Web`, `AngryMonkey.CloudLogin.Components`, `AngryMonkey.CloudLogin.WebAssembly`): standalone Blazor UI and account/login component experience.
+- **Consumer integration layer** (`AngryMonkey.CloudLogin.Server` package usage in external apps): redirects to authority, callback handling, local cookie issuance, coordinated logout.
+- **Mobile layer** (`AngryMonkey.CloudLogin.Maui`): MAUI-native login initiation, callback handling, and secure local session storage.
+- **Client SDK layer** (`AngryMonkey.CloudLogin.Client`): typed API access for programmatic interactions.
 
-External Dependencies (NuGet):
-├── CloudLogin.Web                     # Web app framework
-├── CloudLogin.Server                  # Server helpers
-├── CloudLogin.Client                  # Client SDK
-├── CloudLogin.Contracts               # Shared models and contracts
-└── CloudLogin.Components              # UI components
-```
+Relationship map:
 
-## Required Packages / References
+- `CloudLogin.Web` hosts the authority UI and composes `CloudLogin.Components` + `CloudLogin.WebAssembly`.
+- `CloudLogin.Server` depends on contract models and configures provider authentication plus security policies.
+- `CloudLogin.API` exposes HTTP endpoints that call into `ICloudLogin`/server services.
+- `CloudLogin.Client` consumes the API surface using the same models from `CloudLogin.Contracts`.
+- Consumer websites and MAUI apps authenticate against the CloudLogin authority URL.
 
-### Login Service (Standalone)
-```xml
-<ItemGroup>
-  <PackageReference Include="AngryMonkey.CloudLogin.Web" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Server" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Contracts" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Components" Version="..." />
-</ItemGroup>
-```
+Integration patterns:
 
-### Consumer Applications (Portal, API)
-```xml
-<ItemGroup>
-  <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Contracts" Version="..." />
-</ItemGroup>
-```
+1. **Standalone authority + consumer website(s)** (most common)
+   - Deploy one CloudLogin authority site.
+   - Consumer apps use `AddCloudLoginServer("https://login.example.com")`.
+2. **Embedded authority in existing ASP.NET Core host**
+   - Add CloudLogin services/components directly to an existing site.
+3. **Mobile + authority**
+   - MAUI app uses `AddMauiCloudLogin(...)` and authority callback scheme allowlist.
 
-### Blazor WebAssembly Integration
-```xml
-<ItemGroup>
-  <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.WebAssembly" Version="..." />
-</ItemGroup>
-```
+## Standalone login website
 
-## Configuration
+The complete setup is configuration plus one run call:
 
-### Complete appsettings.json
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "AngryMonkey.CloudLogin": "Debug"
-    }
-  },
-  "AllowedHosts": "*",
-  
-  "Cosmos": {
-    "AccountEndpoint": "https://yourcosmosdb.documents.azure.com:443/",
-    "AccountKey": "<your-cosmos-key>",
-    "Database": "CoverboxLogin",
-    "Container": "Users",
-    "PartitionKeyPath": "/PartitionKey",
-    "ThroughputRUs": 400
-  },
-  
-  "Storage": {
-    "ConnectionString": "<your-storage-connection-string>",
-    "Container": "user-avatars",
-    "BaseUrl": "https://yourstorageaccount.blob.core.windows.net/"
-  },
-  
-  "Microsoft": {
-    "ClientId": "<azure-ad-app-client-id>",
-    "ClientSecret": "<azure-ad-app-client-secret>",
-    "TenantId": "common",
-    "CallbackPath": "/signin-microsoft",
-    "Scopes": ["openid", "profile", "email"]
-  },
-  
-  "Google": {
-    "ClientId": "<google-oauth-client-id>.apps.googleusercontent.com",
-    "ClientSecret": "<google-oauth-client-secret>",
-    "CallbackPath": "/signin-google",
-    "Scopes": ["openid", "profile", "email"]
-  },
-  
-  "Facebook": {
-    "AppId": "<facebook-app-id>",
-    "AppSecret": "<facebook-app-secret>",
-    "CallbackPath": "/signin-facebook",
-    "Scopes": ["email", "public_profile"]
-  },
-  
-  "Security": {
-    "JwtSecret": "<your-jwt-secret-key-at-least-32-chars>",
-    "JwtIssuer": "https://login.coverbox.com",
-    "JwtAudience": "https://portal.coverbox.com",
-    "TokenExpirationMinutes": 60,
-    "RefreshTokenExpirationDays": 30,
-    "RequireEmailVerification": false,
-    "AllowMultipleSessions": true
-  },
-  
-  "Features": {
-    "EnableGoogleLogin": true,
-    "EnableMicrosoftLogin": true,
-    "EnableFacebookLogin": false,
-    "EnableUserRegistration": true,
-    "EnableProfileEditing": true,
-    "EnableAvatarUpload": true,
-    "MaxAvatarSizeMB": 5
-  }
-}
-```
-
-### Environment-Specific Configuration
-```json
-// appsettings.Development.json
-{
-  "Cosmos": {
-    "AccountEndpoint": "https://localhost:8081",  // Cosmos Emulator
-    "AccountKey": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
-  },
-  "Storage": {
-    "ConnectionString": "UseDevelopmentStorage=true"  // Storage Emulator
-  },
-  "Security": {
-    "JwtSecret": "development-secret-key-do-not-use-in-production-min-32-chars",
-    "RequireEmailVerification": false
-  }
-}
-
-// appsettings.Production.json
-{
-  "Security": {
-    "RequireEmailVerification": true,
-    "AllowMultipleSessions": false
-  },
-  "Features": {
-    "EnableUserRegistration": false  // Invite-only in production
-  }
-}
-```
-
-## Web App Bootstrap
-
-### Complete Program.cs Implementation
 ```csharp
-using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
-using AngryMonkey.CloudLogin.Server.Providers;
+using AngryMonkey.CloudLogin.Sever.Providers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to container
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
-
-// Configure CloudLogin
-builder.AddCloudLoginWeb(new CloudLoginConfiguration()
+builder.AddCloudLoginWeb(options =>
 {
-    // Web UI Configuration
-    WebConfig = config =>
-    {
-        config.PageDefaults.SetTitle("Coverbox Login");
-        config.PageDefaults.SetFavicon("favicon.ico");
-        config.Theme.PrimaryColor = "#0c75c4";
-        config.Theme.SecondaryColor = "#10b981";
-        config.RedirectAfterLogin = "https://portal.coverbox.com/";
-        config.RedirectAfterLogout = "https://coverbox.com/";
-    },
-    
-    // Cosmos DB Configuration
-    Cosmos = new CosmosConfiguration(builder.Configuration.GetSection("Cosmos"))
-    {
-        // Partition key for user data (critical for query performance)
-        UserInfoPartitionKeyValue = "User",
-        
-        // Legacy schema support (uppercase ID, PartitionKey, Discriminator)
-        IncludeLegacySchema = true,
-        
-        // ID format: "user|{guid}" for backward compatibility
-        SaveIdMode = IdSaveMode.TypePrefixed,
-        
-        // Auto-create database and container if missing
-        AutoCreateDatabaseAndContainer = true,
-        
-        // Index policy optimization
-        IndexingPolicy = new IndexingPolicy
-        {
-            Automatic = true,
-            IndexingMode = IndexingMode.Consistent,
-            IncludedPaths = 
-            {
-                new IncludedPath { Path = "/*" }
-            },
-            ExcludedPaths = 
-            {
-                new ExcludedPath { Path = "/Avatar/*" },
-                new ExcludedPath { Path = "/LargeData/*" }
-            }
-        }
-    },
-    
-    // Azure Storage Configuration
-    AzureStorage = new StorageConfiguration(builder.Configuration.GetSection("Storage"))
-    {
-        Container = "user-avatars",
-        CreateContainerIfNotExists = true,
-        PublicAccessLevel = PublicAccessLevel.Blob,
-        AllowedFileExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" },
-        MaxFileSizeMB = 5
-    },
-    
-    // Authentication Providers
-    Providers = 
+    options.Cosmos = new(builder.Configuration.GetSection("Cosmos"));
+    options.AzureStorage = new(builder.Configuration.GetSection("Storage"));
+    options.Providers =
     [
-        // Microsoft (Azure AD / Entra ID)
-        new LoginProviders.MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft"))
-        {
-            DisplayName = "Microsoft Account",
-            Icon = "microsoft.svg",
-            ButtonColor = "#00A4EF",
-            Order = 1
-        },
-        
-        // Google
-        new LoginProviders.GoogleProviderConfiguration(builder.Configuration.GetSection("Google"))
-        {
-            DisplayName = "Google",
-            Icon = "google.svg",
-            ButtonColor = "#DB4437",
-            Order = 2
-        },
-        
-        // Facebook (optional)
-        // new LoginProviders.FacebookProviderConfiguration(builder.Configuration.GetSection("Facebook"))
-    ],
-    
-    // Security Settings
-    Security = new SecurityConfiguration
-    {
-        JwtSecret = builder.Configuration["Security:JwtSecret"]!,
-        JwtIssuer = builder.Configuration["Security:JwtIssuer"]!,
-        JwtAudience = builder.Configuration["Security:JwtAudience"]!,
-        TokenExpirationMinutes = builder.Configuration.GetValue<int>("Security:TokenExpirationMinutes", 60),
-        RefreshTokenExpirationDays = builder.Configuration.GetValue<int>("Security:RefreshTokenExpirationDays", 30),
-        RequireHttps = builder.Environment.IsProduction(),
-        CookieSecurePolicy = builder.Environment.IsProduction() 
-            ? CookieSecurePolicy.Always 
-            : CookieSecurePolicy.None
-    },
-    
-    // Feature Flags
-    Features = new FeatureConfiguration
-    {
-        EnableUserRegistration = builder.Configuration.GetValue<bool>("Features:EnableUserRegistration", true),
-        EnableProfileEditing = builder.Configuration.GetValue<bool>("Features:EnableProfileEditing", true),
-        EnableAvatarUpload = builder.Configuration.GetValue<bool>("Features:EnableAvatarUpload", true)
-    },
-    
-    // Event Handlers (optional)
-    Events = new LoginEvents
-    {
-        OnUserCreated = async (user, provider) =>
-        {
-            Console.WriteLine($"New user created: {user.Email} via {provider}");
-            // Send welcome email, trigger analytics, etc.
-        },
-        
-        OnUserLoggedIn = async (user, provider) =>
-        {
-            Console.WriteLine($"User logged in: {user.Email} via {provider}");
-            // Update last login timestamp, log analytics
-        },
-        
-        OnUserLoggedOut = async (user) =>
-        {
-            Console.WriteLine($"User logged out: {user.Email}");
-        },
-        
-        OnProfileUpdated = async (user, changes) =>
-        {
-            Console.WriteLine($"Profile updated: {user.Email}");
-            // Sync with external systems, trigger webhooks
-        }
-    }
-});
+        new LoginProviders.GoogleProviderConfiguration(
+            builder.Configuration.GetSection("Google"))
+    ];
 
-// Initialize CloudLogin application
-await CloudLoginWeb.InitApp(builder);
-```
-
-### Minimal Program.cs (Simplified)
-```csharp
-using AngryMonkey.CloudLogin.Server;
-using AngryMonkey.CloudLogin.Server.Providers;
-
-var builder = WebApplication.CreateBuilder(args);
-
-builder.AddCloudLoginWeb(new CloudLoginConfiguration()
-{
-    WebConfig = config => config.PageDefaults.SetTitle("Coverbox Login"),
-    Cosmos = new(builder.Configuration.GetSection("Cosmos"))
-    {
-        UserInfoPartitionKeyValue = "User",
-        IncludeLegacySchema = true,
-        SaveIdMode = IdSaveMode.TypePrefixed
-    },
-    AzureStorage = new(builder.Configuration.GetSection("Storage")),
-    Providers = 
-    [
-        new LoginProviders.MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
-        new LoginProviders.GoogleProviderConfiguration(builder.Configuration.GetSection("Google"))
-    ]
+    // Optional UI customization.
+    options.WebConfig = web => web.PageDefaults.SetTitle("Company Login");
 });
 
 await CloudLoginWeb.InitApp(builder);
 ```
 
-## Authentication Providers
+The redirect and mobile allowlists are optional. With no additional configuration,
+CloudLogin permits relative and same-origin redirects and denies external destinations.
+Only register callbacks for features the application uses:
 
-### Microsoft (Azure AD / Entra ID) Setup
-
-#### Azure Portal Configuration
-1. Navigate to **Azure Active Directory** → **App Registrations**
-2. Click **New registration**
-3. Set **Name**: "Coverbox Login"
-4. Set **Redirect URI**: 
-   - Type: `Web`
-   - URI: `https://login.coverbox.com/signin-microsoft`
-5. Click **Register**
-6. Note the **Application (client) ID**
-7. Go to **Certificates & secrets** → **New client secret**
-8. Copy the secret value (only shown once!)
-9. Go to **API permissions** → **Add permission** → **Microsoft Graph**
-   - Add: `openid`, `profile`, `email`
-10. Click **Grant admin consent**
-
-#### Configuration
-```json
-{
-  "Microsoft": {
-    "ClientId": "12345678-1234-1234-1234-123456789abc",
-    "ClientSecret": "your-client-secret-value-here",
-    "TenantId": "common",  // or specific tenant GUID
-    "CallbackPath": "/signin-microsoft"
-  }
-}
-```
-
-### Google OAuth Setup
-
-#### Google Cloud Console Configuration
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create new project or select existing
-3. Navigate to **APIs & Services** → **Credentials**
-4. Click **Create Credentials** → **OAuth client ID**
-5. Configure consent screen if prompted
-6. Application type: **Web application**
-7. Add **Authorized redirect URIs**:
-   - `https://login.coverbox.com/signin-google`
-   - `http://localhost:5000/signin-google` (for development)
-8. Copy **Client ID** and **Client Secret**
-
-#### Configuration
-```json
-{
-  "Google": {
-    "ClientId": "123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com",
-    "ClientSecret": "GOCSPX-AbCdEfGhIjKlMnOpQrStUvWxYz",
-    "CallbackPath": "/signin-google"
-  }
-}
-```
-
-### Facebook Login Setup
-
-#### Facebook Developer Portal
-1. Go to [Facebook for Developers](https://developers.facebook.com/)
-2. Create new app → **Consumer** type
-3. Add **Facebook Login** product
-4. Configure **Valid OAuth Redirect URIs**: `https://login.coverbox.com/signin-facebook`
-5. Copy **App ID** and **App Secret**
-
-#### Configuration
-```json
-{
-  "Facebook": {
-    "AppId": "1234567890123456",
-    "AppSecret": "abcdef0123456789abcdef0123456789",
-    "CallbackPath": "/signin-facebook"
-  }
-}
-```
-
-### Custom Provider Implementation
 ```csharp
-public class CustomOAuthProvider : IAuthenticationProvider
+builder.AddCloudLoginWeb(options =>
 {
-    public string Name => "CustomProvider";
-    public string DisplayName => "Custom OAuth";
-    
-    public async Task<UserInfo> AuthenticateAsync(string code, string redirectUri)
-    {
-        // Exchange code for access token
-        var tokenResponse = await ExchangeCodeForTokenAsync(code, redirectUri);
-        
-        // Get user info from provider API
-        var userInfo = await GetUserInfoAsync(tokenResponse.AccessToken);
-        
-        // Map to CloudLogin user model
-        return new UserInfo
-        {
-            Email = userInfo.Email,
-            FirstName = userInfo.FirstName,
-            LastName = userInfo.LastName,
-            ProviderId = userInfo.Id,
-            Provider = Name,
-            AvatarUrl = userInfo.AvatarUrl
-        };
-    }
-}
+    options
+        .AllowWebsite("https://app.example.com")
+        .AllowWebsite("https://portal.example.com")
+        .AllowMobileApp("myapp");
 
-// Register custom provider
-builder.AddCloudLoginWeb(new CloudLoginConfiguration()
-{
-    Providers = 
-    [
-        new CustomOAuthProvider()
-    ]
+    // Other configuration...
 });
 ```
 
-## Cosmos DB Configuration
+HTTP website origins are accepted only for loopback development addresses. `Cosmos`,
+Azure Storage, external providers, UI customization, website callbacks, and mobile
+callbacks are feature-based configuration rather than startup requirements.
 
-### Schema Design
+## Consumer website
 
-#### User Document Structure
-```json
-{
-  "id": "user|12345678-1234-1234-1234-123456789abc",
-  "ID": "12345678-1234-1234-1234-123456789abc",  // Legacy
-  "PartitionKey": "User",  // Legacy
-  "Discriminator": "UserInfo",  // Legacy
-  "Type": "UserInfo",
-  "Email": "user@example.com",
-  "FirstName": "John",
-  "LastName": "Doe",
-  "DisplayName": "John Doe",
-  "AvatarUrl": "https://storage.blob.core.windows.net/avatars/user123.jpg",
-  "Provider": "Microsoft",
-  "ProviderId": "azure-ad-object-id",
-  "Roles": ["User", "Vendor"],
-  "CustomData": {
-    "PhoneNumber": "+1234567890",
-    "Country": "LB",
-    "PreferredLanguage": "ar"
-  },
-  "CreatedDate": "2024-01-15T10:30:00Z",
-  "LastLoginDate": "2024-01-20T14:45:00Z",
-  "IsActive": true,
-  "IsEmailVerified": true
-}
-```
+Register CloudLogin using the authority URL:
 
-#### Legacy Schema Support
 ```csharp
-Cosmos = new CosmosConfiguration(builder.Configuration.GetSection("Cosmos"))
-{
-    // Keep both old (uppercase) and new (lowercase) ID fields
-    IncludeLegacySchema = true,
-    
-    // Save lowercase 'id' as "user|{guid}" instead of just "{guid}"
-    SaveIdMode = IdSaveMode.TypePrefixed,
-    
-    // Maintain PartitionKey field for backward compatibility
-    UserInfoPartitionKeyValue = "User"
-}
+builder.Services.AddCloudLoginServer("https://login.example.com");
 ```
 
-### Indexing Policy
-```csharp
-new IndexingPolicy
-{
-    Automatic = true,
-    IndexingMode = IndexingMode.Consistent,
-    
-    // Index all fields by default
-    IncludedPaths = 
-    {
-        new IncludedPath { Path = "/*" }
-    },
-    
-    // Exclude large fields from indexing
-    ExcludedPaths = 
-    {
-        new ExcludedPath { Path = "/Avatar/*" },
-        new ExcludedPath { Path = "/CustomData/LargeBlob/*" }
-    },
-    
-    // Composite indexes for common queries
-    CompositeIndexes =
-    {
-        new Collection<CompositePath>
-        {
-            new() { Path = "/Email", Order = CompositePathSortOrder.Ascending },
-            new() { Path = "/IsActive", Order = CompositePathSortOrder.Ascending }
-        }
-    }
-}
-```
-
-### Partition Strategy
-```
-Partition Key: /PartitionKey (value: "User")
-- All user documents in single partition
-- Works well for < 100K users
-- Consider user segmentation (by country, tenant) for larger scale
-```
-
-## Storage Configuration
-
-### Container Setup
-```csharp
-AzureStorage = new StorageConfiguration(builder.Configuration.GetSection("Storage"))
-{
-    Container = "user-avatars",
-    CreateContainerIfNotExists = true,
-    
-    // Public read access for avatars
-    PublicAccessLevel = PublicAccessLevel.Blob,
-    
-    // File restrictions
-    AllowedFileExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" },
-    MaxFileSizeMB = 5,
-    
-    // CORS for browser uploads
-    CorsRules = new[]
-    {
-        new CorsRule
-        {
-            AllowedOrigins = new[] { "https://portal.coverbox.com", "https://coverbox.com" },
-            AllowedMethods = new[] { "GET", "POST", "PUT" },
-            AllowedHeaders = new[] { "*" },
-            MaxAgeInSeconds = 3600
-        }
-    }
-}
-```
-
-### Avatar Upload Flow
-```csharp
-public async Task<string> UploadAvatarAsync(Guid userId, Stream imageStream, string fileName)
-{
-    var containerClient = _storageClient.GetBlobContainerClient("user-avatars");
-    
-    // Generate unique blob name
-    string extension = Path.GetExtension(fileName);
-    string blobName = $"{userId}/{Guid.NewGuid()}{extension}";
-    
-    var blobClient = containerClient.GetBlobClient(blobName);
-    
-    // Upload with metadata
-    await blobClient.UploadAsync(imageStream, new BlobUploadOptions
-    {
-        HttpHeaders = new BlobHttpHeaders
-        {
-            ContentType = GetContentType(extension)
-        },
-        Metadata = new Dictionary<string, string>
-        {
-            { "UserId", userId.ToString() },
-            { "UploadDate", DateTime.UtcNow.ToString("O") }
-        }
-    });
-    
-    return blobClient.Uri.ToString();
-}
-```
-
-## Consuming From Other Projects
-
-### Recommended .NET Integration Pattern
-
-If `CloudLogin` is hosted as a separate login site and your application wants to keep its own app cookie/session, use this split:
-
-1. a shared Blazor project that references `AngryMonkey.CloudLogin`
-2. an ASP.NET Core host that owns the cookie and callback endpoints
-3. a web or MAUI client that uses `ICloudLoginService`
-
-### Step 1: Add the Required References
-
-```xml
-<!-- Shared Blazor/RCL project -->
-<ItemGroup>
-  <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin" Version="..." />
-</ItemGroup>
-
-<!-- ASP.NET Core host project -->
-<ItemGroup>
-  <PackageReference Include="AngryMonkey.CloudLogin.API" Version="..." />
-  <PackageReference Include="AngryMonkey.CloudLogin.Client" Version="..." />
-</ItemGroup>
-
-<!-- .NET MAUI Blazor project -->
-<ItemGroup>
-  <PackageReference Include="AngryMonkey.CloudLogin.Maui" Version="..." />
-</ItemGroup>
-```
-
-### Step 2: Point Your App to the CloudLogin Site
+Or keep the URL in configuration:
 
 ```json
 {
-  "LoginUrl": "https://login2.coverbox.app"
+  "LoginUrl": "https://login.example.com"
 }
 ```
 
-`LoginUrl` must be the base address of the hosted `CloudLogin` site. It is used for redirects and for calling `/CloudLogin/Request/GetUserByRequestId`.
-
-### Step 3: Add the CloudLogin Route Assembly to Your Router
-
-`AngryMonkey.CloudLogin` ships the built-in `/cloudlogin/login` route. Add its assembly to your app router:
-
-```razor
-<Router AppAssembly="typeof(Layout.MainLayout).Assembly"
-        AdditionalAssemblies="AngryMonkey.CloudLogin.CloudLoginRouting.AdditionalAssemblies">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-</Router>
-```
-
-### Step 4: Configure Cookie Authentication in the Host App
-
 ```csharp
-using AngryMonkey.CloudLogin;
-
-var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddCloudLoginServer(new CloudLoginServerConfiguration
 {
-    CookieName = "MyAppAuth"
+    LoginUrl = builder.Configuration["LoginUrl"]
 });
+```
 
-builder.Services.AddControllers();
+Use the standard ASP.NET Core pipeline:
 
-var app = builder.Build();
-
+```csharp
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 ```
 
-`AddCloudLoginServer` configures cookie auth with:
+The consumer callback state is encrypted and integrity-protected with ASP.NET Core Data Protection. Logout clears both the consumer cookie and the CloudLogin authority session before returning to the website.
 
-- login path: `/auth/login`
-- logout path: `/auth/logout`
-- access denied path: `/auth/login`
-- a long-lived sliding cookie
-
-### Step 5: Add an Auth Bridge Controller
-
-Your host app should expose `/auth/login`, `/auth/callback`, and optionally `/auth/profile` and `/auth/logout`.
-
-The pattern is:
-
-1. build a callback URL in your app
-2. redirect the browser to `LoginUrl` with `referer={callbackUrl}`
-3. receive `requestId` from CloudLogin on the callback
-4. call `GET {LoginUrl}/CloudLogin/Request/GetUserByRequestId?requestId=...`
-5. map the returned `UserModel` into claims
-6. sign your local cookie
-7. redirect back to the original page and append `rid={requestId}`
-
-Minimal shape:
+## Embedded website
 
 ```csharp
-[ApiController]
-[Route("auth")]
-public class AuthController(IConfiguration configuration) : ControllerBase
-{
-    [HttpGet("login")]
-    public IActionResult Login([FromQuery] string? returnUrl = null)
-    {
-        returnUrl ??= "/";
+builder.Services.AddCloudLoginEmbedded(loginOptions, builder.Configuration);
 
-        string state = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(returnUrl));
-        string? callbackUrl = Url.Action("Callback", "Auth", new { state }, Request.Scheme);
-
-        string loginBaseUrl = configuration["LoginUrl"]!;
-        string finalUrl = $"{loginBaseUrl}?referer={Uri.EscapeDataString(callbackUrl!)}";
-
-        return Redirect(finalUrl);
-    }
-
-    [HttpGet("callback")]
-    public async Task<IActionResult> Callback([FromQuery] string requestId, [FromQuery] string? state)
-    {
-        UserModel? user = await GetUserFromCloudLogin(requestId);
-        if (user == null)
-            return Redirect("/?error=user_not_found");
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.ID.ToString()),
-            new(ClaimTypes.Name, user.DisplayName ?? user.FirstName ?? "User"),
-            new(ClaimTypes.Email, user.PrimaryEmailAddress?.Input ?? string.Empty),
-            new("CloudLoginRequestId", requestId)
-        };
-
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
-
-        string returnUrl = string.IsNullOrEmpty(state)
-            ? "/"
-            : System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(state));
-
-        return Redirect($"{returnUrl}{(returnUrl.Contains('?') ? '&' : '?')}rid={Uri.EscapeDataString(requestId)}");
-    }
-
-    private async Task<UserModel?> GetUserFromCloudLogin(string requestId)
-    {
-        using HttpClient httpClient = new() { BaseAddress = new Uri(configuration["LoginUrl"]!) };
-        return await httpClient.GetFromJsonAsync<UserModel>($"/CloudLogin/Request/GetUserByRequestId?requestId={Uri.EscapeDataString(requestId)}");
-    }
-}
-```
-
-### Step 6: Expose Current-User and Logout Endpoints for the Browser Client
-
-`CloudLoginWebService` expects your site to provide these endpoints:
-
-- `GET /api/users/getUser`
-- `GET /api/users/logout`
-- `POST /api/users/logout`
-
-Minimal implementation:
-
-```csharp
-[ApiController]
-[Route("api/users")]
-public class UsersController : ControllerBase
-{
-    [HttpGet("getUser")]
-    public IActionResult GetUser()
-    {
-        if (!User.Identity?.IsAuthenticated ?? true)
-            return Ok((UserModel?)null);
-
-        string? userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
-            return Ok((UserModel?)null);
-
-        return Ok(new UserModel
-        {
-            ID = userId,
-            DisplayName = User.FindFirst(ClaimTypes.Name)?.Value,
-            FirstName = User.FindFirst(ClaimTypes.GivenName)?.Value,
-            LastName = User.FindFirst(ClaimTypes.Surname)?.Value,
-            ProfilePicture = User.FindFirst("picture")?.Value,
-            Inputs = []
-        });
-    }
-
-    [HttpGet("logout")]
-    [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
-    {
-        await HttpContext.SignOutAsync();
-        return Ok(new { success = true });
-    }
-}
-```
-
-### Step 7: Register the Browser-Side Service
-
-In a Blazor WebAssembly client hosted by your ASP.NET Core app:
-
-```csharp
-builder.Services.AddScoped<ICloudLoginService, CloudLoginWebService>();
-```
-
-Warm it up during startup so cached user state is restored and then refreshed from `/api/users/getUser`:
-
-```csharp
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var loginService = scope.ServiceProvider.GetRequiredService<ICloudLoginService>();
-
-    if (loginService is CloudLoginWebService webLoginService)
-    {
-        _ = webLoginService.User;
-        try { await webLoginService.RefreshUserAsync(); } catch { }
-    }
-}
+app.UseHttpsRedirection();
+app.UseRouting();
+app.UseCloudLoginSecurity();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 ```
 
-### Step 8: Use `ICloudLoginService` from Components
+`UseCloudLoginSecurity` enables authentication rate limiting, secure response headers, sensitive-response no-store headers, and same-origin checks for state-changing browser requests.
 
-```razor
-@inject ICloudLoginService CloudLogin
+## .NET MAUI
 
-@if (CloudLogin.User is null)
-{
-    <button @onclick="SignIn">Sign in</button>
-}
-else
-{
-    <button @onclick="SignOut">Sign out</button>
-}
-
-@code {
-    private Task SignIn() => CloudLogin.Login();
-    private Task SignOut() => CloudLogin.Logout();
-}
-```
-
-`CloudLogin.Login()` navigates to the local `/cloudlogin/login` page first. That page then calls `BeginLoginAsync(returnUrl)` and completes the flow.
-
-### End-to-End Browser Flow
-
-1. user clicks sign-in in your app
-2. `CloudLoginWebService.Login()` navigates to `/cloudlogin/login?returnUrl=...`
-3. the shared sign-in page calls `BeginLoginAsync(...)`
-4. `CloudLoginWebService.BeginLoginAsync(...)` force-loads `/auth/login?returnUrl=...`
-5. your host app redirects to `LoginUrl?referer={callback}`
-6. CloudLogin authenticates the user and redirects back with `requestId`
-7. your callback endpoint fetches the user, signs your local cookie, and redirects back with `rid`
-8. the shared sign-in page sees `rid`, stores it as `RequestId`, calls `FetchUser()`, and navigates back to the original page
-
-### Portal Integration (Program.cs)
 ```csharp
-using AngryMonkey.CloudLogin;
+builder.AddMauiCloudLogin(
+    "https://login.example.com",
+    "myapp");
+```
 
-var builder = WebApplication.CreateBuilder(args);
+Add the same scheme with `AllowMobileApp("myapp")` on the authority. CloudLogin handles the platform callback, stores the local session in MAUI `SecureStorage`, and uses the system authentication browser. Logout clears both local secure storage and the authority browser session. An interrupted authority logout is retried before the next login.
 
-// Register CloudLogin Client
-CloudLoginClient cloudLogin = new() 
-{ 
-    HttpServer = new() 
-    { 
-        BaseAddress = new Uri(builder.Configuration["LoginUrl"]!) 
-    } 
-};
+## Feature overview
 
-builder.Services.AddSingleton(cloudLogin);
+CloudLogin includes:
 
-// Use in services/domains
-var app = builder.Build();
+- Standalone authority website (`AngryMonkey.CloudLogin.Web`) with built-in login and account UI.
+- Embedded authority mode for integrating CloudLogin directly inside an existing ASP.NET Core host.
+- Consumer-site integration (`AngryMonkey.CloudLogin.Server`) with secure login, callback, profile redirect, and coordinated logout endpoints.
+- .NET MAUI support (`AngryMonkey.CloudLogin.Maui`) with mobile callback scheme support.
+- Blazor/WebAssembly UI components (`AngryMonkey.CloudLogin.Components` + `AngryMonkey.CloudLogin.WebAssembly`) for login and account flows.
+- Typed client/contracts packages for programmatic integration and shared models.
+- Account profile management (name, locale, country, profile image upload).
+- Multi-input identity support (email and phone number formats).
+- Global admin user-management experience in account UI.
+- Test mode provider for controlled test-account sign-in.
 
-// Access from dependency injection
-app.MapGet("/api/profile", async (CloudLoginClient loginClient) =>
+## Authentication providers
+
+CloudLogin provider configurations are defined in `AngryMonkey.CloudLogin.Sever.Providers.LoginProviders` (and `LoginTestProviders`):
+
+| Provider | Configuration type | External IdP | Handles | Typical use |
+| --- | --- | --- | --- | --- |
+| Password | `PasswordProviderConfiguration` | No | Email/password | Primary username+password sign-in |
+| Code (OTP) | `CodeProviderConfiguration` | No | Email verification code | Passwordless/verification-code flow |
+| Microsoft | `MicrosoftProviderConfiguration` | Yes | OAuth/OIDC + email claims | Microsoft Entra ID / Microsoft account sign-in |
+| Google | `GoogleProviderConfiguration` | Yes | OAuth + profile claims | Google account sign-in |
+| Facebook | `FacebookProviderConfiguration` | Yes | OAuth + profile claims | Facebook account sign-in |
+| Twitter | `TwitterProviderConfiguration` | Yes | OAuth | X/Twitter account sign-in |
+| WhatsApp | `WhatsAppProviderConfiguration` | No (custom transport) | Phone + verification code send path | Phone-based code delivery |
+| Test Mode | `LoginTestProviders.TestModeConfiguration` | No | Internal test identities | Integration/UAT test sign-in |
+
+Example mixed provider registration:
+
+```csharp
+builder.AddCloudLoginWeb(options =>
 {
-    var user = await loginClient.GetCurrentUserAsync();
-    return Results.Ok(user);
+    options.Cosmos = new(builder.Configuration.GetSection("Cosmos"));
+    options.AzureStorage = new(builder.Configuration.GetSection("Storage"));
+
+    options.Providers =
+    [
+        new LoginProviders.PasswordProviderConfiguration(builder.Configuration.GetSection("Password")),
+        new LoginProviders.CodeProviderConfiguration(builder.Configuration.GetSection("Code")),
+        new LoginProviders.GoogleProviderConfiguration(builder.Configuration.GetSection("Google")),
+        new LoginProviders.MicrosoftProviderConfiguration(builder.Configuration.GetSection("Microsoft")),
+        new LoginProviders.FacebookProviderConfiguration(builder.Configuration.GetSection("Facebook")),
+        new LoginProviders.TwitterProviderConfiguration(builder.Configuration.GetSection("Twitter")),
+        new LoginProviders.WhatsAppProviderConfiguration(builder.Configuration.GetSection("WhatsApp")),
+        new LoginTestProviders.TestModeConfiguration(builder.Configuration.GetSection("TestMode"))
+    ];
 });
 ```
 
-### API Integration
+## Configuration reference
+
+Minimal configuration template (fill only sections for enabled features/providers):
+
+```json
+{
+  "Cosmos": {
+    "ConnectionString": "<cosmos-connection-string>",
+    "DatabaseId": "CloudLogin",
+    "ContainerId": "Users"
+  },
+  "Storage": {
+    "ConnectionString": "<storage-connection-string>",
+    "PublicBaseUrl": "https://<account>.blob.core.windows.net/<container>"
+  },
+  "Google": {
+    "ClientId": "<google-client-id>",
+    "ClientSecret": "<google-client-secret>",
+    "Label": "Google"
+  },
+  "Microsoft": {
+    "ClientId": "<microsoft-client-id>",
+    "ClientSecret": "<microsoft-client-secret>",
+    "TenantId": "common",
+    "Label": "Microsoft"
+  },
+  "Facebook": {
+    "ClientId": "<facebook-client-id>",
+    "ClientSecret": "<facebook-client-secret>",
+    "Label": "Facebook"
+  },
+  "Twitter": {
+    "ClientId": "<twitter-api-key>",
+    "ClientSecret": "<twitter-api-secret>",
+    "Label": "Twitter"
+  },
+  "WhatsApp": {
+    "RequestUri": "<provider-request-uri>",
+    "Authorization": "<auth-header-value>",
+    "Template": "<message-template>",
+    "Language": "en",
+    "Label": "WhatsApp"
+  },
+  "TestMode": {
+    "IsEnabled": false,
+    "Label": "Test Mode"
+  }
+}
+```
+
+## Endpoints developers commonly use
+
+Consumer-site endpoints from `AuthController`:
+
+- `GET /auth/login?returnUrl=/path` - start login at CloudLogin authority.
+- `GET /auth/callback` - login callback that creates the local auth cookie.
+- `GET /auth/profile?returnUrl=/path` - redirect authenticated user to authority account page.
+- `GET /auth/profileCallback` - returns to local application from account flow.
+- `GET|POST /auth/logout?returnUrl=/` - coordinated logout (consumer + authority).
+
+Authority/API endpoints (selected):
+
+- `GET /CloudLogin/Login/{identity}` - begin provider flow.
+- `GET /CloudLogin/Result` - OAuth/OIDC callback target.
+- `GET /CloudLogin/Login/Complete` - build completion redirect.
+- `GET /CloudLogin/Logout` - authority logout endpoint.
+- `GET /api/Providers` - list available providers for UI.
+- `GET /CloudLogin/User/GetUserByInput` - public account discovery (rate-limited, transport-safe).
+- `POST /CloudLogin/User/Update` - authenticated profile update with server-side field protections.
+- `POST /CloudLogin/User/UploadProfilePicture` - authenticated profile image upload.
+- `GET /CloudLogin/Request/GetUserByRequestId` - resolve request-id to transport-safe user model.
+
+## Developer implementation checklist
+
+1. Select deployment mode: standalone authority, consumer integration, or embedded.
+2. Configure HTTPS and redirect/mobile callback allowlists (`AllowWebsite`, `AllowMobileApp`).
+3. Register providers explicitly; only configured providers are available.
+4. Configure shared Data Protection key ring for multi-instance deployments.
+5. Store secrets in a managed secret store (Key Vault, etc.), not in source.
+6. Validate provider callback URLs (`/CloudLogin/Result`) in external IdP configuration.
+7. Enable app monitoring for auth failures, 429s, and provider callback errors.
+8. If using MAUI, ensure callback scheme matches `AllowMobileApp` on authority.
+
+## Secure defaults
+
+- Authentication cookies use `Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`, and the browser-enforced `__Host-` prefix.
+- Session idle timeout is eight hours; persistent sign-in defaults to 30 days.
+- Cookie tickets and consumer return state use ASP.NET Core Data Protection encryption and integrity protection.
+- Authentication attempts and public account-discovery calls are rate limited per remote address.
+- Passwords use versioned PBKDF2-HMAC-SHA256 with 600,000 iterations and a unique 128-bit salt. Valid older 100,000-iteration hashes are upgraded after the next successful login.
+- New passwords accept passphrases and Unicode, require 12–128 characters, reject control characters, and support an application blocklist.
+- Password hashes are never serialized into browser authentication tickets or API responses.
+- Profile APIs enforce ownership; role, lock, credential-provider, and identifier fields remain server-managed.
+- Profile images are size-limited, signature-checked, and restricted to PNG, JPEG, GIF, or WebP; active SVG uploads are rejected.
+- Locked users are rejected consistently across password, test, OAuth handoff, and legacy login paths.
+- Production startup rejects disabled HTTPS, unsafe redirect origins, test login, weak hash settings, invalid cookie settings, and browser-managed verification-code providers.
+- Authentication endpoints send `no-store` responses and deny framing.
+
+Customize only when required:
+
 ```csharp
-[ApiController]
-[Route("api/[controller]")]
-public class UserController : ControllerBase
+builder.AddCloudLoginWeb(options =>
 {
-    private readonly CloudLoginClient _loginClient;
-
-    public UserController(CloudLoginClient loginClient)
-    {
-        _loginClient = loginClient;
-    }
-
-    [HttpGet("profile")]
-    public async Task<IActionResult> GetProfile([FromQuery] Guid userId)
-    {
-        var user = await _loginClient.GetUserAsync(userId);
-        
-        if (user == null)
-            return NotFound();
-            
-        return Ok(user);
-    }
-
-    [HttpPut("profile")]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
-    {
-        var user = await _loginClient.UpdateUserAsync(request.UserId, new UserInfo
-        {
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            CustomData = request.CustomData
-        });
-        
-        return Ok(user);
-    }
-}
-```
-
-## Client-Side Integration
-
-### .NET Client Notes
-
-For .NET applications, prefer the `ICloudLoginService` pattern above over raw browser calls.
-
-- `CloudLoginWebService` restores cached user data from `localStorage`
-- `CloudLoginWebService.RefreshUserAsync()` calls `GET /api/users/getUser`
-- `CloudLoginWebService.Logout()` calls `GET /api/users/logout`
-- `CloudLoginBaseService.FetchUser()` calls `GET {LoginUrl}/CloudLogin/Request/GetUserByRequestId`
-- the built-in sign-in route is `/cloudlogin/login`
-
-The JavaScript and React examples below are lower-level alternatives when you are not using Blazor or .NET MAUI.
-
-### JavaScript/TypeScript Client
-```typescript
-class CloudLoginClient {
-    constructor(private baseUrl: string) {}
-    
-    async login(provider: 'microsoft' | 'google'): Promise<void> {
-        window.location.href = `${this.baseUrl}/login/${provider}?returnUrl=${encodeURIComponent(window.location.href)}`;
-    }
-    
-    async getCurrentUser(): Promise<UserInfo | null> {
-        const response = await fetch(`${this.baseUrl}/api/user/current`, {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) return null;
-        return await response.json();
-    }
-    
-    async logout(): Promise<void> {
-        await fetch(`${this.baseUrl}/api/auth/logout`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        
-        window.location.href = '/';
-    }
-}
-
-// Usage
-const loginClient = new CloudLoginClient('https://login.coverbox.com');
-const user = await loginClient.getCurrentUser();
-
-if (!user) {
-    await loginClient.login('microsoft');
-}
-```
-
-### React Hook
-```tsx
-import { useState, useEffect } from 'react';
-
-interface User {
-    id: string;
-    email: string;
-    displayName: string;
-    avatarUrl?: string;
-}
-
-export function useAuth() {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchUser();
-    }, []);
-
-    async function fetchUser() {
-        try {
-            const response = await fetch('https://login.coverbox.com/api/user/current', {
-                credentials: 'include'
-            });
-            
-            if (response.ok) {
-                const userData = await response.json();
-                setUser(userData);
-            }
-        } catch (error) {
-            console.error('Failed to fetch user:', error);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function login(provider: 'microsoft' | 'google') {
-        window.location.href = `https://login.coverbox.com/login/${provider}`;
-    }
-
-    async function logout() {
-        await fetch('https://login.coverbox.com/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include'
-        });
-        setUser(null);
-        window.location.href = '/';
-    }
-
-    return { user, loading, login, logout };
-}
-
-// Usage in component
-function App() {
-    const { user, loading, login, logout } = useAuth();
-
-    if (loading) return <div>Loading...</div>;
-
-    if (!user) {
-        return (
-            <div>
-                <button onClick={() => login('microsoft')}>Login with Microsoft</button>
-                <button onClick={() => login('google')}>Login with Google</button>
-            </div>
-        );
-    }
-
-    return (
-        <div>
-            <img src={user.avatarUrl} alt={user.displayName} />
-            <span>Welcome, {user.displayName}</span>
-            <button onClick={logout}>Logout</button>
-        </div>
-    );
-}
-```
-
-## User Management
-
-### Create User
-```csharp
-public async Task<UserInfo> CreateUserAsync(string email, string firstName, string lastName)
-{
-    var user = new UserInfo
-    {
-        Email = email,
-        FirstName = firstName,
-        LastName = lastName,
-        DisplayName = $"{firstName} {lastName}",
-        Provider = "Manual",
-        IsActive = true,
-        IsEmailVerified = false,
-        CreatedDate = DateTime.UtcNow,
-        Roles = new List<string> { "User" }
-    };
-    
-    return await _cloudLoginClient.CreateUserAsync(user);
-}
-```
-
-### Get User by ID
-```csharp
-var user = await _cloudLoginClient.GetUserAsync(userId);
-
-if (user != null)
-{
-    Console.WriteLine($"User: {user.DisplayName}");
-    Console.WriteLine($"Email: {user.Email}");
-    Console.WriteLine($"Roles: {string.Join(", ", user.Roles)}");
-}
-```
-
-### Update User Profile
-```csharp
-user.FirstName = "Jane";
-user.CustomData["PhoneNumber"] = "+9611234567";
-user.CustomData["Country"] = "LB";
-
-var updatedUser = await _cloudLoginClient.UpdateUserAsync(user.ID, user);
-```
-
-### Delete User
-```csharp
-await _cloudLoginClient.DeleteUserAsync(userId);
-```
-
-### Search Users
-```csharp
-var users = await _cloudLoginClient.SearchUsersAsync(new UserSearchRequest
-{
-    Email = "user@example.com",
-    Roles = new[] { "Admin", "VendorManager" },
-    IsActive = true,
-    Page = 1,
-    PageSize = 50
-});
-
-foreach (var user in users.Results)
-{
-    Console.WriteLine($"{user.Email} - {string.Join(", ", user.Roles)}");
-}
-```
-
-## Session Management
-
-### Token-Based Authentication
-```csharp
-// Generate token after login
-var token = await _cloudLoginClient.GenerateTokenAsync(user.ID);
-
-// Token structure
-{
-    "AccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "RefreshToken": "abc123def456...",
-    "ExpiresAt": "2024-01-20T15:30:00Z",
-    "TokenType": "Bearer"
-}
-
-// Validate token
-var principal = await _cloudLoginClient.ValidateTokenAsync(token.AccessToken);
-
-if (principal != null)
-{
-    var userId = principal.FindFirst("sub")?.Value;
-    var email = principal.FindFirst("email")?.Value;
-}
-```
-
-### Cookie-Based Sessions
-```csharp
-// Configured in Program.cs
-Security = new SecurityConfiguration
-{
-    CookieName = "CoverboxAuth",
-    CookieSecurePolicy = CookieSecurePolicy.Always,
-    CookieHttpOnly = true,
-    CookieSameSite = SameSiteMode.Lax,
-    CookieExpirationMinutes = 60
-}
-
-// Session stored in encrypted cookie
-// Automatically validated on each request
-```
-
-### Multiple Session Management
-```csharp
-// Allow/deny multiple simultaneous sessions
-Security = new SecurityConfiguration
-{
-    AllowMultipleSessions = false  // Logout other sessions on new login
-}
-
-// Get active sessions for user
-var sessions = await _cloudLoginClient.GetUserSessionsAsync(userId);
-
-// Revoke specific session
-await _cloudLoginClient.RevokeSessionAsync(sessionId);
-
-// Revoke all sessions (force logout everywhere)
-await _cloudLoginClient.RevokeAllSessionsAsync(userId);
-```
-
-## Role-Based Authorization
-
-### Define Roles
-```csharp
-public static class Roles
-{
-    public const string Admin = "Admin";
-    public const string VendorManager = "VendorManager";
-    public const string Vendor = "Vendor";
-    public const string User = "User";
-    public const string Guest = "Guest";
-}
-```
-
-### Assign Roles
-```csharp
-user.Roles = new List<string> { Roles.User, Roles.Vendor };
-await _cloudLoginClient.UpdateUserAsync(user.ID, user);
-```
-
-### Check Permissions
-```csharp
-public async Task<bool> HasRoleAsync(Guid userId, string role)
-{
-    var user = await _cloudLoginClient.GetUserAsync(userId);
-    return user?.Roles?.Contains(role) ?? false;
-}
-
-// Usage
-if (await HasRoleAsync(userId, Roles.Admin))
-{
-    // Admin-only operations
-}
-```
-
-### ASP.NET Core Authorization
-```csharp
-// Configure in Program.cs
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("RequireAdmin", policy => 
-        policy.RequireRole(Roles.Admin));
-        
-    options.AddPolicy("VendorOrAdmin", policy =>
-        policy.RequireRole(Roles.Vendor, Roles.Admin));
-});
-
-// Use in controllers
-[Authorize(Policy = "RequireAdmin")]
-[HttpDelete("vendors/{id}")]
-public async Task<IActionResult> DeleteVendor(Guid id)
-{
-    await _vendorService.DeleteAsync(id);
-    return NoContent();
-}
-```
-
-### Blazor Authorization
-```razor
-<AuthorizeView Roles="@Roles.Admin">
-    <Authorized>
-        <button @onclick="DeleteVendor">Delete</button>
-    </Authorized>
-    <NotAuthorized>
-        <p>Admin access required</p>
-    </NotAuthorized>
-</AuthorizeView>
-
-<AuthorizeView Policy="VendorOrAdmin">
-    <Authorized>
-        <EditVendorForm Vendor="@currentVendor" />
-    </Authorized>
-</AuthorizeView>
-```
-
-## Custom Claims & Profile Data
-
-### Store Custom Data
-```csharp
-user.CustomData = new Dictionary<string, object>
-{
-    { "PhoneNumber", "+9611234567" },
-    { "Country", "LB" },
-    { "PreferredLanguage", "ar" },
-    { "VendorId", vendorId },
-    { "Preferences", new { Theme = "dark", Notifications = true } },
-    { "LastVisitedPage", "/vendors/123" }
-};
-
-await _cloudLoginClient.UpdateUserAsync(user.ID, user);
-```
-
-### Retrieve Custom Data
-```csharp
-var user = await _cloudLoginClient.GetUserAsync(userId);
-
-if (user.CustomData.TryGetValue("PhoneNumber", out var phoneNumber))
-{
-    Console.WriteLine($"Phone: {phoneNumber}");
-}
-
-if (user.CustomData.TryGetValue("VendorId", out var vendorId))
-{
-    var vendor = await _vendorService.GetAsync((Guid)vendorId);
-}
-```
-
-### Type-Safe Custom Data
-```csharp
-public class UserPreferences
-{
-    public string Theme { get; set; } = "light";
-    public bool Notifications { get; set; } = true;
-    public string PreferredLanguage { get; set; } = "en";
-}
-
-// Store
-var preferences = new UserPreferences { Theme = "dark", PreferredLanguage = "ar" };
-user.CustomData["Preferences"] = JsonSerializer.Serialize(preferences);
-await _cloudLoginClient.UpdateUserAsync(user.ID, user);
-
-// Retrieve
-if (user.CustomData.TryGetValue("Preferences", out var prefJson))
-{
-    var preferences = JsonSerializer.Deserialize<UserPreferences>(prefJson.ToString()!);
-}
-```
-
-## Security Best Practices
-
-### Environment Variables for Secrets
-```bash
-# Never commit secrets to source control
-# Use environment variables or secret managers
-
-export COSMOS_KEY="your-cosmos-key"
-export STORAGE_CONNECTION="your-storage-connection"
-export JWT_SECRET="your-jwt-secret-min-32-chars"
-export MICROSOFT_CLIENT_SECRET="your-microsoft-secret"
-export GOOGLE_CLIENT_SECRET="your-google-secret"
-```
-
-### Azure Key Vault Integration
-```csharp
-if (builder.Environment.IsProduction())
-{
-    var keyVaultEndpoint = new Uri(builder.Configuration["KeyVault:Endpoint"]!);
-    builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
-}
-
-// Secrets stored in Key Vault:
-// - Cosmos--AccountKey
-// - Storage--ConnectionString
-// - Security--JwtSecret
-// - Microsoft--ClientSecret
-// - Google--ClientSecret
-```
-
-### HTTPS Enforcement
-```csharp
-if (builder.Environment.IsProduction())
-{
-    app.UseHttpsRedirection();
-    app.UseHsts();
-}
-
-Security = new SecurityConfiguration
-{
-    RequireHttps = true,
-    CookieSecurePolicy = CookieSecurePolicy.Always
-}
-```
-
-### CORS Configuration
-```csharp
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowPortal", policy =>
-    {
-        policy.WithOrigins(
-            "https://portal.coverbox.com",
-            "https://coverbox.com"
-        )
-        .AllowCredentials()
-        .AllowAnyMethod()
-        .AllowAnyHeader();
-    });
-});
-
-app.UseCors("AllowPortal");
-```
-
-### Token Rotation
-```csharp
-// Refresh tokens periodically
-var newToken = await _cloudLoginClient.RefreshTokenAsync(currentToken.RefreshToken);
-
-// Store new token
-HttpContext.Response.Cookies.Append("AuthToken", newToken.AccessToken, new CookieOptions
-{
-    Secure = true,
-    HttpOnly = true,
-    SameSite = SameSiteMode.Lax,
-    Expires = DateTimeOffset.UtcNow.AddMinutes(60)
+    options.AllowWebsite("https://app.example.com");
+
+    options.Security.MinimumPasswordLength = 15;
+    options.Security.AuthenticationPermitLimit = 5;
+    options.Security.PasswordBlocklist.Add("company-name-2026");
+    // Only needed when copying provider avatars into your own storage.
+    options.Security.AllowedProfileImageHosts.Add("lh3.googleusercontent.com");
 });
 ```
 
-## Blazor Integration
+Security controls cannot be weakened below the enforced production minimums. Test mode
+is disabled by default and is enabled in any environment only when its provider has
+`IsEnabled` set to `true`. The deprecated browser-managed verification-code flow still
+fails startup when explicitly configured because it cannot be made safe for production.
 
-### Shared Blazor Router
+> **Production warning:** Test Mode deliberately signs in selected test accounts without
+> external identity verification. When enabling it in Production, restrict access to the
+> login deployment with network, gateway, or equivalent access controls and ensure test
+> accounts have only the permissions required for testing.
 
-Always include the `AngryMonkey.CloudLogin` assembly in your router so the built-in `/cloudlogin/login` page is reachable:
+## Production key and secret management
 
-```razor
-<Router AppAssembly="typeof(Layout.MainLayout).Assembly"
-        AdditionalAssemblies="AngryMonkey.CloudLogin.CloudLoginRouting.AdditionalAssemblies">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-</Router>
-```
-
-The shared sign-in page:
-
-- accepts `r` or `rid` from the callback URL
-- accepts `returnUrl`
-- calls `ICloudLoginService.BeginLoginAsync(...)`
-- waits for `RequestId`
-- calls `FetchUser()` once a request id is available
-- navigates back to the original page when `User` is loaded
-
-### Browser-Hosted Blazor
+ASP.NET Core encrypts CloudLogin cookies and return state with Data Protection. A multi-instance deployment must persist its Data Protection key ring in a shared protected store. Configure this in the host before CloudLogin registration, for example with Azure Blob Storage plus Key Vault, Redis, or another supported shared key-ring provider.
 
 ```csharp
-builder.Services.AddScoped<ICloudLoginService, CloudLoginWebService>();
+builder.Services
+    .AddDataProtection()
+    .SetApplicationName("Company.CloudLogin");
+// Add the persistence and key-encryption provider used by your platform.
 ```
 
-Use it directly from components:
+Operational requirements:
 
-```razor
-@inject ICloudLoginService CloudLogin
+- Store OAuth secrets, Cosmos credentials, storage credentials, and Data Protection key-encryption keys in a managed secret store. Never commit them to `appsettings.json`.
+- Enforce HTTPS at the edge and application, and enable HSTS in production.
+- When running behind a reverse proxy, configure ASP.NET Core forwarded headers with an explicit trusted-proxy/network allowlist before authentication middleware; never trust forwarded headers from arbitrary clients.
+- Enable Cosmos DB and storage encryption at rest; use customer-managed keys where required by organizational policy.
+- Put internet-facing deployments behind a WAF/DDoS service. Application rate limiting is not a replacement for edge protection.
+- Restrict health endpoints to non-sensitive status and monitor authentication failures, 429 responses, provider errors, and administrative actions without logging credentials, authorization codes, request IDs, or personal data.
+- Back up the Data Protection key ring. Losing it invalidates active cookies; disclosing it can compromise protected payloads.
 
-@if (CloudLogin.User is null)
-{
-    <button @onclick="SignIn">Sign in</button>
-}
-else
-{
-    <button @onclick="OpenProfile">My profile</button>
-    <button @onclick="SignOut">Sign out</button>
-}
+## Production startup troubleshooting
 
-@code {
-    [Inject] private NavigationManager Navigation { get; set; } = default!;
+An IIS `500.30` response means the application failed before it could serve its normal
+error page. Check Windows Event Viewer first. For a short diagnostic window, enable the
+ASP.NET Core Module stdout log in the published `web.config` and ensure the application
+pool identity can write to the selected folder:
 
-    private Task SignIn() => CloudLogin.Login();
-    private Task SignOut() => CloudLogin.Logout();
-
-    private async Task OpenProfile()
-    {
-        string profileUrl = await CloudLogin.ProfileUrl();
-        Navigation.NavigateTo(profileUrl, forceLoad: true);
-    }
-}
+```xml
+<aspNetCore processPath="dotnet"
+            arguments=".\Your.Login.dll"
+            stdoutLogEnabled="true"
+            stdoutLogFile=".\logs\stdout"
+            hostingModel="inprocess" />
 ```
 
-### .NET MAUI Blazor Hybrid
+Disable stdout logging again after capturing the startup exception; logs can grow without
+limit and may contain deployment details. An enabled test-mode provider is supported in
+Development, Staging, and Production and no longer causes a startup failure.
 
-Register the MAUI implementation:
+## Migration notes
 
-```csharp
-builder.Services.AddScoped<ICloudLoginService, MauiCloudLoginService>();
-```
+The secure defaults intentionally tighten previous behavior:
 
-Initialize it during app startup so stored sessions are restored before the main UI is shown:
+- Default cookies are now `__Host-CloudLogin` and `__Host-CloudLogin.Consumer`; existing sessions will sign in again once.
+- Password registration now requires at least 12 characters. Existing passwords continue to work and their hashes upgrade after successful authentication.
+- Test mode is disabled by default. When explicitly enabled, it is available in
+  Development, Staging, and Production.
+- Client-managed email/WhatsApp verification codes are disabled. The former flow exposed verification state to browser code and is not suitable for production authentication.
+- Shared parent-domain cookies are no longer inferred from `BaseAddress`. Prefer coordinated login/logout. If a shared cookie is explicitly required, set `CookieDomain` and use a cookie name without the `__Host-` prefix after completing a subdomain threat review.
 
-```csharp
-protected override Window CreateWindow(IActivationState? activationState)
-{
-    Window window = new(new LoadingPage());
-    _ = InitializeAndShowMainPageAsync(window);
-    return window;
-}
+## Security scope
 
-private async Task InitializeAndShowMainPageAsync(Window window)
-{
-    ICloudLoginService loginService = _services.GetRequiredService<ICloudLoginService>();
+These controls provide a strong framework baseline, not automatic regulatory certification. Enterprise deployment still requires threat modeling, dependency and secret scanning, infrastructure hardening, centralized audit logging, incident response, penetration testing, privacy review, and controls appropriate to the required assurance level.
 
-    if (loginService is MauiCloudLoginService mauiLoginService)
-    {
-        await mauiLoginService.InitializeAsync();
+## Additional guidance
 
-        if (loginService.User != null)
-            _ = Task.Run(async () => await loginService.FetchUser());
-    }
+- [ASP.NET Core Data Protection](https://learn.microsoft.com/aspnet/core/security/data-protection/)
+- [ASP.NET Core rate limiting](https://learn.microsoft.com/aspnet/core/performance/rate-limit)
+- [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+- [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html)
 
-    MainThread.BeginInvokeOnMainThread(() => window.Page = new MainPage());
-}
-```
-
-`MauiCloudLoginService.BeginLoginAsync(...)` uses `WebAuthenticator.Default.AuthenticateAsync(...)`, passes `referer={callback}` to the hosted CloudLogin site, receives `requestId` from the native callback, and then uses `FetchUser()` to hydrate `User`.
-
-`MauiCloudLoginService` also persists the current session in `Preferences` and `SecureStorage`, so app restarts can restore the user before a fresh fetch.
-
-## API Integration
-
-### Minimal API Endpoints
-```csharp
-app.MapGet("/api/auth/status", async (CloudLoginClient loginClient, HttpContext context) =>
-{
-    var userId = context.User.FindFirst("sub")?.Value;
-    
-    if (string.IsNullOrEmpty(userId))
-        return Results.Unauthorized();
-        
-    var user = await loginClient.GetUserAsync(Guid.Parse(userId));
-    
-    return user != null ? Results.Ok(user) : Results.NotFound();
-})
-.RequireAuthorization();
-
-app.MapPost("/api/auth/logout", async (CloudLoginClient loginClient, HttpContext context) =>
-{
-    var userId = context.User.FindFirst("sub")?.Value;
-    
-    if (!string.IsNullOrEmpty(userId))
-    {
-        await loginClient.LogoutAsync(Guid.Parse(userId));
-    }
-    
-    context.Response.Cookies.Delete("AuthToken");
-    return Results.Ok();
-});
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**"401 Unauthorized" on API calls**
-```csharp
-// Ensure credentials are included
-var response = await httpClient.GetAsync("https://login.coverbox.com/api/user/current", 
-    new HttpRequestMessage 
-    { 
-        Options = { [new HttpRequestOptionsKey<bool>("WithCredentials")] = true }
-    });
-```
-
-**"CORS policy blocking requests"**
-```csharp
-// Add CORS policy in CloudLogin service
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
-```
-
-**"User data not persisting"**
-- Check Cosmos DB connection string
-- Verify container name matches configuration
-- Check partition key value ("User")
-- Review indexing policy
-
-**"Avatar upload fails"**
-- Check storage connection string
-- Verify container exists and has blob public access
-- Check file size limits (default 5MB)
-- Ensure file extension is allowed
-
-### Logging & Diagnostics
-```csharp
-builder.Services.AddLogging(logging =>
-{
-    logging.AddConsole();
-    logging.AddDebug();
-    logging.SetMinimumLevel(LogLevel.Debug);
-    logging.AddFilter("AngryMonkey.CloudLogin", LogLevel.Trace);
-});
-
-// Enable detailed Cosmos logging
-builder.Services.Configure<CosmosClientOptions>(options =>
-{
-    options.EnableContentResponseOnWrite = true;
-    options.AllowBulkExecution = false;  // Better error messages
-});
-```
-
-## Migration & Legacy Support
-
-### Upgrade from Old Schema
-```csharp
-// Old schema (uppercase ID)
-{
-  "ID": "12345678-1234-1234-1234-123456789abc",
-  "PartitionKey": "User",
-  "Discriminator": "UserInfo"
-}
-
-// New schema (lowercase id with prefix)
-{
-  "id": "user|12345678-1234-1234-1234-123456789abc",
-  "Type": "UserInfo"
-}
-
-// Support both during migration
-Cosmos = new CosmosConfiguration(...)
-{
-    IncludeLegacySchema = true,  // Write both formats
-    SaveIdMode = IdSaveMode.TypePrefixed  // id = "user|{guid}"
-}
-```
-
-### Data Migration Script
-```csharp
-public async Task MigrateUsersAsync()
-{
-    var container = cosmosClient.GetContainer("CoverboxLogin", "Users");
-    var query = "SELECT * FROM c WHERE c.Discriminator = 'UserInfo'";
-    
-    var iterator = container.GetItemQueryIterator<UserInfo>(query);
-    
-    while (iterator.HasMoreResults)
-    {
-        var batch = await iterator.ReadNextAsync();
-        
-        foreach (var user in batch)
-        {
-            // Update to new schema
-            user.Type = "UserInfo";
-            
-            await container.UpsertItemAsync(user, new PartitionKey("User"));
-            Console.WriteLine($"Migrated user: {user.Email}");
-        }
-    }
-}
-```
-
-## Production Deployment
-
-### Azure App Service
-```bash
-# Deploy CloudLogin service
-az webapp create --resource-group CoverboxRG --plan CoverboxPlan --name coverbox-login
-az webapp config appsettings set --resource-group CoverboxRG --name coverbox-login \
-  --settings @appsettings.Production.json
-
-# Enable HTTPS only
-az webapp update --resource-group CoverboxRG --name coverbox-login --https-only true
-
-# Configure custom domain
-az webapp config hostname add --resource-group CoverboxRG --webapp-name coverbox-login \
-  --hostname login.coverbox.com
-```
-
-### Docker Deployment
-```dockerfile
-# Dockerfile
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /app
-EXPOSE 80
-EXPOSE 443
-
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-COPY ["Coverbox.Login/Coverbox.Login.csproj", "Coverbox.Login/"]
-RUN dotnet restore "Coverbox.Login/Coverbox.Login.csproj"
-COPY . .
-WORKDIR "/src/Coverbox.Login"
-RUN dotnet build "Coverbox.Login.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "Coverbox.Login.csproj" -c Release -o /app/publish
-
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Coverbox.Login.dll"]
-```
-
-```bash
-# Build and run
-docker build -t coverbox-login .
-docker run -d -p 443:443 \
-  -e Cosmos__AccountKey=$COSMOS_KEY \
-  -e Storage__ConnectionString=$STORAGE_CONN \
-  coverbox-login
-```
-
-### Health Checks
-```csharp
-builder.Services.AddHealthChecks()
-    .AddCosmosDb(
-        connectionString: builder.Configuration["Cosmos:ConnectionString"]!,
-        database: builder.Configuration["Cosmos:Database"]!)
-    .AddAzureBlobStorage(
-        connectionString: builder.Configuration["Storage:ConnectionString"]!);
-
-app.MapHealthChecks("/health");
-```
-
-### Monitoring
-```csharp
-// Application Insights
-builder.Services.AddApplicationInsightsTelemetry(builder.Configuration["ApplicationInsights:ConnectionString"]);
-
-// Custom metrics
-var telemetryClient = app.Services.GetRequiredService<TelemetryClient>();
-
-Events.OnUserLoggedIn += async (user, provider) =>
-{
-    telemetryClient.TrackEvent("UserLogin", new Dictionary<string, string>
-    {
-        { "Provider", provider },
-        { "UserId", user.ID.ToString() }
-    });
-};
-```
-
----
-
-## Additional Resources
-- CloudLogin Repository: https://github.com/angrymonkeycloud/CloudLogin
-- Azure AD Documentation: https://docs.microsoft.com/azure/active-directory/
-- Google OAuth Documentation: https://developers.google.com/identity/protocols/oauth2
-- Sample Implementation: Review `Coverbox.Login` project structure
-
----
-*Last Updated: 2025*
-*Version: 1.0*
-
----
-
-## Angry Monkey Cloud
-
-This project is part of the [Angry Monkey Cloud](https://angrymonkeycloud.com) open-source ecosystem. Follow the shared [AI development instructions](https://github.com/angrymonkeycloud/CloudDocs/blob/main/docs/ai/instructions.md) and browse the [project catalog](https://angrymonkeycloud.com) and [GitHub organization](https://github.com/angrymonkeycloud).
+CloudLogin is part of the [Angry Monkey Cloud](https://angrymonkeycloud.com) ecosystem and is licensed under the [MIT License](LICENSE).

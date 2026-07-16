@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin", "CloudLogin\Cl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Maui", "CloudLogin.Maui\CloudLogin.Maui.csproj", "{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudLogin.Tests", "CloudLogin.Tests\CloudLogin.Tests.csproj", "{28B8F69C-A939-4B90-95F6-E27390218912}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".libraries", ".libraries", "{DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents.Icons", "..\CloudComponents\CloudComponents.Icons\CloudComponents.Icons.csproj", "{D644C638-790A-AD74-D0F0-BDADC13C361D}"
@@ -102,6 +104,12 @@ Global
 		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release_Server|Any CPU.Build.0 = Release|Any CPU
 		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{139D97AA-9216-0B05-ADA0-DB455B4A4A1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28B8F69C-A939-4B90-95F6-E27390218912}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28B8F69C-A939-4B90-95F6-E27390218912}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28B8F69C-A939-4B90-95F6-E27390218912}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU
+		{28B8F69C-A939-4B90-95F6-E27390218912}.Release_Server|Any CPU.Build.0 = Release|Any CPU
+		{28B8F69C-A939-4B90-95F6-E27390218912}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28B8F69C-A939-4B90-95F6-E27390218912}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D644C638-790A-AD74-D0F0-BDADC13C361D}.Release_Server|Any CPU.ActiveCfg = Release|Any CPU

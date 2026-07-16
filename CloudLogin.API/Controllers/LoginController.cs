@@ -1,7 +1,6 @@
 ﻿using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin.API.Controllers;
 
@@ -14,11 +13,28 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
         => await _server.Login(identity, keepMeSignedIn, sameSite, primaryEmail, input, referer, isMobileApp);
 
     [HttpGet("Login/CustomLogin")]
-    public async Task<IActionResult> CustomLogin(string userInfo, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
-    {
-        UserModel user = JsonSerializer.Deserialize<UserModel>(userInfo, CloudLoginSerialization.Options)!;
+    public async Task<IActionResult> CustomLogin(Guid userId, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
+        => await _server.CustomLogin(userId, keepMeSignedIn, referer, sameSite, isMobileApp);
 
-        return await _server.CustomLogin(user, keepMeSignedIn, referer, sameSite, isMobileApp);
+    [HttpPost("Login/TestSignIn")]
+    public async Task<IActionResult> TestSignIn([FromForm] Guid userId, [FromForm] bool keepMeSignedIn = false)
+        => await _server.TestLogin(userId, keepMeSignedIn) ? Ok() : Unauthorized();
+
+    [HttpGet("Login/Complete")]
+    public async Task<IActionResult> CompleteLogin(string? referer = null, bool isMobileApp = false)
+    {
+        try
+        {
+            return Ok(await _server.CompleteLoginRedirect(referer, isMobileApp));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("Login/PasswordSignIn")]
@@ -30,8 +46,17 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
         if (!result)
             return BadRequest("Invalid email or password.");
 
-        if (!string.IsNullOrEmpty(referer) && CloudLoginShared.IsValidRedirectUri(referer))
-            return Redirect(referer);
+        if (!string.IsNullOrWhiteSpace(referer))
+        {
+            try
+            {
+                return Redirect(await _server.CompleteLoginRedirect(referer));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
         return Ok();
     }
@@ -48,9 +73,6 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
         if (user is null)
             return BadRequest("Registration failed.");
 
-        if (!string.IsNullOrEmpty(referer) && CloudLoginShared.IsValidRedirectUri(referer))
-            return Redirect(referer);
-
         return Ok(user);
     }
 
@@ -62,9 +84,6 @@ public class LoginController(CloudLoginWebConfiguration configuration, ICloudLog
 
         CodeRegistrationRequest request = CodeRegistrationRequest.Create(input, format, firstName, lastName, displayName);
         UserModel user = await _server.CodeRegistration(request);
-
-        if (!string.IsNullOrEmpty(referer) && CloudLoginShared.IsValidRedirectUri(referer))
-            return Redirect(referer);
 
         return Ok(user);
     }

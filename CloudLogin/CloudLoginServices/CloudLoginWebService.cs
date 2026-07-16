@@ -11,7 +11,7 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
     private readonly NavigationManager _navigationManager = navigationManager;
     private readonly IJSRuntime _js = js;
 
-    private const string LocalStorageUserKey = "coverbox_user_json";
+    private const string LocalStorageUserKey = "angrymonkey.cloudlogin.user";
 
     private bool _initialized;
     private Task? _initTask;

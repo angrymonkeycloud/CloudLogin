@@ -3,10 +3,10 @@ using AngryMonkey.Cloud;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, CosmosMethods? cosmosMethods = null, IHttpClientFactory? httpClientFactory = null)
+public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, ICloudLoginStore? cloudLoginStore = null, IHttpClientFactory? httpClientFactory = null)
 {
     readonly CloudGeographyClient _cloudGeography = cloudGeography;
-    readonly CosmosMethods? _cosmosMethods = cosmosMethods;
+    readonly ICloudLoginStore? _cosmosMethods = cloudLoginStore;
     readonly CloudLoginWebConfiguration _configuration = configuration;
     readonly IHttpContextAccessor _accessor = httpContextAccessor;
     readonly IHttpClientFactory? _httpClientFactory = httpClientFactory;

@@ -48,6 +48,8 @@ public interface ICloudLogin
 
     // Authentication methods using models
     Task<bool> PasswordLogin(PasswordLoginRequest request);
+    Task<bool> TestLogin(Guid userId, bool keepMeSignedIn = false);
+    Task<string> CompleteLoginRedirect(string? referer = null, bool isMobileApp = false);
     Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request);
     Task<UserModel> CodeRegistration(CodeRegistrationRequest request);
 

@@ -82,6 +82,36 @@ public sealed record AuthParameters
 public static class CloudLoginShared
 {
     /// <summary>
+    /// Appends an encoded query parameter while preserving a URL fragment.
+    /// </summary>
+    public static string AppendQueryParameter(string url, string name, string value)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        int fragmentIndex = url.IndexOf('#');
+        string pathAndQuery = fragmentIndex >= 0 ? url[..fragmentIndex] : url;
+        string fragment = fragmentIndex >= 0 ? url[fragmentIndex..] : string.Empty;
+        string separator = pathAndQuery.Contains('?') ? "&" : "?";
+
+        return $"{pathAndQuery}{separator}{Uri.EscapeDataString(name)}={Uri.EscapeDataString(value)}{fragment}";
+    }
+
+    /// <summary>
+    /// Compares complete web origins (scheme, host, and effective port).
+    /// </summary>
+    public static bool IsSameOrigin(string? first, string? second)
+    {
+        if (!Uri.TryCreate(first, UriKind.Absolute, out Uri? firstUri) ||
+            !Uri.TryCreate(second, UriKind.Absolute, out Uri? secondUri))
+            return false;
+
+        return firstUri.Scheme.Equals(secondUri.Scheme, StringComparison.OrdinalIgnoreCase) &&
+               firstUri.IdnHost.Equals(secondUri.IdnHost, StringComparison.OrdinalIgnoreCase) &&
+               firstUri.Port == secondUri.Port;
+    }
+
+    /// <summary>
     /// Generates a secure redirect URL with proper encoding
     /// </summary>
     /// <param name="parameters">The redirect parameters</param>
@@ -128,10 +158,6 @@ public static class CloudLoginShared
         if (redirectUri.StartsWith('/') && !redirectUri.StartsWith("//"))
             return true;
 
-        // Allow common mobile app schemes
-        if (IsValidMobileScheme(redirectUri))
-            return true;
-
         // For absolute URLs, validate against security rules
         if (Uri.TryCreate(redirectUri, UriKind.Absolute, out Uri? uri))
         {
@@ -139,12 +165,17 @@ public static class CloudLoginShared
             if (IsDangerousScheme(uri.Scheme))
                 return false;
 
-            // If specific domains are allowed, check against them
-            if (allowedDomains?.Any() == true)
-                return IsAllowedDomain(uri, allowedDomains);
+            if (uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                // If specific domains are allowed, check against them
+                if (allowedDomains?.Any() == true)
+                    return IsAllowedDomain(uri, allowedDomains);
 
-            // For external websites calling CloudLogin, be more permissive
-            return IsAllowedSchemeAndHost(uri);
+                return IsAllowedSchemeAndHost(uri);
+            }
+
+            return IsValidMobileScheme(redirectUri);
         }
 
         return false;

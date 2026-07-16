@@ -13,9 +13,17 @@ public static partial class MvcServiceCollectionExtensions
     public static IServiceCollection AddCloudLoginServer(this IServiceCollection services, CloudLoginServerConfiguration config)
     {
         ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentException.ThrowIfNullOrWhiteSpace(config.CookieName);
+
+        if (config.SessionDuration <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(config.SessionDuration));
 
         services.AddControllers()
             .AddApplicationPart(typeof(global::AngryMonkey.CloudLogin.Server.Controllers.AuthController).Assembly);
+
+        services.AddSingleton(config);
+        services.AddHttpClient();
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
@@ -24,7 +32,7 @@ public static partial class MvcServiceCollectionExtensions
                 options.LogoutPath = "/auth/logout";
                 options.AccessDeniedPath = "/auth/login";
                 options.ReturnUrlParameter = "returnUrl";
-                options.ExpireTimeSpan = TimeSpan.FromDays(30);
+                options.ExpireTimeSpan = config.SessionDuration;
                 options.SlidingExpiration = true;
                 options.Cookie.Name = config.CookieName;
                 options.Cookie.HttpOnly = true;

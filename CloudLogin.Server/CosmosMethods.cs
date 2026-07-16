@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public class CosmosMethods(CloudGeographyClient cloudGeography, Container container) : DataParse
+public class CosmosMethods(CloudGeographyClient cloudGeography, Container container) : DataParse, ICloudLoginStore
 {
     private readonly CloudGeographyClient CloudGeography = cloudGeography;
     private readonly Container _container = container;

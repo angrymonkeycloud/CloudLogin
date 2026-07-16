@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Specialized;
 using System.Net.Http.Json;
@@ -12,9 +13,15 @@ namespace AngryMonkey.CloudLogin.Server.Controllers;
 
 [ApiController]
 [Route("auth")]
-public class AuthController(IConfiguration configuration, ILogger<AuthController> logger) : ControllerBase
+public class AuthController(
+    IConfiguration configuration,
+    CloudLoginServerConfiguration serverConfiguration,
+    IHttpClientFactory httpClientFactory,
+    ILogger<AuthController> logger) : ControllerBase
 {
     private readonly string _loginBaseUrl = configuration["LoginUrl"] ?? throw new InvalidOperationException("LoginUrl configuration is missing.");
+    private readonly TimeSpan _sessionDuration = serverConfiguration.SessionDuration;
+    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly ILogger<AuthController> _logger = logger;
 
     [HttpGet("login")]
@@ -22,7 +29,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
     {
         try
         {
-            returnUrl ??= "/";
+            returnUrl = NormalizeLocalReturnUrl(returnUrl);
 
             string? callbackUrl = Url.Action("Callback", "Auth", new { state = EncodeReturnUrl(returnUrl) }, Request.Scheme);
 
@@ -48,7 +55,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
             if (!User.Identity?.IsAuthenticated ?? true)
                 return Login($"/auth/profile?returnUrl={HttpUtility.UrlEncode(returnUrl ?? "/")}");
 
-            returnUrl ??= "/";
+            returnUrl = NormalizeLocalReturnUrl(returnUrl);
 
             string? callbackUrl = Url.Action("ProfileCallback", "Auth", new { state = EncodeReturnUrl(returnUrl) }, Request.Scheme);
 
@@ -73,7 +80,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
     {
         try
         {
-            return Redirect(DecodeReturnUrl(state));
+            return Redirect(NormalizeLocalReturnUrl(DecodeReturnUrl(state)));
         }
         catch (Exception ex)
         {
@@ -83,7 +90,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
     }
 
     [HttpGet("callback")]
-    public async Task<IActionResult> Callback([FromQuery] string? requestId, [FromQuery] string? state, [FromQuery] string? error)
+    public async Task<IActionResult> Callback([FromQuery] string? requestId, [FromQuery] string? state, [FromQuery] string? error, [FromQuery] bool keepMeSignedIn = false)
     {
         try
         {
@@ -93,16 +100,16 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
                 return Redirect("/?error=login_failed");
             }
 
-            if (string.IsNullOrEmpty(requestId))
+            if (!Guid.TryParse(requestId, out Guid parsedRequestId))
             {
                 _logger.LogWarning("Login callback received without requestId");
                 return Redirect("/?error=invalid_callback");
             }
 
-            string returnUrl = DecodeReturnUrl(state);
+            string returnUrl = NormalizeLocalReturnUrl(DecodeReturnUrl(state));
 
             // Get user information from CloudLogin
-            UserModel? user = await GetUserFromCloudLogin(requestId);
+            UserModel? user = await GetUserFromCloudLogin(parsedRequestId);
 
             if (user == null)
             {
@@ -116,7 +123,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
                 new(ClaimTypes.NameIdentifier, user.ID.ToString()),
                 new(ClaimTypes.Name, user.DisplayName ?? user.FirstName ?? "User"),
                 new(ClaimTypes.Email, user.PrimaryEmailAddress?.Input ?? ""),
-                new("CloudLoginRequestId", requestId)
+                new("CloudLoginRequestId", parsedRequestId.ToString())
             ];
 
             if (!string.IsNullOrEmpty(user.FirstName))
@@ -142,14 +149,14 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
             // Sign in the user
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
             {
-                IsPersistent = true, // Keep user logged in across browser sessions
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30) //30 days expiration
+                IsPersistent = keepMeSignedIn,
+                ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(_sessionDuration) : null
             });
 
             _logger.LogInformation("User {UserId} ({DisplayName}) authenticated successfully", user.ID, user.DisplayName);
 
             // Append requestId to return URL so WASM client can fetch and persist user
-            string finalReturnUrl = AppendQueryParameter(returnUrl, "rid", requestId);
+            string finalReturnUrl = CloudLoginShared.AppendQueryParameter(returnUrl, "rid", parsedRequestId.ToString());
 
             return Redirect(finalReturnUrl);
         }
@@ -170,13 +177,11 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
 
             _logger.LogInformation("User logged out successfully");
 
-            returnUrl ??= "/";
+            returnUrl = NormalizeLocalReturnUrl(returnUrl);
 
             // Build absolute return URL for the consumer website
             string baseUrl = $"{Request.Scheme}://{Request.Host}";
-            string absoluteReturnUrl = returnUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-                ? returnUrl
-                : $"{baseUrl}{(returnUrl.StartsWith('/') ? "" : "/")}{returnUrl}";
+            string absoluteReturnUrl = $"{baseUrl}{returnUrl}";
 
             // Redirect to the standalone CloudLogin service logout to clear its session too,
             // otherwise the user remains signed in on the login service and cannot switch accounts.
@@ -190,15 +195,15 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
         }
     }
 
-    private async Task<UserModel?> GetUserFromCloudLogin(string requestId)
+    private async Task<UserModel?> GetUserFromCloudLogin(Guid requestId)
     {
         try
         {
-            using HttpClient httpClient = new();
+            HttpClient httpClient = _httpClientFactory.CreateClient();
             httpClient.BaseAddress = new Uri(_loginBaseUrl);
 
             // Call CloudLogin API to get user by request ID
-            HttpResponseMessage response = await httpClient.GetAsync($"/CloudLogin/Request/GetUserByRequestId?requestId={requestId}");
+            using HttpResponseMessage response = await httpClient.GetAsync($"/CloudLogin/Request/GetUserByRequestId?requestId={Uri.EscapeDataString(requestId.ToString())}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -214,19 +219,6 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
             _logger.LogError(ex, "Error retrieving user from CloudLogin");
             return null;
         }
-    }
-
-    private static string AppendQueryParameter(string url, string key, string value)
-    {
-        if (string.IsNullOrWhiteSpace(url)) return $"?{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}";
-
-        // Preserve any fragment by inserting the query before it
-        int hashIdx = url.IndexOf('#');
-        string beforeFragment = hashIdx >= 0 ? url[..hashIdx] : url;
-        string fragment = hashIdx >= 0 ? url[hashIdx..] : string.Empty;
-
-        string separator = beforeFragment.Contains('?') ? "&" : "?";
-        return $"{beforeFragment}{separator}{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value)}{fragment}";
     }
 
     private static string EncodeReturnUrl(string returnUrl)
@@ -248,4 +240,7 @@ public class AuthController(IConfiguration configuration, ILogger<AuthController
 
         return "/";
     }
+
+    private string NormalizeLocalReturnUrl(string? returnUrl)
+        => !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/";
 }

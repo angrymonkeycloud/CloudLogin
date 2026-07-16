@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components.Web;
 using QRCoder;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin;
 
@@ -344,7 +343,7 @@ public partial class LoginComponent : IDisposable
                 DisplayName);
 
             UserModel newUser = await cloudLogin.PasswordRegistration(request);
-            CustomSignInChallenge(newUser);
+            await OnTestModeSignInAsync(newUser);
         }
         catch (Exception ex)
         {
@@ -395,8 +394,24 @@ public partial class LoginComponent : IDisposable
     private async Task OnTestModeSignInAsync(UserModel user)
     {
         Auth.StartLoading();
-        CustomSignInChallenge(user);
-        await Task.CompletedTask;
+        Auth.Errors.Clear();
+
+        try
+        {
+            if (await cloudLogin.TestLogin(user.ID, KeepMeSignedIn))
+            {
+                await NavigateToRefererAsync();
+                return;
+            }
+
+            Auth.Errors.Add("Test sign-in is unavailable or the selected account is invalid.");
+        }
+        catch
+        {
+            Auth.Errors.Add("Test sign-in failed. Please try again.");
+        }
+
+        Auth.EndLoading();
     }
 
     private async Task OnTestModeCreateNewClicked()
@@ -449,7 +464,7 @@ public partial class LoginComponent : IDisposable
                 DisplayName);
 
             UserModel newUser = await cloudLogin.CodeRegistration(request);
-            CustomSignInChallenge(newUser);
+            await CustomSignInChallengeAsync(newUser);
         }
         catch (Exception ex)
         {
@@ -502,7 +517,7 @@ public partial class LoginComponent : IDisposable
                 DisplayName);
 
             UserModel newUser = await cloudLogin.PasswordRegistration(request);
-            CustomSignInChallenge(newUser);
+            await CustomSignInChallengeAsync(newUser);
         }
         catch (Exception ex)
         {
@@ -539,7 +554,7 @@ public partial class LoginComponent : IDisposable
         };
 
         if (checkUser != null)
-            CustomSignInChallenge(checkUser);
+            await CustomSignInChallengeAsync(checkUser);
         else 
             await Auth.SwitchStep(ProcessStep.Registration);
     }
@@ -616,8 +631,7 @@ public partial class LoginComponent : IDisposable
             DisplayName = DisplayName
         };
 
-        CustomSignInChallenge(userValues);
-        return Task.CompletedTask;
+        return CustomSignInChallengeAsync(userValues);
     }
 
     private VerificationCodeResult GetVerificationCodeResult(string code)
@@ -722,37 +736,12 @@ public partial class LoginComponent : IDisposable
     {
         string? target = Referer ?? ReferredUrl ?? RedirectUri;
 
-        if (string.IsNullOrWhiteSpace(target) || target == "/")
-            target = "/Account";
-        else
-        {
+        if (!string.IsNullOrWhiteSpace(target))
             try { target = System.Net.WebUtility.UrlDecode(target); } catch { }
-        }
 
-        if (Uri.TryCreate(target, UriKind.Absolute, out Uri? targetUri)
-            && Uri.TryCreate(cloudLogin.LoginUrl, UriKind.Absolute, out Uri? loginUri)
-            && !string.Equals(targetUri.Host, loginUri.Host, StringComparison.OrdinalIgnoreCase))
-        {
-            UserModel? currentUser = await cloudLogin.CurrentUser();
-
-            if (currentUser is null || currentUser.ID == Guid.Empty)
-                throw new InvalidOperationException("The signed-in user could not be loaded for the external website.");
-
-            Guid requestId = await cloudLogin.CreateLoginRequest(currentUser.ID);
-            target = AppendQueryParameter(target, "requestId", requestId.ToString());
-        }
+        target = await cloudLogin.CompleteLoginRedirect(target);
 
         navigationManager.NavigateTo(target, forceLoad: true);
-    }
-
-    private static string AppendQueryParameter(string url, string name, string value)
-    {
-        int fragmentIndex = url.IndexOf('#');
-        string pathAndQuery = fragmentIndex >= 0 ? url[..fragmentIndex] : url;
-        string fragment = fragmentIndex >= 0 ? url[fragmentIndex..] : string.Empty;
-        string separator = pathAndQuery.Contains('?') ? "&" : "?";
-
-        return $"{pathAndQuery}{separator}{Uri.EscapeDataString(name)}={Uri.EscapeDataString(value)}{fragment}";
     }
 
     private async Task OnEmailPasswordLoginClicked()
@@ -818,7 +807,7 @@ public partial class LoginComponent : IDisposable
         }
     }
 
-    private async void CustomSignInChallenge(UserModel user)
+    private async Task CustomSignInChallengeAsync(UserModel user)
     {
         if (IsQrCodeRequest)
         {
@@ -837,44 +826,20 @@ public partial class LoginComponent : IDisposable
         }
 
         InputValue = user.PrimaryEmailAddress?.Input ?? user.PrimaryPhoneNumber?.Input ?? user.Username ?? InputValue;
+        navigationManager.NavigateTo(BuildCustomLoginUrl(user), true);
+    }
 
-        // Send the user through the server-side CustomLogin endpoint which:
-        //  1. Creates the authenticated session cookie.
-        //  2. Redirects the browser back to `referer` (the page that initiated the login).
-        // This guarantees we land on the original referer (e.g. /auth/callback?state=...) instead
-        // of the internal /cloudlogin/login page.
-        string userInfoJson = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
+    private string BuildCustomLoginUrl(UserModel user)
+    {
         string referer = RefererValue;
-        bool sameSite = true;
+        bool sameSite = !Uri.TryCreate(referer, UriKind.Absolute, out _) ||
+                        CloudLoginShared.IsSameOrigin(referer, cloudLogin.LoginUrl);
 
-        // Cross-site referer: hand the user info to the external app via a one-time requestId.
-        if (!string.IsNullOrEmpty(referer)
-            && referer != "/"
-            && Uri.TryCreate(referer, UriKind.Absolute, out Uri? refererUri))
-        {
-            string loginHost = new Uri(cloudLogin.LoginUrl).Host;
-
-            if (!string.Equals(refererUri.Host, loginHost, StringComparison.OrdinalIgnoreCase))
-            {
-                sameSite = false;
-
-                try
-                {
-                    Guid requestId = await cloudLogin.CreateLoginRequest(user.ID);
-                    string separator = referer.Contains('?') ? "&" : "?";
-                    referer = $"{referer}{separator}requestId={Uri.EscapeDataString(requestId.ToString())}";
-                }
-                catch { }
-            }
-        }
-
-        string url = $"{cloudLogin.LoginUrl.TrimEnd('/')}/CloudLogin/Login/CustomLogin"
-                   + $"?userInfo={Uri.EscapeDataString(userInfoJson)}"
-                   + $"&keepMeSignedIn={KeepMeSignedIn.ToString().ToLowerInvariant()}"
-                   + $"&referer={Uri.EscapeDataString(referer ?? string.Empty)}"
-                   + $"&sameSite={sameSite.ToString().ToLowerInvariant()}";
-
-        navigationManager.NavigateTo(url, true);
+        return $"{cloudLogin.LoginUrl.TrimEnd('/')}/CloudLogin/Login/CustomLogin"
+             + $"?userId={Uri.EscapeDataString(user.ID.ToString())}"
+             + $"&keepMeSignedIn={KeepMeSignedIn.ToString().ToLowerInvariant()}"
+             + $"&referer={Uri.EscapeDataString(referer)}"
+             + $"&sameSite={sameSite.ToString().ToLowerInvariant()}";
     }
 
     private async Task ShowQrCodeLoginAsync()
@@ -988,33 +953,10 @@ public partial class LoginComponent : IDisposable
         }
     }
 
-    private async Task QrCodeSignInAsync(UserModel user)
+    private Task QrCodeSignInAsync(UserModel user)
     {
-        string userInfoJson = JsonSerializer.Serialize(user, CloudLoginSerialization.Options);
-        string referer = RefererValue;
-        bool sameSite = true;
-
-        // For external referers, create a login request so the external app can look up the user
-        if (!string.IsNullOrEmpty(referer) && referer != "/" && Uri.TryCreate(referer, UriKind.Absolute, out Uri? refererUri))
-        {
-            string loginHost = new Uri(cloudLogin.LoginUrl).Host;
-
-            if (!string.Equals(refererUri.Host, loginHost, StringComparison.OrdinalIgnoreCase))
-            {
-                sameSite = false;
-
-                try
-                {
-                    Guid requestId = await cloudLogin.CreateLoginRequest(user.ID);
-                    string separator = referer.Contains('?') ? "&" : "?";
-                    referer = $"{referer}{separator}requestId={Uri.EscapeDataString(requestId.ToString())}";
-                }
-                catch { }
-            }
-        }
-
-        string url = $"{cloudLogin.LoginUrl.TrimEnd('/')}/CloudLogin/Login/CustomLogin?userInfo={Uri.EscapeDataString(userInfoJson)}&keepMeSignedIn={KeepMeSignedIn}&referer={Uri.EscapeDataString(referer)}&sameSite={sameSite}";
-        navigationManager.NavigateTo(url, true);
+        navigationManager.NavigateTo(BuildCustomLoginUrl(user), true);
+        return Task.CompletedTask;
     }
     #endregion
 

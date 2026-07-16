@@ -14,19 +14,38 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public partial class CloudLoginServer
 {
+    public async Task<string> CompleteLoginRedirect(string? referer = null, bool isMobileApp = false)
+    {
+        if (!IsAllowedRedirect(referer))
+            throw new ArgumentException("The requested return URL is not allowed.", nameof(referer));
+
+        if (_accessor.HttpContext?.User.Identity?.IsAuthenticated != true)
+            throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
+
+        UserModel? currentUser = await CurrentUser();
+        if (currentUser is null || currentUser.ID == Guid.Empty)
+            throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
+
+        string target = string.IsNullOrWhiteSpace(referer) || referer == "/" ? "/Account" : referer;
+        bool isExternal = Uri.TryCreate(target, UriKind.Absolute, out _) &&
+                          !CloudLoginShared.IsSameOrigin(target, LoginUrl);
+
+        if (isExternal)
+        {
+            Guid requestId = await CreateLoginRequest(currentUser.ID);
+            target = CloudLoginShared.AppendQueryParameter(target, "requestId", requestId.ToString());
+        }
+
+        if (isMobileApp)
+            target = CloudLoginShared.AppendQueryParameter(target, "isMobileApp", "true");
+
+        return target;
+    }
+
     public async Task<IActionResult> Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)
     {
-        // Validate referer to prevent open redirect attacks
-        if (!string.IsNullOrEmpty(referer))
-        {
-            // Basic safety check - just block obviously dangerous schemes
-            if (referer.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) ||
-                referer.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
-                referer.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ArgumentException("Invalid referer", nameof(referer));
-            }
-        }
+        if (!IsAllowedRedirect(referer))
+            return new BadRequestObjectResult("The requested return URL is not allowed.");
 
         // The OAuth provider redirect URI - this is fixed and configured in the OAuth provider
         // It should always point back to our CloudLogin service (NOT the external website)
@@ -87,11 +106,24 @@ public partial class CloudLoginServer
         };
     }
 
-    public async Task<IActionResult> CustomLogin(UserModel user, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
+    public async Task<IActionResult> CustomLogin(Guid userId, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
     {
+        if (!_configuration.EnableLegacyClientManagedLogin)
+            return new NotFoundResult();
+
+        if (!IsAllowedRedirect(referer))
+            return new BadRequestObjectResult("The requested return URL is not allowed.");
+
+        UserModel? user = await GetUserById(userId);
+        if (user is null || user.IsTest)
+            return new UnauthorizedResult();
+
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
 
         referer ??= string.Empty;
+        sameSite = string.IsNullOrWhiteSpace(referer) ||
+                   !Uri.TryCreate(referer, UriKind.Absolute, out _) ||
+                   CloudLoginShared.IsSameOrigin(referer, baseUrl);
 
         if (sameSite)
         {
@@ -132,11 +164,15 @@ public partial class CloudLoginServer
         if (string.IsNullOrEmpty(referer))
             referer = "/";
 
-        if (isMobileApp)
+        if (!sameSite)
         {
-            string separator = referer.Contains('?') ? "&" : "?";
-            referer = $"{referer}{separator}isMobileApp=true";
+            Guid requestId = await CreateLoginRequest(user.ID);
+            referer = CloudLoginShared.AppendQueryParameter(referer, "requestId", requestId.ToString());
+            referer = CloudLoginShared.AppendQueryParameter(referer, "keepMeSignedIn", keepMeSignedIn.ToString().ToLowerInvariant());
         }
+
+        if (isMobileApp)
+            referer = CloudLoginShared.AppendQueryParameter(referer, "isMobileApp", "true");
 
         return new RedirectResult(referer);
     }
@@ -180,20 +216,26 @@ public partial class CloudLoginServer
         // Get other stored values
         string? storedIsMobileApp = null;
         string? storedKeepMeSignedIn = null;
+        string? storedSameSite = null;
 
         if (authenticateResult.Succeeded && authenticateResult.Properties?.Items != null)
         {
             authenticateResult.Properties.Items.TryGetValue("isMobileApp", out storedIsMobileApp);
             authenticateResult.Properties.Items.TryGetValue("keepMeSignedIn", out storedKeepMeSignedIn);
+            authenticateResult.Properties.Items.TryGetValue("sameSite", out storedSameSite);
         }
 
         // Use stored values if available, otherwise use parameters
-        bool finalIsMobileApp = !string.IsNullOrEmpty(storedIsMobileApp) ? bool.Parse(storedIsMobileApp) : isMobileApp;
-        bool finalKeepMeSignedIn = !string.IsNullOrEmpty(storedKeepMeSignedIn) ? bool.Parse(storedKeepMeSignedIn) : keepMeSignedIn;
+        bool finalIsMobileApp = bool.TryParse(storedIsMobileApp, out bool parsedIsMobileApp) ? parsedIsMobileApp : isMobileApp;
+        bool finalKeepMeSignedIn = bool.TryParse(storedKeepMeSignedIn, out bool parsedKeepMeSignedIn) ? parsedKeepMeSignedIn : keepMeSignedIn;
+        bool finalSameSite = bool.TryParse(storedSameSite, out bool parsedSameSite) ? parsedSameSite : sameSite;
 
 
         if (!Uri.IsWellFormedUriString(referer, UriKind.Absolute))
             referer = HttpUtility.UrlDecode(referer);
+
+        if (!IsAllowedRedirect(referer))
+            return new BadRequestObjectResult("The requested return URL is not allowed.");
 
         AuthenticationProperties properties = new()
         {
@@ -226,7 +268,7 @@ public partial class CloudLoginServer
         }
 
         if (user == null)
-            return new RedirectResult(referer);
+            return new RedirectResult(referer ?? "/");
 
         // Create request ID for the external website
         Guid requestId = Guid.NewGuid();
@@ -259,7 +301,7 @@ public partial class CloudLoginServer
         // Build final redirect URL with user data for the external website
         string finalUrl;
 
-        if (sameSite)
+        if (finalSameSite)
         {
             string keepMeSignedInParam = $"KeepMeSignedIn={finalKeepMeSignedIn}";
             string separator = referer.Contains('?') ? "&" : "?";
@@ -284,33 +326,22 @@ public partial class CloudLoginServer
     private static string AddQueryString(string url, string queryString) =>
         $"{url}{(url.Contains('?') ? "&" : "?")}{queryString}";
 
-    public async Task<IActionResult> UpdateAuth(string referer, string? userInfo, bool isMobileApp = false)
+    public Task<IActionResult> UpdateAuth(string referer, string? userInfo, bool isMobileApp = false)
     {
-        if (string.IsNullOrEmpty(userInfo))
-        {
-            if (isMobileApp)
-            {
-                string separator = referer.Contains('?') ? "&" : "?";
-                referer = $"{referer}{separator}isMobileApp=true";
-            }
-            return new RedirectResult(referer);
-        }
+        if (!IsAllowedRedirect(referer))
+            return Task.FromResult<IActionResult>(new BadRequestObjectResult("The requested return URL is not allowed."));
 
-        _request.HttpContext.Response.Cookies.Delete("CloudLogin");
-        _request.HttpContext.Response.Cookies.Append("CloudLogin", userInfo);
-
-        string finalUrl = referer ?? "/";
-        if (isMobileApp)
-        {
-            string separator = finalUrl.Contains('?') ? "&" : "?";
-            finalUrl = $"{finalUrl}{separator}isMobileApp=true";
-        }
-
-        return new RedirectResult(finalUrl);
+        // This legacy endpoint used to copy caller-controlled text directly into
+        // an authentication cookie. It cannot be made safe without a trusted,
+        // server-side exchange, so it is intentionally retired.
+        return Task.FromResult<IActionResult>(new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status410Gone));
     }
 
     public async Task<IActionResult> Logout(string? referer, bool isMobileApp = false)
     {
+        if (!IsAllowedRedirect(referer))
+            return new BadRequestObjectResult("The requested return URL is not allowed.");
+
         await _request.HttpContext.SignOutAsync();
 
         string logoutUrl = !string.IsNullOrEmpty(referer) ? referer : "/";

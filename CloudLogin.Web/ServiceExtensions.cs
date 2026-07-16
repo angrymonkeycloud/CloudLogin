@@ -14,7 +14,6 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -73,11 +72,8 @@ public static class MvcServiceCollectionExtensions
         // Register as singleton
         builder.Services.AddSingleton(container);
         builder.Services.AddScoped<CosmosMethods>();
+        builder.Services.AddScoped<ICloudLoginStore>(services => services.GetRequiredService<CosmosMethods>());
         
-        // Log the configured property names for debugging
-        var logger = builder.Services.BuildServiceProvider().GetService<ILogger<CloudLoginWebConfiguration>>();
-        logger?.LogInformation("CloudLogin Cosmos Configuration: PartitionKey='{PartitionKey}', Type='{Type}'", 
-            loginConfig.Cosmos.PartitionKeyName, loginConfig.Cosmos.TypeName);
     }
 
     private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginWebConfiguration loginConfig)
@@ -108,19 +104,18 @@ public static class MvcServiceCollectionExtensions
         AuthenticationBuilder auth = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                             .AddCookie(options => ConfigureCookieAuth(options, loginConfig));
 
-        ProviderConfigurationService providerService = services.BuildServiceProvider().GetRequiredService<ProviderConfigurationService>();
-
-        providerService.ConfigureProviders(auth);
+        new ProviderConfigurationService(loginConfig).ConfigureProviders(auth);
     }
 
     private static void ConfigureCookieAuth(CookieAuthenticationOptions options, CloudLoginWebConfiguration loginConfig)
     {
-        options.Cookie.Name = "CloudLogin";
-        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.Name = loginConfig.CookieName;
+        options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.HttpOnly = true;
 
-        if (!string.IsNullOrEmpty(loginConfig.BaseAddress) && loginConfig.BaseAddress != "localhost")
-            options.Cookie.Domain = $".{loginConfig.BaseAddress}";
+        if (!string.IsNullOrWhiteSpace(loginConfig.CookieDomain))
+            options.Cookie.Domain = loginConfig.CookieDomain;
 
         options.Events = new CookieAuthenticationEvents
         {

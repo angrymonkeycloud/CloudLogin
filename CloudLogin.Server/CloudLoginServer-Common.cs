@@ -186,9 +186,16 @@ public partial class CloudLoginServer : ICloudLogin
 
     public async Task<List<UserModel>> GetTestUsers()
     {
+        if (!IsTestModeEnabled())
+            return [];
+
         List<UserModel> all = await GetAllUsers();
         return [.. all.Where(u => u.IsTest)];
     }
+
+    private bool IsTestModeEnabled() => _configuration.Providers
+        .OfType<LoginTestProviders.TestModeConfiguration>()
+        .Any(provider => provider.IsEnabled);
 
     public async Task<UserModel?> GetUserById(Guid userId)
     {
@@ -503,28 +510,48 @@ public partial class CloudLoginServer : ICloudLogin
         if (user == null)
             return false;
 
-        // Create claims for the authenticated user
+        await SignInUserAsync(user, request.KeepMeSignedIn, "Password");
+        return true;
+    }
+
+    public async Task<bool> TestLogin(Guid userId, bool keepMeSignedIn = false)
+    {
+        if (userId == Guid.Empty || !IsTestModeEnabled())
+            return false;
+
+        UserModel? user = await GetUserById(userId);
+        if (user?.IsTest != true)
+            return false;
+
+        user.LastSignedIn = DateTimeOffset.UtcNow;
+        await UpdateUser(user);
+        await SignInUserAsync(user, keepMeSignedIn, "TestMode");
+        return true;
+    }
+
+    private async Task SignInUserAsync(UserModel user, bool keepMeSignedIn, string authenticationType)
+    {
         List<Claim> claims =
         [
             new(ClaimTypes.NameIdentifier, user.ID.ToString()),
-            new(ClaimTypes.Email, request.Email.ToLowerInvariant()),
             new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
             new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
             new(ClaimTypes.Surname, user.LastName ?? string.Empty),
             new(ClaimTypes.UserData, JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
         ];
 
-        ClaimsIdentity identity = new(claims, "Password");
-        ClaimsPrincipal principal = new(identity);
+        string? email = user.PrimaryEmailAddress?.Input;
+        if (!string.IsNullOrWhiteSpace(email))
+            claims.Add(new Claim(ClaimTypes.Email, email));
 
+        ClaimsPrincipal principal = new(new ClaimsIdentity(claims, authenticationType));
         AuthenticationProperties properties = new()
         {
-            IsPersistent = request.KeepMeSignedIn,
-            ExpiresUtc = request.KeepMeSignedIn ? DateTimeOffset.UtcNow.AddDays(30) : null
+            IsPersistent = keepMeSignedIn,
+            ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(_configuration.LoginDuration) : null
         };
 
         await _accessor.HttpContext!.SignInAsync(principal, properties);
-        return true;
     }
 
     public async Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request)

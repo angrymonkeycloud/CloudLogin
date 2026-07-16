@@ -7,6 +7,8 @@ namespace AngryMonkey.CloudLogin;
 
 public static class MauiAppBuilderExtensions
 {
+    private static MauiCloudLoginOptions? _configuredOptions;
+
     /// <summary>
     /// Registers CloudLogin services and automatically wires platform auth-callback
     /// interception for Android and iOS. No platform code needed in the host app.
@@ -17,10 +19,23 @@ public static class MauiAppBuilderExtensions
     /// a different user store and the ids it receives will not match the backend's role tables.
     /// When null, <see cref="CloudLoginBaseService.LoginBaseUrl"/> keeps its default.
     /// </param>
-    public static MauiAppBuilder AddMauiCloudLogin(this MauiAppBuilder builder, string loginUrl)
-    {
-        CloudLoginBaseService.LoginBaseUrl = loginUrl;
+    public static MauiAppBuilder AddMauiCloudLogin(this MauiAppBuilder builder, string loginUrl, string callbackScheme)
+        => builder.AddMauiCloudLogin(new MauiCloudLoginOptions
+        {
+            LoginUrl = loginUrl,
+            CallbackScheme = callbackScheme
+        });
 
+    public static MauiAppBuilder AddMauiCloudLogin(this MauiAppBuilder builder, MauiCloudLoginOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+
+        _configuredOptions = options;
+        CloudLoginBaseService.LoginBaseUrl = options.LoginUrl;
+
+        builder.Services.AddSingleton(options);
         builder.Services.AddScoped<ICloudLoginService, MauiCloudLoginService>();
 
         builder.ConfigureLifecycleEvents(events =>
@@ -28,20 +43,20 @@ public static class MauiAppBuilderExtensions
 #if ANDROID
             events.AddAndroid(android =>
             {
-                android.OnCreate((activity, _) => HandleAndroidIntent(activity.Intent));
-                android.OnNewIntent((_, intent) => HandleAndroidIntent(intent));
+                android.OnCreate((activity, _) => HandleAndroidIntent(activity.Intent, options));
+                android.OnNewIntent((_, intent) => HandleAndroidIntent(intent, options));
             });
 #endif
 #if IOS || MACCATALYST
             events.AddiOS(ios =>
             {
                 ios.OpenUrl((_, url, _2) =>
-                    Uri.TryCreate(url?.AbsoluteString, UriKind.Absolute, out var uri) && HandleCallbackUri(uri));
+                    Uri.TryCreate(url?.AbsoluteString, UriKind.Absolute, out var uri) && HandleCallbackUri(uri, options));
 
                 ios.ContinueUserActivity((_, activity, _2) =>
                     activity?.WebPageUrl != null &&
                     Uri.TryCreate(activity.WebPageUrl.AbsoluteString, UriKind.Absolute, out var uri2) &&
-                    HandleCallbackUri(uri2));
+                    HandleCallbackUri(uri2, options));
             });
 #endif
         });
@@ -50,13 +65,13 @@ public static class MauiAppBuilderExtensions
     }
 
 #if ANDROID
-    private static void HandleAndroidIntent(Android.Content.Intent? intent)
+    private static void HandleAndroidIntent(Android.Content.Intent? intent, MauiCloudLoginOptions options)
     {
         try
         {
             if (intent?.Data == null) return;
             if (Uri.TryCreate(intent.Data.ToString(), UriKind.Absolute, out var uri))
-                HandleCallbackUri(uri);
+                HandleCallbackUri(uri, options);
         }
         catch { }
     }
@@ -67,10 +82,16 @@ public static class MauiAppBuilderExtensions
     /// MobileAuthCallback and returns true - callers should stop further processing.
     /// </summary>
     public static bool HandleCallbackUri(Uri uri)
+        => _configuredOptions is not null && HandleCallbackUri(uri, _configuredOptions);
+
+    public static bool HandleCallbackUri(Uri uri, MauiCloudLoginOptions options)
     {
-        if (!string.Equals(uri.Scheme, MauiCloudLoginService.CallbackScheme, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(uri.Host, MauiCloudLoginService.CallbackHost, StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(uri.AbsolutePath, MauiCloudLoginService.CallbackPath, StringComparison.OrdinalIgnoreCase))
+        ArgumentNullException.ThrowIfNull(uri);
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (!string.Equals(uri.Scheme, options.CallbackScheme, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(uri.Host, options.CallbackHost, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(uri.AbsolutePath, options.CallbackPath, StringComparison.OrdinalIgnoreCase))
             return false;
 
         var query = HttpUtility.ParseQueryString(uri.Query);

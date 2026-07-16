@@ -15,12 +15,10 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public class ProviderConfigurationService
 {
-    private readonly IServiceProvider _serviceProvider;
     private readonly CloudLoginWebConfiguration _configuration;
 
-    public ProviderConfigurationService(IServiceProvider serviceProvider, CloudLoginWebConfiguration configuration)
+    public ProviderConfigurationService(CloudLoginWebConfiguration configuration)
     {
-        _serviceProvider = serviceProvider;
         _configuration = configuration;
     }
 
@@ -74,7 +72,7 @@ public class ProviderConfigurationService
         }
         else
         {
-            builder.AddOpenIdConnect("Microsoft", async options =>
+            builder.AddOpenIdConnect("Microsoft", options =>
             {
                 options.SignInScheme = "Cookies";
                 string audiencePath = provider.Audience switch { MicrosoftProviderAudience.Personal => "consumers", _ => provider.TenantId! };
@@ -83,7 +81,7 @@ public class ProviderConfigurationService
         }
     }
 
-    private async void ConfigureMicrosoftOpenIdConnect(OpenIdConnectOptions options, LoginProviders.MicrosoftProviderConfiguration provider, string audiencePath)
+    private void ConfigureMicrosoftOpenIdConnect(OpenIdConnectOptions options, LoginProviders.MicrosoftProviderConfiguration provider, string audiencePath)
     {
         options.ClientId = provider.ClientId;
         options.Authority = $"https://login.microsoftonline.com/{audiencePath}/v2.0/";
@@ -94,7 +92,7 @@ public class ProviderConfigurationService
         options.Scope.Add("openid"); options.Scope.Add("profile"); options.Scope.Add("email"); options.Scope.Add("User.Read");
         ConfigureMicrosoftOpenIdScopes(options);
         ConfigureMicrosoftOpenIdClaims(options);
-        await ConfigureMicrosoftOpenIdEvents(options, provider);
+        ConfigureMicrosoftOpenIdEvents(options, provider).GetAwaiter().GetResult();
     }
 
     private void ConfigureMicrosoftOpenIdScopes(OpenIdConnectOptions options)

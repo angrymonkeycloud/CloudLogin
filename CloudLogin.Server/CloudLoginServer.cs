@@ -35,6 +35,9 @@ public partial class CloudLoginServer
         // Decode if encoded
         try { returnUrl = HttpUtility.UrlDecode(returnUrl); } catch { }
 
+        if (!IsAllowedRedirect(returnUrl))
+            return new BadRequestObjectResult("The requested return URL is not allowed.");
+
         // Append requestId only if not already present
         if (!returnUrl.Contains("requestId=", StringComparison.OrdinalIgnoreCase))
             returnUrl = AppendQuery(returnUrl, "requestId", requestId.ToString());
@@ -95,6 +98,9 @@ public partial class CloudLoginServer
         // Fallbacks
         if (string.IsNullOrWhiteSpace(returnUrl))
             returnUrl = baseUrl; // Root of host if nothing supplied
+
+        if (!IsAllowedRedirect(returnUrl))
+            return new BadRequestObjectResult("The requested return URL is not allowed.");
 
         // Build redirect URI that CloudLogin will call after provider auth
         string loginResultRedirect = $"{baseUrl}/Account/LoginResult?ReturnUrl={HttpUtility.UrlEncode(returnUrl)}";

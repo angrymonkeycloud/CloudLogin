@@ -2,5 +2,6 @@
 
 public class CloudLoginServerConfiguration
 {
-    public string CookieName { get; set; } = string.Empty;
+    public string CookieName { get; set; } = "CloudLogin.Consumer";
+    public TimeSpan SessionDuration { get; set; } = TimeSpan.FromDays(30);
 }

@@ -49,19 +49,13 @@ public static class MobileAuthCallback
 
 public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 {
-    public const string CallbackUrl = "mahloole://auth/callback";
-    public const string CallbackScheme = "mahloole";
-    public const string CallbackHost = "auth";
-    public const string CallbackPath = "/callback";
-
-    // Secure storage keys
-    private const string SecureUserIdKey = "coverbox_secure_user_id";
-    private const string SecureRequestIdKey = "coverbox_secure_request_id";
-
-    // Preferences keys
-    private const string UserDataKey = "coverbox_user_data";
-    private const string PostLoginRouteKey = "coverbox_post_login_route";
-    private const string LastLoginTimestampKey = "coverbox_last_login_timestamp";
+    private readonly MauiCloudLoginOptions _options;
+    private string CallbackUrl => _options.CallbackUrl;
+    private string SecureUserIdKey => _options.StorageKey("secure.user-id");
+    private string SecureRequestIdKey => _options.StorageKey("secure.request-id");
+    private string UserDataKey => _options.StorageKey("user-data");
+    private string PostLoginRouteKey => _options.StorageKey("post-login-route");
+    private string LastLoginTimestampKey => _options.StorageKey("last-login-timestamp");
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -70,9 +64,10 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     private bool _initialized;
     private static CloudLoginBaseService? _activeSubscriber;
 
-    public MauiCloudLoginService(INavigationService navigationService) : base()
+    public MauiCloudLoginService(INavigationService navigationService, MauiCloudLoginOptions options) : base()
     {
         _nav = navigationService;
+        _options = options;
 
         // Lightweight constructor - just event subscriptions
         UserChanged += OnUserChangedInternal;

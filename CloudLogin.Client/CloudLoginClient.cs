@@ -112,10 +112,8 @@ public class CloudLoginClient : ICloudLogin
     {
         HttpResponseMessage response = await HttpServer.GetAsync("api/providers");
 
-        Console.WriteLine(LoginUrl);
-
         if (!response.IsSuccessStatusCode)
-            throw new Exception($"Failed to get providers. Status code: {response.StatusCode}");
+            throw new InvalidOperationException($"Failed to get providers. Status code: {response.StatusCode}");
 
         string responseContent = await response.Content.ReadAsStringAsync();
 
@@ -131,10 +129,7 @@ public class CloudLoginClient : ICloudLogin
         }
         catch (JsonException ex)
         {
-            // Log the response content and the exception
-            Console.WriteLine($"Failed to deserialize response: {responseContent}");
-            Console.WriteLine(ex);
-            throw;
+            throw new InvalidOperationException("CloudLogin returned an invalid provider response.", ex);
         }
     }
 
@@ -379,9 +374,8 @@ public class CloudLoginClient : ICloudLogin
         if (message.StatusCode == HttpStatusCode.BadRequest)
             throw new Exception("Request creation failed.");
 
-        string guidString = await message.Content.ReadAsStringAsync();
-
-        return new Guid(guidString);
+        message.EnsureSuccessStatusCode();
+        return await message.Content.ReadFromJsonAsync<Guid>(CloudLoginSerialization.Options);
     }
 
     //Code functions
@@ -512,6 +506,34 @@ public class CloudLoginClient : ICloudLogin
         }
 
         return true;
+    }
+
+    public async Task<bool> TestLogin(Guid userId, bool keepMeSignedIn = false)
+    {
+        if (userId == Guid.Empty)
+            return false;
+
+        MultipartFormDataContent form = new()
+        {
+            { new StringContent(userId.ToString()), "userId" },
+            { new StringContent(keepMeSignedIn.ToString()), "keepMeSignedIn" }
+        };
+
+        HttpResponseMessage message = await HttpServer.PostAsync("CloudLogin/Login/TestSignIn", form);
+        return message.IsSuccessStatusCode;
+    }
+
+    public async Task<string> CompleteLoginRedirect(string? referer = null, bool isMobileApp = false)
+    {
+        List<string> parameters = [$"isMobileApp={isMobileApp.ToString().ToLowerInvariant()}"];
+        if (!string.IsNullOrWhiteSpace(referer))
+            parameters.Add($"referer={HttpUtility.UrlEncode(referer)}");
+
+        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Login/Complete?{string.Join("&", parameters)}");
+        message.EnsureSuccessStatusCode();
+
+        return (await message.Content.ReadFromJsonAsync<string>(CloudLoginSerialization.Options))
+            ?? throw new InvalidOperationException("CloudLogin returned an empty redirect target.");
     }
 
     public async Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request)

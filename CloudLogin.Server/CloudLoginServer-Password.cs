@@ -22,13 +22,9 @@ public partial class CloudLoginServer
         if (user == null)
             return null;
 
-        // Test-mode fast-path: a test user authenticates without password verification.
+        // Test accounts may only use the explicit test-login endpoint while test mode is enabled.
         if (user.IsTest)
-        {
-            user.LastSignedIn = DateTimeOffset.UtcNow;
-            await UpdateUser(user);
-            return user;
-        }
+            return null;
 
         string? passwordHash = user.Inputs.SelectMany(key => key.Providers).FirstOrDefault(key => key.Code.Equals("password", StringComparison.OrdinalIgnoreCase))?.PasswordHash;
 

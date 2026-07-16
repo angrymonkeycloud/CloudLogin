@@ -13,9 +13,16 @@ public class RequestController(CloudLoginWebConfiguration configuration, ICloudL
     {
         try
         {
+            if (User.Identity?.IsAuthenticated != true)
+                return Unauthorized();
+
+            UserModel? currentUser = await _server.CurrentUser();
+            if (currentUser is null || currentUser.ID == Guid.Empty || currentUser.ID != userId)
+                return Forbid();
+
             Guid request = await _server.CreateLoginRequest(userId, requestId);
 
-            return Ok();
+            return Ok(request);
         }
         catch
         {

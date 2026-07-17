@@ -2,21 +2,21 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public partial class CloudLoginServer
 {
+    private static bool IsRelativePath(string target) =>
+        target.StartsWith('/') && !target.StartsWith("//", StringComparison.Ordinal);
+
     private bool IsAllowedRedirect(string? target)
     {
         if (string.IsNullOrWhiteSpace(target))
             return true;
 
-        if (target.StartsWith('/') && !target.StartsWith("//", StringComparison.Ordinal))
+        if (IsRelativePath(target))
             return true;
 
         if (!Uri.TryCreate(target, UriKind.Absolute, out Uri? uri))
             return false;
 
         if (CloudLoginShared.IsSameOrigin(target, LoginUrl))
-            return true;
-
-        if (uri.Scheme is "https" && _configuration.AllowedRedirectOrigins.Count == 0)
             return true;
 
         if (uri.Scheme is "http" or "https")

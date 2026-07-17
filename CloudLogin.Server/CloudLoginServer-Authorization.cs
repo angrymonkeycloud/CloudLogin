@@ -56,7 +56,8 @@ public partial class CloudLoginServer
         bool isMobileApp)
     {
         string target = string.IsNullOrWhiteSpace(referer) || referer == "/" ? "/Account" : referer;
-        bool isExternal = Uri.TryCreate(target, UriKind.Absolute, out _) &&
+        bool isExternal = !IsRelativePath(target) &&
+                          Uri.TryCreate(target, UriKind.Absolute, out _) &&
                           !CloudLoginShared.IsSameOrigin(target, LoginUrl);
 
         if (isExternal)

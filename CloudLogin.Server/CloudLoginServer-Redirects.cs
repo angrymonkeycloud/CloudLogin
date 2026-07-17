@@ -16,6 +16,9 @@ public partial class CloudLoginServer
         if (CloudLoginShared.IsSameOrigin(target, LoginUrl))
             return true;
 
+        if (uri.Scheme is "https" && _configuration.AllowedRedirectOrigins.Count == 0)
+            return true;
+
         if (uri.Scheme is "http" or "https")
             return _configuration.AllowedRedirectOrigins.Any(origin =>
                 CloudLoginShared.IsSameOrigin(target, origin));

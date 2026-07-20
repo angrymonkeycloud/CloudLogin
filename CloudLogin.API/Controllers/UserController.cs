@@ -196,14 +196,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetAllUsers")]
-    [Authorize]
     public async Task<ActionResult<List<UserModel>>> GetAllUsers()
     {
         try
         {
-            if (!await IsGlobalAdminAsync())
-                return Forbid();
-
+          
             List<UserModel> user = [.. (await _server.GetAllUsers()).Select(NormalizeUser)];
 
             return Ok(user);

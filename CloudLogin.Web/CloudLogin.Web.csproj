@@ -13,7 +13,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.5.0</Version>
+		<Version>1.5.2</Version>
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -53,7 +53,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.8" NoWarn="NU1605" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.8" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.8.0" />
+		<PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
 		<PackageReference Include="Microsoft.Graph" Version="6.2.0" />
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.1" />
 		<PackageReference Include="Microsoft.Kiota.Abstractions" Version="2.0.0" />

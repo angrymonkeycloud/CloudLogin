@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.5.0</Version>
+		<Version>1.5.2</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description />
@@ -20,7 +20,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.CloudWeb.Server" Version="2.4.3" />
-		<PackageReference Include="AngryMonkey.Cloud.Geography" Version="2.8.0" />
+		<PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
 		<PackageReference Include="Azure.Identity" Version="1.21.0" />
 		<PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="10.0.8" />
 		<PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.9.0" />

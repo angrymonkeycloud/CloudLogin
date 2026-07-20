@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents.Maps", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents.DataGrid", "..\CloudComponents\CloudComponents.DataGrid\CloudComponents.DataGrid.csproj", "{89AAD95E-7E71-0090-FCB1-387CB1624D7A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CloudComponents", "..\CloudComponents\CloudComponents\CloudComponents.csproj", "{E934A1CF-9281-2CB5-2962-B3844B7A5A82}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,6 +130,12 @@ Global
 		{89AAD95E-7E71-0090-FCB1-387CB1624D7A}.Release_Server|Any CPU.Build.0 = Release_Server|Any CPU
 		{89AAD95E-7E71-0090-FCB1-387CB1624D7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89AAD95E-7E71-0090-FCB1-387CB1624D7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E934A1CF-9281-2CB5-2962-B3844B7A5A82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E934A1CF-9281-2CB5-2962-B3844B7A5A82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E934A1CF-9281-2CB5-2962-B3844B7A5A82}.Release_Server|Any CPU.ActiveCfg = Release_Server|Any CPU
+		{E934A1CF-9281-2CB5-2962-B3844B7A5A82}.Release_Server|Any CPU.Build.0 = Release_Server|Any CPU
+		{E934A1CF-9281-2CB5-2962-B3844B7A5A82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E934A1CF-9281-2CB5-2962-B3844B7A5A82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -136,6 +144,7 @@ Global
 		{D644C638-790A-AD74-D0F0-BDADC13C361D} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
 		{63977663-E14A-115A-D5C5-D21455F431B6} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
 		{89AAD95E-7E71-0090-FCB1-387CB1624D7A} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
+		{E934A1CF-9281-2CB5-2962-B3844B7A5A82} = {DE1D4B00-B25D-4BB6-BDF2-55BEAC337672}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4F149D60-85D2-4D27-A307-7201B420B208}

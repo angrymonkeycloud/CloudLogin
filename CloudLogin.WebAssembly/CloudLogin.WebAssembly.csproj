@@ -10,7 +10,7 @@
 		<RootNamespace>AngryMonkey.CloudLogin.WebAssembly</RootNamespace>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.5.2</Version>
+		<Version>1.5.3</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<PackageIcon>amc-logo.png</PackageIcon>
@@ -32,8 +32,8 @@
 
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.8" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" PrivateAssets="all" />
 	</ItemGroup>
 
 

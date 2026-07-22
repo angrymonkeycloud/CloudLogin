@@ -13,7 +13,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.5.2</Version>
+		<Version>1.5.3</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description />
@@ -24,8 +24,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.CloudApp.Maui" Version="1.2.1" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.70" />
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.70" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.80" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.80" />
 	</ItemGroup>
 
 	<ItemGroup>

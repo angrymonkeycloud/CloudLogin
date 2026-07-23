@@ -229,13 +229,13 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetUserById")]
-    [Authorize]
+    //[Authorize]
     public async Task<ActionResult<UserModel?>> GetUserById(Guid id)
     {
         try
         {
-            if (!await CanAccessUserAsync(id))
-                return Forbid();
+            //if (!await CanAccessUserAsync(id))
+            //    return Forbid();
 
             UserModel? user = await _server.GetUserById(id);
             if (user is null)

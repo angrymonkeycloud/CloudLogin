@@ -1,0 +1,30 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <!--
+      CloudLogin does not use Newtonsoft.Json.
+
+      The Azure Cosmos SDK ships a build target that fails the build unless
+      Newtonsoft.Json is explicitly referenced, because the SDK's own default
+      serializer and its LINQ provider are built on it. Neither is reachable
+      here:
+
+        * the CosmosClient is constructed with a custom CosmosSerializer
+          (ConfigurableCosmosSerializer) backed by System.Text.Json, so the
+          default serializer is never used;
+        * every query goes through QueryDefinition and GetItemQueryIterator,
+          never GetItemLinqQueryable, so the LINQ provider is never invoked.
+
+      Reintroducing Cosmos LINQ anywhere in this repository would make the
+      SDK reach for Newtonsoft at runtime and fail with a missing-assembly
+      error rather than at build time. Use raw SQL instead, or take the
+      package reference back.
+
+      The property applies solution-wide because the SDK's check runs in every
+      project that references Cosmos transitively, not just the one that
+      declares the package.
+    -->
+    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
+  </PropertyGroup>
+
+</Project>

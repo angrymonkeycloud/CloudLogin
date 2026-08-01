@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
-using AngryMonkey.CloudApp;
+using AngryMonkey.CloudBlazor.App;
 
 namespace AngryMonkey.CloudLogin;
 

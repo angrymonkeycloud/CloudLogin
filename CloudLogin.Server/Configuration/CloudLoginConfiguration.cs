@@ -1,5 +1,5 @@
-﻿using AngryMonkey.CloudLogin.Sever.Providers;
-using AngryMonkey.CloudWeb;
+﻿using AngryMonkey.CloudBlazor.Web;
+using AngryMonkey.CloudLogin.Sever.Providers;
 
 namespace AngryMonkey.CloudLogin.Server;
 

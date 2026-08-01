@@ -4,7 +4,7 @@ using AngryMonkey.CloudLogin.API.Controllers;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Server.Serialization;
 using AngryMonkey.CloudLogin.Sever.Providers;
-using AngryMonkey.CloudWeb;
+using AngryMonkey.CloudBlazor.Web;
 using Azure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;

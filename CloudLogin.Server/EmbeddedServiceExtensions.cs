@@ -1,6 +1,6 @@
 ﻿using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
-using AngryMonkey.CloudWeb;
+using AngryMonkey.CloudBlazor.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;

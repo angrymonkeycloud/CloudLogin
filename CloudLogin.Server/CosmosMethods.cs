@@ -1,8 +1,6 @@
 ﻿using AngryMonkey.Cloud;
 using AngryMonkey.Cloud.Geography;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
-using System.Linq.Expressions;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -13,38 +11,8 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     #region Internal
 
-    internal IQueryable<T> Queryable<T>(string partitionKey) where T : BaseRecord => Queryable<T>(partitionKey, null);
-
     internal static PartitionKey GetPartitionKey<T>(string partitionKey) =>
         !string.IsNullOrEmpty(partitionKey) ? new PartitionKey(partitionKey) : new PartitionKey(typeof(T).Name);
-
-    internal IQueryable<T> Queryable<T>(string partitionKey, Expression<Func<T, bool>>? predicate) where T : BaseRecord
-    {
-        QueryRequestOptions options = new();
-
-        if (!string.IsNullOrEmpty(partitionKey))
-            options.PartitionKey = new PartitionKey(partitionKey);
-
-        // Don't filter by Type or PartitionKey in LINQ - let the JSON converter handle it
-        IQueryable<T> query = _container.GetItemLinqQueryable<T>(requestOptions: options);
-
-        if (predicate != null)
-            query = query.Where(predicate);
-
-        return query;
-    }
-
-    internal static async Task<List<T>> ToListAsync<T>(IQueryable<T> query) where T : BaseRecord
-    {
-        List<T> list = [];
-        using FeedIterator<T> setIterator = query.ToFeedIterator();
-
-        while (setIterator.HasMoreResults)
-            foreach (T item in await setIterator.ReadNextAsync())
-                list.Add(item);
-
-        return list;
-    }
 
     internal static PartitionKey GetPartitionKey<T>(T record) where T : BaseRecord => new(record.PartitionKeyValue);
 

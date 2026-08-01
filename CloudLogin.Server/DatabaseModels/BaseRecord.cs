@@ -20,17 +20,14 @@ public abstract record BaseRecord
 
     // Internal GUID storage - not a public property
     [JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
     internal Guid InternalId { get; set; }
 
     // Keep the raw JSON id value to handle any deserialization ordering edge cases
     [JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
     private string? _rawJsonId;
 
     // Cosmos DB requires lowercase 'id' property. How it's saved depends on configuration.
     // Setter parses either a raw GUID or "{type}|{guid}" and assigns to InternalId.
-    [Newtonsoft.Json.JsonProperty("id")]
     [JsonPropertyName("id")]
     public string id
     {
@@ -87,30 +84,24 @@ public abstract record BaseRecord
 
     // Always include partition key field used by the container path
     [JsonPropertyName("pk")]
-    [Newtonsoft.Json.JsonProperty("pk")]
     public string pk => PartitionKeyValue;
 
     // Also include legacy partition key name for backward compatibility when configured
     [JsonPropertyName("PartitionKey")]
-    [Newtonsoft.Json.JsonProperty("PartitionKey")]
     public string? LegacyPartitionKey => ShouldIncludeLegacySchema() ? PartitionKeyValue : null;
 
     // Include both modern and legacy type discriminator names so queries work in both modes
     [JsonPropertyName("$type")]
-    [Newtonsoft.Json.JsonProperty("$type")]
     public string JsonType => TypeValue;
 
     [JsonPropertyName("Discriminator")]
-    [Newtonsoft.Json.JsonProperty("Discriminator")]
     public string? LegacyDiscriminator => ShouldIncludeLegacySchema() ? TypeValue : null;
 
     // Internal properties (not serialized directly)
     [JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
     public string TypeValue { get; internal set; }
 
     [JsonIgnore]
-    [Newtonsoft.Json.JsonIgnore]
     public string PartitionKeyValue { get; internal set; }
 
     // Methods to get configured property names (kept for SQL queries and callers)
@@ -188,141 +179,4 @@ public abstract record BaseRecord
     /// Sets the internal ID value
     /// </summary>
     public void SetId(Guid id) => InternalId = id;
-}
-
-/// <summary>
-/// Custom contract resolver for BaseRecord serialization that handles dynamic property names
-/// and guarantees Cosmos DB partition key compatibility.
-/// </summary>
-public class BaseRecordContractResolver : Newtonsoft.Json.Serialization.DefaultContractResolver
-{
-    protected override IList<Newtonsoft.Json.Serialization.JsonProperty> CreateProperties(Type type, Newtonsoft.Json.MemberSerialization memberSerialization)
-    {
-        IList<Newtonsoft.Json.Serialization.JsonProperty> properties = base.CreateProperties(type, memberSerialization);
-
-        if (!typeof(BaseRecord).IsAssignableFrom(type))
-            return properties;
-
-        bool includeLegacy = BaseRecord.ShouldIncludeLegacySchema();
-
-        // Add uppercase "ID" property only when legacy schema is enabled
-        if (includeLegacy)
-        {
-            properties.Add(new Newtonsoft.Json.Serialization.JsonProperty
-            {
-                PropertyName = "ID",
-                PropertyType = typeof(Guid),
-                DeclaringType = type,
-                Readable = true,
-                Writable = true,
-                ValueProvider = new IdValueProvider()
-            });
-        }
-
-        // Hide the internal members from default serialization
-        Newtonsoft.Json.Serialization.JsonProperty? typeValueProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.TypeValue), StringComparison.Ordinal));
-        if (typeValueProp != null)
-            typeValueProp.Ignored = true;
-
-        Newtonsoft.Json.Serialization.JsonProperty? pkValueProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.PartitionKeyValue), StringComparison.Ordinal));
-        if (pkValueProp != null)
-            pkValueProp.Ignored = true;
-
-        // Hide InternalId from serialization
-        Newtonsoft.Json.Serialization.JsonProperty? internalIdProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, "InternalId", StringComparison.Ordinal));
-        if (internalIdProp != null)
-            internalIdProp.Ignored = true;
-
-        // Hide ExtensionData from Newtonsoft.Json serialization
-        Newtonsoft.Json.Serialization.JsonProperty? extensionDataProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.ExtensionData), StringComparison.Ordinal));
-        if (extensionDataProp != null)
-            extensionDataProp.Ignored = true;
-
-        // Handle legacy property visibility based on configuration
-        if (!includeLegacy)
-        {
-            // Hide legacy properties when legacy schema is not enabled
-            Newtonsoft.Json.Serialization.JsonProperty? legacyPkProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.LegacyPartitionKey), StringComparison.Ordinal));
-            if (legacyPkProp != null)
-                legacyPkProp.Ignored = true;
-
-            Newtonsoft.Json.Serialization.JsonProperty? legacyDiscProp = properties.FirstOrDefault(p => string.Equals(p.PropertyName, nameof(BaseRecord.LegacyDiscriminator), StringComparison.Ordinal));
-            if (legacyDiscProp != null)
-                legacyDiscProp.Ignored = true;
-        }
-
-        // Add configured type property alias if missing
-        string configuredTypePropertyName = BaseRecord.GetTypePropertyName();
-
-        if (!properties.Any(p => string.Equals(p.PropertyName, configuredTypePropertyName, StringComparison.Ordinal)))
-            properties.Add(new Newtonsoft.Json.Serialization.JsonProperty
-            {
-                PropertyName = configuredTypePropertyName,
-                PropertyType = typeof(string),
-                DeclaringType = type,
-                Readable = true,
-                Writable = true,
-                ValueProvider = new TypeValueProvider()
-            });
-
-        // Add configured partition key alias if missing
-        string configuredPkJsonName = BaseRecord.GetPartitionKeyJsonPropertyName();
-
-        if (!properties.Any(p => string.Equals(p.PropertyName, configuredPkJsonName, StringComparison.Ordinal)))
-            properties.Add(new Newtonsoft.Json.Serialization.JsonProperty
-            {
-                PropertyName = configuredPkJsonName,
-                PropertyType = typeof(string),
-                DeclaringType = type,
-                Readable = true,
-                Writable = true,
-                ValueProvider = new PartitionKeyValueProvider()
-            });
-
-        return properties;
-    }
-}
-
-/// <summary>
-/// Value provider for ID property
-/// </summary>
-public class IdValueProvider : Newtonsoft.Json.Serialization.IValueProvider
-{
-    public object? GetValue(object target) => target is BaseRecord record ? record.InternalId : null;
-
-    public void SetValue(object target, object? value)
-    {
-        if (target is BaseRecord record && value is Guid guidValue)
-            record.InternalId = guidValue;
-        else if (target is BaseRecord record2 && value is string stringValue && Guid.TryParse(stringValue, out Guid parsedGuid))
-            record2.InternalId = parsedGuid;
-    }
-}
-
-/// <summary>
-/// Value provider for TypeValue property
-/// </summary>
-public class TypeValueProvider : Newtonsoft.Json.Serialization.IValueProvider
-{
-    public object? GetValue(object target) => target is BaseRecord record ? record.TypeValue : null;
-
-    public void SetValue(object target, object? value)
-    {
-        if (target is BaseRecord record && value is string stringValue)
-            record.TypeValue = stringValue;
-    }
-}
-
-/// <summary>
-/// Value provider for PartitionKeyValue property
-/// </summary>
-public class PartitionKeyValueProvider : Newtonsoft.Json.Serialization.IValueProvider
-{
-    public object? GetValue(object target) => target is BaseRecord record ? record.PartitionKeyValue : null;
-
-    public void SetValue(object target, object? value)
-    {
-        if (target is BaseRecord record && value is string stringValue)
-            record.PartitionKeyValue = stringValue;
-    }
 }

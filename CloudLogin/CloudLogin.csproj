@@ -20,7 +20,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
 		<PackageReference Include="Microsoft.JSInterop" Version="10.0.10" />
-		<PackageReference Include="AngryMonkey.CloudApp" Version="1.2.1" />
+		<PackageReference Include="AngryMonkey.CloudBlazor.App" Version="1.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>

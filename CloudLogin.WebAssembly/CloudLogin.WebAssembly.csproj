@@ -10,7 +10,7 @@
 		<RootNamespace>AngryMonkey.CloudLogin.WebAssembly</RootNamespace>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.6.3</Version>
+		<Version>1.6.4</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<PackageIcon>amc-logo.png</PackageIcon>
@@ -44,19 +44,28 @@
 	<!--
 		The Blazor WebAssembly SDK marks the wasm boot runtime it generates during Build
 		(dotnet.js, dotnet.native.*, dotnet.runtime.*, and the app/library .wasm assemblies
-		under wwwroot/_framework) with AssetKind=Build instead of AssetKind=All. The RCL pack
-		pipeline (GenerateStaticWebAssetsPackFiles) only packs assets whose AssetKind allows
-		reuse by referencing packages, so these files are silently dropped from the .nupkg even
-		though they exist in bin/$(Configuration)/$(TargetFramework)/wwwroot/_framework and are
-		required at runtime by any host using AddInteractiveWebAssemblyRenderMode. They only
-		come along automatically when this project is consumed via ProjectReference, because in
-		that case the referencing project recomputes them at build time instead of reading this
-		project's packed manifest. Promoting them to AssetKind=All here makes them packable too.
+		under wwwroot/_framework) with AssetKind=Build instead of AssetKind=All, and
+		CopyToPublishDirectory=Never. The RCL pack pipeline (GenerateStaticWebAssetsPackFiles)
+		only packs assets whose AssetKind allows reuse by referencing packages, so these files
+		are silently dropped from the .nupkg even though they exist in
+		bin/$(Configuration)/$(TargetFramework)/wwwroot/_framework and are required at runtime
+		by any host using AddInteractiveWebAssemblyRenderMode. They only come along automatically
+		when this project is consumed via ProjectReference, because in that case the referencing
+		project recomputes them at build time instead of reading this project's packed manifest.
+
+		Promoting AssetKind to All makes them packable. CopyToPublishDirectory=Never must also be
+		overridden to PreserveNewest: without it, consuming apps can still resolve these files
+		locally via `dotnet run` (the endpoint manifest points straight at the file in the NuGet
+		package cache on the dev machine), but `dotnet publish` excludes them from the publish
+		output entirely. On a real deployment target (e.g. Azure App Service) there is no local
+		NuGet cache to fall back to, so the files are simply missing and get served with an empty
+		MIME type instead of the expected JS/Wasm content type.
 	-->
 	<Target Name="IncludeWasmRuntimeAssetsInPackage" BeforeTargets="GenerateStaticWebAssetsPackFiles">
 		<ItemGroup>
 			<StaticWebAsset Update="@(StaticWebAsset)" Condition="$([System.String]::Copy('%(StaticWebAsset.RelativePath)').StartsWith('_framework/')) And '%(StaticWebAsset.AssetKind)' == 'Build'">
 				<AssetKind>All</AssetKind>
+				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 			</StaticWebAsset>
 		</ItemGroup>
 	</Target>

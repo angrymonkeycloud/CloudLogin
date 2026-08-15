@@ -10,7 +10,7 @@
 		<RootNamespace>AngryMonkey.CloudLogin.WebAssembly</RootNamespace>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.6.2</Version>
+		<Version>1.6.3</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<PackageIcon>amc-logo.png</PackageIcon>
@@ -40,5 +40,25 @@
 		</None>
 		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
 	</ItemGroup>
+
+	<!--
+		The Blazor WebAssembly SDK marks the wasm boot runtime it generates during Build
+		(dotnet.js, dotnet.native.*, dotnet.runtime.*, and the app/library .wasm assemblies
+		under wwwroot/_framework) with AssetKind=Build instead of AssetKind=All. The RCL pack
+		pipeline (GenerateStaticWebAssetsPackFiles) only packs assets whose AssetKind allows
+		reuse by referencing packages, so these files are silently dropped from the .nupkg even
+		though they exist in bin/$(Configuration)/$(TargetFramework)/wwwroot/_framework and are
+		required at runtime by any host using AddInteractiveWebAssemblyRenderMode. They only
+		come along automatically when this project is consumed via ProjectReference, because in
+		that case the referencing project recomputes them at build time instead of reading this
+		project's packed manifest. Promoting them to AssetKind=All here makes them packable too.
+	-->
+	<Target Name="IncludeWasmRuntimeAssetsInPackage" BeforeTargets="GenerateStaticWebAssetsPackFiles">
+		<ItemGroup>
+			<StaticWebAsset Update="@(StaticWebAsset)" Condition="$([System.String]::Copy('%(StaticWebAsset.RelativePath)').StartsWith('_framework/')) And '%(StaticWebAsset.AssetKind)' == 'Build'">
+				<AssetKind>All</AssetKind>
+			</StaticWebAsset>
+		</ItemGroup>
+	</Target>
 
 </Project>

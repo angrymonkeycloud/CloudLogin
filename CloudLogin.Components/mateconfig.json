@@ -1,0 +1,78 @@
+{
+  "files": [
+    {
+      "input": "Components/LoadingComponent.razor.less",
+      "output": "Components/LoadingComponent.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-Emails.razor.less",
+      "output": "Components/Account/AccountComponent-Emails.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-Numbers.razor.less",
+      "output": "Components/Account/AccountComponent-Numbers.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-Update.razor.less",
+      "output": "Components/Account/AccountComponent-Update.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-UserInfo.razor.less",
+      "output": "Components/Account/AccountComponent-UserInfo.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent.razor.less",
+      "output": "Components/Account/AccountComponent.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountPageComponent.razor.less",
+      "output": "Components/Account/AccountPageComponent.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Admin/AdminComponent-UserDetail.razor.less",
+      "output": "Components/Admin/AdminComponent-UserDetail.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Admin/AdminComponent-UserList.razor.less",
+      "output": "Components/Admin/AdminComponent-UserList.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Login/LoginComponent-Footer.razor.less",
+      "output": "Components/Login/LoginComponent-Footer.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Login/LoginComponent.razor.less",
+      "output": "Components/Login/LoginComponent.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Login/LoginHeaderComponent.razor.less",
+      "output": "Components/Login/LoginHeaderComponent.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Login/MainInput.razor.less",
+      "output": "Components/Login/MainInput.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Login/ProviderButton.razor.less",
+      "output": "Components/Login/ProviderButton.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Src/cloudlogin-account.less",
+      "output": "wwwroot/cloudlogin-account.css"
+    }
+  ]
+}

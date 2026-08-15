@@ -1,4 +1,4 @@
-﻿@keyframes PageloadingProgress {
+@keyframes PageloadingProgress {
   0% {
     transform: translateX(-110%);
   }

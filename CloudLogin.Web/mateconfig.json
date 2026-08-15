@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "input": "Pages/Home.razor.less",
+      "output": "Pages/Home.razor.css",
+      "minify": false
+    }
+  ]
+}

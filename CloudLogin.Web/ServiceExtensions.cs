@@ -142,7 +142,9 @@ public static class MvcServiceCollectionExtensions
     private static void ConfigureAuthentication(IServiceCollection services, CloudLoginWebConfiguration loginConfig)
     {
         AuthenticationBuilder auth = services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                            .AddCookie(options => ConfigureCookieAuth(options, loginConfig));
+                            .AddCookie(options => ConfigureCookieAuth(options, loginConfig))
+                            .AddScheme<AuthenticationSchemeOptions, ServiceKeyAuthenticationHandler>(
+                                ServiceKeyAuthenticationDefaults.AuthenticationScheme, null);
 
         new ProviderConfigurationService(loginConfig).ConfigureProviders(auth);
     }

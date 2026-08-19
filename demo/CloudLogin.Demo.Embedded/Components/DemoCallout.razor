@@ -1,0 +1,8 @@
+<aside class="demo-callout demo-callout--@Tone"><span>@Icon</span><div><strong>@Title</strong><p>@ChildContent</p></div></aside>
+
+@code {
+    [Parameter] public string Tone { get; set; } = "info";
+    [Parameter] public string Icon { get; set; } = "i";
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

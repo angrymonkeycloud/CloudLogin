@@ -33,6 +33,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="artifacts\**" />
 	  <None Include="amc-logo.png">
 	    <PackagePath>\</PackagePath>
 	    <Pack>True</Pack>

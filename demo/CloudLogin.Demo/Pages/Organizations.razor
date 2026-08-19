@@ -1,0 +1,46 @@
+@page "/demo/organizations"
+@inject DemoAccountRegistrySeed Seed
+@inject IOrganizationRegistry OrganizationRegistry
+
+<PageTitle>CloudLogin organizations demo</PageTitle>
+
+<header class="authority-page-header"><p>IOrganizationRegistry</p><h1>Organizations, teams, and invitations</h1><span>The cards below are seeded through the same public registry developers inject into their applications.</span></header>
+
+<div class="authority-organization-grid">
+    @foreach (CloudLoginOrganization organization in Seed.Organizations)
+    {
+        IReadOnlyList<CloudLoginOrganizationMember> members = _members.GetValueOrDefault(organization.Id, []);
+        <article>
+            <header><span>@Initials(organization.Name)</span><div><small>Business account</small><h2>@organization.Name</h2><code>@organization.Id</code></div></header>
+            <dl><div><dt>Owner</dt><dd>@ShortId(organization.OwnerUserId)</dd></div><div><dt>Members</dt><dd>@members.Count</dd></div><div><dt>Created</dt><dd>@organization.CreatedOn.ToString("dd MMM yyyy")</dd></div></dl>
+            <h3>Team directory</h3>
+            <ul class="authority-people">
+                @foreach (CloudLoginOrganizationMember member in members)
+                {
+                    <li><span>@(member.IsOwner ? "OW" : "MB")</span><div><strong>@(member.IsOwner ? "Organization owner" : $"Member {ShortId(member.UserId)}")</strong><small>@string.Join(" · ", member.Roles)</small></div><div class="authority-tags">@foreach (string permission in member.Permissions) { <b>@permission</b> }</div></li>
+                }
+            </ul>
+            <h3>Pending invitations</h3>
+            @foreach (CloudLoginOrganizationInvitation invitation in Seed.Invitations.Where(item => item.OrganizationId == organization.Id))
+            {
+                <div class="authority-invitation"><div><strong>@invitation.Recipient</strong><small>@string.Join(", ", invitation.Roles)</small></div><time>Expires @invitation.ExpiresAt.ToString("dd MMM, HH:mm")</time></div>
+            }
+        </article>
+    }
+</div>
+
+<details class="authority-code"><summary>Organization integration code</summary><pre><code>@DemoCodeSamples.Organizations</code></pre></details>
+
+@code {
+    private readonly Dictionary<Guid, IReadOnlyList<CloudLoginOrganizationMember>> _members = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Seed.InitializeAsync();
+        foreach (CloudLoginOrganization organization in Seed.Organizations)
+            _members[organization.Id] = await OrganizationRegistry.GetMembersAsync(organization.Id);
+    }
+
+    private static string Initials(string value) => string.Concat(value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    private static string ShortId(Guid id) => id.ToString("N")[..8];
+}

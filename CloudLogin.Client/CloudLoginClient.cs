@@ -17,6 +17,7 @@ public class CloudLoginClient : ICloudLogin
     public string LoginUrl => HttpServer.BaseAddress!.AbsoluteUri;
 
     public string UserRoute = "CloudLogin/User";
+    public string AccountRoute = "CloudLogin/Account";
     public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }
 
@@ -616,5 +617,145 @@ public class CloudLoginClient : ICloudLogin
 
         if (!message.IsSuccessStatusCode)
             throw new Exception($"SetGlobalAdmin failed: {message.StatusCode}");
+    }
+
+    // ── Account registry (organizations, subscriptions, billing) ──────────
+
+    public async Task<List<CloudLoginOrganization>> GetMyOrganizations()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Organizations");
+
+        if (!message.IsSuccessStatusCode)
+            return [];
+
+        List<CloudLoginOrganization>? organizations = await message.Content.ReadFromJsonAsync<List<CloudLoginOrganization>>(CloudLoginSerialization.Options);
+
+        return organizations ?? [];
+    }
+
+    public async Task<List<AccountSubscription>> GetMySubscriptions()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Subscriptions");
+
+        if (!message.IsSuccessStatusCode)
+            return [];
+
+        List<AccountSubscription>? subscriptions = await message.Content.ReadFromJsonAsync<List<AccountSubscription>>(CloudLoginSerialization.Options);
+
+        return subscriptions ?? [];
+    }
+
+    public async Task<AccountBillingProfile?> GetMyBillingProfile()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/BillingProfile");
+
+        if (!message.IsSuccessStatusCode)
+            return null;
+
+        string body = await message.Content.ReadAsStringAsync();
+
+        if (string.IsNullOrWhiteSpace(body) || body == "null")
+            return null;
+
+        return System.Text.Json.JsonSerializer.Deserialize<AccountBillingProfile?>(body, CloudLoginSerialization.Options);
+    }
+
+    public async Task<CloudLoginOrganization> CreateOrganization(string name)
+    {
+        HttpContent content = JsonContent.Create(new CreateOrganizationRequest(name), options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Organizations", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception($"CreateOrganization failed: {await message.Content.ReadAsStringAsync()}");
+
+        return (await message.Content.ReadFromJsonAsync<CloudLoginOrganization>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task<CloudLoginOrganizationInvitation> InviteToOrganization(Guid organizationId, string recipient, IReadOnlyList<string>? roles = null)
+    {
+        HttpContent content = JsonContent.Create(new InviteToOrganizationRequest(recipient, roles), options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Organizations/{organizationId}/Invite", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception($"InviteToOrganization failed: {await message.Content.ReadAsStringAsync()}");
+
+        return (await message.Content.ReadFromJsonAsync<CloudLoginOrganizationInvitation>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task<CloudLoginOrganization> UpdateOrganization(CloudLoginOrganization organization)
+    {
+        HttpContent content = JsonContent.Create(organization, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Organizations/{organization.Id}", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception($"UpdateOrganization failed: {await message.Content.ReadAsStringAsync()}");
+
+        return (await message.Content.ReadFromJsonAsync<CloudLoginOrganization>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task<AccountBillingProfile> AddPaymentMethod(AccountPaymentMethodReference method, Guid? organizationId = null)
+    {
+        HttpContent content = JsonContent.Create(new AddPaymentMethodRequest(method, organizationId), options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/BillingProfile/PaymentMethods", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception($"AddPaymentMethod failed: {await message.Content.ReadAsStringAsync()}");
+
+        return (await message.Content.ReadFromJsonAsync<AccountBillingProfile>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task<CloudLoginOrganization?> GetOrganizationById(Guid organizationId)
+    {
+        // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
+        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Organizations/{organizationId}");
+
+        if (!message.IsSuccessStatusCode)
+            return null;
+
+        return await message.Content.ReadFromJsonAsync<CloudLoginOrganization?>(CloudLoginSerialization.Options);
+    }
+
+    public async Task<List<CloudLoginOrganization>> GetAllOrganizations()
+    {
+        // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
+        HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/Service/Organizations");
+
+        if (!message.IsSuccessStatusCode)
+            return [];
+
+        return await message.Content.ReadFromJsonAsync<List<CloudLoginOrganization>>(CloudLoginSerialization.Options) ?? [];
+    }
+
+    public async Task<List<CloudLoginOrganizationMember>> GetOrganizationMembers(Guid organizationId)
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Organizations/{organizationId}/Members");
+
+        if (!message.IsSuccessStatusCode)
+            return [];
+
+        return await message.Content.ReadFromJsonAsync<List<CloudLoginOrganizationMember>>(CloudLoginSerialization.Options) ?? [];
+    }
+
+
+    public async Task<AccountSubscription?> GetSubscriptionById(Guid subscriptionId)
+    {
+        // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
+        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Subscriptions/{subscriptionId}");
+
+        if (!message.IsSuccessStatusCode)
+            return null;
+
+        return await message.Content.ReadFromJsonAsync<AccountSubscription?>(CloudLoginSerialization.Options);
+    }
+
+    public async Task<List<AccountSubscription>> GetAllSubscriptions()
+    {
+        // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
+        HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/Service/Subscriptions");
+
+        if (!message.IsSuccessStatusCode)
+            return [];
+
+        return await message.Content.ReadFromJsonAsync<List<AccountSubscription>>(CloudLoginSerialization.Options) ?? [];
     }
 }

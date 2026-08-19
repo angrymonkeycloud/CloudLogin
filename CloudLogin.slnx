@@ -1,0 +1,68 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <BuildType Name="Release_Server" />
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/.libraries/">
+    <Project Path="../CloudComponents/CloudComponents.DataGrid/CloudComponents.DataGrid.csproj" />
+    <Project Path="../CloudComponents/CloudComponents.Icons/CloudComponents.Icons.csproj">
+      <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+    </Project>
+    <Project Path="../CloudComponents/CloudComponents.Maps/CloudComponents.Maps.csproj">
+      <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+    </Project>
+    <Project Path="../CloudComponents/CloudComponents/CloudComponents.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/demo/">
+    <File Path="demo/README.md" />
+    <Project Path="demo/CloudLogin.Demo/CloudLogin.Demo.csproj">
+      <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+    </Project>
+    <Project Path="demo/CloudLogin.Demo.Consumer/CloudLogin.Demo.Consumer.csproj">
+      <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+    </Project>
+    <Project Path="demo/CloudLogin.Demo.Embedded/CloudLogin.Demo.Embedded.csproj">
+      <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+    </Project>
+  </Folder>
+  <Project Path="CloudLogin.API/CloudLogin.API.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Client/CloudLogin.Client.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Components/CloudLogin.Components.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Contracts/CloudLogin.Contracts.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Maui/CloudLogin.Maui.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Packing/CloudLogin.Packing.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Server/CloudLogin.Server.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Tests/CloudLogin.Tests.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Web/CloudLogin.Web.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.WebAssembly/CloudLogin.WebAssembly.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin/CloudLogin.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+</Solution>

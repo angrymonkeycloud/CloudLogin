@@ -1,0 +1,26 @@
+<section class="demo-example" data-example>
+    <header>
+        <div>
+            <span class="demo-artifact">@Artifact</span>
+            <small>@Kind</small>
+            <h2>@Title</h2>
+            <p>@Description</p>
+        </div>
+        <div class="demo-tabs" role="tablist" aria-label="@Title">
+            <button type="button" class="active" aria-selected="true" onclick="cloudLoginDemo.showExample(this, 'preview')">Preview</button>
+            <button type="button" aria-selected="false" onclick="cloudLoginDemo.showExample(this, 'code')">Code</button>
+        </div>
+    </header>
+    <div class="demo-preview" data-panel="preview">@ChildContent</div>
+    <div class="demo-code" data-panel="code" hidden><div><span>@FileName</span></div><pre><code>@Code</code></pre></div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required string Description { get; set; }
+    [Parameter, EditorRequired] public required string Code { get; set; }
+    [Parameter] public string Kind { get; set; } = "Integration example";
+    [Parameter] public string Artifact { get; set; } = "REAL CLOUDLOGIN API";
+    [Parameter] public string FileName { get; set; } = "Example.razor";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

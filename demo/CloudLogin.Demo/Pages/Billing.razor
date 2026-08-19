@@ -1,0 +1,32 @@
+@page "/demo/billing"
+@inject DemoAccountRegistrySeed Seed
+@inject ICloudLoginAccountStore Accounts
+
+<PageTitle>CloudLogin billing references demo</PageTitle>
+
+<header class="authority-page-header"><p>ICloudLoginAccountStore</p><h1>Billing and saved payment references</h1><span>These are provider-safe identifiers associated with an account. CloudLogin never authorizes, captures, or refunds money.</span></header>
+
+<div class="authority-boundary"><strong>Account state</strong><span>CloudLogin</span><i>→</i><strong>Transactions</strong><span>CloudPayments</span><i>→</i><strong>Processing</strong><span>Payment provider</span></div>
+
+<div class="authority-billing-grid">
+    <BillingProfileCard Title="Demo account owner" Scope="USER ACCOUNT" Profile="_userProfile" />
+    @foreach (CloudLoginOrganization organization in Seed.Organizations)
+    {
+        <BillingProfileCard Title="@organization.Name" Scope="ORGANIZATION" Profile="_organizationProfiles.GetValueOrDefault(organization.Id)" />
+    }
+</div>
+
+<details class="authority-code"><summary>Billing-reference integration code</summary><pre><code>@DemoCodeSamples.Billing</code></pre></details>
+
+@code {
+    private AccountBillingProfile? _userProfile;
+    private readonly Dictionary<Guid, AccountBillingProfile?> _organizationProfiles = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Seed.InitializeAsync();
+        _userProfile = await Accounts.GetBillingProfileAsync(Seed.OwnerUserId, null);
+        foreach (CloudLoginOrganization organization in Seed.Organizations)
+            _organizationProfiles[organization.Id] = await Accounts.GetBillingProfileAsync(null, organization.Id);
+    }
+}

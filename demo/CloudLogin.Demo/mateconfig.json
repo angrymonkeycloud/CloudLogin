@@ -1,0 +1,12 @@
+{
+  "builds": [
+    {
+      "name": "dev",
+      "js": { "minify": false, "sourceMap": false, "declaration": false }
+    }
+  ],
+  "files": [
+    { "input": "src/css/showcase.less", "output": "wwwroot/demo/css/showcase.css" },
+    { "input": [ "src/js/showcase.js" ], "output": "wwwroot/demo/js/showcase.js" }
+  ]
+}

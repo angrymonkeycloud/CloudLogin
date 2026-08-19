@@ -25,3 +25,44 @@
 .input-content input:focus {
   outline: none;
 }
+/* Standard CloudLogin field */
+.input {
+  width: 100%;
+}
+.input-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #323130;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+.input-content input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #8a8886;
+  border-radius: 3px;
+  background: #fff;
+  color: #242424;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 15px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.input-content input:hover {
+  border-color: #323130;
+}
+.input-content input:focus {
+  outline: 2px solid var(--amc-accentColor, #0078d4);
+  outline-offset: -2px;
+  border-color: var(--amc-accentColor, #0078d4);
+}
+.input-content input:disabled {
+  border-color: #d2d0ce;
+  background: #f3f2f1;
+  color: #a19f9d;
+  cursor: not-allowed;
+}
+.input-content input::placeholder {
+  color: #767676;
+}

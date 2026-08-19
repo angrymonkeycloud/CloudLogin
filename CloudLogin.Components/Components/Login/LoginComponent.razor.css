@@ -1,4 +1,4 @@
-﻿/*@import url('http://fonts.cdnfonts.com/css/helvetica-neue-9');*/
+/*@import url('http://fonts.cdnfonts.com/css/helvetica-neue-9');*/
 @font-face {
   font-family: 'Tajawal';
   font-style: normal;
@@ -410,3 +410,124 @@
     opacity: 1;
   }
 }
+/* Microsoft account-inspired CloudLogin surface */
+.amc-cloudlogin {
+  --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
+  --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
+  --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
+  width: min(440px, calc(100% - 32px));
+  margin: 32px auto;
+  padding: 40px 44px 36px;
+  overflow: visible;
+  border: 1px solid #e1e1e1;
+  border-top: 3px solid var(--cloudlogin-brand);
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 3px 14px rgba(0,0,0,.14);
+  color: #1b1b1b;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  direction: ltr;
+}
+.amc-cloudlogin *, .amc-cloudlogin *::before, .amc-cloudlogin *::after { box-sizing: border-box; }
+.amc-cloudlogin-body { width: 100%; max-width: none; margin: 28px 0 0; }
+.amc-cloudlogin-body .login-form { align-items: stretch; gap: 16px; }
+.amc-cloudlogin-body .login-form-input,
+.amc-cloudlogin-body .login-form-buttons { gap: 14px; }
+.amc-cloudlogin-body .login-form-next,
+.amc-cloudlogin-body .login-form-verify,
+.amc-cloudlogin-body .login-form-finish { width: 100%; margin: 8px 0 12px; text-align: right; }
+.amc-cloudlogin-body .login-form-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 2px;
+  color: #605e5c;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}
+.amc-cloudlogin-body .login-form-title::before,
+.amc-cloudlogin-body .login-form-title::after { content: ""; flex: 1; height: 1px; background: #e1e1e1; }
+.amc-cloudlogin-panel { width: 100%; margin: 0 0 14px; padding: 0; }
+.amc-cloudlogin-selectedinput { align-items: flex-start; color: #323130; }
+.amc-cloudlogin-selectedinput-value { padding: 6px 10px; border-radius: 3px; background: #f3f2f1; font-size: 13px; }
+.amc-cloudlogin-providers { gap: 10px; margin: 4px 0; }
+.amc-cloudlogin-provider {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+  justify-content: flex-start;
+  padding: 10px 14px;
+  border: 1px solid #8a8886;
+  border-radius: 3px;
+  background: #fff;
+  color: #242424;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.amc-cloudlogin-provider:hover { border-color: #323130; background: #f5f5f5; color: #161616; }
+.amc-cloudlogin-button {
+  width: auto;
+  min-width: 108px;
+  max-width: none;
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 1px solid var(--cloudlogin-brand);
+  border-radius: 3px;
+  background: var(--cloudlogin-brand);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: none;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+.amc-cloudlogin-button:hover { border-color: var(--cloudlogin-brand-strong); background: var(--cloudlogin-brand-strong); color: #fff; }
+.amc-cloudlogin-button._solid { border-color: var(--cloudlogin-brand); background: var(--cloudlogin-brand); }
+.amc-cloudlogin-button._solid:hover { border-color: var(--cloudlogin-brand-strong); background: var(--cloudlogin-brand-strong); color: #fff; }
+.amc-cloudlogin-input { gap: 6px; width: 100%; }
+.amc-cloudlogin-input label { order: -1; margin: 0; color: #323130; font-size: 13px; font-weight: 600; }
+.amc-cloudlogin input[type="text"],
+.amc-cloudlogin input[type="email"],
+.amc-cloudlogin input[type="password"],
+.amc-cloudlogin input[type="tel"],
+.amc-cloudlogin select,
+.amc-cloudlogin textarea,
+.amc-cloudlogin ::deep .input-content input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #8a8886;
+  border-radius: 3px;
+  background: #fff;
+  color: #242424;
+  font: inherit;
+  font-size: 15px;
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+.amc-cloudlogin input::placeholder,
+.amc-cloudlogin ::deep .input-content input::placeholder { color: #767676; }
+.amc-cloudlogin input:focus,
+.amc-cloudlogin select:focus,
+.amc-cloudlogin textarea:focus,
+.amc-cloudlogin ::deep .input-content input:focus {
+  outline: 2px solid var(--cloudlogin-brand);
+  outline-offset: -2px;
+  border-color: var(--cloudlogin-brand);
+  box-shadow: none;
+}
+.amc-cloudlogin ::deep .input-label { display: block; margin-bottom: 6px; color: #323130; font-size: 13px; font-weight: 600; }
+.amc-cloudlogin-keppsignedin { margin: 2px 0; opacity: 1; color: #323130; }
+.amc-cloudlogin-keppsignedin input { width: 18px; height: 18px; accent-color: var(--cloudlogin-brand); }
+.amc-cloudlogin-keppsignedin label { padding-left: 3px; font-size: 13px; }
+.amc-cloudlogin-link { color: var(--cloudlogin-brand); font-family: inherit; font-size: 13px; }
+.amc-cloudlogin-link:hover { color: var(--cloudlogin-brand-strong); text-decoration: underline; }
+.amc-cloudlogin a, .amc-cloudlogin a:visited { color: var(--cloudlogin-brand); }
+.amc-cloudlogin :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--cloudlogin-brand); outline-offset: 2px; }
+.amc-cloudlogin .--disable { cursor: not-allowed; opacity: .45; }
+@media only screen and (max-width: 520px) {
+  .amc-cloudlogin { width: 100%; margin: 0; padding: 32px 24px; border-right: 0; border-left: 0; border-radius: 0; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) { .amc-cloudlogin *, .amc-cloudlogin *::before, .amc-cloudlogin *::after { transition: none !important; animation-duration: .01ms !important; } }

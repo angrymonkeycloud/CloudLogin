@@ -1,0 +1,18 @@
+<ErrorBoundary>
+    <ChildContent>
+        <Router AppAssembly="@typeof(App).Assembly" AdditionalAssemblies="AdditionalAssemblies">
+            <Found Context="routeData">
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(DemoMainLayout)" />
+            </Found>
+            <NotFound>
+                <LayoutView Layout="@typeof(DemoMainLayout)">
+                    <section class="authority-empty"><p>404</p><h1>Page not found</h1><a href="/demo">Open the developer showcase</a></section>
+                </LayoutView>
+            </NotFound>
+        </Router>
+    </ChildContent>
+</ErrorBoundary>
+
+@code {
+    private static readonly Assembly[] AdditionalAssemblies = [typeof(AngryMonkey.CloudLogin.Main.App).Assembly];
+}

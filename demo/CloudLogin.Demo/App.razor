@@ -1,0 +1,20 @@
+@using AngryMonkey.CloudBlazor.Web
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <base href="/" />
+    <CloudHeadPlaceholder />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="demo/css/showcase.css" />
+    <script>document.documentElement.dataset.theme = localStorage.getItem("cloudlogin-authority-theme") || "light";</script>
+</head>
+
+<body>
+    <DemoRoutes />
+    <script src="demo/js/showcase.js"></script>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>

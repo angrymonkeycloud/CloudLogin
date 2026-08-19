@@ -1,0 +1,19 @@
+@page "/login"
+
+<PageTitle>CloudLogin authentication demo</PageTitle>
+
+<DemoPageHeader Eyebrow="Real package component" Title="Try the complete authentication journey." Description="This page renders CloudLoginPage from AngryMonkey.CloudLogin.Components. Choose Test mode for instant access, Password for registration and recovery, or Email verification code with the local demo inbox.">
+    <a class="demo-button demo-button--secondary" href="/providers">Provider guide</a>
+</DemoPageHeader>
+
+<div class="demo-boundary-banner"><span>SHIPPED COMPONENT</span><strong>&lt;CloudLoginPage Embedded="true" /&gt;</strong><small>Namespace: AngryMonkey.CloudLogin · Package UI, not demo markup</small></div>
+
+<DemoExample Title="Embedded login, registration, and recovery" Kind="Live authentication component" Artifact="PACKAGE COMPONENT" Description="Interact with the real CloudLogin UI below. The surrounding title, boundary label, and code tab belong only to this developer portal." Code="@DemoCodeSamples.Login" FileName="Login.razor">
+    <div class="demo-auth-stage"><CloudLoginPage Embedded="true" /></div>
+</DemoExample>
+
+<div class="demo-login-help">
+    <article><span>01</span><div><strong>Instant admin tour</strong><p>Choose Test mode and select Demo Admin (Global Admin).</p></div></article>
+    <article><span>02</span><div><strong>Email and password</strong><p>Register with any demo email and a password of at least 12 characters.</p></div></article>
+    <article><span>03</span><div><strong>Email verification code</strong><p>Request a code, then open the <a href="/inbox">demo inbox</a>.</p></div></article>
+</div>

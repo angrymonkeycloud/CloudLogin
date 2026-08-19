@@ -1,0 +1,56 @@
+@page "/"
+
+<PageTitle>CloudLogin developer demo</PageTitle>
+
+<section class="demo-hero">
+    <div>
+        <span class="demo-kicker"><i></i> Official interactive developer portal</span>
+        <h1>Identity infrastructure<br /><em>developers can actually try.</em></h1>
+        <p>Run authentication, profile management, global administration, organizations, teams, subscriptions, and billing account state in one zero-configuration CloudLogin host.</p>
+        <div class="demo-actions"><a class="demo-button demo-button--primary" href="/login">Try authentication <span>→</span></a><a class="demo-button demo-button--secondary" href="/organizations">Open account registry</a></div>
+        <div class="demo-trust"><span><b>✓</b> Real package components</span><span><b>✓</b> Real public services</span><span><b>✓</b> No external infrastructure</span></div>
+    </div>
+    <aside class="demo-hero-console">
+        <header><span></span><span></span><span></span><small>CloudLogin host</small></header>
+        <div>
+            <span>Authentication</span><strong>3 providers ready</strong><i>Test · Password · Email code</i>
+        </div>
+        <div>
+            <span>Account registry</span><strong>Organizations ready</strong><i>Teams · Subscriptions · Billing</i>
+        </div>
+        <footer><i></i> Running locally</footer>
+    </aside>
+</section>
+
+<section class="demo-stats">
+    <article><strong>3</strong><span>authentication providers</span><a href="/providers">Inspect providers →</a></article>
+    <article><strong>5</strong><span>account management tabs</span><a href="/account">Open account UI →</a></article>
+    <article><strong>8</strong><span>feature areas documented</span><a href="#features">Browse features →</a></article>
+    <article><strong>0</strong><span>external services required</span><a href="/inbox">Open local inbox →</a></article>
+</section>
+
+<section id="features" class="demo-section">
+    <DemoPageHeader Eyebrow="Complete feature map" Title="Choose a real workflow—not a static screenshot." Description="Every card links to an actual CloudLogin component or service-backed developer lab." />
+    <div class="demo-feature-grid">
+        @foreach (DemoFeatureDefinition feature in DemoFeatureCatalog.All)
+        {
+            <a href="@feature.Route">
+                <header><span>@feature.Area</span><b>@feature.Badge</b></header>
+                <h2>@feature.Title</h2>
+                <p>@feature.Description</p>
+                <ul>@foreach (string capability in feature.Capabilities) { <li>@capability</li> }</ul>
+                <strong>Open feature →</strong>
+            </a>
+        }
+    </div>
+</section>
+
+<DemoExample Title="Embed CloudLogin in an ASP.NET Core host" Kind="Application startup" Description="This demo uses the same registration surface available to applications. The in-memory implementations are replaceable infrastructure, not alternate domain APIs." Code="@DemoCodeSamples.EmbeddedRegistration" FileName="Program.cs">
+    <div class="demo-architecture-flow">
+        <article><span>Host app</span><strong>AddCloudLoginEmbedded</strong><small>Choose providers and security policy</small></article><b>→</b>
+        <article><span>CloudLogin UI</span><strong>Login and account components</strong><small>Replace or embed at page level</small></article><b>→</b>
+        <article><span>Public services</span><strong>Identity and account registries</strong><small>Swap only persistence</small></article>
+    </div>
+</DemoExample>
+
+<DemoCallout Tone="success" Icon="✓" Title="Fastest complete tour">Open Authentication, choose Test mode, and select Demo Admin. Then open Account and use the Admin tab before exploring organizations, subscriptions, and billing references.</DemoCallout>

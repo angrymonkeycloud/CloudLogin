@@ -16,13 +16,12 @@
 }
 else
 {
-    <section>
-        <article>
-            <AngryMonkey.CloudLogin.AccountComponent  Referer="@Referer"/>
-        </article>
-    </section>
+    <AngryMonkey.CloudLogin.AccountComponent Referer="@Referer" AdminUserId="@AdminUserId" InitialSection="@InitialSection" TargetEntityId="@TargetEntityId" />
 }
 
-@code{
+@code {
     [Parameter] public string? Referer { get; set; }
+    [Parameter] public Guid? AdminUserId { get; set; }
+    [Parameter] public string? InitialSection { get; set; }
+    [Parameter] public Guid? TargetEntityId { get; set; }
 }

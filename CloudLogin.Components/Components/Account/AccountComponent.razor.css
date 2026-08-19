@@ -1,144 +1,401 @@
 .account-management {
-  padding-block: 50px;
+  --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
+  --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
+  --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
   direction: ltr !important;
-  background-color: transparent;
   min-height: 100vh;
-  padding-inline: 0;
+  border-top: 2px solid var(--cloudlogin-brand);
+  background: #f3f3f3;
+  color: #1b1b1b;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+}
+.account-management *,
+.account-management *::before,
+.account-management *::after {
+  box-sizing: border-box;
 }
 .account-management > div {
   display: grid;
   grid-template-columns: 1fr;
-  max-width: 900px;
-  width: 100%;
-  margin-inline: auto;
-  gap: 0;
-  background-color: #fff;
-  border-radius: 16px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: max-width 0.25s ease;
+  min-height: calc(100vh - 2px);
+  background: #f3f3f3;
 }
-.account-management._admin > div {
-  max-width: 1200px;
+.account-management .sidebar {
+  display: flex;
+  flex-direction: column;
+  background: #f3f3f3;
+  border-bottom: 1px solid #dedede;
+}
+.account-management .profile-mini {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 20px 14px;
+}
+.account-management .profile-mini-avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border: 1px solid #d6d6d6;
+  border-radius: 50%;
+  background: #fff;
+  object-fit: cover;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.account-management .profile-mini-avatar.initials {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: var(--cloudlogin-brand);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+.account-management .profile-mini-copy {
+  min-width: 0;
+}
+.account-management .profile-mini-name,
+.account-management .profile-mini-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-management .profile-mini-name {
+  color: #161616;
+  font-size: 14px;
+  font-weight: 600;
+}
+.account-management .profile-mini-email {
+  margin-top: 1px;
+  color: #616161;
+  font-size: 12px;
 }
 .account-management .tabs {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 0;
-  padding: 16px;
-  background-color: #fafbfc;
-  border-bottom: 1px solid #e9ecef;
+  gap: 4px;
+  padding: 8px 12px 16px;
+  overflow-x: auto;
 }
 .account-management .tab-button {
-  padding: 10px 16px;
-  border: none;
-  background-color: transparent;
-  border-radius: 8px;
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #323130;
   cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
   text-align: left;
-  color: #495057;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  font-size: 0.8rem;
-  margin-bottom: 4px;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 .account-management .tab-button:hover {
-  background-color: #f1f3f5;
-  color: var(--amc-accentColor);
+  background: #e7e7e7;
+  color: #161616;
 }
 .account-management .tab-button.active {
-  background-color: var(--amc-accentColor);
-  color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  color: #161616;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
-.account-management .tab-button--logout {
-  margin-top: 8px;
-  padding-top: 12px;
-  border-top: 1px solid #e9ecef;
-  color: #dc3545;
-  width: 100%;
+.account-management .tab-button.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--cloudlogin-brand);
 }
-.account-management .tab-button--logout:hover {
-  background-color: #fff5f5;
-  color: #c92a2a;
+.account-management .tab-button--admin {
+  color: var(--cloudlogin-brand-strong) !important;
 }
+.account-management .tab-button--admin.active {
+  background: #fff !important;
+  color: #161616 !important;
+}
+.account-management .admin-tab-badge {
+  margin-left: 4px;
+  color: var(--cloudlogin-brand);
+  font-size: 11px;
+}
+.account-management .tab-button--logout,
 .account-management .tab-button--delete {
-  color: #dc3545;
+  color: #a4262c;
 }
+.account-management .tab-button--logout:hover,
 .account-management .tab-button--delete:hover {
-  background-color: #fff5f5;
-  color: #c92a2a;
+  background: #fde7e9;
+  color: #a4262c;
 }
 .account-management .tab-content {
-  flex-grow: 1;
-  padding: 20px;
-  background-color: #fff;
+  width: 100%;
+  min-width: 0;
+  max-width: 1120px;
+  padding: 28px 20px 64px;
   overflow-x: hidden;
 }
-.account-management.skelton > div {
-  background-color: transparent;
+.account-management .account-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 70px;
+  margin-bottom: 22px;
+}
+.account-management .account-page-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: #605e5c;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.account-management .account-page-header h1 {
+  margin: 0;
+  color: #111;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.account-management .account-security-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid #d8d8d8;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #424242;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.account-management .account-security-pill span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--cloudlogin-brand-soft);
+  color: var(--cloudlogin-brand-strong);
+  font-weight: 700;
+}
+.account-management .tab-content ::deep .account-section {
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+}
+.account-management .tab-content ::deep .section-header {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.account-management .tab-content ::deep .section-header h3 {
+  margin: 0;
+  color: #1b1b1b;
+  font-size: 18px;
+  font-weight: 600;
+}
+.account-management .tab-content ::deep .section-description,
+.account-management .tab-content ::deep .section-header-description {
+  margin: 4px 0 0;
+  color: #605e5c;
+  font-size: 13px;
+}
+.account-management .tab-content ::deep .card,
+.account-management .tab-content ::deep .header-card,
+.account-management .tab-content ::deep .account-section > .form-container {
+  border: 1px solid #dedede;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.account-management .tab-content ::deep .card,
+.account-management .tab-content ::deep .header-card {
+  padding: 20px 24px;
+}
+.account-management .tab-content ::deep .account-section > .form-container {
+  max-width: 760px;
+  padding: 24px;
+}
+.account-management .tab-content ::deep .info-item,
+.account-management .tab-content ::deep .contact-item {
+  border: 1px solid #e5e5e5;
+  border-left: 3px solid var(--cloudlogin-brand);
+  border-radius: 6px;
+  background: #fafafa;
   box-shadow: none;
 }
-.account-management.skelton .tabs {
-  background-color: transparent;
-  border: none;
+.account-management .tab-content ::deep .form-label {
+  margin: 0 0 6px;
+  color: #323130;
+  font-size: 13px;
+  font-weight: 600;
+}
+.account-management .tab-content ::deep .form-input,
+.account-management .tab-content ::deep input[type="text"],
+.account-management .tab-content ::deep input[type="email"],
+.account-management .tab-content ::deep input[type="tel"],
+.account-management .tab-content ::deep input[type="password"],
+.account-management .tab-content ::deep select,
+.account-management .tab-content ::deep textarea {
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid #8a8886;
+  border-radius: 4px;
+  background: #fff;
+  color: #242424;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.account-management .tab-content ::deep .form-input:hover,
+.account-management .tab-content ::deep input:hover,
+.account-management .tab-content ::deep select:hover {
+  border-color: #323130;
+}
+.account-management .tab-content ::deep .form-input:focus,
+.account-management .tab-content ::deep input:focus,
+.account-management .tab-content ::deep select:focus,
+.account-management .tab-content ::deep textarea:focus {
+  outline: 2px solid var(--cloudlogin-brand);
+  outline-offset: -2px;
+  border-color: var(--cloudlogin-brand);
+  box-shadow: none;
+}
+.account-management .tab-content ::deep .btn,
+.account-management .tab-content ::deep .admin-action-btn,
+.account-management .tab-content ::deep button:not(.link-action):not(.admin-tab) {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.account-management .tab-content ::deep .btn-primary,
+.account-management .tab-content ::deep .admin-action-btn--primary {
+  border: 1px solid var(--cloudlogin-brand);
+  background: var(--cloudlogin-brand);
+  color: #fff;
+  box-shadow: none;
+}
+.account-management .tab-content ::deep .btn-primary:hover:not(:disabled),
+.account-management .tab-content ::deep .admin-action-btn--primary:hover:not(:disabled) {
+  border-color: var(--cloudlogin-brand-strong);
+  background: var(--cloudlogin-brand-strong);
+}
+.account-management .tab-content ::deep .btn-outline,
+.account-management .tab-content ::deep .admin-action-btn--outline {
+  border: 1px solid #8a8886;
+  background: #fff;
+  color: #323130;
+}
+.account-management .tab-content ::deep .btn-outline:hover:not(:disabled),
+.account-management .tab-content ::deep .admin-action-btn--outline:hover:not(:disabled) {
+  border-color: #323130;
+  background: #f5f5f5;
+}
+.account-management .tab-content ::deep button:focus-visible,
+.account-management .tab-content ::deep input:focus-visible,
+.account-management .tab-content ::deep select:focus-visible {
+  outline: 2px solid var(--cloudlogin-brand);
+  outline-offset: 2px;
+}
+.account-management.skelton {
+  border: 0;
+}
+.account-management.skelton .tab,
+.account-management.skelton .body {
+  border-radius: 6px;
+  animation: skelton 1.5s ease-in-out infinite alternate;
 }
 .account-management.skelton .tab {
-  height: 50px;
   width: 100%;
-  animation: skelton 1.5s ease-in-out infinite alternate;
-  border-radius: 8px;
+  height: 44px;
   margin-bottom: 8px;
 }
 .account-management.skelton .body {
-  width: 100%;
-  height: 100%;
-  animation: skelton 1.5s ease-in-out infinite alternate;
-  border-radius: 8px;
-  min-height: 400px;
-}
-@media only screen and (min-width: 850px) {
-  .account-management > div {
-    grid-template-columns: 220px 1fr;
-  }
-  .account-management .tabs {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    padding: 24px;
-    border-bottom: none;
-    border-right: 1px solid #e9ecef;
-  }
-  .account-management .tab-button {
-    font-size: 0.9rem;
-    padding: 14px 20px;
-    margin-bottom: 6px;
-  }
-  .account-management .tab-content {
-    padding: 32px;
-  }
-}
-@media only screen and (min-width: 1024px) {
-  .account-management > div {
-    grid-template-columns: 240px 1fr;
-  }
-}
-@keyframes skelton {
-  0% {
-    background-color: #e9ecef;
-  }
-  100% {
-    background-color: #f8f9fa;
-  }
+  min-height: 420px;
 }
 .badge,
 ::deep .badge {
-  background-color: var(--amc-accentColor) !important;
-  color: #fff !important;
-  padding: 4px 10px !important;
-  border-radius: 12px !important;
-  font-size: 0.6rem !important;
-  margin-left: 8px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
   font-weight: 600 !important;
-  letter-spacing: 0.3px !important;
+  letter-spacing: 0.02em !important;
+}
+@media only screen and (min-width: 850px) {
+  .account-management > div {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+  .account-management .sidebar {
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 2px);
+    border-right: 1px solid #dedede;
+    border-bottom: 0;
+  }
+  .account-management .profile-mini {
+    padding: 28px 20px 18px;
+  }
+  .account-management .tabs {
+    flex-direction: column;
+    overflow: visible;
+    padding: 6px 12px 24px;
+  }
+  .account-management .tab-button {
+    width: 100%;
+    flex: none;
+    padding: 0 16px 0 22px;
+  }
+  .account-management .tab-button--logout {
+    margin-top: 14px;
+    border-top: 1px solid #dedede;
+    border-radius: 0 0 4px 4px;
+  }
+  .account-management .tab-content {
+    padding: 38px calc(clamp(32px, 5vw, 72px)) 72px;
+  }
+}
+@media only screen and (max-width: 560px) {
+  .account-management .account-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .account-management .account-page-header h1 {
+    font-size: 24px;
+  }
+  .account-management .tab-content ::deep .card,
+  .account-management .tab-content ::deep .header-card,
+  .account-management .tab-content ::deep .account-section > .form-container {
+    padding: 18px;
+  }
+}
+@keyframes skelton {
+  from {
+    background: #e6e6e6;
+  }
+  to {
+    background: #f7f7f7;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-management *,
+  .account-management *::before,
+  .account-management *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+  }
 }

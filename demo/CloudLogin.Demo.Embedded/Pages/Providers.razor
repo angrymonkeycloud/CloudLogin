@@ -1,0 +1,19 @@
+@page "/providers"
+
+<PageTitle>CloudLogin authentication providers</PageTitle>
+
+<DemoPageHeader Eyebrow="Provider studio" Title="Understand every enabled authentication method." Description="These providers are configured in this running CloudLogin host. Each card explains the real journey and where its test data comes from.">
+    <a class="demo-button demo-button--primary" href="/login">Open live login</a>
+</DemoPageHeader>
+
+<section class="demo-provider-grid">
+    <article class="featured"><header><span>TM</span><b>Recommended first</b></header><small>LoginTestProviders</small><h2>Test mode</h2><p>Instantly creates or selects test users. Choose the seeded Demo Admin account to unlock administration.</p><ul><li>No credentials</li><li>Existing user selection</li><li>New test accounts</li></ul><a href="/login">Try Test mode →</a></article>
+    <article><header><span>PW</span><b>Local store</b></header><small>LoginProviders</small><h2>Email and password</h2><p>Exercises registration, password validation, login, logout, and forgot-password recovery against the in-memory user store.</p><ul><li>Registration</li><li>12+ character password</li><li>Recovery flow</li></ul><a href="/login">Try Password →</a></article>
+    <article><header><span>EC</span><b>Demo inbox</b></header><small>LoginProviders</small><h2>Email verification code</h2><p>Generates real one-time codes through CloudLogin’s email callback. The local inbox replaces SMTP for this demo.</p><ul><li>One-time code</li><li>Registration</li><li>Password recovery</li></ul><a href="/inbox">Open inbox →</a></article>
+</section>
+
+<DemoExample Title="Configure authentication providers" Kind="Server registration" Description="Provider adapters remain isolated from the UI. Applications enable only the methods they support and supply their own email delivery callback." Code="@DemoCodeSamples.EmbeddedRegistration" FileName="Program.cs">
+    <div class="demo-provider-pipeline"><span>Provider configuration</span><b>→</b><span>CloudLogin validation</span><b>→</b><span>Session cookie</span><b>→</b><span>Account UI</span></div>
+</DemoExample>
+
+<DemoCallout Tone="warning" Icon="!" Title="External providers are intentionally not faked">Microsoft, Google, Facebook, Twitter/X, and OpenID Connect require real application registrations. CloudLogin supports them, but this zero-configuration demo does not pretend to complete an OAuth flow without provider credentials.</DemoCallout>

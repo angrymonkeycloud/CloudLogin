@@ -13,6 +13,7 @@ CloudLogin is secure by default: HTTPS-only cookies, exact redirect allowlists, 
 
 ## Table of contents
 
+- [Try it locally](#try-it-locally)
 - [Projects and packages](#projects-and-packages)
 - [Architecture](#architecture)
 - [Standalone login website](#standalone-login-website)
@@ -30,6 +31,13 @@ CloudLogin is secure by default: HTTPS-only cookies, exact redirect allowlists, 
 - [Migration notes](#migration-notes)
 - [Security scope](#security-scope)
 - [Additional guidance](#additional-guidance)
+
+## Try it locally
+
+The [`demo/`](demo/README.md) folder has three runnable apps you can `dotnet run` with zero
+setup - no Cosmos DB, no OAuth secrets, no SMTP server - covering the standalone authority,
+consumer-website integration, and embedded-host integration. See [`demo/README.md`](demo/README.md)
+for ports and how to sign in.
 
 ## Projects and packages
 
@@ -92,6 +100,7 @@ builder.AddCloudLoginWeb(options =>
     ];
 
     // Optional UI customization.
+    options.PrimaryColor = "#0078D4"; // Defaults to blue when omitted.
     options.WebConfig = web => web.PageDefaults.SetTitle("Company Login");
 });
 
@@ -416,3 +425,48 @@ These controls provide a strong framework baseline, not automatic regulatory cer
 - [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html)
 
 CloudLogin is part of the [Angry Monkey Cloud](https://angrymonkeycloud.com) ecosystem and is licensed under the [MIT License](LICENSE).
+
+## External integrations and webhooks
+
+CloudLogin remains authoritative for identity, users, organizations, memberships, permissions, subscriptions, and billing data. Applications such as CDM consume those entities through the authenticated service API and retain only their own application data plus stable CloudLogin identifiers.
+
+The service API exposes Organization, User, Subscription, and Organization-member reads for trusted server applications. Service keys belong on the server and must never be sent to WebAssembly or browser code. Account deep links accept a section and entity identifier so an integration can open the specific Organization or Subscription; user administration links accept the target user identifier.
+
+### Generic webhook registrations
+
+Webhook delivery is application-neutral. Configure registrations on `CloudLoginWebConfiguration.Webhooks`:
+
+```csharp
+new CloudLoginWebhookRegistration
+{
+    Application = "CDM",
+    Url = new Uri("https://cdm.example/api/cloudlogin/webhook"),
+    Secret = "<at least 32 characters>",
+    Events =
+    [
+        "User.Updated",
+        "Organization.Updated",
+        "Subscription.Updated",
+        "Subscription.Cancelled"
+    ]
+}
+```
+
+An empty event set subscribes to every published event. Production webhook URLs must use HTTPS. Development HTTP endpoints are accepted only for local development. Configuration validation rejects missing application names, invalid URLs, short secrets, and blank event names.
+
+CloudLogin mutation services publish a `CloudLoginEvent` through `ICloudLoginEventPublisher` after successful User, Organization, membership, invitation, and Subscription persistence. Current events include `User.Created`, `User.Updated`, `User.Deleted`, `Organization.Created`, `Organization.Updated`, `Organization.MembershipUpdated`, `Organization.InvitationCreated`, `Subscription.Created`, `Subscription.Updated`, and `Subscription.Cancelled`. This remains application-neutral so CDM, Coverbox, Melon Cut, or any future application can consume the same stream. Events contain `EventId`, `EventType`, `EntityType`, `EntityId`, `Timestamp`, `Version`, `Operation`, and a JSON `Payload`.
+
+Delivery signs the exact JSON body with HMAC-SHA256 and sends:
+
+- `X-CloudLogin-Event-Id`
+- `X-CloudLogin-Timestamp`
+- `X-CloudLogin-Signature: sha256=<hex digest>`
+
+Consumers must validate the signature against their registration secret, reject stale timestamps according to their security policy, and store successful event IDs for idempotency. `CloudLoginWebhookPublisher.Verify` provides constant-time signature comparison. Delivery retries transient failures four times with bounded backoff and reports a terminal error instead of using fire-and-forget delivery.
+
+CloudLogin never creates application records in response to its own events. A consumer decides whether a linked record exists, which configured fields it synchronizes, and how it records delivery or synchronization errors. In particular, CDM only updates already-linked records and does not create a Business, Contact, or Subscription merely because CloudLogin emits an event.
+
+### CDM mapping
+
+The initial native CDM mappings are Business ↔ Organization, Contact ↔ User, and Subscription ↔ Subscription. CDM can operate in a CloudLogin read-only view mode or a combined CloudLogin + CDM mode. CloudLogin-created lifecycle timestamps remain distinct from CDM's link time and actor. Manual Sync and record-specific Open in CloudLogin actions are provided by CDM's generic external-provider runtime.
+

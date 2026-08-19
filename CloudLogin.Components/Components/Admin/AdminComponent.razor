@@ -39,6 +39,9 @@
 </div>
 
 @code {
+    /// <summary>When set, pre-selects this user in the detail view instead of showing the list.</summary>
+    [Parameter] public Guid? AdminUserId { get; set; }
+
     private string activeTab = "Users";
     private UserModel? _selectedUser;
     private int _userCount;
@@ -46,6 +49,9 @@
     protected override async Task OnInitializedAsync()
     {
         _userCount = await cloudLogin.GetUserCount();
+
+        if (AdminUserId.HasValue)
+            _selectedUser = await cloudLogin.GetUserById(AdminUserId.Value);
     }
 
     private void SelectUser(UserModel user)

@@ -19,6 +19,12 @@ public class CloudLoginWebConfiguration
     public AzureStorageConfiguration? AzureStorage { get; set; } // Optional Azure Storage configuration
 
     /// <summary>
+    /// The primary/accent color used across the login and account UI, as a hex string
+    /// (e.g. "#0078D4" or "#06C"). Defaults to blue.
+    /// </summary>
+    public string PrimaryColor { get; set; } = "#0078D4";
+
+    /// <summary>
     /// Optional exact origins for websites hosted separately from CloudLogin.
     /// When empty, relative and same-origin redirects continue to work while
     /// cross-origin redirects are denied.
@@ -33,6 +39,19 @@ public class CloudLoginWebConfiguration
     public string CookieName { get; set; } = "__Host-CloudLogin";
     public string? CookieDomain { get; set; }
     public CloudLoginSecurityOptions Security { get; set; } = new();
+
+    /// <summary>
+    /// Shared secrets accepted by the "ServiceKey" authentication scheme, used by trusted
+    /// backend services (not browsers) to call the service-to-service lookup endpoints
+    /// (e.g. <c>CloudLogin/Service/Organizations/{id}</c>). Empty by default — those
+    /// endpoints reject every request until at least one key is configured. Never expose
+    /// these to a browser; store them via user secrets / a secret manager on both sides.
+    /// </summary>
+
+    public List<string> ServiceKeys { get; set; } = [];
+
+    /// <summary>Application-neutral signed webhook registrations.</summary>
+    public List<CloudLoginWebhookRegistration> Webhooks { get; set; } = [];
     /// <summary>
     /// Enables the old code/QR flow that selects a user in browser code and then
     /// asks the server to create a session for that user. Keep disabled unless a

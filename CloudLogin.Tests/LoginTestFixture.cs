@@ -1,7 +1,7 @@
 using AngryMonkey.Cloud;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Sever.Providers;
-using AngryMonkey.CloudWeb;
+using AngryMonkey.CloudBlazor.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +15,8 @@ internal sealed class LoginTestFixture
     public LoginTestFixture(
         bool testModeEnabled = false,
         IEnumerable<string>? allowedOrigins = null,
-        IEnumerable<string>? allowedMobileSchemes = null)
+        IEnumerable<string>? allowedMobileSchemes = null,
+        ICloudLoginEventPublisher? eventPublisher = null)
     {
         Configuration = new CloudLoginWebConfiguration
         {
@@ -47,7 +48,12 @@ internal sealed class LoginTestFixture
             .BuildServiceProvider();
 
         Accessor.HttpContext = HttpContext;
-        Server = new CloudLoginServer(new CloudGeographyClient(), Configuration, Accessor, Store);
+        Server = new CloudLoginServer(
+            new CloudGeographyClient(),
+            Configuration,
+            Accessor,
+            cloudLoginStore: Store,
+            eventPublisher: eventPublisher);
     }
 
     public CloudLoginWebConfiguration Configuration { get; }

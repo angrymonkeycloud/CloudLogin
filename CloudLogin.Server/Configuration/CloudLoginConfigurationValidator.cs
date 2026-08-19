@@ -8,6 +8,9 @@ public static partial class CloudLoginConfigurationValidator
     [GeneratedRegex("^[a-zA-Z][a-zA-Z0-9+.-]*$")]
     private static partial Regex UriSchemePattern();
 
+    [GeneratedRegex("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")]
+    private static partial Regex HexColorPattern();
+
     public static void Validate(CloudLoginWebConfiguration configuration, bool isDevelopment)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -41,12 +44,38 @@ public static partial class CloudLoginConfigurationValidator
         if (string.IsNullOrWhiteSpace(configuration.CookieName))
             throw new InvalidOperationException("CookieName is required.");
 
+        if (string.IsNullOrWhiteSpace(configuration.PrimaryColor) || !HexColorPattern().IsMatch(configuration.PrimaryColor))
+            throw new InvalidOperationException("PrimaryColor must be a hex color, e.g. \"#0078D4\" or \"#06C\".");
+
         if (!string.IsNullOrWhiteSpace(configuration.CookieDomain) &&
             configuration.CookieName.StartsWith("__Host-", StringComparison.Ordinal))
             throw new InvalidOperationException("A __Host- cookie cannot specify CookieDomain. Change CookieName only when domain-wide cookies are explicitly required.");
 
         foreach (string origin in configuration.AllowedRedirectOrigins)
             ValidateOrigin(origin);
+
+        foreach (string serviceKey in configuration.ServiceKeys)
+        {
+            if (string.IsNullOrWhiteSpace(serviceKey) || serviceKey.Trim().Length < 32)
+                throw new InvalidOperationException("Each ServiceKeys entry must be at least 32 characters — generate one with a cryptographically random secret, not a guessable string.");
+        }
+
+        foreach (CloudLoginWebhookRegistration webhook in configuration.Webhooks)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(webhook.Application);
+            
+            if (!webhook.Url.IsAbsoluteUri
+                || (!isDevelopment && webhook.Url.Scheme != Uri.UriSchemeHttps)
+                || (isDevelopment && webhook.Url.Scheme != Uri.UriSchemeHttp
+                    && webhook.Url.Scheme != Uri.UriSchemeHttps))
+                throw new InvalidOperationException("Webhook URLs must be absolute HTTPS URLs (HTTP is allowed only in development).");
+            
+            if (string.IsNullOrWhiteSpace(webhook.Secret) || webhook.Secret.Length < 32)
+                throw new InvalidOperationException("Webhook secrets must contain at least 32 characters.");
+            
+            if (webhook.Events.Any(string.IsNullOrWhiteSpace))
+                throw new InvalidOperationException("Webhook event identifiers cannot be empty.");
+        }
 
         foreach (string scheme in configuration.AllowedMobileSchemes)
         {

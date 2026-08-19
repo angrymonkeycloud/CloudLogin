@@ -1,0 +1,10 @@
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<button class="demo-theme-toggle" type="button" aria-label="Toggle light and dark theme" @onclick="ToggleAsync">
+    <span aria-hidden="true">◐</span><span data-theme-label>Dark mode</span>
+</button>
+
+@code {
+    private async Task ToggleAsync() => await JS.InvokeVoidAsync("cloudLoginDemo.toggleTheme");
+}

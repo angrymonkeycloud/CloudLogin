@@ -1,0 +1,34 @@
+@inherits LayoutComponentBase
+
+<div class="demo-shell">
+    <aside class="demo-sidebar">
+        <a class="demo-brand" href="/">
+            <span>CL</span>
+            <div><strong>CloudLogin</strong><small>Developer demo</small></div>
+        </a>
+        <nav class="demo-nav" aria-label="CloudLogin demo navigation">
+            <span>Explore</span>
+            <NavLink href="/" Match="NavLinkMatch.All"><i>01</i><b>Overview</b></NavLink>
+            <NavLink href="/login"><i>02</i><b>Authentication</b></NavLink>
+            <NavLink href="/providers"><i>03</i><b>Provider studio</b></NavLink>
+            <NavLink href="/account"><i>04</i><b>Account and admin</b></NavLink>
+            <span>Account registry</span>
+            <NavLink href="/organizations"><i>05</i><b>Organizations</b></NavLink>
+            <NavLink href="/subscriptions"><i>06</i><b>Subscriptions</b></NavLink>
+            <NavLink href="/billing"><i>07</i><b>Billing references</b></NavLink>
+            <span>Developer tools</span>
+            <NavLink href="/inbox"><i>08</i><b>Demo inbox</b></NavLink>
+        </nav>
+        <div class="demo-sidebar-note"><span>Zero infrastructure</span><p>In-memory users and account registry. No Cosmos, SMTP, or OAuth setup required.</p></div>
+    </aside>
+
+    <section class="demo-content">
+        <header class="demo-topbar">
+            <a class="demo-mobile-brand" href="/">CL</a>
+            <div><span>Angry Monkey Cloud</span><strong>Identity and account infrastructure</strong></div>
+            <div class="demo-topbar-actions"><a href="/login">Open login</a><ThemeToggle /></div>
+        </header>
+        <main class="demo-main">@Body</main>
+        <footer class="demo-footer"><span>Angry Monkey CloudLogin developer demo</span><a href="https://github.com/angrymonkeycloud/CloudLogin">Source and documentation</a></footer>
+    </section>
+</div>

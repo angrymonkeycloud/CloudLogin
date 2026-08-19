@@ -22,7 +22,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Content Remove="mateconfig.json" />
+		<Content Remove="mateconfig.json" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -50,6 +50,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="artifacts\**" />
 		<None Update="amc-logo.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>

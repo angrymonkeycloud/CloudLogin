@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\CloudLogin.API\CloudLogin.API.csproj" />
+		<ProjectReference Include="..\..\CloudLogin.WebAssembly\CloudLogin.WebAssembly.csproj" />
+	</ItemGroup>
+
+</Project>

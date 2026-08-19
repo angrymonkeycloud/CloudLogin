@@ -1,0 +1,18 @@
+<header class="demo-page-header">
+    <div>
+        <span>@Eyebrow</span>
+        <h1>@Title</h1>
+        <p>@Description</p>
+    </div>
+    @if (ChildContent is not null)
+    {
+        <aside>@ChildContent</aside>
+    }
+</header>
+
+@code {
+    [Parameter] public string Eyebrow { get; set; } = "CloudLogin";
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required string Description { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

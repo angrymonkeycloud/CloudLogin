@@ -1,0 +1,19 @@
+@inherits LayoutComponentBase
+
+<div class="authority-shell">
+    <header class="authority-header">
+        <a class="authority-brand" href="/demo"><span>CL</span><strong>CloudLogin</strong><small>Authority demo</small></a>
+        <nav aria-label="Primary navigation">
+            <NavLink href="/" Match="NavLinkMatch.All">Authentication</NavLink>
+            <NavLink href="/Account">Account</NavLink>
+            <NavLink href="/demo">Showcase</NavLink>
+            <NavLink href="/demo/organizations">Organizations</NavLink>
+            <NavLink href="/demo/subscriptions">Subscriptions</NavLink>
+            <NavLink href="/demo/billing">Billing</NavLink>
+            <a href="/demo/inbox.html">Code inbox</a>
+        </nav>
+        <button type="button" class="authority-theme" onclick="cloudLoginAuthority.toggleTheme()"><span aria-hidden="true">◐</span><span data-theme-label>Dark mode</span></button>
+    </header>
+    <main class="authority-main">@Body</main>
+    <footer><span>Angry Monkey CloudLogin</span><span>Demo data resets when the application restarts.</span></footer>
+</div>

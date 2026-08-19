@@ -1,0 +1,75 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+@namespace AngryMonkey.CloudLogin
+
+<div class="account-section">
+    <div class="section-header">
+        <h3>Subscriptions</h3>
+        <p class="section-description">Applications and plans linked to your account</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-spinner"></div>
+    }
+    else if (_subscriptions.Count == 0)
+    {
+        <div class="empty-state">You don't have any subscriptions yet.</div>
+    }
+    else
+    {
+        <div class="entity-list">
+            @foreach (var subscription in _subscriptions)
+            {
+                <div id="cloudlogin-subscription-@subscription.Id" class="card entity-card @(TargetSubscriptionId == subscription.Id ? "deep-link-target" : null)">
+                    <div class="card-header">
+                        <h4>@subscription.Application</h4>
+                        <span class="badge @StatusBadgeClass(subscription.Status)">@subscription.Status</span>
+                    </div>
+                    <div class="kv-list">
+                        <div class="kv-row">
+                            <div class="kv-key">Reference</div>
+                            <div class="kv-value">@subscription.Reference</div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-key">Auto-renew</div>
+                            <div class="kv-value">@(subscription.AutoRenew ? "On" : "Off")</div>
+                        </div>
+                        <div class="kv-row">
+                            <div class="kv-key">Expires</div>
+                            <div class="kv-value">@(subscription.ExpiresAt?.ToString("MMMM dd, yyyy") ?? "Never")</div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(subscription.Provider))
+                        {
+                            <div class="kv-row">
+                                <div class="kv-key">Provider</div>
+                                <div class="kv-value">@subscription.Provider</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<AccountSubscription> _subscriptions = [];
+    private bool _loading = true;
+    [Parameter] public Guid? TargetSubscriptionId { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _subscriptions = await cloudLogin.GetMySubscriptions();
+        _loading = false;
+    }
+
+    private static string StatusBadgeClass(AccountSubscriptionStatuses status) => status switch
+    {
+        AccountSubscriptionStatuses.Active => "badge-primary",
+        AccountSubscriptionStatuses.Pending => "badge-info",
+        _ => "badge-secondary"
+    };
+}

@@ -16,6 +16,19 @@ public class CloudLoginConfigurationSecurityTests
         Assert.StartsWith("__Host-", configuration.CookieName);
         Assert.True(configuration.Security.RequireHttps);
         Assert.Equal(600_000, configuration.Security.PasswordHashIterations);
+        Assert.Equal("#0078D4", configuration.PrimaryColor);
+    }
+    [Theory]
+    [InlineData("")]
+    [InlineData("blue")]
+    [InlineData("#12")]
+    [InlineData("#12345G")]
+    public void PrimaryColor_RejectsInvalidValues(string color)
+    {
+        CloudLoginWebConfiguration configuration = new() { PrimaryColor = color };
+
+        Assert.Throws<InvalidOperationException>(() =>
+            CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: false));
     }
 
     [Fact]

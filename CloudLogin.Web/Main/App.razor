@@ -1,4 +1,6 @@
 @using AngryMonkey.CloudBlazor.Web
+@using AngryMonkey.CloudLogin.Server
+@inject CloudLoginWebConfiguration Config
 
 <!DOCTYPE html>
 <html lang="en">
@@ -6,6 +8,14 @@
 <head>
     <base href="/" />
     <CloudHeadPlaceholder />
+    <style>
+        :root {
+            --cloudlogin-color: @Config.PrimaryColor;
+            --amc-accentColor: var(--cloudlogin-color, #0078D4);
+            --amc-secondColor: color-mix(in srgb, var(--amc-accentColor) 82%, #000);
+            --amc-accentColor-soft: color-mix(in srgb, var(--amc-accentColor) 10%, #fff);
+        }
+    </style>
 </head>
 
 <body>

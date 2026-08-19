@@ -1,0 +1,32 @@
+@page "/inbox"
+@rendermode InteractiveServer
+@inject DemoInboxService DemoInbox
+
+<PageTitle>CloudLogin demo verification inbox</PageTitle>
+
+<DemoPageHeader Eyebrow="Local developer tool" Title="Email verification codes without SMTP." Description="The configured CloudLogin email callback captures one-time codes in server memory. Request a code from the real login or recovery flow, then refresh this page.">
+    <button class="demo-button demo-button--primary" @onclick="Refresh">Refresh inbox</button>
+</DemoPageHeader>
+
+<div class="demo-boundary-banner"><span>DEMO-ONLY INFRASTRUCTURE</span><strong>DemoInboxService</strong><small>Replaces email delivery locally; not part of the CloudLogin package</small></div>
+
+<section class="demo-inbox">
+    <header><div><span>Recent messages</span><h2>@_entries.Count verification codes</h2></div><a href="/login">Request another code →</a></header>
+    @if (_entries.Count == 0)
+    {
+        <div class="demo-empty"><span>@@</span><h3>Your demo inbox is empty</h3><p>Open Authentication, choose Email verification code, and request a code for any demo address.</p><a class="demo-button demo-button--primary" href="/login">Open authentication</a></div>
+    }
+    else
+    {
+        <div class="demo-inbox-list">@foreach (DemoInboxService.InboxEntry entry in _entries) { <article><span>@Initial(entry.Address)</span><div><strong>@entry.Address</strong><small>CloudLogin verification code · @entry.SentAt.ToLocalTime().ToString("HH:mm:ss")</small></div><code>@entry.Code</code></article> }</div>
+    }
+</section>
+
+<DemoCallout Tone="warning" Icon="!" Title="Local development only">Codes are intentionally visible here because the demo has no real mailbox. Production applications must deliver codes through a trusted email provider and must never expose them through an inbox endpoint.</DemoCallout>
+
+@code {
+    private IReadOnlyList<DemoInboxService.InboxEntry> _entries = [];
+    protected override void OnInitialized() => Refresh();
+    private void Refresh() => _entries = DemoInbox.GetRecent();
+    private static string Initial(string address) => address.Length == 0 ? "?" : char.ToUpperInvariant(address[0]).ToString();
+}

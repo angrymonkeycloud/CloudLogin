@@ -75,3 +75,60 @@
 .amc-cloudlogin._loading .amc-cloudlogin-loading {
   display: block;
 }
+/* Professional account-style header */
+.amc-cloudlogin-header {
+  align-items: flex-start;
+  text-align: left;
+}
+.amc-cloudlogin-title {
+  width: 100%;
+  padding: 0;
+  color: #1b1b1b;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.amc-cloudlogin-title button {
+  left: -6px;
+  top: 1px;
+  width: 30px;
+  height: 30px;
+  transform: translateX(-100%);
+  border-radius: 3px;
+}
+.amc-cloudlogin-title button:hover {
+  background: #f3f2f1;
+}
+.amc-cloudlogin-subtitle {
+  margin-top: 8px;
+  color: #605e5c;
+  font-size: 14px;
+  line-height: 1.45;
+  opacity: 1;
+}
+.amc-cloudlogin-errors {
+  width: 100%;
+  margin-top: 14px;
+}
+.amc-cloudlogin-errors ul {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid #d13438;
+  background: #fde7e9;
+  color: #a4262c;
+  font-size: 13px;
+}
+.amc-cloudlogin-loading {
+  inset: 0 0 auto;
+  width: 100%;
+}
+.amc-cloudlogin-loading > div {
+  height: 3px;
+  border-radius: 0;
+  background: var(--amc-accentColor, #0078d4);
+}
+.amc-cloudlogin-logo {
+  max-width: 148px;
+  margin: 0 0 22px;
+}

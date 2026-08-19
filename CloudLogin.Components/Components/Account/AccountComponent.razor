@@ -1,4 +1,4 @@
-﻿@using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Interfaces
 
 @rendermode @(new InteractiveWebAssemblyRenderMode(false))
 
@@ -13,28 +13,54 @@
     {
         <div class="account-management @(activeTab == "Admin" ? "_admin" : "")">
             <div>
-                <div class="tabs">
-                    @foreach (var tab in Tabs)
-                    {
-                        <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
-                    }
-                    @if (CurrentUser.IsGlobalAdmin)
-                    {
-                        <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")'>
-                            Admin
-                            <span class="admin-tab-badge">★</span>
-                        </button>
-                    }
-                    @if (string.IsNullOrEmpty(Referer))
-                    {
-                        <button class="tab-button tab-button--logout" @onclick="SignOut">Log out</button>
-                    }
-                    @if (CurrentUser.IsTest)
-                    {
-                        <button class="tab-button tab-button--delete" @onclick="DeleteAccount">Delete account</button>
-                    }
+                <div class="sidebar">
+                    <div class="profile-mini">
+                        @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
+                        {
+                            <img class="profile-mini-avatar" src="@CurrentUser.ProfilePicture" alt="Profile picture" />
+                        }
+                        else
+                        {
+                            <div class="profile-mini-avatar initials" aria-hidden="true">@GetInitials()</div>
+                        }
+                        <div class="profile-mini-copy">
+                            <div class="profile-mini-name">@GetDisplayName()</div>
+                            <div class="profile-mini-email">@GetPrimaryEmail()</div>
+                        </div>
+                    </div>
+                    <div class="tabs">
+                        @foreach (var tab in Tabs)
+                        {
+                            <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
+                        }
+                        @if (CurrentUser.IsGlobalAdmin)
+                        {
+                            <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")'>
+                                Admin
+                                <span class="admin-tab-badge">★</span>
+                            </button>
+                        }
+                        @if (string.IsNullOrEmpty(Referer))
+                        {
+                            <button class="tab-button tab-button--logout" @onclick="SignOut">Log out</button>
+                        }
+                        @if (CurrentUser.IsTest)
+                        {
+                            <button class="tab-button tab-button--delete" @onclick="DeleteAccount">Delete account</button>
+                        }
+                    </div>
                 </div>
                 <div class="tab-content">
+                    <header class="account-page-header">
+                        <div>
+                            <span class="account-page-eyebrow">CloudLogin account</span>
+                            <h1>@GetActiveTabDisplayName()</h1>
+                        </div>
+                        <div class="account-security-pill" title="Your CloudLogin session is protected">
+                            <span aria-hidden="true">&#10003;</span>
+                            Secure session
+                        </div>
+                    </header>
                     @if (activeTab == "Manage")
                     {
                         <AccountComponent_Update CurrentUser="CurrentUser" />
@@ -47,9 +73,21 @@
                     {
                         <AccountComponent_Numbers CurrentUser="CurrentUser" />
                     }
+                    else if (activeTab == "Subscriptions")
+                    {
+                        <AccountComponent_Subscriptions TargetSubscriptionId="@TargetEntityId" />
+                    }
+                    else if (activeTab == "Organizations")
+                    {
+                        <AccountComponent_Organizations TargetOrganizationId="@TargetEntityId" />
+                    }
+                    else if (activeTab == "PaymentMethods")
+                    {
+                        <AccountComponent_PaymentMethods />
+                    }
                     else if (activeTab == "Admin" && CurrentUser.IsGlobalAdmin)
                     {
-                        <AdminComponent />
+                        <AdminComponent AdminUserId="@AdminUserId" />
                     }
                     else
                     {
@@ -85,18 +123,40 @@ else
 
 @code {
     [Parameter] public string? Referer { get; set; }
+
+    /// <summary>When set (and the signed-in user is a global admin), opens straight to this user in the Admin tab.</summary>
+    [Parameter] public Guid? AdminUserId { get; set; }
+
+    /// <summary>Initial account section selected by a trusted deep link.</summary>
+    [Parameter] public string? InitialSection { get; set; }
+
+    /// <summary>Specific organization or subscription addressed by the deep link.</summary>
+    [Parameter] public Guid? TargetEntityId { get; set; }
+
     private UserModel? CurrentUser { get; set; }
 
-    protected override async Task OnInitializedAsync() => CurrentUser = await cloudLogin.CurrentUser();
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser = await cloudLogin.CurrentUser();
+
+        if (AdminUserId.HasValue && CurrentUser is { IsGlobalAdmin: true })
+            activeTab = "Admin";
+        if (!string.IsNullOrWhiteSpace(InitialSection) && Tabs.Any(tab => tab.Name == InitialSection))
+            activeTab = InitialSection;
+
+    }
 
     private string activeTab = "UserInfo";
 
     private List<TabItem> Tabs = new List<TabItem>
     {
-        new TabItem { Name = "UserInfo", DisplayName = "User Info" },
-        new TabItem { Name = "Manage", DisplayName = "Manage" },
+        new TabItem { Name = "UserInfo", DisplayName = "Account" },
+        new TabItem { Name = "Manage", DisplayName = "Your info" },
         new TabItem { Name = "Emails", DisplayName = "Emails" },
-        new TabItem { Name = "PhoneNumbers", DisplayName = "Phone Numbers" }
+        new TabItem { Name = "PhoneNumbers", DisplayName = "Phone Numbers" },
+        new TabItem { Name = "Subscriptions", DisplayName = "Subscriptions" },
+        new TabItem { Name = "Organizations", DisplayName = "Organizations" },
+        new TabItem { Name = "PaymentMethods", DisplayName = "Payment options" }
     };
 
     private class TabItem
@@ -106,6 +166,33 @@ else
     }
 
     private void SwitchTab(string tab) => activeTab = tab;
+
+    private string GetActiveTabDisplayName()
+        => activeTab == "Admin"
+            ? "Administration"
+            : Tabs.FirstOrDefault(tab => tab.Name == activeTab)?.DisplayName ?? "Account";
+
+    private string GetDisplayName()
+    {
+        string? full = CurrentUser?.DisplayName;
+        if (string.IsNullOrWhiteSpace(full))
+            full = string.Join(" ", new[] { CurrentUser?.FirstName, CurrentUser?.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        return string.IsNullOrWhiteSpace(full) ? "Account" : full!;
+    }
+
+    private string GetPrimaryEmail()
+        => (CurrentUser?.PrimaryEmailAddress ?? CurrentUser?.EmailAddresses.FirstOrDefault())?.Input ?? string.Empty;
+
+    private string GetInitials()
+    {
+        var parts = new[] { CurrentUser?.FirstName, CurrentUser?.LastName }
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s!.Trim());
+        var initials = string.Concat(parts.Select(p => char.ToUpperInvariant(p[0])));
+        if (string.IsNullOrWhiteSpace(initials) && !string.IsNullOrWhiteSpace(CurrentUser?.DisplayName))
+            initials = new string(CurrentUser!.DisplayName!.Where(char.IsLetter).Take(2).Select(char.ToUpperInvariant).ToArray());
+        return string.IsNullOrWhiteSpace(initials) ? "?" : initials;
+    }
 
     private void SignOut()
     {

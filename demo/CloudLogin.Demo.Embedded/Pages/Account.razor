@@ -1,0 +1,20 @@
+@page "/account"
+
+<PageTitle>CloudLogin account and administration demo</PageTitle>
+
+<DemoPageHeader Eyebrow="Real package component" Title="Profile, contact methods, security, and administration." Description="AccountPageComponent exposes the signed-in user experience. Demo Admin also unlocks the role-gated administration tab and real user-management components.">
+    <a class="demo-button demo-button--secondary" href="/login">Sign in first</a>
+</DemoPageHeader>
+
+<div class="demo-boundary-banner"><span>SHIPPED COMPONENT</span><strong>&lt;AccountPageComponent /&gt;</strong><small>User Info · Manage · Emails · Phone Numbers · Admin · Logout · Delete</small></div>
+
+<DemoExample Title="Account management and global administration" Kind="Live account component" Artifact="PACKAGE COMPONENT" Description="Sign in through the authentication page first. Test accounts can update profile data and delete themselves; Demo Admin can also manage users." Code="@DemoCodeSamples.Account" FileName="Account.razor">
+    <div class="demo-account-stage"><AccountPageComponent /></div>
+</DemoExample>
+
+<section class="demo-account-capabilities">
+    <article><span>Profile</span><strong>User information and editing</strong><p>Display name, locale, country, and account metadata.</p></article>
+    <article><span>Contacts</span><strong>Email and phone management</strong><p>Primary and secondary account inputs.</p></article>
+    <article><span>Administration</span><strong>Role-gated user directory</strong><p>Available only when IsGlobalAdmin is true.</p></article>
+    <article><span>Lifecycle</span><strong>Logout and test deletion</strong><p>Real session termination and account cleanup paths.</p></article>
+</section>

@@ -345,6 +345,14 @@ public partial class CloudLoginServer : ICloudLogin
             throw new InvalidOperationException("CosmosMethods is not initialized");
 
         await _cosmosMethods.Update(user);
+        
+        if (_eventPublisher != null)
+            await _eventPublisher.PublishAsync(CloudLoginEvent.Create(
+                "User.Updated",
+                "User",
+                user.ID,
+                "Updated",
+                new { user.ID }));
     }
 
     public async Task CreateUser(UserModel user)
@@ -353,6 +361,14 @@ public partial class CloudLoginServer : ICloudLogin
             throw new InvalidOperationException("CosmosMethods is not initialized");
 
         await _cosmosMethods.Create(user);
+        
+        if (_eventPublisher != null)
+            await _eventPublisher.PublishAsync(CloudLoginEvent.Create(
+                "User.Created",
+                "User",
+                user.ID,
+                "Created",
+                new { user.ID }));
     }
 
     public async Task DeleteUser(Guid userId)
@@ -361,6 +377,14 @@ public partial class CloudLoginServer : ICloudLogin
             throw new InvalidOperationException("CosmosMethods is not initialized");
 
         await _cosmosMethods.DeleteUser(userId);
+        
+        if (_eventPublisher != null)
+            await _eventPublisher.PublishAsync(CloudLoginEvent.Create(
+                "User.Deleted",
+                "User",
+                userId,
+                "Deleted",
+                new { ID = userId }));
     }
 
     public async Task AddUserInput(Guid userId, LoginInput input)

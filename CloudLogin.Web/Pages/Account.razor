@@ -4,9 +4,21 @@
 
 <CloudHeadContent />
 
-<AngryMonkey.CloudLogin.AccountPageComponent Referer="@Referer" />
+<AngryMonkey.CloudLogin.AccountPageComponent Referer="@Referer" AdminUserId="@AdminUserId" InitialSection="@Section" TargetEntityId="@EntityId" />
 
 @code{
     [SupplyParameterFromQuery]
     public string? Referer { get; set; }
+
+    /// <summary>Deep-links a global admin straight to this user's detail view in the Admin tab.</summary>
+    [SupplyParameterFromQuery]
+    public Guid? AdminUserId { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Section { get; set; }
+
+    [SupplyParameterFromQuery]
+    public Guid? EntityId { get; set; }
+
+
 }

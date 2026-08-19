@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>CloudLogin Demo Inbox</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; background: #0f172a; color: #e2e8f0; }
+    h1 { font-size: 1.25rem; }
+    p.hint { color: #94a3b8; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #1e293b; }
+    th { color: #94a3b8; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+    code { background: #1e293b; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 1rem; }
+    .empty { color: #64748b; padding: 1rem 0; }
+  </style>
+</head>
+<body>
+  <h1>CloudLogin Demo Inbox</h1>
+  <p class="hint">
+    This demo has no real SMTP server. When you sign in with the Email/Code provider,
+    the verification code appears here instead of in an email. Leave this tab open next
+    to the login page.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Code</th><th>Sent</th></tr>
+    </thead>
+    <tbody id="entries"></tbody>
+  </table>
+  <p id="empty" class="empty">No codes sent yet.</p>
+
+  <script>
+    async function refresh() {
+      const response = await fetch('/demo/inbox', { cache: 'no-store' });
+      const entries = await response.json();
+
+      const body = document.getElementById('entries');
+      const empty = document.getElementById('empty');
+      body.innerHTML = '';
+      empty.style.display = entries.length === 0 ? 'block' : 'none';
+
+      for (const entry of entries) {
+        const row = document.createElement('tr');
+        const sentOn = new Date(entry.sentAt).toLocaleTimeString();
+        row.innerHTML = `<td>${entry.address}</td><td><code>${entry.code}</code></td><td>${sentOn}</td>`;
+        body.appendChild(row);
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+</html>

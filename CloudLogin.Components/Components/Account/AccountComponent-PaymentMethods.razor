@@ -1,0 +1,144 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+@namespace AngryMonkey.CloudLogin
+
+<div class="account-section">
+    <div class="section-header">
+        <h3>Payment options</h3>
+        <p class="section-description">Payment methods saved to your account. CloudLogin stores only provider references &mdash; never card data.</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-spinner"></div>
+    }
+    else
+    {
+        <div class="card entity-card">
+            <div class="card-header">
+                <h4>Add payment method</h4>
+            </div>
+            <div class="form-group">
+                <select class="form-input" @bind="_newProvider" disabled="@_saving">
+                    <option value="Stripe">Stripe</option>
+                    <option value="BankTransfer">Bank Transfer</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input class="form-input" placeholder="Reference (e.g. payment method id)" @bind="_newReference" disabled="@_saving" />
+            </div>
+            <div class="form-group">
+                <input class="form-input" placeholder="Display name (optional)" @bind="_newDisplayName" disabled="@_saving" />
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" @bind="_newIsDefault" disabled="@_saving" />
+                    Set as default
+                </label>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary btn-sm" @onclick="AddPaymentMethodAsync" disabled="@(_saving || string.IsNullOrWhiteSpace(_newReference))">
+                    @(_saving ? "Adding..." : "Add")
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(_message))
+            {
+                <div class="@(_success ? "alert-success" : "alert-error")">@_message</div>
+            }
+        </div>
+
+        if (_paymentMethods.Count == 0)
+        {
+            <div class="empty-state">You don't have any saved payment methods yet.</div>
+        }
+        else
+        {
+            <div class="entity-list">
+                @foreach (var method in _paymentMethods)
+                {
+                    <div class="card entity-card">
+                        <div class="card-header">
+                            <h4>@(method.DisplayName ?? method.Provider)</h4>
+                            @if (method.IsDefault)
+                            {
+                                <span class="badge badge-primary">Default</span>
+                            }
+                        </div>
+                        <div class="kv-list">
+                            <div class="kv-row">
+                                <div class="kv-key">Provider</div>
+                                <div class="kv-value">@method.Provider</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<AccountPaymentMethodReference> _paymentMethods = [];
+    private bool _loading = true;
+
+    private string _newProvider = "Stripe";
+    private string _newReference = string.Empty;
+    private string _newDisplayName = string.Empty;
+    private bool _newIsDefault;
+    private bool _saving;
+    private string _message = string.Empty;
+    private bool _success;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+        _loading = false;
+    }
+
+    private async Task ReloadAsync()
+    {
+        AccountBillingProfile? profile = await cloudLogin.GetMyBillingProfile();
+        _paymentMethods = profile?.PaymentMethods.ToList() ?? [];
+    }
+
+    private async Task AddPaymentMethodAsync()
+    {
+        if (_saving || string.IsNullOrWhiteSpace(_newReference))
+            return;
+
+        try
+        {
+            _saving = true;
+            _message = string.Empty;
+            StateHasChanged();
+
+            AccountPaymentMethodReference method = new(
+                _newProvider,
+                _newReference.Trim(),
+                string.IsNullOrWhiteSpace(_newDisplayName) ? null : _newDisplayName.Trim(),
+                _newIsDefault);
+
+            await cloudLogin.AddPaymentMethod(method);
+            await ReloadAsync();
+
+            _newReference = string.Empty;
+            _newDisplayName = string.Empty;
+            _newIsDefault = false;
+
+            _message = "Payment method added.";
+            _success = true;
+        }
+        catch (Exception ex)
+        {
+            _message = $"Failed to add payment method: {ex.Message}";
+            _success = false;
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+}

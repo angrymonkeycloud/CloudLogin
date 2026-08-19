@@ -85,4 +85,37 @@ public interface ICloudLogin
     /// <param name="finalReferer">The external website URL that referred to CloudLogin</param>
     /// <returns>The complete custom login URL</returns>
     string GetCustomLoginUrl(string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false, string? userHint = null);
+
+    // Account-registry surface for the signed-in user (organizations, subscriptions, billing references).
+    // Returns empty results when the account registry isn't configured on the host.
+    Task<List<CloudLoginOrganization>> GetMyOrganizations();
+    Task<List<AccountSubscription>> GetMySubscriptions();
+    Task<AccountBillingProfile?> GetMyBillingProfile();
+
+    /// <summary>Creates a new organization owned by the signed-in user.</summary>
+    Task<CloudLoginOrganization> CreateOrganization(string name);
+
+    /// <summary>Invites a recipient (email or phone) to an organization the signed-in user owns/administers.</summary>
+    Task<CloudLoginOrganizationInvitation> InviteToOrganization(Guid organizationId, string recipient, IReadOnlyList<string>? roles = null);
+
+    /// <summary>Updates an organization's profile fields (Name, BillingEmail, BillingContactName). Caller must be the owner/admin.</summary>
+    Task<CloudLoginOrganization> UpdateOrganization(CloudLoginOrganization organization);
+
+    /// <summary>Adds or updates a saved payment-method reference for the signed-in user (or an organization they belong to).</summary>
+    Task<AccountBillingProfile> AddPaymentMethod(AccountPaymentMethodReference method, Guid? organizationId = null);
+
+    /// <summary>Looks up an organization by id, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
+    Task<CloudLoginOrganization?> GetOrganizationById(Guid organizationId);
+
+    /// <summary>Returns every organization in the registry, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
+    Task<List<CloudLoginOrganization>> GetAllOrganizations();
+
+    /// <summary>Returns organization membership and string permissions for trusted service integrations.</summary>
+    Task<List<CloudLoginOrganizationMember>> GetOrganizationMembers(Guid organizationId);
+
+    /// <summary>Looks up a subscription by id, regardless of owner. Used by the service-to-service lookup endpoint.</summary>
+    Task<AccountSubscription?> GetSubscriptionById(Guid subscriptionId);
+
+    /// <summary>Returns every subscription in the registry, regardless of owner or status. Used by the service-to-service lookup endpoint.</summary>
+    Task<List<AccountSubscription>> GetAllSubscriptions();
 }

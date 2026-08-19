@@ -1,0 +1,22 @@
+{
+  "builds": [
+    {
+      "name": "dev",
+      "js": {
+        "minify": false,
+        "sourceMap": false,
+        "declaration": false
+      }
+    }
+  ],
+  "files": [
+    {
+      "input": "src/css/app.less",
+      "output": "wwwroot/css/app.css"
+    },
+    {
+      "input": [ "src/js/app.js" ],
+      "output": "wwwroot/js/app.js"
+    }
+  ]
+}

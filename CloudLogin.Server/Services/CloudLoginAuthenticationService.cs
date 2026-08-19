@@ -195,6 +195,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
         user.LastSignedIn = currentDateTime;
         await cosmosMethods.Update(user);
+        await PublishUserEvent("User.Updated", "Updated", user.ID);
     }
 
     private async Task CreateNewUser(ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
@@ -254,8 +255,24 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         };
 
         await cosmosMethods.Create(user);
+        await PublishUserEvent("User.Created", "Created", user.ID);
     }
 
+    private async Task PublishUserEvent(
+        string eventType,
+        string operation,
+        Guid userId)
+    {
+        ICloudLoginEventPublisher? publisher =
+            _serviceProvider.GetService<ICloudLoginEventPublisher>();
+        if (publisher != null)
+            await publisher.PublishAsync(CloudLoginEvent.Create(
+                eventType,
+                "User",
+                userId,
+                operation,
+                new { ID = userId }));
+    }
     private async Task<(string? countryCode, string? callingCode, string input)> ProcessPhoneNumber(InputFormat formatValue, string input)
     {
         if (formatValue != InputFormat.PhoneNumber)

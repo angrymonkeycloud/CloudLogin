@@ -1,3 +1,10 @@
+.entity-card.deep-link-target {
+    border-color: var(--cloudlogin-primary, #0078d4);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cloudlogin-primary, #0078d4) 20%, transparent);
+    scroll-margin-top: 1rem;
+}
+
+
 /* CloudLogin Account Management Styles */
 
 
@@ -58,7 +65,7 @@
 
     .form-input:focus {
         outline: none;
-        border-color: #3b82f6;
+        border-color: var(--amc-accentColor, #0078d4);
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
@@ -93,14 +100,14 @@
     }
 
 .btn-primary {
-    background-color: #3b82f6;
+    background-color: var(--amc-accentColor, #0078d4);
     color: #ffffff;
-    border-color: #3b82f6;
+    border-color: var(--amc-accentColor, #0078d4);
 }
 
     .btn-primary:hover:not(:disabled) {
-        background-color: #2563eb;
-        border-color: #2563eb;
+        background-color: var(--amc-secondColor, #005a9e);
+        border-color: var(--amc-secondColor, #005a9e);
     }
 
 .btn-secondary {
@@ -116,12 +123,12 @@
 
 .btn-outline {
     background-color: transparent;
-    color: #3b82f6;
-    border-color: #3b82f6;
+    color: var(--amc-accentColor, #0078d4);
+    border-color: var(--amc-accentColor, #0078d4);
 }
 
     .btn-outline:hover:not(:disabled) {
-        background-color: #3b82f6;
+        background-color: var(--amc-accentColor, #0078d4);
         color: #ffffff;
     }
 
@@ -413,7 +420,7 @@
 
 .btn:focus-visible,
 .form-input:focus-visible {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid var(--amc-accentColor, #0078d4);
     outline-offset: 2px;
 }
 
@@ -477,7 +484,7 @@
     display: inline-flex;
     align-items: center;
     padding: 0.2rem 0.6rem;
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    background: linear-gradient(135deg, var(--amc-accentColor, #0078d4), var(--amc-accentColor, #0078d4));
     color: #fff;
     font-size: 0.7rem;
     font-weight: 700;
@@ -510,17 +517,17 @@
 }
 
     .admin-tab:hover {
-        color: #4f46e5;
+        color: var(--amc-accentColor, #0078d4);
     }
 
     .admin-tab.active {
-        color: #4f46e5;
-        border-bottom-color: #4f46e5;
+        color: var(--amc-accentColor, #0078d4);
+        border-bottom-color: var(--amc-accentColor, #0078d4);
     }
 
 .admin-count-badge {
-    background: #e0e7ff;
-    color: #4f46e5;
+    background: var(--amc-accentColor-soft, #e8f3fb);
+    color: var(--amc-accentColor, #0078d4);
     font-size: 0.7rem;
     font-weight: 700;
     padding: 0.1rem 0.45rem;
@@ -529,15 +536,15 @@
 
 /* Account sidebar tab — Admin variant */
 .tab-button--admin {
-    color: #7c3aed !important;
+    color: var(--amc-accentColor, #0078d4) !important;
 }
 
     .tab-button--admin:hover {
-        background-color: #f5f3ff !important;
+        background-color: var(--amc-accentColor-soft, #e8f3fb) !important;
     }
 
     .tab-button--admin.active {
-        background-color: #7c3aed !important;
+        background-color: var(--amc-accentColor, #0078d4) !important;
         color: #fff !important;
     }
 
@@ -566,7 +573,7 @@
 
     .admin-filter-select:focus {
         outline: none;
-        border-color: #7c3aed;
+        border-color: var(--amc-accentColor, #0078d4);
         box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
     }
 
@@ -628,7 +635,7 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    background: linear-gradient(135deg, var(--amc-accentColor, #0078d4), var(--amc-accentColor, #0078d4));
     color: #fff;
     font-size: 1.2rem;
     font-weight: 700;
@@ -672,8 +679,8 @@
 }
 
 .chip--admin {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: var(--amc-accentColor-soft, #e8f3fb);
+    color: var(--amc-secondColor, #005a9e);
 }
 
 .chip--test {
@@ -845,13 +852,13 @@
     }
 
 .admin-action-btn--primary {
-    background: #4f46e5;
+    background: var(--amc-accentColor, #0078d4);
     color: #fff;
-    border-color: #4f46e5;
+    border-color: var(--amc-accentColor, #0078d4);
 }
 
     .admin-action-btn--primary:hover:not(:disabled) {
-        background: #4338ca;
+        background: var(--amc-secondColor, #005a9e);
     }
 
 .admin-action-btn--danger {
@@ -876,12 +883,12 @@
 
 .admin-action-btn--outline {
     background: transparent;
-    color: #4f46e5;
-    border-color: #4f46e5;
+    color: var(--amc-accentColor, #0078d4);
+    border-color: var(--amc-accentColor, #0078d4);
 }
 
     .admin-action-btn--outline:hover:not(:disabled) {
-        background: #eef2ff;
+        background: var(--amc-accentColor-soft, #e8f3fb);
     }
 
 .admin-action-btn--sm {
@@ -922,5 +929,126 @@
     .admin-filter-select {
         flex: 1;
         min-width: 110px;
+    }
+}
+
+/* Shared account card/list primitives (used by Subscriptions, Organizations, Payment options) */
+.card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #f1f3f5;
+
+    h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+    }
+}
+
+.kv-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.kv-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 14px 0;
+    border-top: 1px solid #f8f9fa;
+
+    &:first-child {
+        border-top: none;
+    }
+
+    &.meta .kv-key {
+        color: #6c757d;
+    }
+}
+
+.kv-key {
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.kv-value {
+    color: #212529;
+    font-size: 0.8rem;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.badge-primary {
+    background-color: var(--amc-accentColor);
+    color: #fff;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.badge-info {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.entity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.entity-card .card-header h4 {
+    font-size: 15px;
+}
+
+.empty-state {
+    padding: 32px 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.875rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    border-top-color: var(--amc-accentColor);
+    border-radius: 50%;
+    display: block;
+    margin: 24px auto;
+    animation: cloudlogin-account-spin 0.7s linear infinite;
+}
+
+@keyframes cloudlogin-account-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media only screen and (min-width: 640px) {
+    .kv-row {
+        grid-template-columns: 240px 1fr;
+        gap: 16px;
     }
 }

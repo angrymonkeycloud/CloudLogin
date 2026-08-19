@@ -29,11 +29,12 @@
 
 
 	<ItemGroup>
-	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
-	  <ProjectReference Include="..\CloudLogin.Components\CloudLogin.Components.csproj" />
+		<ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
+		<ProjectReference Include="..\CloudLogin.Components\CloudLogin.Components.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="artifacts\**" />
 		<None Update="amc-logo.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>

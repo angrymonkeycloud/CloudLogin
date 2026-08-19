@@ -22,9 +22,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Content Remove="mateconfig.json" />
+		<None Remove="artifacts\**" />
+		<Content Remove="mateconfig.json" />
 	</ItemGroup>
-	
+
 	<ItemGroup>
 		<SupportedPlatform Include="browser" />
 	</ItemGroup>
@@ -36,13 +37,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\CloudComponents\CloudComponents.DataGrid\CloudComponents.DataGrid.csproj" />
-	  <ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
+		<ProjectReference Include="..\..\CloudComponents\CloudComponents.DataGrid\CloudComponents.DataGrid.csproj" />
+		<ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Components\ForgetPassword\" />
-	  <Folder Include="Services\" />
+		<Folder Include="Components\ForgetPassword\" />
+		<Folder Include="Services\" />
 	</ItemGroup>
 
 	<ItemGroup>

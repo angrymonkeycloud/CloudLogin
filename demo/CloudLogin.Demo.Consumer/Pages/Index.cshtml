@@ -1,0 +1,56 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "CloudLogin Demo - Consumer";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 3rem; background: #0f172a; color: #e2e8f0; }
+        h1 { font-size: 1.5rem; }
+        p.hint { color: #94a3b8; max-width: 40rem; }
+        .status { padding: 1rem 1.25rem; border-radius: 8px; margin: 1.5rem 0; }
+        .status.signed-in { background: #14532d; }
+        .status.signed-out { background: #1e293b; }
+        .actions a { display: inline-block; margin-right: 0.75rem; padding: 0.6rem 1.1rem; border-radius: 6px; background: #2563eb; color: white; text-decoration: none; }
+        .actions a.secondary { background: #334155; }
+        dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
+        dt { color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <h1>CloudLogin Demo &mdash; Consumer Website</h1>
+    <p class="hint">
+        This site does not run any CloudLogin UI itself. It calls the authority app running
+        at <code>https://localhost:7100</code> via <code>AddCloudLoginServer</code>, using the
+        <code>/auth/login</code>, <code>/auth/profile</code>, and <code>/auth/logout</code>
+        endpoints from <code>AuthController</code>.
+    </p>
+
+    @if (Model.IsAuthenticated)
+    {
+        <div class="status signed-in">
+            <strong>Signed in</strong>
+            <dl>
+                <dt>Name</dt><dd>@Model.Name</dd>
+                <dt>Email</dt><dd>@Model.Email</dd>
+            </dl>
+        </div>
+        <div class="actions">
+            <a href="/auth/profile?returnUrl=/">Manage profile on authority</a>
+            <a class="secondary" href="/auth/logout?returnUrl=/">Log out</a>
+        </div>
+    }
+    else
+    {
+        <div class="status signed-out">Not signed in.</div>
+        <div class="actions">
+            <a href="/auth/login?returnUrl=/">Log in via CloudLogin</a>
+        </div>
+    }
+</body>
+</html>

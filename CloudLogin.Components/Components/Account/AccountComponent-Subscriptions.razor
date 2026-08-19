@@ -38,7 +38,7 @@
                         </div>
                         <div class="kv-row">
                             <div class="kv-key">Expires</div>
-                            <div class="kv-value">@(subscription.ExpiresAt?.ToString("MMMM dd, yyyy") ?? "Never")</div>
+                            <div class="kv-value">@(subscription.ExpiresOn?.ToString("MMMM dd, yyyy") ?? "Never")</div>
                         </div>
                         @if (!string.IsNullOrWhiteSpace(subscription.Provider))
                         {

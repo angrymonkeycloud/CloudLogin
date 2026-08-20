@@ -51,6 +51,10 @@ builder.AddCloudLoginWeb(options =>
         return Task.CompletedTask;
     };
 
+    options.Subscription = new();
+    options.Organization = new();
+    options.Payment = new();
+
     // Matches the fixed port used by demo/CloudLogin.Demo.Consumer.
     options.AllowWebsite("https://localhost:7200");
 });

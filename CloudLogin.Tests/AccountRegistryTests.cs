@@ -44,7 +44,7 @@ public class AccountRegistryTests
         Assert.Equal("developer@example.invalid", invitation.Recipient);
         Assert.Equal(ownerId, invitation.InvitedByUserId);
         Assert.Equal(["Developer"], invitation.Roles);
-        Assert.Equal(expiry, invitation.ExpiresAt);
+        Assert.Equal(expiry, invitation.ExpiresOn);
     }
 
     [Fact]

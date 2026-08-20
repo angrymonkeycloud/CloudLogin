@@ -1,6 +1,6 @@
 <article class="authority-subscription-card">
     <header><div><span>@Value.Application</span><h3>@Value.Reference</h3></div><b class="status-@Value.Status.ToString().ToLowerInvariant()">@Value.Status</b></header>
-    <dl><div><dt>Provider</dt><dd>@(Value.Provider ?? "Application managed")</dd></div><div><dt>Auto-renew</dt><dd>@(Value.AutoRenew ? "Enabled" : "Disabled")</dd></div><div><dt>Expires</dt><dd>@(Value.ExpiresAt?.ToString("dd MMM yyyy") ?? "No expiry")</dd></div></dl>
+    <dl><div><dt>Provider</dt><dd>@(Value.Provider ?? "Application managed")</dd></div><div><dt>Auto-renew</dt><dd>@(Value.AutoRenew ? "Enabled" : "Disabled")</dd></div><div><dt>Expires</dt><dd>@(Value.ExpiresOn?.ToString("dd MMM yyyy") ?? "No expiry")</dd></div></dl>
     @if (!string.IsNullOrWhiteSpace(Value.ProviderReference))
     {
         <code>@Value.ProviderReference</code>

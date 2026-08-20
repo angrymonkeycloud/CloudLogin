@@ -53,22 +53,21 @@
 }
 
 /* ── Sidebar rail ─────────────────────────────────────────────
-   Sticky (not viewport-fixed) so the rail stays within whatever
-   container hosts the component instead of overlaying a parent
-   app's own chrome. It still never moves while its own content
-   scrolls, which is what "fixed navigation" means for consumers. */
+   Truly fixed: pinned with top/bottom insets (not an explicit vh
+   height) so it never moves while the page scrolls. Using insets
+   instead of `height: 100vh` also means a host page can still
+   contain it to its own box (via `contain: layout` or a transform
+   ancestor) without the rail spilling past that box's edges. */
 
 .account-management .sidebar {
-    position: sticky;
+    position: fixed;
     z-index: 50;
     top: 0;
-    flex: 0 0 auto;
-    align-self: flex-start;
+    bottom: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
     width: var(--rail-width-collapsed);
-    height: 100vh;
-    height: 100dvh;
     overflow: hidden;
     background: #fff;
     border-right: 1px solid #e4e4e4;
@@ -77,8 +76,6 @@
 }
 
 .account-management .sidebar._open {
-    position: fixed;
-    left: 0;
     width: var(--rail-width-expanded);
     max-width: 86vw;
     overflow-y: auto;
@@ -313,6 +310,7 @@
     width: 100%;
     min-width: 0;
     max-width: 1160px;
+    margin-left: var(--rail-width-collapsed);
     padding: 24px 18px 64px;
     overflow-x: hidden;
 }
@@ -585,6 +583,7 @@
     }
 
     .account-management .tab-content {
+        margin-left: var(--rail-width-desktop);
         padding: 38px clamp(32px, 5vw, 72px) 72px;
     }
 }

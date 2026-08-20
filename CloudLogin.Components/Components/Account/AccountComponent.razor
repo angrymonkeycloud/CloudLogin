@@ -12,8 +12,21 @@
     @if (CurrentUser != null)
     {
         <div class="account-management @(activeTab == "Admin" ? "_admin" : "")">
-            <div>
-                <div class="sidebar">
+            <div class="account-shell">
+                <nav class="sidebar @(navOpen ? "_open" : "")" aria-label="Account navigation">
+                    <button type="button" class="sidebar-toggle" @onclick="ToggleNav" aria-expanded="@(navOpen ? "true" : "false")" aria-label="@(navOpen ? "Collapse navigation" : "Expand navigation")">
+                        <span class="sidebar-toggle-icon" aria-hidden="true">
+                            @if (navOpen)
+                            {
+                                <Close />
+                            }
+                            else
+                            {
+                                <MenuIcon />
+                            }
+                        </span>
+                    </button>
+
                     <div class="profile-mini">
                         @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
                         {
@@ -28,28 +41,40 @@
                             <div class="profile-mini-email">@GetPrimaryEmail()</div>
                         </div>
                     </div>
+
                     <div class="tabs">
                         @foreach (var tab in Tabs)
                         {
-                            <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)">@tab.DisplayName</button>
+                            <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)" title="@tab.DisplayName">
+                                <span class="tab-icon" aria-hidden="true">@TabIcon(tab.Name)</span>
+                                <span class="tab-label">@tab.DisplayName</span>
+                            </button>
                         }
                         @if (CurrentUser.IsGlobalAdmin)
                         {
-                            <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")'>
-                                Admin
-                                <span class="admin-tab-badge">★</span>
+                            <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")' title="Admin">
+                                <span class="tab-icon" aria-hidden="true"><ShieldCheckIcon /></span>
+                                <span class="tab-label">Admin<span class="admin-tab-badge">&#9733;</span></span>
                             </button>
                         }
-                        @if (string.IsNullOrEmpty(Referer))
-                        {
-                            <button class="tab-button tab-button--logout" @onclick="SignOut">Log out</button>
-                        }
-                        @if (CurrentUser.IsTest)
-                        {
-                            <button class="tab-button tab-button--delete" @onclick="DeleteAccount">Delete account</button>
-                        }
                     </div>
-                </div>
+
+                    @if (string.IsNullOrEmpty(Referer))
+                    {
+                        <div class="sidebar-footer">
+                            <button class="tab-button tab-button--logout" @onclick="SignOut" title="Log out">
+                                <span class="tab-icon" aria-hidden="true"><SignOutIcon /></span>
+                                <span class="tab-label">Log out</span>
+                            </button>
+                        </div>
+                    }
+                </nav>
+
+                @if (navOpen)
+                {
+                    <div class="nav-backdrop" @onclick="CollapseNav"></div>
+                }
+
                 <div class="tab-content">
                     <header class="account-page-header">
                         <div>
@@ -61,17 +86,9 @@
                             Secure session
                         </div>
                     </header>
-                    @if (activeTab == "Manage")
+                    @if (activeTab == "Profile")
                     {
-                        <AccountComponent_Update CurrentUser="CurrentUser" />
-                    }
-                    else if (activeTab == "Emails")
-                    {
-                        <AccountComponent_Emails CurrentUser="CurrentUser" />
-                    }
-                    else if (activeTab == "PhoneNumbers")
-                    {
-                        <AccountComponent_Numbers CurrentUser="CurrentUser" />
+                        <AccountComponent_Profile CurrentUser="CurrentUser" />
                     }
                     else if (activeTab == "Subscriptions")
                     {
@@ -91,7 +108,12 @@
                     }
                     else
                     {
-                        <AccountComponent_UserInfo CurrentUser="CurrentUser" />
+                        <AccountComponent_Overview CurrentUser="CurrentUser"
+                                                    EnableSubscriptions="EnableSubscriptions"
+                                                    EnableOrganizations="EnableOrganizations"
+                                                    EnablePayments="EnablePayments"
+                                                    OnNavigateToTab="SwitchTab"
+                                                    OnDeleteAccount="DeleteAccount" />
                     }
                 </div>
             </div>
@@ -138,6 +160,7 @@ else
     [Parameter] public bool EnablePayments { get; set; }
 
     private UserModel? CurrentUser { get; set; }
+    private bool navOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,16 +173,14 @@ else
 
     }
 
-    private string activeTab = "UserInfo";
+    private string activeTab = "Overview";
 
     private IEnumerable<TabItem> Tabs
     {
         get
         {
-            yield return new() { Name = "UserInfo", DisplayName = "Account" };
-            yield return new() { Name = "Manage", DisplayName = "Your info" };
-            yield return new() { Name = "Emails", DisplayName = "Emails" };
-            yield return new() { Name = "PhoneNumbers", DisplayName = "Phone Numbers" };
+            yield return new() { Name = "Overview", DisplayName = "Overview" };
+            yield return new() { Name = "Profile", DisplayName = "Profile" };
 
             if (EnableSubscriptions)
                 yield return new() { Name = "Subscriptions", DisplayName = "Subscriptions" };
@@ -178,7 +199,25 @@ else
         public required string DisplayName { get; set; }
     }
 
-    private void SwitchTab(string tab) => activeTab = tab;
+    private void SwitchTab(string tab)
+    {
+        activeTab = tab;
+        navOpen = false;
+    }
+
+    private void ToggleNav() => navOpen = !navOpen;
+    private void CollapseNav() => navOpen = false;
+
+    private static RenderFragment TabIcon(string tabName) => tabName switch
+    {
+        "Overview" => @<GridIcon />,
+        "Profile" => @<PersonIcon />,
+        "Subscriptions" => @<CreditCardIcon />,
+        "Organizations" => @<BuildingIcon />,
+        "PaymentMethods" => @<WalletIcon />,
+        "Admin" => @<ShieldCheckIcon />,
+        _ => @<GridIcon />
+    };
 
     private string GetActiveTabDisplayName()
         => activeTab == "Admin"

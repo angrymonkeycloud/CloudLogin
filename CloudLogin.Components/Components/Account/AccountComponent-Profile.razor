@@ -1,11 +1,16 @@
-﻿@using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Interfaces
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Forms
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
 
-<div class="account-section ms-account">
+<div class="account-section profile-page">
+    <div class="section-header">
+        <h3>Profile</h3>
+        <p class="section-description">Your info, email addresses, and phone numbers. Everything here can only be edited from this page.</p>
+    </div>
+
     <!-- Header card with avatar and name -->
     <div class="header-card">
         <div class="profile-block">
@@ -76,7 +81,6 @@
         </div>
     </div>
 
-
     <!-- Profile info card -->
     <div class="card info-card">
         <div class="card-header">
@@ -140,60 +144,16 @@
         </div>
     </div>
 
-
-    <!-- Account info card -->
-    <div class="card info-card">
-        <div class="card-header">
-            <h4>Account info</h4>
-        </div>
-        <div class="kv-list">
-            <div class="kv-row">
-                <div class="kv-key">Email address</div>
-                <div class="kv-value">@GetPrimaryEmail()</div>
-            </div>
-            <div class="kv-row">
-                <div class="kv-key">Phone number</div>
-                <div class="kv-value">@GetPrimaryPhone()</div>
-            </div>
-            <div class="kv-row meta">
-                <div class="kv-key">Account created</div>
-                <div class="kv-value">@FormatDateTime(CurrentUser.CreatedOn)</div>
-            </div>
-            <div class="kv-row meta">
-                <div class="kv-key">Last sign in</div>
-                <div class="kv-value">@FormatDateTime(CurrentUser.LastSignedIn)</div>
-            </div>
-        </div>
-    </div>
-
-    @if (CurrentUser.Providers.Any())
-    {
-        <div class="card providers-card">
-            <div class="card-header">
-                <h4>Connected providers</h4>
-            </div>
-            <div class="providers-list">
-                @foreach (var provider in CurrentUser.Providers.Distinct())
-                {
-                    <span class="provider-badge">@FormatProviderName(provider)</span>
-                }
-            </div>
-        </div>
-    }
-
-    @if (CurrentUser.IsLocked)
-    {
-        <div class="alert alert-warning">
-            <strong>Account Status:</strong> This account is currently locked.
-        </div>
-    }
-
     @if (!string.IsNullOrEmpty(_statusMessage))
     {
         <div class="@(_operationSuccess ? "alert-success" : "alert-error")">
             @_statusMessage
         </div>
     }
+
+    <AccountComponent_Emails CurrentUser="CurrentUser" />
+
+    <AccountComponent_Numbers CurrentUser="CurrentUser" />
 </div>
 
 @code {
@@ -498,77 +458,5 @@
         {
             return locale ?? "Not specified";
         }
-    }
-
-    private string GetPrimaryEmail()
-        => (CurrentUser.PrimaryEmailAddress ?? CurrentUser.EmailAddresses.FirstOrDefault())?.Input ?? "None";
-
-    private string GetPrimaryPhone()
-    {
-        var phone = (CurrentUser.PrimaryPhoneNumber ?? CurrentUser.PhoneNumbers.FirstOrDefault())?.Input;
-        return string.IsNullOrWhiteSpace(phone) ? "None" : FormatPhoneNumber(phone);
-    }
-
-    /// <summary>
-    /// Formats DateTime for user-friendly display
-    /// </summary>
-    private static string FormatDateTime(DateTimeOffset dateTime)
-    {
-        if (dateTime == DateTimeOffset.MinValue)
-            return "Not available";
-
-        var timeAgo = DateTimeOffset.UtcNow - dateTime;
-
-        if (timeAgo.TotalDays < 1 && timeAgo.TotalHours < 1)
-            return $"{(int)timeAgo.TotalMinutes} minutes ago";
-
-        if (timeAgo.TotalDays < 1)
-            return $"{(int)timeAgo.TotalHours} hours ago";
-
-        if (timeAgo.TotalDays < 7)
-            return $"{(int)timeAgo.TotalDays} days ago";
-
-        if (timeAgo.TotalDays < 30)
-            return $"{(int)(timeAgo.TotalDays / 7)} weeks ago";
-
-        if (timeAgo.TotalDays < 365)
-            return $"{(int)(timeAgo.TotalDays / 30)} months ago";
-
-        return dateTime.ToString("MMMM dd, yyyy");
-    }
-
-    /// <summary>
-    /// Formats phone number for display
-    /// </summary>
-    private static string FormatPhoneNumber(string phoneNumber)
-    {
-        if (string.IsNullOrEmpty(phoneNumber))
-            return phoneNumber;
-
-        // Basic formatting for US/Canada numbers
-        if (phoneNumber.StartsWith("+1") && phoneNumber.Length == 12)
-        {
-            return $"{phoneNumber[..2]} ({phoneNumber[2..5]}) {phoneNumber[5..8]}-{phoneNumber[8..]}";
-        }
-
-        return phoneNumber;
-    }
-
-    /// <summary>
-    /// Formats provider names for display
-    /// </summary>
-    private static string FormatProviderName(string provider)
-    {
-        return provider.ToLowerInvariant() switch
-        {
-            "microsoft" => "Microsoft",
-            "google" => "Google",
-            "facebook" => "Facebook",
-            "twitter" => "Twitter",
-            "whatsapp" => "WhatsApp",
-            "code" => "Email/SMS Code",
-            "password" => "Password",
-            _ => provider
-        };
     }
 }

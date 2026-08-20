@@ -1,0 +1,393 @@
+@import (reference) "../../Src/variable.less";
+
+.account-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.section {
+    &-header {
+        margin-bottom: 8px;
+
+        h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: @text;
+            margin: 0 0 4px 0;
+        }
+
+        &-description {
+            font-size: 14px;
+            color: @muted;
+            margin: 0;
+        }
+    }
+}
+
+.card {
+    background: @white;
+    border: 1px solid @border;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid @surface-alt;
+
+    h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+    }
+}
+
+/* ── Hero card ─────────────────────────────────────────────── */
+
+.hero-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+}
+
+.hero-identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.hero-avatar {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid @border-dashed;
+    box-shadow: @shadow-sm;
+
+    &.initials {
+        display: grid;
+        place-items: center;
+        background: var(--amc-accentColor);
+        color: @white;
+        font-weight: 700;
+        font-size: 22px;
+    }
+}
+
+.hero-identity-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.hero-name {
+    font-size: 19px;
+    font-weight: 700;
+    color: @heading;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hero-email {
+    font-size: 13px;
+    color: @muted;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chip {
+    display: inline-block;
+    align-self: flex-start;
+    margin-top: 2px;
+    padding: 2px 9px;
+    font-size: .68rem;
+    font-weight: 700;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+
+    &--active {
+        background: @success-soft;
+        color: @success;
+    }
+
+    &--locked {
+        background: @danger-soft;
+        color: @danger-dark;
+    }
+}
+
+.hero-meta {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding-top: 18px;
+    border-top: 1px solid @surface;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.meta-icon {
+    display: grid;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 9px;
+    background: @surface;
+    color: var(--amc-accentColor);
+
+    ::deep svg {
+        width: 17px;
+        height: 17px;
+    }
+}
+
+.meta-label {
+    font-size: .72rem;
+    font-weight: 600;
+    color: @muted;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.meta-value {
+    margin-top: 2px;
+    font-size: .875rem;
+    font-weight: 600;
+    color: @text;
+}
+
+.hero-providers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+.provider-badge {
+    padding: 5px 12px;
+    background-color: @white;
+    border: 1.5px solid var(--amc-accentColor);
+    color: var(--amc-accentColor);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ── Feature grid ──────────────────────────────────────────── */
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+.feature-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid @border;
+    border-radius: 12px;
+    background: @white;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+
+    &:hover {
+        border-color: var(--amc-accentColor);
+        box-shadow: @shadow;
+        transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--amc-accentColor);
+        outline-offset: 2px;
+    }
+}
+
+.feature-icon {
+    display: grid;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 12%, #fff));
+    color: var(--amc-accentColor);
+
+    ::deep svg {
+        width: 21px;
+        height: 21px;
+    }
+}
+
+.feature-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.feature-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: @heading;
+}
+
+.feature-stat {
+    font-size: 12.5px;
+    color: @muted;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.feature-chevron {
+    display: grid;
+    flex: 0 0 18px;
+    place-items: center;
+    color: @placeholder;
+
+    ::deep svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+.feature-card:hover .feature-chevron {
+    color: var(--amc-accentColor);
+}
+
+/* ── Danger zone ───────────────────────────────────────────── */
+
+.danger-card {
+    border-color: color-mix(in srgb, @danger 35%, @border);
+    background: @danger-soft;
+}
+
+.danger-row {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.danger-title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: @danger-dark;
+}
+
+.danger-desc {
+    margin: 0;
+    font-size: 13px;
+    color: @text-soft;
+}
+
+.danger-confirm {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    span {
+        font-size: 13px;
+        font-weight: 600;
+        color: @danger-dark;
+    }
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s ease;
+
+    &-icon {
+        display: grid;
+        place-items: center;
+
+        ::deep svg {
+            width: 15px;
+            height: 15px;
+        }
+    }
+
+    &-danger {
+        background: @danger;
+        color: @white;
+
+        &:hover:not(:disabled) {
+            background: @danger-dark;
+        }
+    }
+
+    &-outline {
+        background: transparent;
+        border: 1px solid @border-strong;
+        color: @text-soft;
+
+        &:hover:not(:disabled) {
+            background: @surface;
+        }
+    }
+
+    &-sm {
+        padding: 7px 12px;
+        font-size: 13px;
+    }
+
+    &:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+}
+
+@media @media-medium {
+    .hero-card {
+        gap: 24px;
+    }
+
+    .hero-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .feature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .danger-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+@media @media-large {
+    .feature-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}

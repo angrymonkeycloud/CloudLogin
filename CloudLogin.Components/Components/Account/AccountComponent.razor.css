@@ -2,10 +2,13 @@
   --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
   --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
   --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
+  --rail-width-collapsed: 68px;
+  --rail-width-expanded: 300px;
+  --rail-width-desktop: 272px;
   direction: ltr !important;
   min-height: 100vh;
   border-top: 2px solid var(--cloudlogin-brand);
-  background: #f3f3f3;
+  background: #f5f6f7;
   color: #1b1b1b;
   font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
 }
@@ -14,28 +17,102 @@
 .account-management *::after {
   box-sizing: border-box;
 }
-.account-management > div {
+.account-management .account-shell {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   min-height: calc(100vh - 2px);
-  background: #f3f3f3;
 }
+/* ── CloudIcons theming ───────────────────────────────────────
+   CloudComponents.Icons SVGs carry no color of their own; they're
+   styled through the same amc-svg-fill / amc-svg-stroke classes
+   the icon library ships with, but bound to currentColor here so
+   nav/card icons follow this component's own hover/active states
+   instead of a single fixed accent color. ::deep reaches into the
+   icon components regardless of nesting depth. */
+.account-management ::deep svg {
+  display: block;
+}
+.account-management ::deep .amc-svg-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-miterlimit: 10;
+}
+.account-management ::deep .amc-svg-stroke._corner-rounded {
+  stroke-linecap: round;
+}
+.account-management ::deep .amc-svg-fill {
+  fill: currentColor;
+}
+/* ── Sidebar rail ─────────────────────────────────────────────
+   Sticky (not viewport-fixed) so the rail stays within whatever
+   container hosts the component instead of overlaying a parent
+   app's own chrome. It still never moves while its own content
+   scrolls, which is what "fixed navigation" means for consumers. */
 .account-management .sidebar {
+  position: sticky;
+  z-index: 50;
+  top: 0;
+  flex: 0 0 auto;
+  align-self: flex-start;
   display: flex;
   flex-direction: column;
-  background: #f3f3f3;
-  border-bottom: 1px solid #dedede;
+  width: var(--rail-width-collapsed);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #fff;
+  border-right: 1px solid #e4e4e4;
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.02);
+  transition: width 0.2s ease;
+}
+.account-management .sidebar._open {
+  position: fixed;
+  left: 0;
+  width: var(--rail-width-expanded);
+  max-width: 86vw;
+  overflow-y: auto;
+  box-shadow: 2px 0 24px rgba(0, 0, 0, 0.18);
+}
+.account-management .sidebar-toggle {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 100%;
+  height: 56px;
+  border: 0;
+  border-bottom: 1px solid #eee;
+  background: transparent;
+  color: #4b4b4b;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.account-management .sidebar-toggle-icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+}
+.account-management .sidebar-toggle-icon ::deep svg {
+  width: 20px;
+  height: 20px;
+}
+.account-management .sidebar-toggle:hover {
+  background: #f2f2f2;
+  color: var(--cloudlogin-brand);
 }
 .account-management .profile-mini {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 12px;
-  padding: 22px 20px 14px;
+  padding: 18px 14px;
+  border-bottom: 1px solid #f0f0f0;
 }
 .account-management .profile-mini-avatar {
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   border: 1px solid #d6d6d6;
   border-radius: 50%;
   background: #fff;
@@ -48,11 +125,15 @@
   border: 0;
   background: var(--cloudlogin-brand);
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 .account-management .profile-mini-copy {
+  display: none;
   min-width: 0;
+}
+.account-management .sidebar._open .profile-mini-copy {
+  display: block;
 }
 .account-management .profile-mini-name,
 .account-management .profile-mini-email {
@@ -72,71 +153,127 @@
 }
 .account-management .tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px 12px 16px;
-  overflow-x: auto;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 10px;
+  overflow-y: auto;
+}
+.account-management .sidebar-footer {
+  flex: 0 0 auto;
+  padding: 10px;
+  border-top: 1px solid #f0f0f0;
 }
 .account-management .tab-button {
   position: relative;
+  display: flex;
   flex: 0 0 auto;
-  min-height: 42px;
-  padding: 0 14px;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 15px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
   color: #323130;
   cursor: pointer;
   font: inherit;
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 500;
   text-align: left;
   transition: background-color 0.12s ease, color 0.12s ease;
 }
+.account-management .tab-icon {
+  display: grid;
+  flex: 0 0 20px;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: #6b6b6b;
+  transition: color 0.12s ease;
+}
+.account-management .tab-icon ::deep svg {
+  width: 20px;
+  height: 20px;
+}
+.account-management .tab-label {
+  display: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-management .sidebar._open .tab-label {
+  display: inline-block;
+}
 .account-management .tab-button:hover {
-  background: #e7e7e7;
+  background: #f2f2f2;
+  color: #161616;
+}
+.account-management .tab-button:hover .tab-icon {
   color: #161616;
 }
 .account-management .tab-button.active {
-  background: #fff;
-  color: #161616;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  background: var(--cloudlogin-brand-soft);
+  color: var(--cloudlogin-brand-strong);
+  font-weight: 600;
+}
+.account-management .tab-button.active .tab-icon {
+  color: var(--cloudlogin-brand-strong);
 }
 .account-management .tab-button.active::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 10px;
-  bottom: 10px;
+  left: -10px;
+  top: 8px;
+  bottom: 8px;
   width: 3px;
   border-radius: 2px;
   background: var(--cloudlogin-brand);
 }
+.account-management .sidebar._open .tab-button.active::before {
+  left: 0;
+}
 .account-management .tab-button--admin {
   color: var(--cloudlogin-brand-strong) !important;
-}
-.account-management .tab-button--admin.active {
-  background: #fff !important;
-  color: #161616 !important;
 }
 .account-management .admin-tab-badge {
   margin-left: 4px;
   color: var(--cloudlogin-brand);
   font-size: 11px;
 }
-.account-management .tab-button--logout,
-.account-management .tab-button--delete {
+.account-management .tab-button--logout {
   color: #a4262c;
 }
-.account-management .tab-button--logout:hover,
-.account-management .tab-button--delete:hover {
+.account-management .tab-button--logout .tab-icon {
+  color: #a4262c;
+}
+.account-management .tab-button--logout:hover {
   background: #fde7e9;
   color: #a4262c;
 }
+.account-management .nav-backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  background: rgba(15, 15, 15, 0.4);
+  animation: cloudlogin-fade-in 0.15s ease;
+}
+@keyframes cloudlogin-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* ── Content ──────────────────────────────────────────────── */
 .account-management .tab-content {
+  flex: 1 1 auto;
   width: 100%;
   min-width: 0;
-  max-width: 1120px;
-  padding: 28px 20px 64px;
+  max-width: 1160px;
+  padding: 24px 18px 64px;
   overflow-x: hidden;
 }
 .account-management .account-page-header {
@@ -145,7 +282,7 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
-  min-height: 70px;
+  min-height: 46px;
   margin-bottom: 22px;
 }
 .account-management .account-page-eyebrow {
@@ -214,10 +351,10 @@
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card,
 .account-management .tab-content ::deep .account-section > .form-container {
-  border: 1px solid #dedede;
-  border-radius: 8px;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card {
@@ -251,7 +388,7 @@
   min-height: 40px;
   padding: 8px 11px;
   border: 1px solid #8a8886;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #fff;
   color: #242424;
   font: inherit;
@@ -277,7 +414,7 @@
 .account-management .tab-content ::deep button:not(.link-action):not(.admin-tab) {
   min-height: 40px;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: 6px;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -353,37 +490,25 @@
   }
 }
 @media (min-width: 992px) {
-  .account-management > div {
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-  }
   .account-management .sidebar {
-    position: sticky;
-    top: 0;
-    height: calc(100vh - 2px);
-    border-right: 1px solid #dedede;
-    border-bottom: 0;
+    width: var(--rail-width-desktop);
+    box-shadow: none;
   }
-  .account-management .profile-mini {
-    padding: 28px 20px 18px;
+  .account-management .sidebar-toggle {
+    display: none;
   }
-  .account-management .tabs {
-    flex-direction: column;
-    overflow: visible;
-    padding: 6px 12px 24px;
+  .account-management .profile-mini-copy,
+  .account-management .tab-label {
+    display: block;
   }
-  .account-management .tab-button {
-    width: 100%;
-    flex: none;
-    padding: 0 16px 0 22px;
+  .account-management .tab-button.active::before {
+    left: 0;
   }
-  .account-management .tab-button--logout {
-    margin-top: 14px;
-    border-top: 1px solid #dedede;
-    border-radius: 0 0 4px 4px;
+  .account-management .nav-backdrop {
+    display: none;
   }
   .account-management .tab-content {
-    padding: 38px calc(clamp(32px, 5vw, 72px)) 72px;
+    padding: 38px clamp(32px, 5vw, 72px) 72px;
   }
 }
 @keyframes skelton {

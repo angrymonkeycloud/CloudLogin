@@ -1,0 +1,296 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+@namespace AngryMonkey.CloudLogin
+
+<div class="account-section overview-page">
+    <div class="section-header">
+        <h3>Account overview</h3>
+        <p class="section-description">A quick look at your account and the areas you can manage.</p>
+    </div>
+
+    <div class="card hero-card">
+        <div class="hero-identity">
+            @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
+            {
+                <img class="hero-avatar" src="@CurrentUser.ProfilePicture" alt="Profile picture" />
+            }
+            else
+            {
+                <div class="hero-avatar initials" aria-hidden="true">@GetInitials()</div>
+            }
+            <div class="hero-identity-copy">
+                <div class="hero-name">@GetDisplayName()</div>
+                <div class="hero-email">@GetPrimaryEmail()</div>
+                @if (CurrentUser.IsLocked)
+                {
+                    <span class="chip chip--locked">Locked</span>
+                }
+                else
+                {
+                    <span class="chip chip--active">Active</span>
+                }
+            </div>
+        </div>
+
+        <div class="hero-meta">
+            <div class="meta-item">
+                <span class="meta-icon" aria-hidden="true"><CalendarIcon /></span>
+                <div>
+                    <div class="meta-label">Member since</div>
+                    <div class="meta-value">@FormatDateTime(CurrentUser.CreatedOn)</div>
+                </div>
+            </div>
+            <div class="meta-item">
+                <span class="meta-icon" aria-hidden="true"><ClockIcon /></span>
+                <div>
+                    <div class="meta-label">Last signed in</div>
+                    <div class="meta-value">@FormatDateTime(CurrentUser.LastSignedIn)</div>
+                </div>
+            </div>
+        </div>
+
+        @if (CurrentUser.Providers.Any())
+        {
+            <div class="hero-providers">
+                @foreach (var provider in CurrentUser.Providers.Distinct())
+                {
+                    <span class="provider-badge">@FormatProviderName(provider)</span>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="feature-grid">
+        <button type="button" class="feature-card" @onclick='() => Navigate("Profile")'>
+            <span class="feature-icon" aria-hidden="true"><PersonIcon /></span>
+            <span class="feature-copy">
+                <span class="feature-title">Profile</span>
+                <span class="feature-stat">Your info, @CurrentUser.EmailAddresses.Count() email(s), @CurrentUser.PhoneNumbers.Count() phone(s)</span>
+            </span>
+            <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
+        </button>
+
+        @if (EnableSubscriptions)
+        {
+            <button type="button" class="feature-card" @onclick='() => Navigate("Subscriptions")'>
+                <span class="feature-icon" aria-hidden="true"><CreditCardIcon /></span>
+                <span class="feature-copy">
+                    <span class="feature-title">Subscriptions</span>
+                    <span class="feature-stat">@(_loadingSubscriptions ? "Loading…" : SubscriptionsSummary())</span>
+                </span>
+                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
+            </button>
+        }
+
+        @if (EnableOrganizations)
+        {
+            <button type="button" class="feature-card" @onclick='() => Navigate("Organizations")'>
+                <span class="feature-icon" aria-hidden="true"><BuildingIcon /></span>
+                <span class="feature-copy">
+                    <span class="feature-title">Organizations</span>
+                    <span class="feature-stat">@(_loadingOrganizations ? "Loading…" : OrganizationsSummary())</span>
+                </span>
+                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
+            </button>
+        }
+
+        @if (EnablePayments)
+        {
+            <button type="button" class="feature-card" @onclick='() => Navigate("PaymentMethods")'>
+                <span class="feature-icon" aria-hidden="true"><WalletIcon /></span>
+                <span class="feature-copy">
+                    <span class="feature-title">Payment options</span>
+                    <span class="feature-stat">@(_loadingPaymentMethods ? "Loading…" : PaymentMethodsSummary())</span>
+                </span>
+                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
+            </button>
+        }
+
+        @if (CurrentUser.IsGlobalAdmin)
+        {
+            <button type="button" class="feature-card" @onclick='() => Navigate("Admin")'>
+                <span class="feature-icon" aria-hidden="true"><ShieldCheckIcon /></span>
+                <span class="feature-copy">
+                    <span class="feature-title">Administration</span>
+                    <span class="feature-stat">Manage users, roles, and access</span>
+                </span>
+                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
+            </button>
+        }
+    </div>
+
+    @if (CurrentUser.IsTest)
+    {
+        <div class="card danger-card">
+            <div class="card-header">
+                <h4>Danger zone</h4>
+            </div>
+            <div class="danger-row">
+                <div class="danger-copy">
+                    <p class="danger-title">Delete this account</p>
+                    <p class="danger-desc">Permanently deletes this test account and all of its data. This action can't be undone.</p>
+                </div>
+                @if (!_confirmingDelete)
+                {
+                    <button type="button" class="btn btn-danger" @onclick="() => _confirmingDelete = true">
+                        <span class="btn-icon" aria-hidden="true"><TrashIcon /></span>
+                        Delete account
+                    </button>
+                }
+                else
+                {
+                    <div class="danger-confirm">
+                        <span>Are you sure? This can't be undone.</span>
+                        <button type="button" class="btn btn-danger btn-sm" @onclick="ConfirmDelete" disabled="@_deleting">
+                            @(_deleting ? "Deleting…" : "Yes, delete")
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" @onclick="() => _confirmingDelete = false" disabled="@_deleting">Cancel</button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public required UserModel CurrentUser { get; set; }
+    [Parameter] public bool EnableSubscriptions { get; set; }
+    [Parameter] public bool EnableOrganizations { get; set; }
+    [Parameter] public bool EnablePayments { get; set; }
+    [Parameter] public EventCallback<string> OnNavigateToTab { get; set; }
+    [Parameter] public EventCallback OnDeleteAccount { get; set; }
+
+    private bool _loadingSubscriptions;
+    private bool _loadingOrganizations;
+    private bool _loadingPaymentMethods;
+    private int _subscriptionCount;
+    private int _organizationCount;
+    private int _paymentMethodCount;
+
+    private bool _confirmingDelete;
+    private bool _deleting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        List<Task> tasks = [];
+
+        if (EnableSubscriptions)
+            tasks.Add(LoadSubscriptionsAsync());
+
+        if (EnableOrganizations)
+            tasks.Add(LoadOrganizationsAsync());
+
+        if (EnablePayments)
+            tasks.Add(LoadPaymentMethodsAsync());
+
+        if (tasks.Count > 0)
+            await Task.WhenAll(tasks);
+    }
+
+    private async Task LoadSubscriptionsAsync()
+    {
+        _loadingSubscriptions = true;
+        _subscriptionCount = (await cloudLogin.GetMySubscriptions()).Count;
+        _loadingSubscriptions = false;
+    }
+
+    private async Task LoadOrganizationsAsync()
+    {
+        _loadingOrganizations = true;
+        _organizationCount = (await cloudLogin.GetMyOrganizations()).Count;
+        _loadingOrganizations = false;
+    }
+
+    private async Task LoadPaymentMethodsAsync()
+    {
+        _loadingPaymentMethods = true;
+        AccountBillingProfile? profile = await cloudLogin.GetMyBillingProfile();
+        _paymentMethodCount = profile?.PaymentMethods.Count() ?? 0;
+        _loadingPaymentMethods = false;
+    }
+
+    private string SubscriptionsSummary()
+        => _subscriptionCount == 0 ? "No subscriptions yet" : $"{_subscriptionCount} subscription{(_subscriptionCount == 1 ? "" : "s")}";
+
+    private string OrganizationsSummary()
+        => _organizationCount == 0 ? "Not a member of any organization" : $"{_organizationCount} organization{(_organizationCount == 1 ? "" : "s")}";
+
+    private string PaymentMethodsSummary()
+        => _paymentMethodCount == 0 ? "No payment methods saved" : $"{_paymentMethodCount} saved method{(_paymentMethodCount == 1 ? "" : "s")}";
+
+    private async Task Navigate(string tab) => await OnNavigateToTab.InvokeAsync(tab);
+
+    private async Task ConfirmDelete()
+    {
+        if (_deleting)
+            return;
+
+        _deleting = true;
+        StateHasChanged();
+
+        await OnDeleteAccount.InvokeAsync();
+    }
+
+    private string GetDisplayName()
+    {
+        string? full = CurrentUser.DisplayName;
+        if (string.IsNullOrWhiteSpace(full))
+            full = string.Join(" ", new[] { CurrentUser.FirstName, CurrentUser.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        return string.IsNullOrWhiteSpace(full) ? "Account" : full!;
+    }
+
+    private string GetPrimaryEmail()
+        => (CurrentUser.PrimaryEmailAddress ?? CurrentUser.EmailAddresses.FirstOrDefault())?.Input ?? "No email on file";
+
+    private string GetInitials()
+    {
+        var parts = new[] { CurrentUser.FirstName, CurrentUser.LastName }
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s!.Trim());
+        var initials = string.Concat(parts.Select(p => char.ToUpperInvariant(p[0])));
+        if (string.IsNullOrWhiteSpace(initials) && !string.IsNullOrWhiteSpace(CurrentUser.DisplayName))
+            initials = new string(CurrentUser.DisplayName!.Where(char.IsLetter).Take(2).Select(char.ToUpperInvariant).ToArray());
+        return string.IsNullOrWhiteSpace(initials) ? "?" : initials;
+    }
+
+    private static string FormatDateTime(DateTimeOffset dateTime)
+    {
+        if (dateTime == DateTimeOffset.MinValue)
+            return "Not available";
+
+        var timeAgo = DateTimeOffset.UtcNow - dateTime;
+
+        if (timeAgo.TotalDays < 1 && timeAgo.TotalHours < 1)
+            return $"{(int)timeAgo.TotalMinutes} minutes ago";
+
+        if (timeAgo.TotalDays < 1)
+            return $"{(int)timeAgo.TotalHours} hours ago";
+
+        if (timeAgo.TotalDays < 7)
+            return $"{(int)timeAgo.TotalDays} days ago";
+
+        if (timeAgo.TotalDays < 30)
+            return $"{(int)(timeAgo.TotalDays / 7)} weeks ago";
+
+        if (timeAgo.TotalDays < 365)
+            return $"{(int)(timeAgo.TotalDays / 30)} months ago";
+
+        return dateTime.ToString("MMMM dd, yyyy");
+    }
+
+    private static string FormatProviderName(string provider)
+    {
+        return provider.ToLowerInvariant() switch
+        {
+            "microsoft" => "Microsoft",
+            "google" => "Google",
+            "facebook" => "Facebook",
+            "twitter" => "Twitter",
+            "whatsapp" => "WhatsApp",
+            "code" => "Email/SMS Code",
+            "password" => "Password",
+            _ => provider
+        };
+    }
+}

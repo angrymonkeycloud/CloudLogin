@@ -15,18 +15,21 @@
     }
     else
     {
-        <div class="card entity-card">
-            <div class="card-header">
-                <h4>Create organization</h4>
-            </div>
-            <div class="form-group">
+        <div class="add-input-section">
+            <div class="input-group">
                 <input class="form-input" placeholder="Organization name" @bind="_newOrganizationName" disabled="@_creating" />
-            </div>
-            <div class="form-actions">
-                <button class="btn btn-primary btn-sm" @onclick="CreateOrganizationAsync" disabled="@(_creating || string.IsNullOrWhiteSpace(_newOrganizationName))">
-                    @(_creating ? "Creating..." : "Create")
+                <button class="btn btn-secondary" @onclick="CreateOrganizationAsync" disabled="@(_creating || string.IsNullOrWhiteSpace(_newOrganizationName))">
+                    @if (_creating)
+                    {
+                        <span class="loading-spinner"></span>
+                    }
+                    else
+                    {
+                        <span>Add Organization</span>
+                    }
                 </button>
             </div>
+            <small class="input-hint">Create an organization to manage billing details and invite members.</small>
             @if (!string.IsNullOrEmpty(_createMessage))
             {
                 <div class="@(_createSuccess ? "alert-success" : "alert-error")">@_createMessage</div>
@@ -39,26 +42,25 @@
         }
         else
         {
-            <div class="entity-list">
+            <div class="items-list">
                 @foreach (var organization in _organizations)
                 {
                     bool isOwner = organization.OwnerUserId == CurrentUserId;
                     bool editing = _editingOrgId == organization.Id;
                     bool inviting = _invitingOrgId == organization.Id;
 
-                    <div id="cloudlogin-organization-@organization.Id" class="card entity-card @(TargetOrganizationId == organization.Id ? "deep-link-target" : null)">
-                        <div class="card-header">
-                            <h4>@organization.Name</h4>
+                    <div id="cloudlogin-organization-@organization.Id" class="item-row _stack @(TargetOrganizationId == organization.Id ? "deep-link-target" : null)">
+                        <div class="item-info">
+                            <div class="item-copy">
+                                <span class="item-text">@organization.Name</span>
+                                <span class="item-meta">Created @organization.CreatedOn.ToString("MMMM dd, yyyy")</span>
+                            </div>
                             @if (isOwner)
                             {
                                 <span class="badge badge-primary">Owner</span>
                             }
                         </div>
                         <div class="kv-list">
-                            <div class="kv-row meta">
-                                <div class="kv-key">Created</div>
-                                <div class="kv-value">@organization.CreatedOn.ToString("MMMM dd, yyyy")</div>
-                            </div>
                             <div class="kv-row">
                                 <div class="kv-key">Billing email</div>
                                 <div class="kv-value">
@@ -89,7 +91,7 @@
 
                         @if (isOwner)
                         {
-                            <div class="form-actions">
+                            <div class="item-actions">
                                 @if (editing)
                                 {
                                     <button class="btn btn-primary btn-sm" @onclick="() => SaveOrganizationAsync(organization)" disabled="@_saving">Save</button>
@@ -102,7 +104,7 @@
                             </div>
                         }
 
-                        <div class="form-actions">
+                        <div class="item-actions">
                             @if (inviting)
                             {
                                 <input class="form-input" placeholder="Email or phone to invite" @bind="_inviteRecipient" disabled="@_saving" />

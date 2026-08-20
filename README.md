@@ -93,6 +93,9 @@ builder.AddCloudLoginWeb(options =>
 {
     options.Cosmos = new(builder.Configuration.GetSection("Cosmos"));
     options.AzureStorage = new(builder.Configuration.GetSection("Storage"));
+    options.Subscription = new SubscriptionConfiguration();
+    options.Organization = new OrganizationConfiguration();
+    options.Payment = new PaymentConfiguration();
     options.Providers =
     [
         new LoginProviders.GoogleProviderConfiguration(
@@ -106,6 +109,11 @@ builder.AddCloudLoginWeb(options =>
 
 await CloudLoginWeb.InitApp(builder);
 ```
+
+Subscription, organization, and payment account features are opt-in. Adding the
+corresponding configuration enables its account navigation item, page, and API;
+omitting it keeps that complete feature surface disabled. The configuration types
+are intentionally small today and provide a stable home for feature-specific options.
 
 The redirect and mobile allowlists are optional. With no additional configuration,
 CloudLogin permits relative and same-origin redirects and denies external destinations.

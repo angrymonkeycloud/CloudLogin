@@ -1,5 +1,21 @@
-﻿section {
+﻿@import (reference) "../../Src/variable.less";
+
+section {
     article {
+        width: 100%;
+        min-width: 0;
         overflow: visible;
+    }
+}
+
+@media @media-medium {
+    section article {
+        margin-inline: auto;
+    }
+}
+
+@media @media-large {
+    section article {
+        max-width: 1440px;
     }
 }

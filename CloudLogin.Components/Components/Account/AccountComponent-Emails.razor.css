@@ -193,7 +193,7 @@
   border-left: 4px solid #842029;
   color: #842029;
 }
-@media only screen and (min-width: 600px) {
+@media (min-width: 768px) {
   .input-group {
     flex-direction: row;
     align-items: stretch;
@@ -209,5 +209,10 @@
   }
   .item-actions {
     justify-content: flex-end;
+  }
+}
+@media (min-width: 992px) {
+  .account-section {
+    gap: 18px;
   }
 }

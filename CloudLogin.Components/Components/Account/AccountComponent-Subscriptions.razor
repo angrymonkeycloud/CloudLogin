@@ -19,34 +19,28 @@
     }
     else
     {
-        <div class="entity-list">
+        <div class="items-list">
             @foreach (var subscription in _subscriptions)
             {
-                <div id="cloudlogin-subscription-@subscription.Id" class="card entity-card @(TargetSubscriptionId == subscription.Id ? "deep-link-target" : null)">
-                    <div class="card-header">
-                        <h4>@subscription.Application</h4>
+                <div id="cloudlogin-subscription-@subscription.Id" class="item-row @(TargetSubscriptionId == subscription.Id ? "deep-link-target" : null)">
+                    <div class="item-info">
+                        <div class="item-copy">
+                            <span class="item-text">@subscription.Application</span>
+                            <span class="item-meta">
+                                @subscription.Reference
+                                <span aria-hidden="true">&middot;</span>
+                                @(subscription.ExpiresOn?.ToString("MMMM dd, yyyy") ?? "No expiry")
+                                @if (!string.IsNullOrWhiteSpace(subscription.Provider))
+                                {
+                                    <span aria-hidden="true">&middot;</span>
+                                    @subscription.Provider
+                                }
+                            </span>
+                        </div>
                         <span class="badge @StatusBadgeClass(subscription.Status)">@subscription.Status</span>
                     </div>
-                    <div class="kv-list">
-                        <div class="kv-row">
-                            <div class="kv-key">Reference</div>
-                            <div class="kv-value">@subscription.Reference</div>
-                        </div>
-                        <div class="kv-row">
-                            <div class="kv-key">Auto-renew</div>
-                            <div class="kv-value">@(subscription.AutoRenew ? "On" : "Off")</div>
-                        </div>
-                        <div class="kv-row">
-                            <div class="kv-key">Expires</div>
-                            <div class="kv-value">@(subscription.ExpiresOn?.ToString("MMMM dd, yyyy") ?? "Never")</div>
-                        </div>
-                        @if (!string.IsNullOrWhiteSpace(subscription.Provider))
-                        {
-                            <div class="kv-row">
-                                <div class="kv-key">Provider</div>
-                                <div class="kv-value">@subscription.Provider</div>
-                            </div>
-                        }
+                    <div class="item-actions">
+                        <span class="badge badge-info">Auto-renew @(subscription.AutoRenew ? "on" : "off")</span>
                     </div>
                 </div>
             }

@@ -16,6 +16,21 @@
       "minify": false
     },
     {
+      "input": "Components/Account/AccountComponent-Subscriptions.razor.less",
+      "output": "Components/Account/AccountComponent-Subscriptions.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-Organizations.razor.less",
+      "output": "Components/Account/AccountComponent-Organizations.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-PaymentMethods.razor.less",
+      "output": "Components/Account/AccountComponent-PaymentMethods.razor.css",
+      "minify": false
+    },
+    {
       "input": "Components/Account/AccountComponent-Update.razor.less",
       "output": "Components/Account/AccountComponent-Update.razor.css",
       "minify": false

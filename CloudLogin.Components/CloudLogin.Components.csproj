@@ -52,6 +52,10 @@
 			<PackagePath>\</PackagePath>
 		</None>
 		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
+		<None Include="compilerconfig.json" />
+		<None Include="Components\Account\AccountComponent-Emails.razor.min.css" />
+		<None Include="Components\Account\AccountComponent-Organizations.razor.min.css" />
+		<None Include="Components\Account\AccountComponent-PaymentMethods.razor.min.css" />
 		<None Include="mateconfig.json" />
 	</ItemGroup>
 

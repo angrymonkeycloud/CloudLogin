@@ -1,8 +1,5 @@
 ﻿@import (reference) "../../Src/variable.less";
 
-// ?? AccountComponent-Numbers ?????????????????????????????
-// Mobile-first · Tablet @600px
-
 .account-section {
     display: flex;
     flex-direction: column;
@@ -64,8 +61,13 @@
     transition: all 0.2s ease;
     width: 100%;
 
-    &::placeholder { color: @placeholder; }
-    &:hover:not(:disabled) { border-color: @border-strong; }
+    &::placeholder {
+        color: @placeholder;
+    }
+
+    &:hover:not(:disabled) {
+        border-color: @border-strong;
+    }
 
     &:focus {
         border-color: var(--amc-accentColor);
@@ -109,7 +111,9 @@
             transform: translateY(-1px);
         }
 
-        &:active:not(:disabled) { transform: translateY(0); }
+        &:active:not(:disabled) {
+            transform: translateY(0);
+        }
     }
 
     &-outline {
@@ -127,7 +131,9 @@
         background-color: @error;
         color: @white;
 
-        &:hover:not(:disabled) { background-color: @error-dark; }
+        &:hover:not(:disabled) {
+            background-color: @error-dark;
+        }
     }
 
     &-sm {
@@ -146,7 +152,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .items-list {
@@ -244,8 +252,7 @@
     }
 }
 
-// ?? Tablet ??
-@media only screen and (min-width: 600px) {
+@media @media-medium {
     .input-group {
         flex-direction: row;
         align-items: stretch;
@@ -266,5 +273,11 @@
         &-actions {
             justify-content: flex-end;
         }
+    }
+}
+
+@media @media-large {
+    .account-section {
+        gap: 18px;
     }
 }

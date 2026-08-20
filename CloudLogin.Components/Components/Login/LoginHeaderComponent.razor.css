@@ -1,9 +1,23 @@
+@keyframes cloudlogin-header-loading {
+  0% {
+    left: -34%;
+  }
+  55% {
+    left: 58%;
+  }
+  100% {
+    left: 100%;
+  }
+}
 .amc-cloudlogin-header {
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   transform: translateX(0);
+}
+.amc-cloudlogin-header._loading .amc-cloudlogin-loading {
+  display: block;
 }
 .amc-cloudlogin-title {
   color: #202124;
@@ -45,26 +59,23 @@
 }
 .amc-cloudlogin-loading {
   position: fixed;
-  min-height: 10px;
+  inset: 0 0 auto;
+  z-index: 1000;
   display: none;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  background-color: #fff;
+  pointer-events: none;
 }
 .amc-cloudlogin-loading > div {
-  position: relative;
-  top: 0px;
-  width: 100px;
-  height: 5px;
-  background-color: var(--amc-accentColor);
-  border-radius: 20px;
-  margin: 0 auto;
-  animation: move 4s cubic-bezier(0.31, 0.33, 1, 1) infinite;
-}
-.amc-cloudlogin-loading > div:after {
-  content: "";
   position: absolute;
-  width: 10px;
-  height: 5px;
-  border-radius: 20px;
-  background-color: var(--amc-accentColor);
+  inset: 0 auto 0 0;
+  width: 34%;
+  height: 100%;
+  border-radius: 0 20px 20px 0;
+  background-color: var(--amc-accentColor, #0078d4);
+  animation: cloudlogin-header-loading 1.35s ease-in-out infinite;
 }
 .amc-cloudlogin-logo {
   display: block;
@@ -72,10 +83,6 @@
   max-width: 200px;
   margin: 30px auto 5px auto;
 }
-.amc-cloudlogin._loading .amc-cloudlogin-loading {
-  display: block;
-}
-/* Professional account-style header */
 .amc-cloudlogin-header {
   align-items: flex-start;
   text-align: left;
@@ -119,16 +126,13 @@
   color: #a4262c;
   font-size: 13px;
 }
-.amc-cloudlogin-loading {
-  inset: 0 0 auto;
-  width: 100%;
-}
-.amc-cloudlogin-loading > div {
-  height: 3px;
-  border-radius: 0;
-  background: var(--amc-accentColor, #0078d4);
-}
 .amc-cloudlogin-logo {
   max-width: 148px;
   margin: 0 0 22px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .amc-cloudlogin-loading > div {
+    width: 100%;
+    animation: none;
+  }
 }

@@ -1,0 +1,155 @@
+@import (reference) "../../Src/variable.less";
+
+.account-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.section {
+    &-header {
+        margin-bottom: 8px;
+
+        h3 {
+            margin: 0 0 4px;
+            color: @text;
+            font-size: 24px;
+            font-weight: 600;
+        }
+    }
+
+    &-description {
+        margin: 0;
+        color: @muted;
+        font-size: 14px;
+    }
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item {
+    &-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px 20px;
+        border: 2px solid @border;
+        border-radius: @radius-sm;
+        background-color: @white;
+
+        &.deep-link-target {
+            border-color: var(--amc-accentColor);
+        }
+    }
+
+    &-info {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    &-copy {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    &-text {
+        color: @text;
+        font-size: 15px;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+
+    &-meta {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: @muted;
+        font-size: 13px;
+        flex-wrap: wrap;
+    }
+
+    &-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: @radius;
+    font-size: 12px;
+    font-weight: 600;
+
+    &-primary {
+        background-color: var(--amc-accentColor);
+        color: @white;
+    }
+
+    &-secondary {
+        background-color: @muted;
+        color: @white;
+    }
+
+    &-info {
+        background-color: @border;
+        color: @text-soft;
+    }
+}
+
+.empty-state {
+    padding: 40px 20px;
+    border: 2px dashed @border-dashed;
+    border-radius: @radius-sm;
+    background-color: @surface;
+    color: @muted;
+    font-size: 15px;
+    text-align: center;
+}
+
+.loading-spinner {
+    display: block;
+    width: 20px;
+    height: 20px;
+    margin: 24px auto;
+    border: 2px solid rgba(0, 0, 0, .15);
+    border-top-color: var(--amc-accentColor);
+    border-radius: 50%;
+    animation: subscription-spin .7s linear infinite;
+}
+
+@keyframes subscription-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media @media-medium {
+    .item {
+        &-row {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        &-actions {
+            justify-content: flex-end;
+        }
+    }
+}
+
+@media @media-large {
+    .account-section {
+        gap: 18px;
+    }
+}

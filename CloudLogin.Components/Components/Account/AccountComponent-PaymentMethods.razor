@@ -15,34 +15,33 @@
     }
     else
     {
-        <div class="card entity-card">
-            <div class="card-header">
-                <h4>Add payment method</h4>
-            </div>
-            <div class="form-group">
+        <div class="add-input-section">
+            <div class="input-group">
                 <select class="form-input" @bind="_newProvider" disabled="@_saving">
                     <option value="Stripe">Stripe</option>
                     <option value="BankTransfer">Bank Transfer</option>
                     <option value="Other">Other</option>
                 </select>
-            </div>
-            <div class="form-group">
                 <input class="form-input" placeholder="Reference (e.g. payment method id)" @bind="_newReference" disabled="@_saving" />
             </div>
-            <div class="form-group">
+            <div class="input-group">
                 <input class="form-input" placeholder="Display name (optional)" @bind="_newDisplayName" disabled="@_saving" />
-            </div>
-            <div class="form-group">
-                <label>
+                <label class="input-check">
                     <input type="checkbox" @bind="_newIsDefault" disabled="@_saving" />
                     Set as default
                 </label>
-            </div>
-            <div class="form-actions">
-                <button class="btn btn-primary btn-sm" @onclick="AddPaymentMethodAsync" disabled="@(_saving || string.IsNullOrWhiteSpace(_newReference))">
-                    @(_saving ? "Adding..." : "Add")
+                <button class="btn btn-secondary" @onclick="AddPaymentMethodAsync" disabled="@(_saving || string.IsNullOrWhiteSpace(_newReference))">
+                    @if (_saving)
+                    {
+                        <span class="loading-spinner"></span>
+                    }
+                    else
+                    {
+                        <span>Add Payment</span>
+                    }
                 </button>
             </div>
+            <small class="input-hint">CloudLogin saves the provider reference only and never stores card details.</small>
             @if (!string.IsNullOrEmpty(_message))
             {
                 <div class="@(_success ? "alert-success" : "alert-error")">@_message</div>
@@ -55,22 +54,19 @@
         }
         else
         {
-            <div class="entity-list">
+            <div class="items-list">
                 @foreach (var method in _paymentMethods)
                 {
-                    <div class="card entity-card">
-                        <div class="card-header">
-                            <h4>@(method.DisplayName ?? method.Provider)</h4>
+                    <div class="item-row">
+                        <div class="item-info">
+                            <div class="item-copy">
+                                <span class="item-text">@(method.DisplayName ?? method.Provider)</span>
+                                <span class="item-meta">@method.Provider</span>
+                            </div>
                             @if (method.IsDefault)
                             {
                                 <span class="badge badge-primary">Default</span>
                             }
-                        </div>
-                        <div class="kv-list">
-                            <div class="kv-row">
-                                <div class="kv-key">Provider</div>
-                                <div class="kv-value">@method.Provider</div>
-                            </div>
                         </div>
                     </div>
                 }

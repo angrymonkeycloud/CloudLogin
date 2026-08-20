@@ -16,7 +16,13 @@
 }
 else
 {
-    <AngryMonkey.CloudLogin.AccountComponent Referer="@Referer" AdminUserId="@AdminUserId" InitialSection="@InitialSection" TargetEntityId="@TargetEntityId" />
+    <AngryMonkey.CloudLogin.AccountComponent Referer="@Referer"
+                                               AdminUserId="@AdminUserId"
+                                               InitialSection="@InitialSection"
+                                               TargetEntityId="@TargetEntityId"
+                                               EnableSubscriptions="@EnableSubscriptions"
+                                               EnableOrganizations="@EnableOrganizations"
+                                               EnablePayments="@EnablePayments" />
 }
 
 @code {
@@ -24,4 +30,7 @@ else
     [Parameter] public Guid? AdminUserId { get; set; }
     [Parameter] public string? InitialSection { get; set; }
     [Parameter] public Guid? TargetEntityId { get; set; }
+    [Parameter] public bool EnableSubscriptions { get; set; }
+    [Parameter] public bool EnableOrganizations { get; set; }
+    [Parameter] public bool EnablePayments { get; set; }
 }

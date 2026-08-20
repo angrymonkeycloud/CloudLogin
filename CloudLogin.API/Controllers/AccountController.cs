@@ -13,6 +13,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
     [Authorize]
     public async Task<ActionResult<List<CloudLoginOrganization>>> Organizations()
     {
+        if (Configuration.Organization is null)
+            return NotFound();
+
         try
         {
             return Ok(await _server.GetMyOrganizations());
@@ -27,6 +30,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
     [Authorize]
     public async Task<ActionResult<List<AccountSubscription>>> Subscriptions()
     {
+        if (Configuration.Subscription is null)
+            return NotFound();
+
         try
         {
             return Ok(await _server.GetMySubscriptions());
@@ -41,6 +47,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
     [Authorize]
     public async Task<ActionResult<AccountBillingProfile?>> BillingProfile()
     {
+        if (Configuration.Payment is null)
+            return NotFound();
+
         try
         {
             return Ok(await _server.GetMyBillingProfile());
@@ -55,6 +64,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
     [Authorize]
     public async Task<ActionResult<CloudLoginOrganization>> CreateOrganization([FromBody] CreateOrganizationRequest request)
     {
+        if (Configuration.Organization is null)
+            return NotFound();
+
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest("Name is required.");
 
@@ -76,6 +88,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
     [Authorize]
     public async Task<ActionResult<CloudLoginOrganizationInvitation>> InviteToOrganization(Guid organizationId, [FromBody] InviteToOrganizationRequest request)
     {
+        if (Configuration.Organization is null)
+            return NotFound();
+
         if (string.IsNullOrWhiteSpace(request.Recipient))
             return BadRequest("Recipient is required.");
 
@@ -101,6 +116,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
     [Authorize]
     public async Task<ActionResult<CloudLoginOrganization>> UpdateOrganization(Guid organizationId, [FromBody] CloudLoginOrganization organization)
     {
+        if (Configuration.Organization is null)
+            return NotFound();
+
         if (organizationId != organization.Id)
             return BadRequest("Route id and body id must match.");
 
@@ -126,6 +144,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
     [Authorize]
     public async Task<ActionResult<AccountBillingProfile>> AddPaymentMethod([FromBody] AddPaymentMethodRequest request)
     {
+        if (Configuration.Payment is null)
+            return NotFound();
+
         if (string.IsNullOrWhiteSpace(request.Method.Provider) || string.IsNullOrWhiteSpace(request.Method.Reference))
             return BadRequest("Provider and Reference are required.");
 

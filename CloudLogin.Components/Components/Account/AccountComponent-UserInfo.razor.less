@@ -1,8 +1,5 @@
 ﻿@import (reference) "../../Src/variable.less";
 
-// ── AccountComponent-UserInfo ────────────────────────────
-// Mobile-first · Tablet @640px
-
 .account-section {
     display: flex;
     flex-direction: column;
@@ -189,8 +186,6 @@
     }
 }
 
-// ── ms-account card layout ──
-
 .ms-account {
     display: flex;
     flex-direction: column;
@@ -319,7 +314,6 @@
     }
 }
 
-// ── Inline editing controls ──
 .btn.btn-outline {
     display: inline-flex;
     align-items: center;
@@ -485,8 +479,7 @@
     }
 }
 
-// ── Tablet ──
-@media only screen and (min-width: 640px) {
+@media @media-medium {
     .profile-block {
         align-items: center;
     }
@@ -497,10 +490,14 @@
     }
 }
 
-@media only screen and (min-width: 800px) {
+@media @media-large {
     .profile {
         &-block {
             flex-direction: row;
         }
+    }
+
+    .info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

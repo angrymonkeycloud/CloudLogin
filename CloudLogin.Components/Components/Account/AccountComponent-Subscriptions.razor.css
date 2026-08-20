@@ -1,0 +1,126 @@
+﻿.account-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.section-header {
+  margin-bottom: 8px;
+}
+.section-header h3 {
+  margin: 0 0 4px;
+  color: #212529;
+  font-size: 24px;
+  font-weight: 600;
+}
+.section-description {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.item-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background-color: #fff;
+}
+.item-row.deep-link-target {
+  border-color: var(--amc-accentColor);
+}
+.item-info {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.item-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+.item-text {
+  color: #212529;
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #6c757d;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-primary {
+  background-color: var(--amc-accentColor);
+  color: #fff;
+}
+.badge-secondary {
+  background-color: #6c757d;
+  color: #fff;
+}
+.badge-info {
+  background-color: #e9ecef;
+  color: #495057;
+}
+.empty-state {
+  padding: 40px 20px;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  font-size: 15px;
+  text-align: center;
+}
+.loading-spinner {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 24px auto;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-top-color: var(--amc-accentColor);
+  border-radius: 50%;
+  animation: subscription-spin 0.7s linear infinite;
+}
+@keyframes subscription-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (min-width: 768px) {
+  .item-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .item-actions {
+    justify-content: flex-end;
+  }
+}
+@media (min-width: 992px) {
+  .account-section {
+    gap: 18px;
+  }
+}

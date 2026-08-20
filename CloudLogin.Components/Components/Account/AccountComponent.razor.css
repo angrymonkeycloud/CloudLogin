@@ -15,8 +15,8 @@
   box-sizing: border-box;
 }
 .account-management > div {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: calc(100vh - 2px);
   background: #f3f3f3;
 }
@@ -141,9 +141,10 @@
 }
 .account-management .account-page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-direction: column;
   justify-content: space-between;
-  gap: 20px;
+  gap: 12px;
   min-height: 70px;
   margin-bottom: 22px;
 }
@@ -159,7 +160,7 @@
 .account-management .account-page-header h1 {
   margin: 0;
   color: #111;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -220,11 +221,11 @@
 }
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card {
-  padding: 20px 24px;
+  padding: 18px;
 }
 .account-management .tab-content ::deep .account-section > .form-container {
   max-width: 760px;
-  padding: 24px;
+  padding: 18px;
 }
 .account-management .tab-content ::deep .info-item,
 .account-management .tab-content ::deep .contact-item {
@@ -334,8 +335,26 @@
   font-weight: 600 !important;
   letter-spacing: 0.02em !important;
 }
-@media only screen and (min-width: 850px) {
+@media (min-width: 768px) {
+  .account-management .account-page-header {
+    align-items: center;
+    flex-direction: row;
+    gap: 20px;
+  }
+  .account-management .account-page-header h1 {
+    font-size: 28px;
+  }
+  .account-management .tab-content ::deep .card,
+  .account-management .tab-content ::deep .header-card {
+    padding: 20px 24px;
+  }
+  .account-management .tab-content ::deep .account-section > .form-container {
+    padding: 24px;
+  }
+}
+@media (min-width: 992px) {
   .account-management > div {
+    display: grid;
     grid-template-columns: 260px minmax(0, 1fr);
   }
   .account-management .sidebar {
@@ -365,21 +384,6 @@
   }
   .account-management .tab-content {
     padding: 38px calc(clamp(32px, 5vw, 72px)) 72px;
-  }
-}
-@media only screen and (max-width: 560px) {
-  .account-management .account-page-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .account-management .account-page-header h1 {
-    font-size: 24px;
-  }
-  .account-management .tab-content ::deep .card,
-  .account-management .tab-content ::deep .header-card,
-  .account-management .tab-content ::deep .account-section > .form-container {
-    padding: 18px;
   }
 }
 @keyframes skelton {

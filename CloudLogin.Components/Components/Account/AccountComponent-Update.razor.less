@@ -1,8 +1,5 @@
 ﻿@import (reference) "../../Src/variable.less";
 
-// ?? AccountComponent-Update ??????????????????????????????
-// Mobile-first · Tablet @600px
-
 .account-section {
     display: flex;
     flex-direction: column;
@@ -59,8 +56,13 @@
         transition: all 0.2s ease;
         width: 100%;
 
-        &::placeholder { color: @placeholder; }
-        &:hover { border-color: @border-strong; }
+        &::placeholder {
+            color: @placeholder;
+        }
+
+        &:hover {
+            border-color: @border-strong;
+        }
 
         &:focus {
             border-color: var(--amc-accentColor);
@@ -125,7 +127,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .alert {
@@ -148,8 +152,7 @@
     }
 }
 
-// ?? Tablet ??
-@media only screen and (min-width: 600px) {
+@media @media-medium {
     .form-container {
         gap: 20px;
     }
@@ -157,5 +160,11 @@
     .btn {
         width: auto;
         min-width: 200px;
+    }
+}
+
+@media @media-large {
+    .form-container {
+        max-width: 760px;
     }
 }

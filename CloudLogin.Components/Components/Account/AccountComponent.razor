@@ -133,6 +133,10 @@ else
     /// <summary>Specific organization or subscription addressed by the deep link.</summary>
     [Parameter] public Guid? TargetEntityId { get; set; }
 
+    [Parameter] public bool EnableSubscriptions { get; set; }
+    [Parameter] public bool EnableOrganizations { get; set; }
+    [Parameter] public bool EnablePayments { get; set; }
+
     private UserModel? CurrentUser { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -148,16 +152,25 @@ else
 
     private string activeTab = "UserInfo";
 
-    private List<TabItem> Tabs = new List<TabItem>
+    private IEnumerable<TabItem> Tabs
     {
-        new TabItem { Name = "UserInfo", DisplayName = "Account" },
-        new TabItem { Name = "Manage", DisplayName = "Your info" },
-        new TabItem { Name = "Emails", DisplayName = "Emails" },
-        new TabItem { Name = "PhoneNumbers", DisplayName = "Phone Numbers" },
-        new TabItem { Name = "Subscriptions", DisplayName = "Subscriptions" },
-        new TabItem { Name = "Organizations", DisplayName = "Organizations" },
-        new TabItem { Name = "PaymentMethods", DisplayName = "Payment options" }
-    };
+        get
+        {
+            yield return new() { Name = "UserInfo", DisplayName = "Account" };
+            yield return new() { Name = "Manage", DisplayName = "Your info" };
+            yield return new() { Name = "Emails", DisplayName = "Emails" };
+            yield return new() { Name = "PhoneNumbers", DisplayName = "Phone Numbers" };
+
+            if (EnableSubscriptions)
+                yield return new() { Name = "Subscriptions", DisplayName = "Subscriptions" };
+
+            if (EnableOrganizations)
+                yield return new() { Name = "Organizations", DisplayName = "Organizations" };
+
+            if (EnablePayments)
+                yield return new() { Name = "PaymentMethods", DisplayName = "Payment options" };
+        }
+    }
 
     private class TabItem
     {

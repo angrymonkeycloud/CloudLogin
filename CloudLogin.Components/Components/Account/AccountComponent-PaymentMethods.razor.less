@@ -1,0 +1,255 @@
+@import (reference) "../../Src/variable.less";
+
+.account-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.section {
+    &-header {
+        margin-bottom: 8px;
+
+        h3 {
+            margin: 0 0 4px;
+            color: @text;
+            font-size: 24px;
+            font-weight: 600;
+        }
+    }
+
+    &-description {
+        margin: 0;
+        color: @muted;
+        font-size: 14px;
+    }
+}
+
+.add-input-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border-radius: @radius-sm;
+    background-color: @surface;
+}
+
+.input {
+    &-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    &-hint {
+        margin-left: 4px;
+        color: @muted;
+        font-size: 13px;
+        font-style: italic;
+    }
+
+    &-check {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        gap: 8px;
+        color: @text-soft;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+}
+
+select {
+    appearance: auto;
+    cursor: pointer;
+}
+
+.input-check {
+    cursor: pointer;
+}
+
+.form-input {
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid @border;
+    border-radius: @radius-sm;
+    background-color: @white;
+    color: @text;
+    font-size: 15px;
+    outline: none;
+
+    &::placeholder {
+        color: @placeholder;
+    }
+
+    &:hover:not(:disabled) {
+        border-color: @border-strong;
+    }
+
+    &:focus {
+        border-color: var(--amc-accentColor);
+        box-shadow: none;
+    }
+}
+
+.btn-secondary {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: @radius-sm;
+    background-color: var(--amc-secondColor);
+    color: @white;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        background-color: var(--amc-accentColor);
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: .5;
+    }
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item {
+    &-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px 20px;
+        border: 2px solid @border;
+        border-radius: @radius-sm;
+        background: @white;
+    }
+
+    &-info {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    &-copy {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    &-text {
+        color: @text;
+        font-size: 15px;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+
+    &-meta {
+        color: @muted;
+        font-size: 13px;
+    }
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: @radius;
+    font-size: 12px;
+    font-weight: 600;
+
+    &-primary {
+        background-color: var(--amc-accentColor);
+        color: @white;
+    }
+}
+
+.empty-state {
+    padding: 40px 20px;
+    border: 2px dashed @border-dashed;
+    border-radius: @radius-sm;
+    background: @surface;
+    color: @muted;
+    text-align: center;
+}
+
+.alert {
+    &-success, &-error {
+        padding: 12px 16px;
+        border-radius: @radius-sm;
+        font-size: 14px;
+    }
+
+    &-success {
+        background: @success-alt-soft;
+        color: @success-alt;
+    }
+
+    &-error {
+        background: @error-alt-soft;
+        color: @error-alt;
+    }
+}
+
+.loading-spinner {
+    display: block;
+    width: 20px;
+    height: 20px;
+    margin: 24px auto;
+    border: 2px solid rgba(0, 0, 0, .15);
+    border-top-color: var(--amc-accentColor);
+    border-radius: 50%;
+    animation: payment-spin .7s linear infinite;
+}
+
+.btn-secondary .loading-spinner {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    border-color: rgba(255,255,255,.35);
+    border-top-color: @white;
+}
+
+@keyframes payment-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media @media-medium {
+    .input-group {
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+    .btn-secondary {
+        width: auto;
+        min-width: 140px;
+    }
+
+    .item-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+@media @media-large {
+    .account-section {
+        gap: 18px;
+    }
+}

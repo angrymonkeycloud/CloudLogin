@@ -1,10 +1,18 @@
 @page "/Account"
 @using AngryMonkey.CloudBlazor.Web
+@using AngryMonkey.CloudLogin.Server
+@inject CloudLoginWebConfiguration Configuration
 
 
 <CloudHeadContent />
 
-<AngryMonkey.CloudLogin.AccountPageComponent Referer="@Referer" AdminUserId="@AdminUserId" InitialSection="@Section" TargetEntityId="@EntityId" />
+<AngryMonkey.CloudLogin.AccountPageComponent Referer="@Referer"
+                                                    AdminUserId="@AdminUserId"
+                                                    InitialSection="@Section"
+                                                    TargetEntityId="@EntityId"
+                                                    EnableSubscriptions="@(Configuration.Subscription is not null)"
+                                                    EnableOrganizations="@(Configuration.Organization is not null)"
+                                                    EnablePayments="@(Configuration.Payment is not null)" />
 
 @code{
     [SupplyParameterFromQuery]

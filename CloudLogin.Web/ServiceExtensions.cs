@@ -101,10 +101,19 @@ public static class MvcServiceCollectionExtensions
         BaseRecord.CosmosConfiguration = loginConfig.Cosmos;
 
         // Create CosmosClient with custom serialization using configurable property names
-        CosmosClient cosmosClient = new(loginConfig.Cosmos.ConnectionString, new CosmosClientOptions
+        CosmosClientOptions cosmosClientOptions = new()
         {
             Serializer = new ConfigurableCosmosSerializer()
-        });
+        };
+
+        if (loginConfig.Cosmos.GatewayMode)
+        {
+            // Local emulators (the Linux-based Cosmos emulator) support Gateway mode only.
+            cosmosClientOptions.ConnectionMode = ConnectionMode.Gateway;
+            cosmosClientOptions.LimitToEndpoint = true;
+        }
+
+        CosmosClient cosmosClient = new(loginConfig.Cosmos.ConnectionString, cosmosClientOptions);
 
         // Get container reference
         var container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);

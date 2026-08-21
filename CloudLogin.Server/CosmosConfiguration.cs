@@ -28,6 +28,9 @@ public class CosmosConfiguration
         // Optional override for logical UserInfo discriminator/partition key value
         UserInfoPartitionKeyValue = configurationSection["UserInfoPartitionKeyValue"];
 
+        // Local emulators (the Linux-based Cosmos emulator) support Gateway mode only.
+        GatewayMode = configurationSection.GetValue("GatewayMode", false);
+
         // Compatibility flags
         UseUppercaseIdProperty = configurationSection.GetValue("UseUppercaseIdProperty", false) || IncludeLegacySchema;
         JsonCompatibilityMode = Enum.TryParse(
@@ -54,6 +57,13 @@ public class CosmosConfiguration
     /// </summary>
     public IdSaveMode SaveIdMode { get; set; } = IdSaveMode.Raw;
     
+    /// <summary>
+    /// Connects in Cosmos Gateway mode instead of the SDK's default Direct mode. Required by
+    /// local emulators (the Linux-based Cosmos emulator supports Gateway only); leave off
+    /// (default) against real Azure Cosmos DB.
+    /// </summary>
+    public bool GatewayMode { get; set; }
+
     public string PartitionKeyName { get; set; } = "/pk";
     public string TypeName { get; set; } = "$type";
 

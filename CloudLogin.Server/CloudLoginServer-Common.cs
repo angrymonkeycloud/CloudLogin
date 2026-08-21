@@ -377,7 +377,24 @@ public partial class CloudLoginServer : ICloudLogin
             throw new InvalidOperationException("CosmosMethods is not initialized");
 
         await _cosmosMethods.DeleteUser(userId);
-        
+
+        // Security state (login history, the TOTP secret, passkey public keys) lives outside
+        // the user document in blob storage and would otherwise survive account deletion
+        // indefinitely. Best-effort: a storage hiccup here must not turn a successful account
+        // deletion into a failed one.
+        if (_configuration.AzureStorage is not null)
+        {
+            try
+            {
+                await SecurityStore.DeleteLoginHistory(userId);
+                await SecurityStore.DeleteCredentials(userId);
+            }
+            catch
+            {
+                // Intentionally ignored — see summary.
+            }
+        }
+
         if (_eventPublisher != null)
             await _eventPublisher.PublishAsync(CloudLoginEvent.Create(
                 "User.Deleted",

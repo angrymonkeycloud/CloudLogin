@@ -23,7 +23,7 @@
             <h3>Pending invitations</h3>
             @foreach (CloudLoginOrganizationInvitation invitation in Seed.Invitations.Where(item => item.OrganizationId == organization.Id))
             {
-                <div class="authority-invitation"><div><strong>@invitation.Recipient</strong><small>@string.Join(", ", invitation.Roles)</small></div><time>Expires @invitation.ExpiresAt.ToString("dd MMM, HH:mm")</time></div>
+            <div class="authority-invitation"><div><strong>@invitation.Recipient</strong><small>@string.Join(", ", invitation.Roles)</small></div><time>Expires @invitation.ExpiresOn.ToString("dd MMM, HH:mm")</time></div>
             }
         </article>
     }

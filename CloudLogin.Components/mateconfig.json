@@ -21,8 +21,13 @@
       "minify": false
     },
     {
-      "input": "Components/Account/AccountComponent-Organizations.razor.less",
-      "output": "Components/Account/AccountComponent-Organizations.razor.css",
+      "input": "Components/Account/AccountComponent-Organization.razor.less",
+      "output": "Components/Account/AccountComponent-Organization.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-WorkspaceSwitcher.razor.less",
+      "output": "Components/Account/AccountComponent-WorkspaceSwitcher.razor.css",
       "minify": false
     },
     {
@@ -31,13 +36,23 @@
       "minify": false
     },
     {
-      "input": "Components/Account/AccountComponent-Update.razor.less",
-      "output": "Components/Account/AccountComponent-Update.razor.css",
+      "input": "Components/Account/AccountComponent-Overview.razor.less",
+      "output": "Components/Account/AccountComponent-Overview.razor.css",
       "minify": false
     },
     {
-      "input": "Components/Account/AccountComponent-UserInfo.razor.less",
-      "output": "Components/Account/AccountComponent-UserInfo.razor.css",
+      "input": "Components/Account/AccountComponent-Profile.razor.less",
+      "output": "Components/Account/AccountComponent-Profile.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-Security.razor.less",
+      "output": "Components/Account/AccountComponent-Security.razor.css",
+      "minify": false
+    },
+    {
+      "input": "Components/Account/AccountComponent-ErrorDialog.razor.less",
+      "output": "Components/Account/AccountComponent-ErrorDialog.razor.css",
       "minify": false
     },
     {

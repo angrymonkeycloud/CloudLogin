@@ -1,0 +1,608 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@using System.Globalization
+@using QRCoder
+@inject ICloudLogin cloudLogin
+@inject NavigationManager navigationManager
+@inject IJSRuntime js
+
+@namespace AngryMonkey.CloudLogin
+
+<div class="account-section security-page">
+    <div class="section-header">
+        <h3>Security</h3>
+        <p class="section-description">Manage how you sign in, add extra verification, and review recent activity on your account.</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-spinner"></div>
+    }
+    else
+    {
+        @* ── Password ─────────────────────────────────────────── *@
+        @if (_overview.PasswordProviderConfigured)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h4>Password</h4>
+                    @if (!_isEditingPassword)
+                    {
+                        <button class="link-action" @onclick="StartPasswordEdit">
+                            @(_overview.HasPassword ? "Change password" : "Add password")
+                        </button>
+                    }
+                </div>
+
+                @if (!_isEditingPassword)
+                {
+                    <p class="card-note">
+                        @(_overview.HasPassword
+                            ? "A password is set on this account."
+                            : "No password yet. Add one to sign in without a verification code.")
+                    </p>
+                }
+                else
+                {
+                    <div class="stack">
+                        @if (_overview.HasPassword)
+                        {
+                            <div class="field">
+                                <label class="field-label" for="current-password">Current password</label>
+                                <input id="current-password" type="password" class="form-input" @bind="_currentPassword" @bind:event="oninput" autocomplete="current-password" disabled="@_busy" />
+                            </div>
+                        }
+                        <div class="field">
+                            <label class="field-label" for="new-password">New password</label>
+                            <input id="new-password" type="password" class="form-input" @bind="_newPassword" @bind:event="oninput" autocomplete="new-password" disabled="@_busy" />
+                        </div>
+                        <div class="field">
+                            <label class="field-label" for="confirm-password">Confirm new password</label>
+                            <input id="confirm-password" type="password" class="form-input" @bind="_confirmPassword" @bind:event="oninput" autocomplete="new-password" disabled="@_busy" />
+                        </div>
+                        <div class="row-actions">
+                            <button class="btn btn-primary" @onclick="SavePassword" disabled="@(_busy || !CanSavePassword)">Save password</button>
+                            <button class="btn btn-outline" @onclick="CancelPasswordEdit" disabled="@_busy">Cancel</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* ── Authenticator app ────────────────────────────────── *@
+        <div class="card">
+            <div class="card-header">
+                <h4>Authenticator app</h4>
+                @if (_overview.HasAuthenticatorApp && _enrollment is null)
+                {
+                    <button class="link-action link-danger" @onclick="DisableAuthenticator" disabled="@_busy">Remove</button>
+                }
+            </div>
+
+            @if (_enrollment is not null)
+            {
+                <div class="stack">
+                    <p class="card-note">Scan this code with your authenticator app, then enter the 6-digit code it shows to finish.</p>
+                    <div class="qr-block">
+                        <div class="qr-code">@((MarkupString)_qrSvg)</div>
+                        <div class="qr-manual">
+                            <span class="field-label">Can't scan it?</span>
+                            <p class="card-note">Enter this key manually:</p>
+                            <code class="secret-key">@_enrollment.SecretKey</code>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="totp-code">Verification code</label>
+                        <input id="totp-code" class="form-input code-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+                               @bind="_totpCode" @bind:event="oninput" placeholder="000000" disabled="@_busy" />
+                    </div>
+                    <div class="row-actions">
+                        <button class="btn btn-primary" @onclick="ConfirmAuthenticator" disabled="@(_busy || string.IsNullOrWhiteSpace(_totpCode))">Verify &amp; enable</button>
+                        <button class="btn btn-outline" @onclick="CancelEnrollment" disabled="@_busy">Cancel</button>
+                    </div>
+                </div>
+            }
+            else if (_overview.HasAuthenticatorApp)
+            {
+                <div class="status-row">
+                    <span class="status-badge status-badge--on">Enabled</span>
+                    <span class="card-note">Added @FormatAbsolute(_overview.AuthenticatorEnrolledOn)</span>
+                </div>
+            }
+            else
+            {
+                <p class="card-note">Use an app like Microsoft Authenticator, Google Authenticator, or 1Password to generate sign-in codes.</p>
+                <div class="row-actions">
+                    <button class="btn btn-primary" @onclick="BeginAuthenticator" disabled="@_busy">Set up authenticator</button>
+                </div>
+            }
+        </div>
+
+        @* ── Passkeys ─────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-header">
+                <h4>Passkeys &amp; biometrics</h4>
+                @if (_webAuthnSupported)
+                {
+                    <button class="link-action" @onclick="RegisterPasskey" disabled="@_busy">Add passkey</button>
+                }
+            </div>
+
+            @if (!_webAuthnSupported)
+            {
+                <p class="card-note">This browser doesn't support passkeys, or the page isn't running over a secure connection.</p>
+            }
+            else
+            {
+                <p class="card-note">
+                    Sign in with your device PIN, fingerprint, or face instead of a code.
+                    @if (_hasPlatformAuthenticator)
+                    {
+                        <text>This device has a built-in authenticator you can use.</text>
+                    }
+                </p>
+
+                @if (_overview.Passkeys.Count == 0)
+                {
+                    <div class="empty-state"><p>No passkeys registered yet.</p></div>
+                }
+                else
+                {
+                    <div class="entry-list">
+                        @foreach (PasskeySummary passkey in _overview.Passkeys)
+                        {
+                            <div class="entry-row">
+                                <span class="entry-icon" aria-hidden="true"><ShieldCheckIcon /></span>
+                                <div class="entry-copy">
+                                    <span class="entry-title">@(string.IsNullOrWhiteSpace(passkey.Name) ? "Passkey" : passkey.Name)</span>
+                                    <span class="entry-meta">
+                                        Added @FormatAbsolute(passkey.CreatedOn)
+                                        @if (passkey.LastUsedOn.HasValue)
+                                        {
+                                            <text> · Last used @FormatRelative(passkey.LastUsedOn.Value)</text>
+                                        }
+                                        @if (passkey.IsBackedUp)
+                                        {
+                                            <text> · Synced</text>
+                                        }
+                                    </span>
+                                </div>
+                                <button class="btn btn-danger btn-sm" @onclick="() => RemovePasskey(passkey.CredentialId)" disabled="@_busy">Remove</button>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+
+        @* ── Connected providers ──────────────────────────────── *@
+        <div class="card">
+            <div class="card-header">
+                <h4>Sign-in providers</h4>
+            </div>
+
+            @if (_overview.ConnectedProviders.Count == 0)
+            {
+                <div class="empty-state"><p>No providers linked.</p></div>
+            }
+            else
+            {
+                <div class="entry-list">
+                    @foreach (ConnectedProvider provider in _overview.ConnectedProviders)
+                    {
+                        <div class="entry-row">
+                            <span class="entry-icon" aria-hidden="true"><PersonIcon /></span>
+                            <div class="entry-copy">
+                                <span class="entry-title">@provider.Label</span>
+                                <span class="entry-meta">@provider.Input</span>
+                            </div>
+                            @if (provider.CanDisconnect)
+                            {
+                                <button class="btn btn-danger btn-sm" @onclick="() => Disconnect(provider)" disabled="@_busy">Disconnect</button>
+                            }
+                            else
+                            {
+                                <span class="entry-note" title="This is your only way to sign in">Only sign-in method</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (_overview.AvailableProviders.Count > 0)
+            {
+                <div class="available-block">
+                    <span class="field-label">Available to connect</span>
+                    <div class="provider-chips">
+                        @foreach (ProviderDefinition provider in _overview.AvailableProviders)
+                        {
+                            <button class="provider-chip" @onclick="() => Connect(provider)" disabled="@_busy">@provider.Label</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* ── Login history ────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-header">
+                <h4>Recent sign-ins</h4>
+            </div>
+
+            @if (_history.Count == 0)
+            {
+                <div class="empty-state"><p>No sign-in activity recorded yet.</p></div>
+            }
+            else
+            {
+                <div class="entry-list">
+                    @foreach (LoginHistoryEntry entry in _history)
+                    {
+                        <div class="entry-row">
+                            <span class="entry-icon" aria-hidden="true"><ClockIcon /></span>
+                            <div class="entry-copy">
+                                <span class="entry-title">@FormatAbsolute(entry.SignedInOn)</span>
+                                <span class="entry-meta">
+                                    @FormatRelative(entry.SignedInOn)
+                                    @if (!string.IsNullOrWhiteSpace(entry.Provider))
+                                    {
+                                        <text> · @entry.Provider</text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(entry.Device))
+                                    {
+                                        <text> · @entry.Device</text>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(entry.IpAddress))
+                                    {
+                                        <text> · @entry.IpAddress</text>
+                                    }
+                                </span>
+                            </div>
+                            @if (entry.HasCoordinates)
+                            {
+                                <button class="btn btn-outline btn-sm"
+                                        title="@($"{entry.Latitude}, {entry.Longitude}")"
+                                        @onclick="() => OpenMap(entry)">
+                                    View on map
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="@(_messageSuccess ? "alert-success" : "alert-error")">@_message</div>
+    }
+</div>
+
+@code {
+    [Parameter] public required UserModel CurrentUser { get; set; }
+
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
+    private SecurityOverview _overview = new();
+    private List<LoginHistoryEntry> _history = [];
+
+    private bool _loading = true;
+    private bool _busy;
+    private string _message = string.Empty;
+    private bool _messageSuccess;
+
+    // Password
+    private bool _isEditingPassword;
+    private string _currentPassword = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _confirmPassword = string.Empty;
+
+    // Authenticator
+    private AuthenticatorEnrollmentModel? _enrollment;
+    private string _qrSvg = string.Empty;
+    private string _totpCode = string.Empty;
+
+    // WebAuthn capability
+    private bool _webAuthnSupported;
+    private bool _hasPlatformAuthenticator;
+
+    private bool CanSavePassword =>
+        !string.IsNullOrWhiteSpace(_newPassword)
+        && _newPassword == _confirmPassword
+        && (!_overview.HasPassword || !string.IsNullOrWhiteSpace(_currentPassword));
+
+    protected override async Task OnInitializedAsync() => await Reload();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        try
+        {
+            _webAuthnSupported = await js.InvokeAsync<bool>("cloudLoginWebAuthn.isSupported");
+
+            if (_webAuthnSupported)
+                _hasPlatformAuthenticator = await js.InvokeAsync<bool>("cloudLoginWebAuthn.hasPlatformAuthenticator");
+
+            StateHasChanged();
+        }
+        catch (JSException)
+        {
+            // The interop module isn't loaded on this host; passkey UI stays hidden.
+            _webAuthnSupported = false;
+        }
+    }
+
+    private async Task Reload()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            _overview = await cloudLogin.GetSecurityOverview();
+            _history = await cloudLogin.GetMyLoginHistory();
+        }
+        catch (Exception ex)
+        {
+            SetMessage($"Couldn't load your security settings: {ex.Message}", false);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Password ─────────────────────────────────────────────────────────────
+
+    private void StartPasswordEdit()
+    {
+        _isEditingPassword = true;
+        _currentPassword = _newPassword = _confirmPassword = string.Empty;
+        _message = string.Empty;
+    }
+
+    private void CancelPasswordEdit()
+    {
+        _isEditingPassword = false;
+        _currentPassword = _newPassword = _confirmPassword = string.Empty;
+    }
+
+    private async Task SavePassword()
+    {
+        if (_busy || !CanSavePassword)
+            return;
+
+        await Run("Password", async () =>
+        {
+            await cloudLogin.ChangeMyPassword(new ChangePasswordRequest
+            {
+                CurrentPassword = _overview.HasPassword ? _currentPassword : null,
+                NewPassword = _newPassword
+            });
+
+            CancelPasswordEdit();
+            await Reload();
+            SetMessage("Password updated.", true);
+        });
+    }
+
+    // ── Authenticator ────────────────────────────────────────────────────────
+
+    private async Task BeginAuthenticator()
+    {
+        await Run("Authenticator app", async () =>
+        {
+            _enrollment = await cloudLogin.BeginAuthenticatorEnrollment();
+            _qrSvg = GenerateQrCodeSvg(_enrollment.ProvisioningUri);
+            _totpCode = string.Empty;
+        });
+    }
+
+    private async Task ConfirmAuthenticator()
+    {
+        await Run("Authenticator app", async () =>
+        {
+            bool confirmed = await cloudLogin.ConfirmAuthenticatorEnrollment(_totpCode);
+
+            if (!confirmed)
+            {
+                SetMessage("That code isn't right. Check your authenticator app and try again.", false);
+                return;
+            }
+
+            CancelEnrollment();
+            await Reload();
+            SetMessage("Authenticator app enabled.", true);
+        });
+    }
+
+    private void CancelEnrollment()
+    {
+        _enrollment = null;
+        _qrSvg = string.Empty;
+        _totpCode = string.Empty;
+    }
+
+    private async Task DisableAuthenticator()
+    {
+        await Run("Authenticator app", async () =>
+        {
+            await cloudLogin.DisableAuthenticator();
+            await Reload();
+            SetMessage("Authenticator app removed.", true);
+        });
+    }
+
+    private static string GenerateQrCodeSvg(string url)
+    {
+        using QRCodeGenerator generator = new();
+        using QRCodeData data = generator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
+        using SvgQRCode svg = new(data);
+
+        return svg.GetGraphic(4);
+    }
+
+    // ── Passkeys ─────────────────────────────────────────────────────────────
+
+    private async Task RegisterPasskey()
+    {
+        await Run("Passkeys", async () =>
+        {
+            string optionsJson = await cloudLogin.BeginPasskeyRegistration();
+
+            string attestationJson;
+
+            try
+            {
+                attestationJson = await js.InvokeAsync<string>("cloudLoginWebAuthn.createCredential", optionsJson);
+            }
+            catch (JSException ex)
+            {
+                // The user dismissed the platform prompt, or the authenticator refused.
+                SetMessage($"Passkey setup was cancelled or failed: {ex.Message}", false);
+                return;
+            }
+
+            await cloudLogin.CompletePasskeyRegistration(optionsJson, attestationJson, DescribeThisDevice());
+            await Reload();
+            SetMessage("Passkey added.", true);
+        });
+    }
+
+    private async Task RemovePasskey(string credentialId)
+    {
+        await Run("Passkeys", async () =>
+        {
+            await cloudLogin.RemovePasskey(credentialId);
+            await Reload();
+            SetMessage("Passkey removed.", true);
+        });
+    }
+
+    /// <summary>A default label so a new passkey is recognisable in the list.</summary>
+    private string DescribeThisDevice() => _hasPlatformAuthenticator ? "This device" : "Security key";
+
+    // ── Providers ────────────────────────────────────────────────────────────
+
+    private async Task Disconnect(ConnectedProvider provider)
+    {
+        await Run("Sign-in providers", async () =>
+        {
+            await cloudLogin.DisconnectProvider(provider.Code, provider.Input);
+            await Reload();
+            SetMessage($"{provider.Label} disconnected.", true);
+        });
+    }
+
+    /// <summary>
+    /// Linking a provider is an authentication ceremony, so it goes through the normal
+    /// provider sign-in URL rather than an API call.
+    /// </summary>
+    private void Connect(ProviderDefinition provider)
+        => navigationManager.NavigateTo(cloudLogin.GetProviderLoginUrl(provider.Code, navigationManager.Uri), true);
+
+    // ── History ──────────────────────────────────────────────────────────────
+
+    private async Task OpenMap(LoginHistoryEntry entry)
+    {
+        if (!entry.HasCoordinates)
+            return;
+
+        await js.InvokeVoidAsync("cloudLoginWebAuthn.openMap", entry.Latitude, entry.Longitude);
+    }
+
+    // ── Shared helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Runs a security action, showing the inline alert as before and — new — also recording
+    /// any failure in the account-wide error center so it stays visible from the nav rail
+    /// even after the user leaves this tab. <paramref name="context"/> becomes that entry's
+    /// "Source" label, e.g. "Security — Passkeys".
+    /// </summary>
+    private async Task Run(string context, Func<Task> action)
+    {
+        if (_busy)
+            return;
+
+        _busy = true;
+        _message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            SetMessage(ex.Message, false);
+            ErrorCenter?.Report($"Security — {context}", ex.Message, ex);
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetMessage(string message, bool success)
+    {
+        _message = message;
+        _messageSuccess = success;
+    }
+
+    private CultureInfo DisplayCulture
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(CurrentUser.Locale))
+                try
+                {
+                    CultureInfo culture = CultureInfo.GetCultureInfo(CurrentUser.Locale);
+
+                    const int LocaleCustomUnspecified = 0x1000;
+
+                    if (!string.IsNullOrEmpty(culture.Name) && culture.LCID != LocaleCustomUnspecified)
+                        return culture;
+                }
+                catch (CultureNotFoundException) { }
+
+            return CultureInfo.CurrentCulture;
+        }
+    }
+
+    private string FormatAbsolute(DateTimeOffset? dateTime)
+    {
+        if (!dateTime.HasValue || dateTime.Value == DateTimeOffset.MinValue)
+            return "Not available";
+
+        return dateTime.Value.ToLocalTime().ToString("f", DisplayCulture);
+    }
+
+    private static string FormatRelative(DateTimeOffset dateTime)
+    {
+        if (dateTime == DateTimeOffset.MinValue)
+            return "Not available";
+
+        TimeSpan ago = DateTimeOffset.UtcNow - dateTime;
+
+        if (ago < TimeSpan.Zero)
+            ago = TimeSpan.Zero;
+
+        if (ago.TotalSeconds < 45) return "Right now";
+        if (ago.TotalMinutes < 2) return "A minute ago";
+        if (ago.TotalMinutes < 60) return $"{(int)ago.TotalMinutes} minutes ago";
+        if (ago.TotalHours < 2) return "An hour ago";
+        if (ago.TotalHours < 24) return $"{(int)ago.TotalHours} hours ago";
+        if (ago.TotalDays < 2) return "Yesterday";
+        if (ago.TotalDays < 7) return $"{(int)ago.TotalDays} days ago";
+        if (ago.TotalDays < 14) return "Last week";
+        if (ago.TotalDays < 30) return $"{(int)(ago.TotalDays / 7)} weeks ago";
+        if (ago.TotalDays < 60) return "Last month";
+        if (ago.TotalDays < 365) return $"{(int)(ago.TotalDays / 30)} months ago";
+
+        return $"{(int)(ago.TotalDays / 365)} years ago";
+    }
+}

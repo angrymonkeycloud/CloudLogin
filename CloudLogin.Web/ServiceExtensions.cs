@@ -134,6 +134,15 @@ public static class MvcServiceCollectionExtensions
                 Source = "AngryMonkey.CloudLogin.WebAssembly.styles.css",
                 MinOnRelease = false
             });
+
+            // Bridges navigator.credentials to the passkey endpoints on the account page's
+            // Security tab. Not pre-minified, so release builds must not look for a .min.js
+            // that doesn't exist.
+            config.PageDefaults.AppendBundle(new CloudBundle()
+            {
+                Source = "_content/AngryMonkey.CloudLogin.Components/cloudlogin-webauthn.js",
+                MinOnRelease = false
+            });
         });
 
         services.AddSingleton(loginConfig);

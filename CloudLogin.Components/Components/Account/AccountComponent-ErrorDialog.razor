@@ -1,0 +1,134 @@
+@using AngryMonkey.CloudComponents
+@inject IJSRuntime js
+
+@namespace AngryMonkey.CloudLogin
+
+<Dialog @ref="_dialog" Title="Recent errors" Buttons="_buttons">
+    @if (ErrorCenter is null || ErrorCenter.Entries.Count == 0)
+    {
+        <div class="error-dialog-empty">
+            <span class="error-dialog-empty-icon" aria-hidden="true"><ShieldCheckIcon /></span>
+            <p>Nothing to report. Everything's working normally.</p>
+        </div>
+    }
+    else
+    {
+        <div class="error-dialog-list">
+            @foreach (AccountErrorEntry entry in ErrorCenter!.Entries)
+            {
+                <div class="error-dialog-item">
+                    <div class="error-dialog-item-header">
+                        <div class="error-dialog-item-titles">
+                            <span class="error-dialog-item-source">@entry.Source</span>
+                            <span class="error-dialog-item-time" title="@entry.OccurredOn.ToLocalTime().ToString("f")">@FormatRelative(entry.OccurredOn)</span>
+                        </div>
+                        <button type="button" class="error-dialog-item-dismiss" title="Dismiss" @onclick="() => ErrorCenter?.Dismiss(entry.Id)">
+                            <Close />
+                        </button>
+                    </div>
+
+                    <p class="error-dialog-item-message">@entry.Message</p>
+
+                    @if (!string.IsNullOrWhiteSpace(entry.Details))
+                    {
+                        <div class="error-dialog-item-actions">
+                            <button type="button" class="link-action" @onclick="() => ToggleDetails(entry.Id)">
+                                @(IsExpanded(entry.Id) ? "Hide details" : "Show details")
+                            </button>
+                            <button type="button" class="link-action" @onclick="() => CopyDetails(entry)">
+                                <span class="link-action-icon" aria-hidden="true"><CopyIcon /></span>
+                                @(_justCopiedId == entry.Id ? "Copied" : "Copy")
+                            </button>
+                        </div>
+
+                        @if (IsExpanded(entry.Id))
+                        {
+                            <pre class="error-dialog-item-details">@entry.Details</pre>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+</Dialog>
+
+@code {
+    // Cascaded from AccountComponent, same as every tab component — not a [Parameter], since
+    // AccountErrorCenter is deliberately internal (it's account-page-only plumbing, not part
+    // of CloudLogin's public component surface) and [Parameter] properties must be public.
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
+    private Dialog? _dialog;
+    private List<DialogButton> _buttons = [];
+    private readonly HashSet<Guid> _expanded = [];
+    private Guid? _justCopiedId;
+
+    protected override void OnInitialized()
+    {
+        _buttons =
+        [
+            new DialogButton
+            {
+                Text = "Clear all",
+                ClassCss = "error-dialog-btn error-dialog-btn--outline",
+                AutoClose = false,
+                OnReply = () => ErrorCenter?.Clear()
+            },
+            new DialogButton
+            {
+                Text = "Close",
+                ClassCss = "error-dialog-btn error-dialog-btn--primary",
+                AutoClose = true
+            }
+        ];
+    }
+
+    public async Task Open()
+    {
+        if (_dialog is not null)
+            await _dialog.Open();
+    }
+
+    private bool IsExpanded(Guid id) => _expanded.Contains(id);
+
+    private void ToggleDetails(Guid id)
+    {
+        if (!_expanded.Add(id))
+            _expanded.Remove(id);
+    }
+
+    private async Task CopyDetails(AccountErrorEntry entry)
+    {
+        string text = $"{entry.Source}\n{entry.OccurredOn:u}\n{entry.Message}" +
+            (string.IsNullOrWhiteSpace(entry.Details) ? "" : $"\n\n{entry.Details}");
+
+        try
+        {
+            await js.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            _justCopiedId = entry.Id;
+        }
+        catch (JSException)
+        {
+            // Clipboard access can be denied by the browser/OS; the details stay on-screen
+            // via "Show details" either way, so this is a nice-to-have, not a hard failure.
+        }
+    }
+
+    private static string FormatRelative(DateTimeOffset dateTime)
+    {
+        TimeSpan ago = DateTimeOffset.UtcNow - dateTime;
+
+        if (ago < TimeSpan.Zero)
+            ago = TimeSpan.Zero;
+
+        if (ago.TotalSeconds < 45) return "Right now";
+        if (ago.TotalMinutes < 2) return "A minute ago";
+        if (ago.TotalMinutes < 60) return $"{(int)ago.TotalMinutes} minutes ago";
+        if (ago.TotalHours < 2) return "An hour ago";
+        if (ago.TotalHours < 24) return $"{(int)ago.TotalHours} hours ago";
+        if (ago.TotalDays < 2) return "Yesterday";
+        if (ago.TotalDays < 7) return $"{(int)ago.TotalDays} days ago";
+
+        return dateTime.ToLocalTime().ToString("MMM d, yyyy");
+    }
+}

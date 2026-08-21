@@ -1,8 +1,9 @@
-﻿@import (reference) "../../Src/variable.less";
+@import (reference) "../../Src/variable.less";
 
 .account-section {
     display: flex;
     flex-direction: column;
+    gap: 20px;
 }
 
 .section {
@@ -22,174 +23,6 @@
             margin: 0;
         }
     }
-}
-
-.info {
-    &-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-
-    &-item {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        padding: 16px;
-        background-color: @surface;
-        border-radius: 8px;
-        border-left: 3px solid var(--amc-accentColor);
-        transition: all 0.2s ease;
-    }
-
-    &-label {
-        font-size: .7rem;
-        font-weight: 600;
-        color: @muted;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    &-value {
-        font-size: .8rem;
-        color: @text;
-        font-weight: 500;
-    }
-}
-
-.contact {
-    &-section {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-
-        h4 {
-            font-size: 18px;
-            font-weight: 600;
-            color: @text;
-            margin: 0;
-        }
-    }
-
-    &-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    &-item {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 16px 20px;
-        background-color: @white;
-        border: 1px solid @border;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-
-        &:hover {
-            border-color: var(--amc-accentColor);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        }
-    }
-
-    &-text {
-        font-size: 15px;
-        color: @text;
-        font-weight: 500;
-        overflow-wrap: anywhere;
-    }
-
-    &-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: center;
-    }
-}
-
-.badge {
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-
-    &-primary {
-        background-color: var(--amc-accentColor);
-        color: @white;
-    }
-
-    &-secondary {
-        background-color: var(--amc-secondColor);
-        color: @white;
-    }
-
-    &-info {
-        background-color: @border;
-        color: @text-soft;
-    }
-}
-
-.providers {
-    &-section {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-
-        h4 {
-            font-size: 18px;
-            font-weight: 600;
-            color: @text;
-            margin: 0;
-        }
-    }
-
-    &-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 12px 16px;
-    }
-
-    &-card {
-        padding-bottom: 8px;
-    }
-}
-
-.provider-badge {
-    padding: 8px 14px;
-    background-color: @white;
-    border: 2px solid var(--amc-accentColor);
-    color: var(--amc-accentColor);
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.alert {
-    padding: 16px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 1.5;
-
-    &-warning {
-        background-color: @white3cd;
-        border-left: 4px solid #ffc107;
-        color: #856404;
-
-        strong {
-            font-weight: 600;
-            color: #664d03;
-        }
-    }
-}
-
-.ms-account {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
 }
 
 .header-card {
@@ -273,20 +106,6 @@
     font-size: 14px;
 }
 
-.btn.btn-outline {
-    background: transparent;
-    border: 1px solid @border-strong;
-    color: @text-soft;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-weight: 600;
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-}
-
 .full-name {
     &-row {
         display: flex;
@@ -318,9 +137,15 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    background: transparent;
+    border: 1px solid @border-strong;
+    color: @text-soft;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
     cursor: pointer;
 
-    &.is-disabled {
+    &:disabled, &.is-disabled {
         opacity: 0.6;
         cursor: not-allowed;
     }
@@ -337,10 +162,40 @@
     border-radius: 6px;
     font-size: 14px;
     color: @text;
+    background-color: @white;
 
     &:focus {
         outline: none;
         border-color: var(--amc-accentColor);
+        box-shadow: 0 0 0 3px var(--amc-accentColor-soft, fade(#0078d4, 12%));
+    }
+}
+
+// Country / language / regional-format pickers. Native selects keep the
+// dropdown accessible and searchable-by-typing on every platform; only the
+// chrome is restyled to match the text inputs beside them.
+select.form-input {
+    appearance: none;
+    padding-right: 34px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 7.5 10 12l4.5-4.5' stroke='%236c757d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 16px;
+
+    &:hover {
+        border-color: @text-soft;
+    }
+}
+
+.field-preview {
+    margin: 6px 0 0;
+    font-size: 12.5px;
+    color: @muted;
+
+    strong {
+        color: @text-soft;
+        font-weight: 600;
     }
 }
 
@@ -358,44 +213,42 @@
     }
 }
 
-.btn {
-    &.btn-primary {
-        background: var(--amc-accentColor);
-        border: 1px solid var(--amc-accentColor);
-        color: @white;
-        padding: 8px 14px;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
+.btn.btn-primary {
+    background: var(--amc-accentColor);
+    border: 1px solid var(--amc-accentColor);
+    color: @white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
 
-        &:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
+}
 
-    &.btn-sm {
-        padding: 6px 12px;
-        font-size: 13px;
-    }
+.btn.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
 }
 
 .alert-success {
     padding: 12px 16px;
     border-radius: 8px;
     font-size: 14px;
-    background-color: #d1e7dd;
-    border-left: 4px solid #198754;
-    color: #0f5132;
+    background-color: @success-alt-soft;
+    border-left: 4px solid @success-alt;
+    color: @success-alt;
 }
 
 .alert-error {
     padding: 12px 16px;
     border-radius: 8px;
     font-size: 14px;
-    background-color: #f8d7da;
-    border-left: 4px solid #dc3545;
-    color: #842029;
+    background-color: @error-alt-soft;
+    border-left: 4px solid @error-alt;
+    color: @error-alt;
 }
 
 .photo-message {
@@ -411,15 +264,14 @@
     border-top-color: currentColor;
     border-radius: 50%;
     display: inline-block;
-    animation: uinfo-spin 0.7s linear infinite;
+    animation: profile-spin 0.7s linear infinite;
 }
 
-@keyframes uinfo-spin {
+@keyframes profile-spin {
     to {
         transform: rotate(360deg);
     }
 }
-
 
 .card {
     background: @white;
@@ -452,18 +304,14 @@
     &-row {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 4px;
-        padding: 14px 0;
+        align-items: center;
+        gap: 6px;
+        min-height: 56px;
+        padding: 18px 0;
         border-top: 1px solid @surface;
 
         &:first-child {
             border-top: none;
-        }
-
-        &.meta {
-            .kv-key {
-                color: @muted;
-            }
         }
     }
 
@@ -491,13 +339,7 @@
 }
 
 @media @media-large {
-    .profile {
-        &-block {
-            flex-direction: row;
-        }
-    }
-
-    .info-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .profile-block {
+        flex-direction: row;
     }
 }

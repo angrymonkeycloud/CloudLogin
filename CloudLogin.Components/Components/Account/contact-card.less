@@ -1,0 +1,336 @@
+// Shared styling for the account page's contact cards (email addresses and phone
+// numbers). Both sections render identical markup, so the rules live here once and
+// each component's scoped stylesheet mixes them in — Blazor scoped CSS can't share a
+// stylesheet directly, but it can share a LESS mixin that compiles into both.
+//
+// Imported with (reference) so this file emits nothing on its own.
+
+@import (reference) "../../Src/variable.less";
+
+.contact-card-styles() {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-block: 10px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid @surface-alt;
+
+        h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: @heading;
+        }
+    }
+
+    .link-action {
+        background: none;
+        border: none;
+        padding: 0;
+        color: var(--amc-accentColor);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            text-decoration: underline;
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    }
+
+    // ── Add / verify panel ───────────────────────────────────
+    .add-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+        margin-bottom: 10px;
+        border: 1px solid @border;
+        border-radius: @radius-sm;
+        background: @surface;
+    }
+
+    .add-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: @label;
+
+        strong {
+            color: @text;
+        }
+    }
+
+    .add-row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .add-hint {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 0;
+        font-size: 12.5px;
+        color: @muted;
+    }
+
+    .form-input {
+        flex: 1 1 auto;
+        width: 100%;
+        min-height: 40px;
+        padding: 9px 12px;
+        font-size: 14px;
+        color: @text;
+        background-color: @white;
+        border: 1px solid @border-strong;
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        &::placeholder {
+            color: @placeholder;
+        }
+
+        &:hover:not(:disabled) {
+            border-color: @text-soft;
+        }
+
+        &:focus {
+            border-color: var(--amc-accentColor);
+            box-shadow: 0 0 0 3px var(--amc-accentColor-soft, fade(#0078d4, 12%));
+        }
+
+        &:disabled {
+            background-color: @surface-alt;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        &.code-input {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.4em;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    // ── Buttons ──────────────────────────────────────────────
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        padding: 9px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+        &:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        &-primary {
+            background-color: var(--amc-accentColor);
+            border-color: var(--amc-accentColor);
+            color: @white;
+
+            &:hover:not(:disabled) {
+                background-color: var(--amc-secondColor);
+                border-color: var(--amc-secondColor);
+            }
+        }
+
+        &-outline {
+            background-color: @white;
+            border-color: @border-strong;
+            color: @text-soft;
+
+            &:hover:not(:disabled) {
+                border-color: @text;
+                background-color: @surface;
+            }
+        }
+
+        &-danger {
+            background-color: transparent;
+            border-color: fade(@danger, 45%);
+            color: @danger;
+
+            &:hover:not(:disabled) {
+                background-color: @danger-soft;
+                border-color: @danger;
+            }
+        }
+
+        &-sm {
+            min-height: 32px;
+            padding: 5px 12px;
+            font-size: 12.5px;
+        }
+    }
+
+    .loading-spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid fade(#fff, 35%);
+        border-top-color: @white;
+        border-radius: 50%;
+        animation: contact-spin 0.6s linear infinite;
+    }
+
+    // ── Contact rows ─────────────────────────────────────────
+    .contact-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .contact-row {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        min-height: 60px;
+        padding: 18px 0;
+        border-top: 1px solid @surface;
+
+        &:first-child {
+            border-top: none;
+        }
+    }
+
+    .contact-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    .contact-icon {
+        display: grid;
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border-radius: 8px;
+        background: @surface;
+        color: var(--amc-accentColor);
+
+        ::deep svg {
+            width: 15px;
+            height: 15px;
+        }
+    }
+
+    .contact-text {
+        font-size: 14.5px;
+        color: @text;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+
+    .contact-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .badge {
+        padding: 3px 9px;
+        border-radius: @radius-pill;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+
+        &-primary {
+            background-color: var(--amc-accentColor);
+            color: @white;
+        }
+
+        &-info {
+            background-color: @border;
+            color: @text-soft;
+        }
+    }
+
+    .empty-state {
+        padding: 24px 20px;
+        text-align: center;
+        background-color: @surface;
+        border-radius: @radius-sm;
+        border: 1px dashed @border-dashed;
+
+        p {
+            margin: 0;
+            color: @muted;
+            font-size: 14px;
+        }
+    }
+
+    .alert-success,
+    .alert-error {
+        margin-top: 10px;
+        padding: 11px 14px;
+        border-radius: @radius-sm;
+        font-size: 13.5px;
+        line-height: 1.5;
+    }
+
+    .alert-success {
+        background-color: @success-alt-soft;
+        border-left: 3px solid @success-alt;
+        color: @success-alt;
+    }
+
+    .alert-error {
+        background-color: @error-alt-soft;
+        border-left: 3px solid @error-alt;
+        color: @error-alt;
+    }
+
+    @media @media-medium {
+        .add-row {
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .form-input.code-input {
+            max-width: 200px;
+        }
+
+        .contact-row {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+    }
+}
+
+// Consumers call this alongside .contact-card-styles() to emit the spinner
+// keyframes. It lives in a mixin because a (reference) import emits nothing
+// on its own, so a top-level @keyframes here would never reach the output.
+.contact-card-keyframes() {
+    @keyframes contact-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}

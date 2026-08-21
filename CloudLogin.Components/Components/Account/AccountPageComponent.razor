@@ -22,7 +22,8 @@ else
                                                TargetEntityId="@TargetEntityId"
                                                EnableSubscriptions="@EnableSubscriptions"
                                                EnableOrganizations="@EnableOrganizations"
-                                               EnablePayments="@EnablePayments" />
+                                               EnablePayments="@EnablePayments"
+                                               BasePath="@BasePath" />
 }
 
 @code {
@@ -33,4 +34,7 @@ else
     [Parameter] public bool EnableSubscriptions { get; set; }
     [Parameter] public bool EnableOrganizations { get; set; }
     [Parameter] public bool EnablePayments { get; set; }
+
+    /// <summary>The path the host mounted this page at, e.g. "/Account". Used to build and parse every tab and organization URL.</summary>
+    [Parameter] public string BasePath { get; set; } = "/Account";
 }

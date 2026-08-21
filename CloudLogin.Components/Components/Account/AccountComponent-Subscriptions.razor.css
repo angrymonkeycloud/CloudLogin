@@ -27,12 +27,17 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px 20px;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
   background-color: #fff;
+  transition: border-color 0.15s ease;
 }
 .item-row.deep-link-target {
   border-color: var(--amc-accentColor);
+  box-shadow: 0 0 0 3px var(--amc-accentColor-soft, rgba(0, 120, 212, 0.12));
+}
+.item-row._inactive {
+  background-color: #f8f9fa;
 }
 .item-info {
   display: flex;
@@ -51,7 +56,7 @@
 .item-text {
   color: #212529;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 .item-meta {
@@ -66,6 +71,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+.policy-note {
+  color: #adb5bd;
+  font-size: 12px;
+}
+.policy-note:empty {
+  display: none;
+}
+.confirm-copy {
+  color: #495057;
+  font-size: 13px;
+  font-weight: 600;
 }
 .badge {
   padding: 4px 10px;
@@ -85,14 +103,70 @@
   background-color: #e9ecef;
   color: #495057;
 }
+.badge-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.btn-sm {
+  min-height: 32px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+}
+.btn-outline {
+  border-color: #ced4da;
+  background: #fff;
+  color: #495057;
+}
+.btn-outline:hover:not(:disabled) {
+  border-color: #212529;
+  background: #f8f9fa;
+}
+.btn-danger {
+  border-color: rgba(220, 38, 38, 0.45);
+  background: #fff;
+  color: #dc2626;
+}
+.btn-danger:hover:not(:disabled) {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
 .empty-state {
-  padding: 40px 20px;
-  border: 2px dashed #dee2e6;
+  padding: 32px 20px;
+  border: 1px dashed #dee2e6;
   border-radius: 8px;
   background-color: #f8f9fa;
-  color: #6c757d;
-  font-size: 15px;
   text-align: center;
+}
+.empty-state p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+.alert-error {
+  width: 100%;
+  padding: 10px 14px;
+  border-left: 3px solid #842029;
+  border-radius: 8px;
+  background: #f8d7da;
+  color: #842029;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .loading-spinner {
   display: block;
@@ -114,6 +188,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
   }
   .item-actions {
     justify-content: flex-end;

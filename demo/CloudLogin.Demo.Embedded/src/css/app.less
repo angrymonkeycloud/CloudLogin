@@ -357,6 +357,17 @@ button, input, select, textarea { font: inherit; }
   background: var(--surface);
 }
 
+// AccountPageComponent's nav rail is `position: fixed`, which is
+// correct for its real, full-page usage. `contain: layout` scopes
+// that fixed positioning to this preview box instead of the whole
+// demo page, so boxing the live component here doesn't make its
+// nav escape into the surrounding showcase chrome.
+.demo-account-stage {
+  position: relative;
+  overflow: hidden;
+  contain: layout;
+}
+
 .demo-login-help { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
 .demo-login-help > div { padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
 .demo-login-help strong { display: block; }

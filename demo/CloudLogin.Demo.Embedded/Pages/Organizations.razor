@@ -43,7 +43,10 @@
                     <div class="demo-invitation-list">
                         @foreach (CloudLoginOrganizationInvitation invitation in Workspace.Invitations.Where(item => item.OrganizationId == organization.Id))
                         {
-                            <article><div><strong>@invitation.Recipient</strong><small>By @ShortId(invitation.InvitedByUserId)</small></div><div class="demo-tags">@foreach (string role in invitation.Roles) { <b>@role</b> }</div><time>@invitation.ExpiresAt.ToLocalTime().ToString("dd MMM, HH:mm")</time></article>
+                        <article><div><strong>@invitation.Recipient</strong><small>By @ShortId(invitation.InvitedByUserId)</small></div><div class="demo-tags">@foreach (string role in invitation.Roles) {
+                            <b>@role</b>
+                        }
+                    </div><time>@invitation.ExpiresOn.ToLocalTime().ToString("dd MMM, HH:mm")</time></article>
                         }
                     </div>
                     <div class="demo-inline-form"><label><span>Recipient</span><input type="email" @bind="_inviteEmail" /></label><label><span>Roles</span><input @bind="_inviteRoles" /></label><button class="demo-button demo-button--primary" disabled="@string.IsNullOrWhiteSpace(_inviteEmail)" @onclick="InviteAsync">Create invitation</button></div>

@@ -37,12 +37,19 @@
         flex-direction: column;
         gap: 12px;
         padding: 16px 20px;
-        border: 2px solid @border;
-        border-radius: @radius-sm;
+        border: 1px solid @border;
+        border-radius: @radius;
         background-color: @white;
+        transition: border-color .15s ease;
 
         &.deep-link-target {
             border-color: var(--amc-accentColor);
+            box-shadow: 0 0 0 3px var(--amc-accentColor-soft, fade(#0078d4, 12%));
+        }
+
+        // An ended plan stays legible but recedes behind the ones still running.
+        &._inactive {
+            background-color: @surface;
         }
     }
 
@@ -65,7 +72,7 @@
     &-text {
         color: @text;
         font-size: 15px;
-        font-weight: 500;
+        font-weight: 600;
         overflow-wrap: anywhere;
     }
 
@@ -82,7 +89,23 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-wrap: wrap;
     }
+}
+
+.policy-note {
+    color: @placeholder;
+    font-size: 12px;
+
+    &:empty {
+        display: none;
+    }
+}
+
+.confirm-copy {
+    color: @text-soft;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .badge {
@@ -105,16 +128,82 @@
         background-color: @border;
         color: @text-soft;
     }
+
+    &-warning {
+        background-color: @warning-soft;
+        color: @warning-text;
+    }
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: .55;
+    }
+
+    &-sm {
+        min-height: 32px;
+        padding: 5px 12px;
+        font-size: 12.5px;
+    }
+
+    &-outline {
+        border-color: @border-strong;
+        background: @white;
+        color: @text-soft;
+
+        &:hover:not(:disabled) {
+            border-color: @text;
+            background: @surface;
+        }
+    }
+
+    &-danger {
+        border-color: fade(@danger, 45%);
+        background: @white;
+        color: @danger;
+
+        &:hover:not(:disabled) {
+            border-color: @danger;
+            background: @danger-soft;
+        }
+    }
 }
 
 .empty-state {
-    padding: 40px 20px;
-    border: 2px dashed @border-dashed;
+    padding: 32px 20px;
+    border: 1px dashed @border-dashed;
     border-radius: @radius-sm;
     background-color: @surface;
-    color: @muted;
-    font-size: 15px;
     text-align: center;
+
+    p {
+        margin: 0;
+        color: @muted;
+        font-size: 14px;
+    }
+}
+
+.alert-error {
+    width: 100%;
+    padding: 10px 14px;
+    border-left: 3px solid @error-alt;
+    border-radius: @radius-sm;
+    background: @error-alt-soft;
+    color: @error-alt;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 .loading-spinner {
@@ -140,6 +229,7 @@
             flex-direction: row;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
         }
 
         &-actions {

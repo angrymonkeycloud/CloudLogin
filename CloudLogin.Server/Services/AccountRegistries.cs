@@ -22,21 +22,40 @@ public sealed class InMemoryCloudLoginAccountStore : ICloudLoginAccountStore
     public Task<IReadOnlyList<CloudLoginOrganizationMember>> GetMembersAsync(Guid organizationId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<CloudLoginOrganizationMember>>([.. _members.Values.Where(member => member.OrganizationId == organizationId)]);
     public Task SaveMemberAsync(CloudLoginOrganizationMember member, CancellationToken cancellationToken = default) { _members[(member.OrganizationId, member.UserId)] = member; return Task.CompletedTask; }
     public Task SaveInvitationAsync(CloudLoginOrganizationInvitation invitation, CancellationToken cancellationToken = default) { _invitations[invitation.Id] = invitation; return Task.CompletedTask; }
+    public Task<IReadOnlyList<CloudLoginOrganizationInvitation>> GetInvitationsAsync(Guid organizationId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<CloudLoginOrganizationInvitation>>([.. _invitations.Values.Where(invitation => invitation.OrganizationId == organizationId)]);
     public Task<AccountSubscription?> GetSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default) => Task.FromResult(_subscriptions.TryGetValue(subscriptionId, out AccountSubscription? subscription) ? subscription : null);
     public Task<IReadOnlyList<AccountSubscription>> GetSubscriptionsAsync(Guid? userId, Guid? organizationId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AccountSubscription>>([.. _subscriptions.Values.Where(subscription => (userId is null || subscription.UserId == userId) && (organizationId is null || subscription.OrganizationId == organizationId))]);
     public Task<IReadOnlyList<AccountSubscription>> GetAllSubscriptionsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AccountSubscription>>([.. _subscriptions.Values]);
     public Task SaveSubscriptionAsync(AccountSubscription subscription, CancellationToken cancellationToken = default) { _subscriptions[subscription.Id] = subscription; return Task.CompletedTask; }
     public Task<AccountBillingProfile?> GetBillingProfileAsync(Guid? userId, Guid? organizationId, CancellationToken cancellationToken = default) => Task.FromResult(_billingProfiles.TryGetValue((userId, organizationId), out AccountBillingProfile? profile) ? profile : null);
     public Task SaveBillingProfileAsync(AccountBillingProfile profile, CancellationToken cancellationToken = default) { _billingProfiles[(profile.UserId, profile.OrganizationId)] = profile; return Task.CompletedTask; }
+
+    public Task DeleteOrganizationAsync(Guid organizationId, CancellationToken cancellationToken = default) { _organizations.TryRemove(organizationId, out _); return Task.CompletedTask; }
+    public Task DeleteMemberAsync(Guid organizationId, Guid userId, CancellationToken cancellationToken = default) { _members.TryRemove((organizationId, userId), out _); return Task.CompletedTask; }
+    public Task DeleteInvitationAsync(Guid invitationId, CancellationToken cancellationToken = default) { _invitations.TryRemove(invitationId, out _); return Task.CompletedTask; }
+    public Task DeleteSubscriptionAsync(Guid subscriptionId, CancellationToken cancellationToken = default) { _subscriptions.TryRemove(subscriptionId, out _); return Task.CompletedTask; }
+    public Task DeleteBillingProfileAsync(Guid? userId, Guid? organizationId, CancellationToken cancellationToken = default) { _billingProfiles.TryRemove((userId, organizationId), out _); return Task.CompletedTask; }
 }
 
 public sealed class OrganizationRegistry(
     ICloudLoginAccountStore store,
-    ICloudLoginEventPublisher? eventPublisher = null) : IOrganizationRegistry
+    ICloudLoginEventPublisher? eventPublisher = null,
+    CloudLoginWebConfiguration? configuration = null) : IOrganizationRegistry
 {
+    private OrganizationConfiguration Options => configuration?.Organization ?? new OrganizationConfiguration();
+
     public async Task<CloudLoginOrganization> CreateAsync(string name, Guid ownerUserId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        OrganizationQuota quota = await GetQuotaAsync(ownerUserId, cancellationToken);
+
+        if (quota.RemainingOwned <= 0)
+            throw new OrganizationLimitReachedException(OrganizationLimitKinds.Owned, quota.MaxOwned);
+
+        if (quota.RemainingTotal <= 0)
+            throw new OrganizationLimitReachedException(OrganizationLimitKinds.Membership, quota.MaxTotal);
+
         CloudLoginOrganization organization = new() { Name = name.Trim(), OwnerUserId = ownerUserId };
         CloudLoginOrganizationMember owner = new() { OrganizationId = organization.Id, UserId = ownerUserId, IsOwner = true, Roles = ["Owner"] };
         await store.SaveOrganizationAsync(organization, cancellationToken);
@@ -57,9 +76,36 @@ public sealed class OrganizationRegistry(
     public Task<IReadOnlyList<CloudLoginOrganization>> GetAllAsync(CancellationToken cancellationToken = default) => store.GetAllOrganizationsAsync(cancellationToken);
     public Task<IReadOnlyList<CloudLoginOrganizationMember>> GetMembersAsync(Guid organizationId, CancellationToken cancellationToken = default) => store.GetMembersAsync(organizationId, cancellationToken);
 
+    public async Task<OrganizationQuota> GetQuotaAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<CloudLoginOrganization> organizations = await store.GetOrganizationsForUserAsync(userId, cancellationToken);
+        OrganizationConfiguration options = Options;
+
+        return new OrganizationQuota
+        {
+            Owned = organizations.Count(organization => organization.OwnerUserId == userId),
+            MaxOwned = options.EffectiveMaxOwnedPerUser,
+            Total = organizations.Count,
+            MaxTotal = options.EffectiveMaxPerUser
+        };
+    }
+
     public async Task<CloudLoginOrganizationMember> AddMemberAsync(Guid organizationId, Guid userId, IReadOnlyList<string>? roles = null, CancellationToken cancellationToken = default)
     {
         _ = await store.GetOrganizationAsync(organizationId, cancellationToken) ?? throw new KeyNotFoundException($"Organization '{organizationId}' was not found.");
+
+        // Joining counts against the member's own membership cap. An existing member being
+        // re-saved with new roles isn't a new membership, so it never trips the cap.
+        IReadOnlyList<CloudLoginOrganizationMember> existingMembers = await store.GetMembersAsync(organizationId, cancellationToken);
+
+        if (!existingMembers.Any(member => member.UserId == userId))
+        {
+            OrganizationQuota quota = await GetQuotaAsync(userId, cancellationToken);
+
+            if (!quota.CanJoin)
+                throw new OrganizationLimitReachedException(OrganizationLimitKinds.Membership, quota.MaxTotal);
+        }
+
         CloudLoginOrganizationMember member = new() { OrganizationId = organizationId, UserId = userId, Roles = roles ?? [] };
         await store.SaveMemberAsync(member, cancellationToken);
         if (eventPublisher != null)
@@ -98,21 +144,27 @@ public sealed class OrganizationRegistry(
         CloudLoginOrganization existing = await store.GetOrganizationAsync(organization.Id, cancellationToken)
             ?? throw new KeyNotFoundException($"Organization '{organization.Id}' was not found.");
 
-        bool isOwner = existing.OwnerUserId == callerUserId;
-        if (!isOwner)
-        {
-            IReadOnlyList<CloudLoginOrganizationMember> members = await store.GetMembersAsync(organization.Id, cancellationToken);
-            CloudLoginOrganizationMember? caller = members.FirstOrDefault(member => member.UserId == callerUserId);
-            isOwner = caller is { IsOwner: true } || (caller?.Roles.Contains("Owner", StringComparer.OrdinalIgnoreCase) ?? false) || (caller?.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase) ?? false);
-        }
-
-        if (!isOwner)
+        if (!await CanManageAsync(existing, callerUserId, cancellationToken))
             throw new UnauthorizedAccessException("Only the organization's owner or an admin member may update its profile.");
 
         ArgumentException.ThrowIfNullOrWhiteSpace(organization.Name);
         existing.Name = organization.Name.Trim();
-        existing.BillingEmail = string.IsNullOrWhiteSpace(organization.BillingEmail) ? null : organization.BillingEmail.Trim();
-        existing.BillingContactName = string.IsNullOrWhiteSpace(organization.BillingContactName) ? null : organization.BillingContactName.Trim();
+        existing.LegalName = Clean(organization.LegalName);
+        existing.Website = Clean(organization.Website);
+        existing.Phone = Clean(organization.Phone);
+        existing.BillingEmail = Clean(organization.BillingEmail);
+        existing.BillingContactName = Clean(organization.BillingContactName);
+        existing.TaxId = Clean(organization.TaxId);
+        existing.BillingAddress = new OrganizationAddress
+        {
+            Line1 = Clean(organization.BillingAddress?.Line1),
+            Line2 = Clean(organization.BillingAddress?.Line2),
+            City = Clean(organization.BillingAddress?.City),
+            State = Clean(organization.BillingAddress?.State),
+            PostalCode = Clean(organization.BillingAddress?.PostalCode),
+            Country = Clean(organization.BillingAddress?.Country)
+        };
+        existing.UpdatedOn = DateTimeOffset.UtcNow;
 
         await store.SaveOrganizationAsync(existing, cancellationToken);
         if (eventPublisher != null)
@@ -125,6 +177,113 @@ public sealed class OrganizationRegistry(
                 cancellationToken);
         return existing;
     }
+
+    public async Task<OrganizationDeletionReport> GetDeletionReportAsync(Guid organizationId, Guid callerUserId, CancellationToken cancellationToken = default)
+    {
+        CloudLoginOrganization organization = await store.GetOrganizationAsync(organizationId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Organization '{organizationId}' was not found.");
+
+        if (!await IsOwnerAsync(organization, callerUserId, cancellationToken))
+            throw new UnauthorizedAccessException("Only the organization's owner may delete it.");
+
+        return await BuildDeletionReportAsync(organizationId, callerUserId, cancellationToken);
+    }
+
+    public async Task DeleteAsync(Guid organizationId, Guid callerUserId, CancellationToken cancellationToken = default)
+    {
+        OrganizationDeletionReport report = await GetDeletionReportAsync(organizationId, callerUserId, cancellationToken);
+
+        if (!report.CanDelete)
+            throw new OrganizationDeletionBlockedException(report);
+
+        // Nothing here blocks any more, so clear the organization's own records before the
+        // organization itself: a store that fails midway leaves an organization the owner can
+        // retry, rather than orphaned members and subscriptions no one can reach.
+        foreach (AccountSubscription subscription in await store.GetSubscriptionsAsync(null, organizationId, cancellationToken))
+            await store.DeleteSubscriptionAsync(subscription.Id, cancellationToken);
+
+        await store.DeleteBillingProfileAsync(null, organizationId, cancellationToken);
+
+        foreach (CloudLoginOrganizationInvitation invitation in await store.GetInvitationsAsync(organizationId, cancellationToken))
+            await store.DeleteInvitationAsync(invitation.Id, cancellationToken);
+
+        foreach (CloudLoginOrganizationMember member in await store.GetMembersAsync(organizationId, cancellationToken))
+            await store.DeleteMemberAsync(organizationId, member.UserId, cancellationToken);
+
+        await store.DeleteOrganizationAsync(organizationId, cancellationToken);
+
+        if (eventPublisher != null)
+            await eventPublisher.PublishAsync(CloudLoginEvent.Create(
+                "Organization.Deleted",
+                "Organization",
+                organizationId,
+                "Deleted",
+                new { Id = organizationId, DeletedByUserId = callerUserId }),
+                cancellationToken);
+    }
+
+    private async Task<OrganizationDeletionReport> BuildDeletionReportAsync(Guid organizationId, Guid callerUserId, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<AccountSubscription> subscriptions = await store.GetSubscriptionsAsync(null, organizationId, cancellationToken);
+        IReadOnlyList<CloudLoginOrganizationMember> members = await store.GetMembersAsync(organizationId, cancellationToken);
+        AccountBillingProfile? billing = await store.GetBillingProfileAsync(null, organizationId, cancellationToken);
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        int running = subscriptions.Count(subscription => subscription.DeletionPolicy != SubscriptionDeletionPolicies.Always && subscription.IsRunningOn(now));
+        int protectedCount = subscriptions.Count(subscription => subscription.DeletionPolicy == SubscriptionDeletionPolicies.Never);
+        int removable = subscriptions.Count(subscription => subscription.CanDeleteOn(now));
+
+        OrganizationDeletionBlockers blockers = OrganizationDeletionBlockers.None;
+        List<string> reasons = [];
+
+        if (running > 0)
+        {
+            blockers |= OrganizationDeletionBlockers.ActiveSubscriptions;
+            reasons.Add($"{running} subscription{(running == 1 ? " is" : "s are")} still running. Cancel {(running == 1 ? "it" : "them")} or wait for the term to end.");
+        }
+
+        if (protectedCount > 0)
+        {
+            blockers |= OrganizationDeletionBlockers.ProtectedSubscriptions;
+            reasons.Add($"{protectedCount} subscription{(protectedCount == 1 ? "" : "s")} must be cleared by the application that created {(protectedCount == 1 ? "it" : "them")}.");
+        }
+
+        return new OrganizationDeletionReport
+        {
+            OrganizationId = organizationId,
+            Blockers = blockers,
+            ActiveSubscriptionCount = running,
+            ProtectedSubscriptionCount = protectedCount,
+            RemovableSubscriptionCount = removable,
+            OtherMemberCount = members.Count(member => member.UserId != callerUserId),
+            PaymentMethodCount = billing?.PaymentMethods.Count ?? 0,
+            Reasons = reasons
+        };
+    }
+
+    private async Task<bool> IsOwnerAsync(CloudLoginOrganization organization, Guid callerUserId, CancellationToken cancellationToken)
+    {
+        if (organization.OwnerUserId == callerUserId)
+            return true;
+
+        IReadOnlyList<CloudLoginOrganizationMember> members = await store.GetMembersAsync(organization.Id, cancellationToken);
+        CloudLoginOrganizationMember? caller = members.FirstOrDefault(member => member.UserId == callerUserId);
+
+        return caller is { IsOwner: true } || (caller?.Roles.Contains("Owner", StringComparer.OrdinalIgnoreCase) ?? false);
+    }
+
+    private async Task<bool> CanManageAsync(CloudLoginOrganization organization, Guid callerUserId, CancellationToken cancellationToken)
+    {
+        if (await IsOwnerAsync(organization, callerUserId, cancellationToken))
+            return true;
+
+        IReadOnlyList<CloudLoginOrganizationMember> members = await store.GetMembersAsync(organization.Id, cancellationToken);
+        CloudLoginOrganizationMember? caller = members.FirstOrDefault(member => member.UserId == callerUserId);
+
+        return caller?.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase) ?? false;
+    }
+
+    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
 
 public sealed class SubscriptionRegistry(
@@ -138,7 +297,13 @@ public sealed class SubscriptionRegistry(
     {
         ValidateOwner(userId, organizationId);
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        return [.. (await store.GetSubscriptionsAsync(userId, organizationId, cancellationToken)).Where(subscription => subscription.Status == AccountSubscriptionStatuses.Active && (subscription.ExpiresOn is null || subscription.ExpiresOn > now))];
+        return [.. (await store.GetSubscriptionsAsync(userId, organizationId, cancellationToken)).Where(subscription => subscription.IsRunningOn(now))];
+    }
+
+    public async Task<IReadOnlyList<AccountSubscription>> GetForOwnerAsync(Guid? userId = null, Guid? organizationId = null, CancellationToken cancellationToken = default)
+    {
+        ValidateOwner(userId, organizationId);
+        return await store.GetSubscriptionsAsync(userId, organizationId, cancellationToken);
     }
 
     public async Task<AccountSubscription> SaveAsync(AccountSubscription subscription, CancellationToken cancellationToken = default)
@@ -166,6 +331,26 @@ public sealed class SubscriptionRegistry(
                 cancellationToken);
         }
         return subscription;
+    }
+
+    public async Task DeleteAsync(Guid subscriptionId, CancellationToken cancellationToken = default)
+    {
+        AccountSubscription subscription = await store.GetSubscriptionAsync(subscriptionId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Subscription '{subscriptionId}' was not found.");
+
+        if (!subscription.CanDelete)
+            throw new SubscriptionDeletionBlockedException(subscription);
+
+        await store.DeleteSubscriptionAsync(subscriptionId, cancellationToken);
+
+        if (eventPublisher != null)
+            await eventPublisher.PublishAsync(CloudLoginEvent.Create(
+                "Subscription.Deleted",
+                "Subscription",
+                subscription.Id,
+                "Deleted",
+                new { subscription.Id, subscription.UserId, subscription.OrganizationId }),
+                cancellationToken);
     }
 
     public Task<AccountSubscription?> GetAsync(Guid subscriptionId, CancellationToken cancellationToken = default) => store.GetSubscriptionAsync(subscriptionId, cancellationToken);

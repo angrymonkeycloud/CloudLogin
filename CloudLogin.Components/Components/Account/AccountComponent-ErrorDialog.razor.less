@@ -1,0 +1,195 @@
+@import (reference) "../../Src/variable.less";
+
+// Dialog.razor renders its own chrome (PopupComp's .modal/.modal-content/.header/.actions),
+// styled by CloudComponents itself. This file only styles the content we place inside it —
+// everything here lives under Dialog's own scoped CSS isolation boundary via ::deep, since
+// PopupComp's markup belongs to a different component than this one.
+
+::deep .amc-dialog-message {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.error-dialog-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 20px;
+    text-align: center;
+    color: @muted;
+}
+
+.error-dialog-empty-icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 50%;
+    background: @success-soft;
+    color: @success;
+
+    ::deep svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.error-dialog-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.error-dialog-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.error-dialog-item {
+    padding: 16px 0;
+    border-top: 1px solid @surface;
+
+    &:first-child {
+        border-top: none;
+        padding-top: 4px;
+    }
+}
+
+.error-dialog-item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.error-dialog-item-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.error-dialog-item-source {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: @heading;
+}
+
+.error-dialog-item-time {
+    font-size: 12px;
+    color: @muted;
+}
+
+.error-dialog-item-dismiss {
+    display: grid;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: @muted;
+    cursor: pointer;
+    transition: background-color .12s ease, color .12s ease;
+
+    ::deep svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    &:hover {
+        background: @surface;
+        color: @text;
+    }
+}
+
+.error-dialog-item-message {
+    margin: 6px 0 0;
+    font-size: 13.5px;
+    color: @text-soft;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.error-dialog-item-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.link-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amc-accentColor);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.link-action-icon {
+    display: grid;
+    place-items: center;
+
+    ::deep svg {
+        width: 12px;
+        height: 12px;
+    }
+}
+
+.error-dialog-item-details {
+    margin: 8px 0 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: @surface;
+    border: 1px solid @border;
+    color: @text-soft;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+// Footer buttons (Clear all / Close), rendered via DialogButton.ClassCss.
+::deep .error-dialog-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+
+::deep .error-dialog-btn--outline {
+    border: 1px solid @border-strong;
+    background: @white;
+    color: @text-soft;
+
+    &:hover {
+        border-color: @text;
+        background: @surface;
+    }
+}
+
+::deep .error-dialog-btn--primary {
+    border: 1px solid var(--amc-accentColor);
+    background: var(--amc-accentColor);
+    color: @white;
+
+    &:hover {
+        background: var(--amc-secondColor);
+        border-color: var(--amc-secondColor);
+    }
+}

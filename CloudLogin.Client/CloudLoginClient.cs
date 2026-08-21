@@ -18,6 +18,7 @@ public class CloudLoginClient : ICloudLogin
 
     public string UserRoute = "CloudLogin/User";
     public string AccountRoute = "CloudLogin/Account";
+    public string SecurityRoute = "CloudLogin/Security";
     public string? RedirectUri { get; set; }
     public List<Link>? FooterLinks { get; set; }
 
@@ -633,9 +634,9 @@ public class CloudLoginClient : ICloudLogin
         return organizations ?? [];
     }
 
-    public async Task<List<AccountSubscription>> GetMySubscriptions()
+    public async Task<List<AccountSubscription>> GetMySubscriptions(bool includeInactive = false)
     {
-        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Subscriptions");
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Subscriptions?includeInactive={includeInactive}");
 
         if (!message.IsSuccessStatusCode)
             return [];
@@ -643,6 +644,29 @@ public class CloudLoginClient : ICloudLogin
         List<AccountSubscription>? subscriptions = await message.Content.ReadFromJsonAsync<List<AccountSubscription>>(CloudLoginSerialization.Options);
 
         return subscriptions ?? [];
+    }
+
+    public async Task<OrganizationQuota> GetMyOrganizationQuota()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Organizations/Quota");
+
+        // Without a reachable quota the UI shouldn't invent an allowance: report none left rather
+        // than offering a create button the server would refuse.
+        if (!message.IsSuccessStatusCode)
+            return new OrganizationQuota { Owned = 0, MaxOwned = 0, Total = 0, MaxTotal = 0 };
+
+        return await message.Content.ReadFromJsonAsync<OrganizationQuota>(CloudLoginSerialization.Options)
+            ?? new OrganizationQuota { Owned = 0, MaxOwned = 0, Total = 0, MaxTotal = 0 };
+    }
+
+    public async Task<OrganizationWorkspace?> GetOrganizationWorkspace(Guid organizationId)
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Organizations/{organizationId}/Workspace");
+
+        if (!message.IsSuccessStatusCode)
+            return null;
+
+        return await message.Content.ReadFromJsonAsync<OrganizationWorkspace>(CloudLoginSerialization.Options);
     }
 
     public async Task<AccountBillingProfile?> GetMyBillingProfile()
@@ -666,7 +690,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Organizations", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception($"CreateOrganization failed: {await message.Content.ReadAsStringAsync()}");
+            throw await AccountFailure(message, "We couldn't create that organization.");
 
         return (await message.Content.ReadFromJsonAsync<CloudLoginOrganization>(CloudLoginSerialization.Options))!;
     }
@@ -677,7 +701,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Organizations/{organizationId}/Invite", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception($"InviteToOrganization failed: {await message.Content.ReadAsStringAsync()}");
+            throw await AccountFailure(message, "We couldn't send that invitation.");
 
         return (await message.Content.ReadFromJsonAsync<CloudLoginOrganizationInvitation>(CloudLoginSerialization.Options))!;
     }
@@ -688,9 +712,25 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Organizations/{organization.Id}", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception($"UpdateOrganization failed: {await message.Content.ReadAsStringAsync()}");
+            throw await AccountFailure(message, "We couldn't save those changes.");
 
         return (await message.Content.ReadFromJsonAsync<CloudLoginOrganization>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task DeleteOrganization(Guid organizationId)
+    {
+        HttpResponseMessage message = await HttpServer.DeleteAsync($"{AccountRoute}/Organizations/{organizationId}");
+
+        if (!message.IsSuccessStatusCode)
+            throw await AccountFailure(message, "We couldn't delete that organization.");
+    }
+
+    public async Task DeleteSubscription(Guid subscriptionId)
+    {
+        HttpResponseMessage message = await HttpServer.DeleteAsync($"{AccountRoute}/Subscriptions/{subscriptionId}");
+
+        if (!message.IsSuccessStatusCode)
+            throw await AccountFailure(message, "We couldn't remove that subscription.");
     }
 
     public async Task<AccountBillingProfile> AddPaymentMethod(AccountPaymentMethodReference method, Guid? organizationId = null)
@@ -699,9 +739,54 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/BillingProfile/PaymentMethods", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception($"AddPaymentMethod failed: {await message.Content.ReadAsStringAsync()}");
+            throw await AccountFailure(message, "We couldn't save that payment method.");
 
         return (await message.Content.ReadFromJsonAsync<AccountBillingProfile>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task<AccountBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? organizationId = null)
+    {
+        HttpContent content = JsonContent.Create(new RemovePaymentMethodRequest(provider, reference, organizationId), options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/BillingProfile/PaymentMethods/Remove", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw await AccountFailure(message, "We couldn't remove that payment method.");
+
+        return (await message.Content.ReadFromJsonAsync<AccountBillingProfile>(CloudLoginSerialization.Options))!;
+    }
+
+    /// <summary>
+    /// Turns a failed account call into an exception the account UI can show as-is. The account
+    /// endpoints answer refusals the user can act on — a reached limit, a subscription that still
+    /// blocks deletion — with a ProblemDetails <c>detail</c>, so that sentence is preferred over a
+    /// status code. Anything else falls back to <paramref name="fallback"/> and never leaks a
+    /// server-side message of unknown shape into the page.
+    /// </summary>
+    private static async Task<Exception> AccountFailure(HttpResponseMessage message, string fallback)
+    {
+        try
+        {
+            if (message.Content.Headers.ContentType?.MediaType?.Contains("json", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                using JsonDocument document = JsonDocument.Parse(await message.Content.ReadAsStringAsync());
+
+                if (document.RootElement.ValueKind == JsonValueKind.Object
+                    && document.RootElement.TryGetProperty("detail", out JsonElement detail)
+                    && detail.ValueKind == JsonValueKind.String
+                    && !string.IsNullOrWhiteSpace(detail.GetString()))
+                    return new InvalidOperationException(detail.GetString());
+            }
+        }
+        catch (JsonException) { }
+
+        return message.StatusCode switch
+        {
+            HttpStatusCode.Unauthorized => new UnauthorizedAccessException("Sign in again to continue."),
+            HttpStatusCode.Forbidden => new UnauthorizedAccessException("You don't have permission to do this."),
+            HttpStatusCode.NotFound => new KeyNotFoundException(fallback),
+            HttpStatusCode.NotImplemented => new NotSupportedException("This host doesn't support that yet."),
+            _ => new InvalidOperationException(fallback)
+        };
     }
 
     public async Task<CloudLoginOrganization?> GetOrganizationById(Guid organizationId)
@@ -757,5 +842,126 @@ public class CloudLoginClient : ICloudLogin
             return [];
 
         return await message.Content.ReadFromJsonAsync<List<AccountSubscription>>(CloudLoginSerialization.Options) ?? [];
+    }
+
+    // ── Security ─────────────────────────────────────────────────────────────
+    // The server derives the acting user from the session cookie, so none of these
+    // calls carries a user id.
+
+    public async Task<SecurityOverview> GetSecurityOverview()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/Overview");
+
+        if (!message.IsSuccessStatusCode)
+            return new SecurityOverview();
+
+        return await message.Content.ReadFromJsonAsync<SecurityOverview>(CloudLoginSerialization.Options) ?? new SecurityOverview();
+    }
+
+    public async Task<List<LoginHistoryEntry>> GetMyLoginHistory()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/LoginHistory");
+
+        if (!message.IsSuccessStatusCode)
+            return [];
+
+        return await message.Content.ReadFromJsonAsync<List<LoginHistoryEntry>>(CloudLoginSerialization.Options) ?? [];
+    }
+
+    public async Task ChangeMyPassword(ChangePasswordRequest request)
+    {
+        HttpContent content = JsonContent.Create(request, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Password", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+    }
+
+    public async Task DisconnectProvider(string providerCode, string input)
+    {
+        HttpContent content = JsonContent.Create(new { providerCode, input }, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/DisconnectProvider", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+    }
+
+    public async Task<AuthenticatorEnrollmentModel> BeginAuthenticatorEnrollment()
+    {
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Authenticator/Begin", null);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+
+        return (await message.Content.ReadFromJsonAsync<AuthenticatorEnrollmentModel>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task<bool> ConfirmAuthenticatorEnrollment(string code)
+    {
+        HttpContent content = JsonContent.Create(new { code }, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Authenticator/Confirm", content);
+
+        if (!message.IsSuccessStatusCode)
+            return false;
+
+        return await message.Content.ReadFromJsonAsync<bool>(CloudLoginSerialization.Options);
+    }
+
+    public async Task DisableAuthenticator()
+    {
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Authenticator/Disable", null);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+    }
+
+    public async Task<string> BeginPasskeyRegistration()
+    {
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Begin", null);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+
+        return await message.Content.ReadAsStringAsync();
+    }
+
+    public async Task<PasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name)
+    {
+        HttpContent content = JsonContent.Create(new { optionsJson, attestationJson, name }, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Complete", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+
+        return (await message.Content.ReadFromJsonAsync<PasskeySummary>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task RemovePasskey(string credentialId)
+    {
+        HttpContent content = JsonContent.Create(new { credentialId }, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Remove", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+    }
+
+    public async Task RenamePasskey(string credentialId, string name)
+    {
+        HttpContent content = JsonContent.Create(new { credentialId, name }, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Rename", content);
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+    }
+
+    /// <summary>
+    /// Surfaces the server's reason for rejecting a security change, so the account page can
+    /// show "Your current password is incorrect" rather than a bare status code.
+    /// </summary>
+    private static async Task<string> ReadProblem(HttpResponseMessage message)
+    {
+        string body = await message.Content.ReadAsStringAsync();
+
+        return string.IsNullOrWhiteSpace(body) ? message.ReasonPhrase ?? "Request failed." : body;
     }
 }

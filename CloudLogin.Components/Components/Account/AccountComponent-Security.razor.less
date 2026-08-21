@@ -1,0 +1,430 @@
+@import (reference) "../../Src/variable.less";
+
+.account-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.section {
+    &-header {
+        margin-bottom: 8px;
+
+        h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: @text;
+            margin: 0 0 4px 0;
+        }
+
+        &-description {
+            font-size: 14px;
+            color: @muted;
+            margin: 0;
+        }
+    }
+}
+
+.card {
+    background: @white;
+    border: 1px solid @border;
+    border-radius: 12px;
+    padding: 22px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid @surface-alt;
+
+    h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: @heading;
+    }
+}
+
+.card-note {
+    margin: 0;
+    font-size: 13.5px;
+    color: @muted;
+    line-height: 1.5;
+}
+
+.link-action {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--amc-accentColor);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        text-decoration: underline;
+    }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: .6;
+    }
+
+    &.link-danger {
+        color: @danger;
+    }
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 6px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: @label;
+}
+
+.form-input {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 12px;
+    font-size: 14px;
+    color: @text;
+    background: @white;
+    border: 1px solid @border-strong;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+
+    &:focus {
+        border-color: var(--amc-accentColor);
+        box-shadow: 0 0 0 3px var(--amc-accentColor-soft, fade(#0078d4, 12%));
+    }
+
+    &:disabled {
+        background: @surface-alt;
+        cursor: not-allowed;
+        opacity: .7;
+    }
+
+    &.code-input {
+        max-width: 220px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: .4em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.row-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 9px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+
+    &:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+    }
+
+    &-primary {
+        background: var(--amc-accentColor);
+        border-color: var(--amc-accentColor);
+        color: @white;
+
+        &:hover:not(:disabled) {
+            background: var(--amc-secondColor);
+            border-color: var(--amc-secondColor);
+        }
+    }
+
+    &-outline {
+        background: @white;
+        border-color: @border-strong;
+        color: @text-soft;
+
+        &:hover:not(:disabled) {
+            border-color: @text;
+            background: @surface;
+        }
+    }
+
+    &-danger {
+        background: transparent;
+        border-color: fade(@danger, 45%);
+        color: @danger;
+
+        &:hover:not(:disabled) {
+            background: @danger-soft;
+            border-color: @danger;
+        }
+    }
+
+    &-sm {
+        min-height: 32px;
+        padding: 5px 12px;
+        font-size: 12.5px;
+    }
+}
+
+// ── Status ───────────────────────────────────────────────────
+.status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+}
+
+.status-badge {
+    padding: 3px 10px;
+    border-radius: @radius-pill;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+
+    &--on {
+        background: @success-soft;
+        color: @success;
+    }
+}
+
+// ── Authenticator enrollment ─────────────────────────────────
+.qr-block {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid @border;
+    border-radius: @radius-sm;
+    background: @surface;
+}
+
+.qr-code {
+    display: grid;
+    place-items: center;
+    width: 176px;
+    height: 176px;
+    padding: 10px;
+    border-radius: @radius-sm;
+    background: @white;
+
+    ::deep svg {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+.qr-manual {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.secret-key {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: @white;
+    border: 1px solid @border;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    letter-spacing: .12em;
+    color: @text;
+    overflow-wrap: anywhere;
+}
+
+// ── Entry rows (passkeys, providers, history) ────────────────
+.entry-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.entry-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-height: 64px;
+    padding: 18px 0;
+    border-top: 1px solid @surface;
+
+    &:first-child {
+        border-top: none;
+    }
+}
+
+.entry-icon {
+    display: grid;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 9px;
+    background: @surface;
+    color: var(--amc-accentColor);
+
+    ::deep svg {
+        width: 17px;
+        height: 17px;
+    }
+}
+
+.entry-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.entry-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: @text;
+    overflow-wrap: anywhere;
+}
+
+.entry-meta {
+    font-size: 12.5px;
+    color: @muted;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.entry-note {
+    font-size: 12px;
+    color: @placeholder;
+    white-space: nowrap;
+}
+
+// ── Available providers ──────────────────────────────────────
+.available-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid @surface;
+}
+
+.provider-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.provider-chip {
+    padding: 8px 16px;
+    border: 1px solid var(--amc-accentColor);
+    border-radius: @radius-pill;
+    background: @white;
+    color: var(--amc-accentColor);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+
+    &:hover:not(:disabled) {
+        background: var(--amc-accentColor);
+        color: @white;
+    }
+
+    &:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+    }
+}
+
+.empty-state {
+    padding: 24px 20px;
+    text-align: center;
+    background: @surface;
+    border-radius: @radius-sm;
+    border: 1px dashed @border-dashed;
+
+    p {
+        margin: 0;
+        color: @muted;
+        font-size: 14px;
+    }
+}
+
+.alert-success,
+.alert-error {
+    padding: 12px 16px;
+    border-radius: @radius-sm;
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.alert-success {
+    background: @success-alt-soft;
+    border-left: 3px solid @success-alt;
+    color: @success-alt;
+}
+
+.alert-error {
+    background: @error-alt-soft;
+    border-left: 3px solid @error-alt;
+    color: @error-alt;
+}
+
+.loading-spinner {
+    width: 22px;
+    height: 22px;
+    border: 2px solid fade(#000, 15%);
+    border-top-color: var(--amc-accentColor);
+    border-radius: 50%;
+    display: block;
+    margin: 28px auto;
+    animation: security-spin .7s linear infinite;
+}
+
+@keyframes security-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media @media-medium {
+    .qr-block {
+        flex-direction: row;
+        align-items: center;
+        gap: 22px;
+    }
+
+    .entry-row {
+        align-items: center;
+    }
+}

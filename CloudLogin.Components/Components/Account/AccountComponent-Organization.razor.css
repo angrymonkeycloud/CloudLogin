@@ -401,7 +401,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .field._wide {
-    grid-column: -1;
+    grid-column: 1 / -1;
   }
   .detail-row {
     grid-template-columns: 220px 1fr;

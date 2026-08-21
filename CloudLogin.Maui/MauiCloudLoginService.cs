@@ -64,11 +64,18 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     private bool _disposed;
     private bool _initialized;
     private static CloudLoginBaseService? _activeSubscriber;
+    private static readonly SemaphoreSlim LoginCompletionLock = new(1, 1);
+    private static string? _completedRequestId;
+    private readonly IReadOnlyList<IMauiCloudLoginRequestExchange> _requestExchanges;
 
-    public MauiCloudLoginService(INavigationService navigationService, MauiCloudLoginOptions options) : base()
+    public MauiCloudLoginService(
+        INavigationService navigationService,
+        MauiCloudLoginOptions options,
+        IEnumerable<IMauiCloudLoginRequestExchange>? requestExchanges = null) : base()
     {
         _nav = navigationService;
         _options = options;
+        _requestExchanges = requestExchanges?.ToList() ?? [];
 
         // Lightweight constructor - just event subscriptions
         UserChanged += OnUserChangedInternal;
@@ -302,8 +309,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
                 && !string.IsNullOrWhiteSpace(requestId))
             {
                 Debug.WriteLine($"[AccountService] WebAuthenticator returned requestId: {requestId}");
-                RequestId = requestId;
-                await FetchUser();
+                await CompleteLoginAsync(requestId);
 
                 if (User != null)
                 {
@@ -390,11 +396,10 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     private async void OnRequestIdReceived(string requestId)
     {
         Debug.WriteLine($"[MauiCloudLoginService] OnRequestIdReceived: {requestId}");
-        RequestId = requestId;
 
         try
         {
-            await FetchUser();
+            await CompleteLoginAsync(requestId);
 
             if (User != null)
             {
@@ -418,6 +423,49 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         catch (Exception ex)
         {
             Debug.WriteLine($"[MauiCloudLoginService] FetchUser after callback failed: {ex.Message}");
+        }
+    }
+
+    private async Task CompleteLoginAsync(string requestId)
+    {
+        await LoginCompletionLock.WaitAsync();
+        try
+        {
+            if (string.Equals(_completedRequestId, requestId, StringComparison.OrdinalIgnoreCase)
+                && User is not null)
+                return;
+
+            await SecureStorage.Default.SetAsync(SecureRequestIdKey, requestId);
+            RequestId = requestId;
+
+            if (_requestExchanges.Count == 0)
+            {
+                await FetchUser();
+            }
+            else
+            {
+                UserModel? exchangedUser = null;
+                foreach (IMauiCloudLoginRequestExchange exchange in _requestExchanges)
+                {
+                    exchangedUser = await exchange.ExchangeAsync(requestId);
+                    if (exchangedUser is not null)
+                        break;
+                }
+
+                if (exchangedUser is null)
+                    throw new InvalidOperationException(
+                        "The native application could not establish its authenticated API session.");
+
+                User = exchangedUser;
+                RaiseUserChanged(User);
+            }
+
+            if (User is not null)
+                _completedRequestId = requestId;
+        }
+        finally
+        {
+            LoginCompletionLock.Release();
         }
     }
 

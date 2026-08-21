@@ -41,6 +41,7 @@ public static partial class MvcServiceCollectionExtensions
                 options.ExpireTimeSpan = config.SessionDuration;
                 options.SlidingExpiration = true;
                 options.Cookie.Name = config.CookieName;
+                options.Cookie.Domain = config.CookieDomain;
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SecurePolicy = config.RequireHttps
                     ? CookieSecurePolicy.Always

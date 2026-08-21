@@ -93,7 +93,12 @@ public class AuthController(
     }
 
     [HttpGet("callback")]
-    public async Task<IActionResult> Callback([FromQuery] string? requestId, [FromQuery] string? state, [FromQuery] string? error, [FromQuery] bool keepMeSignedIn = false)
+    public async Task<IActionResult> Callback(
+        [FromQuery] string? requestId,
+        [FromQuery] string? state,
+        [FromQuery] string? error,
+        [FromQuery] bool keepMeSignedIn = false,
+        [FromQuery] bool native = false)
     {
         try
         {
@@ -157,6 +162,12 @@ public class AuthController(
             });
 
             _logger.LogInformation("Login callback completed successfully");
+
+            // Native clients cannot share the system browser's cookie jar. Return the
+            // resolved user in the same one-time exchange that creates this API's cookie,
+            // so the request id is never consumed twice.
+            if (native)
+                return Ok(user);
 
             // Append requestId to return URL so WASM client can fetch and persist user
             string finalReturnUrl = CloudLoginShared.AppendQueryParameter(returnUrl, "rid", parsedRequestId.ToString());

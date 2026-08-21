@@ -1,61 +1,112 @@
-﻿@namespace AngryMonkey.CloudLogin
+@namespace AngryMonkey.CloudLogin
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @inject ICloudLogin cloudLogin
 
-<div class="account-section">
-    <div class="section-header">
-        <h3>Email Addresses</h3>
-        <p class="section-description">Manage your email addresses</p>
+<div class="card contacts-card">
+    <div class="card-header">
+        <h4>Email addresses</h4>
+        @if (!_verification.IsAwaitingCode && !_isAdding)
+        {
+            <button class="link-action" @onclick="StartAdd" disabled="@_isProcessing">Add email</button>
+        }
     </div>
 
-    <div class="add-input-section">
-        <div class="input-group">
-            <input type="email" 
-                   class="form-input" 
-                   @bind="NewEmail" 
-                   placeholder="Add new email address" 
-                   disabled="@_isProcessing" />
-            <button class="btn btn-secondary" 
-                    @onclick="AddEmail" 
-                    disabled="@(_isProcessing || string.IsNullOrWhiteSpace(NewEmail) || !IsValidEmail(NewEmail))">
-                @if (_isProcessing)
-                {
-                    <span class="loading-spinner"></span>
-                }
-                else
-                {
-                    <span>Add Email</span>
-                }
-            </button>
+    @if (_isAdding || _verification.IsAwaitingCode)
+    {
+        <div class="add-panel">
+            @if (!_verification.IsAwaitingCode)
+            {
+                <label class="add-label" for="new-email">New email address</label>
+                <div class="add-row">
+                    <input type="email"
+                           id="new-email"
+                           class="form-input"
+                           @bind="NewEmail"
+                           @bind:event="oninput"
+                           placeholder="you@example.com"
+                           disabled="@_isProcessing" />
+                    <button class="btn btn-primary"
+                            @onclick="SendCode"
+                            disabled="@(_isProcessing || !IsValidEmail(NewEmail))">
+                        @if (_isProcessing)
+                        {
+                            <span class="loading-spinner"></span>
+                            <span>Checking…</span>
+                        }
+                        else
+                        {
+                            <span>Send code</span>
+                        }
+                    </button>
+                    <button class="btn btn-outline" @onclick="CancelAdd" disabled="@_isProcessing">Cancel</button>
+                </div>
+                <p class="add-hint">We'll email a 6-digit code to confirm you own this address before adding it.</p>
+            }
+            else
+            {
+                <label class="add-label" for="email-code">Enter the code sent to <strong>@_verification.PendingInput</strong></label>
+                <div class="add-row">
+                    <input type="text"
+                           id="email-code"
+                           class="form-input code-input"
+                           inputmode="numeric"
+                           maxlength="6"
+                           autocomplete="one-time-code"
+                           @bind="_verification.EnteredCode"
+                           @bind:event="oninput"
+                           placeholder="000000"
+                           disabled="@_isProcessing" />
+                    <button class="btn btn-primary"
+                            @onclick="ConfirmCode"
+                            disabled="@(_isProcessing || string.IsNullOrWhiteSpace(_verification.EnteredCode))">
+                        @if (_isProcessing)
+                        {
+                            <span class="loading-spinner"></span>
+                            <span>Verifying…</span>
+                        }
+                        else
+                        {
+                            <span>Verify &amp; add</span>
+                        }
+                    </button>
+                    <button class="btn btn-outline" @onclick="CancelAdd" disabled="@_isProcessing">Cancel</button>
+                </div>
+                <p class="add-hint">
+                    Didn't get it?
+                    <button class="link-action" @onclick="ResendCode" disabled="@_isProcessing">Resend code</button>
+                </p>
+            }
         </div>
-    </div>
+    }
 
     @if (CurrentUser.EmailAddresses.Any())
     {
-        <div class="items-list">
+        <div class="contact-list">
             @foreach (LoginInput email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
             {
-                <div class="item-row">
-                    <div class="item-info">
-                        <span class="item-text">@email.Input</span>
+                <div class="contact-row">
+                    <div class="contact-main">
+                        <span class="contact-icon" aria-hidden="true"><PersonIcon /></span>
+                        <span class="contact-text">@email.Input</span>
                         @if (email.IsPrimary)
                         {
                             <span class="badge badge-primary">Primary</span>
                         }
                     </div>
-                    <div class="item-actions">
+                    <div class="contact-actions">
                         @if (!email.IsPrimary)
                         {
-                            <button class="btn btn-outline btn-sm" 
-                                    @onclick="() => SetPrimary(email.Input)" 
+                            <button class="btn btn-outline btn-sm"
+                                    @onclick="() => SetPrimary(email.Input)"
                                     disabled="@_isProcessing">
-                                Set Primary
+                                Make primary
                             </button>
                         }
                         @if (CurrentUser.EmailAddresses.Count > 1)
                         {
-                            <button class="btn btn-danger btn-sm" 
-                                    @onclick="() => RemoveEmail(email.Input)" 
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => RemoveEmail(email.Input)"
                                     disabled="@_isProcessing">
                                 Remove
                             </button>
@@ -83,18 +134,41 @@
 @code {
     [Parameter] public required UserModel CurrentUser { get; set; }
 
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
     private string NewEmail { get; set; } = string.Empty;
     private bool _isProcessing = false;
+    private bool _isAdding = false;
     private string _statusMessage = string.Empty;
     private bool _operationSuccess = false;
 
-    /// <summary>
-    /// Adds a new email address to the user's account
-    /// </summary>
-    private async Task AddEmail()
+    private readonly AccountContactVerification _verification = new();
+
+    private void StartAdd()
     {
-        if (_isProcessing || string.IsNullOrWhiteSpace(NewEmail) || !IsValidEmail(NewEmail))
+        _isAdding = true;
+        NewEmail = string.Empty;
+        _statusMessage = string.Empty;
+    }
+
+    private void CancelAdd()
+    {
+        _isAdding = false;
+        NewEmail = string.Empty;
+        _verification.Reset();
+        _statusMessage = string.Empty;
+    }
+
+    /// <summary>
+    /// Confirms the address isn't already taken, then sends a verification code to it.
+    /// The input is not attached to the account until that code comes back.
+    /// </summary>
+    private async Task SendCode()
+    {
+        if (_isProcessing || !IsValidEmail(NewEmail))
             return;
+
+        string normalized = NewEmail.Trim().ToLowerInvariant();
 
         try
         {
@@ -102,42 +176,109 @@
             _statusMessage = string.Empty;
             StateHasChanged();
 
-            // Check if email already exists
-            if (CurrentUser.EmailAddresses.Any(e => e.Input.Equals(NewEmail.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase)))
+            if (CurrentUser.EmailAddresses.Any(e => e.Input.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
             {
-                _statusMessage = "This email address is already associated with your account.";
-                _operationSuccess = false;
+                SetStatus("This email address is already on your account.", false);
                 return;
             }
 
-            // Check if email exists in system for another user
-            UserModel? existingUser = await cloudLogin.GetUserByEmailAddress(NewEmail.Trim().ToLowerInvariant());
+            UserModel? existingUser = await cloudLogin.GetUserByEmailAddress(normalized);
             if (existingUser != null && existingUser.ID != CurrentUser.ID)
             {
-                _statusMessage = "This email address is already in use by another account.";
-                _operationSuccess = false;
+                SetStatus("This email address is already in use by another account.", false);
                 return;
             }
 
-            var newEmailInput = new LoginInput
+            string code = _verification.Start(normalized);
+            await cloudLogin.SendEmailCode(normalized, code);
+
+            SetStatus($"We sent a code to {normalized}.", true);
+        }
+        catch (Exception ex)
+        {
+            _verification.Reset();
+            SetStatus($"Failed to send verification code: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Email addresses", _statusMessage, ex);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ResendCode()
+    {
+        if (_isProcessing || !_verification.IsAwaitingCode)
+            return;
+
+        try
+        {
+            _isProcessing = true;
+            StateHasChanged();
+
+            string code = _verification.Reissue();
+            await cloudLogin.SendEmailCode(_verification.PendingInput, code);
+
+            SetStatus($"We sent a new code to {_verification.PendingInput}.", true);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Failed to resend code: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Email addresses", _statusMessage, ex);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>Validates the entered code and, only on success, persists the new address.</summary>
+    private async Task ConfirmCode()
+    {
+        if (_isProcessing || !_verification.IsAwaitingCode)
+            return;
+
+        switch (_verification.Check())
+        {
+            case VerificationCodeResult.NotValid:
+                SetStatus("That code isn't correct. Please check and try again.", false);
+                return;
+
+            case VerificationCodeResult.Expired:
+                SetStatus("That code has expired. Request a new one.", false);
+                return;
+        }
+
+        try
+        {
+            _isProcessing = true;
+            StateHasChanged();
+
+            string verifiedInput = _verification.PendingInput;
+
+            LoginInput newEmailInput = new()
             {
-                Input = NewEmail.Trim().ToLowerInvariant(),
+                Input = verifiedInput,
                 Format = InputFormat.EmailAddress,
-                IsPrimary = !CurrentUser.EmailAddresses.Any(), // First email becomes primary
+                IsPrimary = !CurrentUser.EmailAddresses.Any(),
                 Providers = []
             };
 
             CurrentUser.Inputs.Add(newEmailInput);
             await cloudLogin.UpdateUser(CurrentUser);
-            
+
+            _verification.Reset();
+            _isAdding = false;
             NewEmail = string.Empty;
-            _statusMessage = "Email address added successfully.";
-            _operationSuccess = true;
+
+            SetStatus("Email address verified and added.", true);
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to add email address: {ex.Message}";
-            _operationSuccess = false;
+            SetStatus($"Failed to add email address: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Email addresses", _statusMessage, ex);
         }
         finally
         {
@@ -161,14 +302,13 @@
             _statusMessage = string.Empty;
             StateHasChanged();
 
-            var emailToRemove = CurrentUser.Inputs.FirstOrDefault(e => 
-                e.Format == InputFormat.EmailAddress && 
+            var emailToRemove = CurrentUser.Inputs.FirstOrDefault(e =>
+                e.Format == InputFormat.EmailAddress &&
                 e.Input.Equals(email, StringComparison.OrdinalIgnoreCase));
 
             if (emailToRemove == null)
             {
-                _statusMessage = "Email address not found.";
-                _operationSuccess = false;
+                SetStatus("Email address not found.", false);
                 return;
             }
 
@@ -182,14 +322,13 @@
 
             CurrentUser.Inputs.Remove(emailToRemove);
             await cloudLogin.UpdateUser(CurrentUser);
-            
-            _statusMessage = "Email address removed successfully.";
-            _operationSuccess = true;
+
+            SetStatus("Email address removed successfully.", true);
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to remove email address: {ex.Message}";
-            _operationSuccess = false;
+            SetStatus($"Failed to remove email address: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Email addresses", _statusMessage, ex);
         }
         finally
         {
@@ -218,14 +357,13 @@
                 e.IsPrimary = e.Input.Equals(email, StringComparison.OrdinalIgnoreCase);
 
             await cloudLogin.UpdateUser(CurrentUser);
-            
-            _statusMessage = "Primary email address updated successfully.";
-            _operationSuccess = true;
+
+            SetStatus("Primary email address updated successfully.", true);
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to update primary email: {ex.Message}";
-            _operationSuccess = false;
+            SetStatus($"Failed to update primary email: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Email addresses", _statusMessage, ex);
         }
         finally
         {
@@ -233,6 +371,12 @@
             StateHasChanged();
             await ClearStatusMessageAfterDelay();
         }
+    }
+
+    private void SetStatus(string message, bool success)
+    {
+        _statusMessage = message;
+        _operationSuccess = success;
     }
 
     /// <summary>
@@ -243,8 +387,8 @@
         if (string.IsNullOrWhiteSpace(email))
             return false;
 
-        return System.Text.RegularExpressions.Regex.IsMatch(email.Trim(), 
-            @"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$", 
+        return System.Text.RegularExpressions.Regex.IsMatch(email.Trim(),
+            @"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     }
 

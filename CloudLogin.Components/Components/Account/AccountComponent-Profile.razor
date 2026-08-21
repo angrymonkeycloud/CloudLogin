@@ -1,6 +1,8 @@
 @using AngryMonkey.CloudLogin.Interfaces
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Forms
+@using AngryMonkey.Cloud
+@using AngryMonkey.Cloud.Geography
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
@@ -116,7 +118,13 @@
                 <div class="kv-value">
                     @if (_isEditingProfile)
                     {
-                        <input class="form-input" @bind="_editCountry" placeholder="Country code (e.g., US)" />
+                        <select class="form-input" @bind="_editCountry" @bind:after="OnCountryChanged">
+                            <option value="">Not specified</option>
+                            @foreach (Country country in Countries)
+                            {
+                                <option value="@country.Code">@country.Name</option>
+                            }
+                        </select>
                     }
                     else
                     {
@@ -129,7 +137,15 @@
                 <div class="kv-value">
                     @if (_isEditingProfile)
                     {
-                        <input class="form-input" @bind="_editLocale" placeholder="Locale (e.g., en-US)" />
+                        <select class="form-input" @bind="_editLanguage" @bind:after="OnLanguageChanged">
+                            <option value="">Not specified</option>
+                            @foreach (Language language in Languages)
+                            {
+                                <option value="@language.Code">
+                                    @(language.Name == language.NativeName ? language.Name : $"{language.Name} — {language.NativeName}")
+                                </option>
+                            }
+                        </select>
                     }
                     else
                     {
@@ -138,8 +154,27 @@
                 </div>
             </div>
             <div class="kv-row">
-                <div class="kv-key">Regional formats</div>
-                <div class="kv-value">@FormatRegionalFormats(CurrentUser.Locale)</div>
+                <div class="kv-key">Regional format</div>
+                <div class="kv-value">
+                    @if (_isEditingProfile)
+                    {
+                        <select class="form-input" @bind="_editLocale">
+                            <option value="">Not specified</option>
+                            @foreach (RegionalFormatOption option in RegionalFormatOptions)
+                            {
+                                <option value="@option.Code">@option.Label</option>
+                            }
+                        </select>
+                        @if (FormatSample(_editLocale) is { Length: > 0 } sample)
+                        {
+                            <p class="field-preview">Dates and numbers will look like: <strong>@sample</strong></p>
+                        }
+                    }
+                    else
+                    {
+                        @FormatRegionalFormats(CurrentUser.Locale)
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -159,6 +194,8 @@
 @code {
     [Parameter] public required UserModel CurrentUser { get; set; }
 
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
     // Photo upload state
     private bool _isUploadingPhoto = false;
     private string _photoMessage = string.Empty;
@@ -174,6 +211,7 @@
     private bool _isEditingProfile = false;
     private DateTime? _editDateOfBirth;
     private string? _editCountry;
+    private string? _editLanguage;
     private string? _editLocale;
 
     private bool _isSaving = false;
@@ -181,6 +219,158 @@
     private bool _operationSuccess = false;
 
     private const long MaxPhotoBytes = 5 * 1024 * 1024; // 5 MB
+
+    // CloudGeography's country and language tables are static data that needs no API key
+    // (only its reverse-geocoding helpers require one), so a plain client instance is enough
+    // to back these dropdowns. Shared across instances since the lists never change.
+    private static readonly CloudGeographyClient Geography = new();
+    private static List<Country>? _countries;
+    private static List<Language>? _languages;
+
+    private static List<Country> Countries =>
+        _countries ??= [.. Geography.Countries.Get().OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase)];
+
+    private static List<Language> Languages =>
+        _languages ??= [.. Geography.Languages.Get().OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase)];
+
+    private sealed record RegionalFormatOption(string Code, string Label);
+
+    /// <summary>
+    /// Locale choices for the "Regional format" field. Built from the selected language and
+    /// country rather than <see cref="CultureInfo.GetCultures"/>, because Blazor WebAssembly
+    /// commonly ships a trimmed ICU dataset where enumerating every culture is unreliable.
+    /// Anything the runtime can't actually resolve is dropped, so every option here formats.
+    /// </summary>
+    private List<RegionalFormatOption> RegionalFormatOptions
+    {
+        get
+        {
+            List<string> candidates = [];
+
+            void AddCandidate(string? code)
+            {
+                if (!string.IsNullOrWhiteSpace(code) && !candidates.Contains(code, StringComparer.OrdinalIgnoreCase))
+                    candidates.Add(code);
+            }
+
+            // The combination the user is actively choosing takes priority.
+            if (!string.IsNullOrWhiteSpace(_editLanguage) && !string.IsNullOrWhiteSpace(_editCountry))
+                AddCandidate($"{_editLanguage!.ToLowerInvariant()}-{_editCountry!.ToUpperInvariant()}");
+
+            // Every language spoken in the selected country. Each code is validated against
+            // the language table first: a few countries in CloudGeography's dataset carry
+            // stray non-language codes (currency codes, for one) in their Languages list,
+            // and pairing one of those with a country yields a locale that looks plausible
+            // but silently formats as invariant.
+            if (!string.IsNullOrWhiteSpace(_editCountry))
+            {
+                Country? country = Geography.Countries.Get(_editCountry!);
+                if (country?.Languages is not null)
+                    foreach (CountryLanguage countryLanguage in country.Languages)
+                    {
+                        Language? language = Geography.Languages.Get(countryLanguage.Code ?? string.Empty);
+                        if (language is not null)
+                            AddCandidate($"{language.Code.ToLowerInvariant()}-{country.Code.ToUpperInvariant()}");
+                    }
+            }
+
+            // Whatever is already saved stays selectable even if it falls outside the above.
+            AddCandidate(CurrentUser.Locale);
+            AddCandidate(_editLocale);
+
+            foreach (string common in CommonLocales)
+                AddCandidate(common);
+
+            List<RegionalFormatOption> options = [];
+
+            foreach (string candidate in candidates)
+            {
+                CultureInfo? culture = TryGetCulture(candidate);
+                if (culture is null)
+                    continue;
+
+                if (options.Any(o => o.Code.Equals(culture.Name, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                options.Add(new RegionalFormatOption(culture.Name, culture.DisplayName));
+            }
+
+            return options;
+        }
+    }
+
+    private static readonly string[] CommonLocales =
+    [
+        "en-US", "en-GB", "en-CA", "en-AU", "fr-FR", "de-DE", "es-ES", "it-IT",
+        "pt-BR", "nl-NL", "sv-SE", "da-DK", "nb-NO", "fi-FI", "pl-PL", "tr-TR",
+        "ru-RU", "ar-SA", "he-IL", "hi-IN", "ja-JP", "ko-KR", "zh-CN", "zh-TW"
+    ];
+
+    private static CultureInfo? TryGetCulture(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        try
+        {
+            CultureInfo culture = CultureInfo.GetCultureInfo(code);
+
+            if (string.IsNullOrEmpty(culture.Name))
+                return null;
+
+            // Any well-formed tag is accepted rather than throwing — ICU synthesizes a
+            // custom culture for names it doesn't actually know, which then formats as
+            // invariant while still reporting a tidy DisplayName. LOCALE_CUSTOM_UNSPECIFIED
+            // is how those synthesized cultures identify themselves, so drop them here
+            // instead of offering the user a regional format that wouldn't take effect.
+            const int LocaleCustomUnspecified = 0x1000;
+
+            if (culture.LCID == LocaleCustomUnspecified)
+                return null;
+
+            return culture;
+        }
+        catch (CultureNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Keeps the regional format aligned with the country the user just picked.</summary>
+    private void OnCountryChanged() => RealignLocale();
+
+    /// <summary>Keeps the regional format aligned with the language the user just picked.</summary>
+    private void OnLanguageChanged() => RealignLocale();
+
+    private void RealignLocale()
+    {
+        List<RegionalFormatOption> options = RegionalFormatOptions;
+
+        // Drop a stale selection that no longer belongs to the chosen country/language,
+        // then default to the best match so the field is never left showing nothing.
+        if (!string.IsNullOrWhiteSpace(_editLocale) &&
+            options.Any(o => o.Code.Equals(_editLocale, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        _editLocale = options.FirstOrDefault()?.Code ?? string.Empty;
+    }
+
+    private static string FormatSample(string? locale)
+    {
+        CultureInfo? culture = TryGetCulture(locale);
+
+        if (culture is null)
+            return string.Empty;
+
+        try
+        {
+            return $"{DateTimeOffset.Now.ToString("d", culture)} · {1234567.89.ToString("N2", culture)}";
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
 
     /// <summary>
     /// Handles selection of a new profile photo and uploads it to blob storage.
@@ -222,6 +412,7 @@
         {
             _photoMessage = $"Failed to update profile photo: {ex.Message}";
             _photoSuccess = false;
+            ErrorCenter?.Report("Profile — Photo", _photoMessage, ex);
         }
         finally
         {
@@ -274,6 +465,7 @@
         {
             _photoMessage = $"Failed to remove profile photo: {ex.Message}";
             _photoSuccess = false;
+            ErrorCenter?.Report("Profile — Photo", _photoMessage, ex);
         }
         finally
         {
@@ -326,6 +518,7 @@
         {
             _statusMessage = $"Failed to update name: {ex.Message}";
             _operationSuccess = false;
+            ErrorCenter?.Report("Profile — Name", _statusMessage, ex);
         }
         finally
         {
@@ -338,12 +531,27 @@
     private void StartEditProfile()
     {
         _editDateOfBirth = CurrentUser.DateOfBirth?.ToDateTime(TimeOnly.MinValue);
-        _editCountry = CurrentUser.Country;
+        _editCountry = NormalizeCountryCode(CurrentUser.Country);
         _editLocale = CurrentUser.Locale;
+        _editLanguage = DeriveLanguageCode(CurrentUser.Locale);
         _isEditingProfile = true;
     }
 
     private void CancelEditProfile() => _isEditingProfile = false;
+
+    /// <summary>Matches a stored country value to a known CloudGeography code so the select binds.</summary>
+    private static string NormalizeCountryCode(string? stored)
+        => string.IsNullOrWhiteSpace(stored) ? string.Empty : Geography.Countries.Get(stored)?.Code ?? string.Empty;
+
+    /// <summary>Pulls the language half out of a stored locale (e.g. "en-US" -> "EN").</summary>
+    private static string DeriveLanguageCode(string? locale)
+    {
+        if (string.IsNullOrWhiteSpace(locale))
+            return string.Empty;
+
+        string languagePart = locale.Split('-', '_')[0];
+        return Geography.Languages.Get(languagePart)?.Code ?? string.Empty;
+    }
 
     private async Task SaveProfile()
     {
@@ -370,6 +578,7 @@
         {
             _statusMessage = $"Failed to update profile info: {ex.Message}";
             _operationSuccess = false;
+            ErrorCenter?.Report("Profile — Profile info", _statusMessage, ex);
         }
         finally
         {
@@ -416,47 +625,38 @@
 
     private static string FormatCountry(string? countryCode)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(countryCode))
-                return "Not specified";
-            var ri = new RegionInfo(countryCode);
-            return ri.DisplayName;
-        }
-        catch
-        {
-            return countryCode ?? "Not specified";
-        }
+        if (string.IsNullOrWhiteSpace(countryCode))
+            return "Not specified";
+
+        return Geography.Countries.Get(countryCode)?.Name ?? countryCode;
     }
 
     private static string FormatLanguage(string? locale)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(locale))
-                return "Not specified";
-            var culture = CultureInfo.GetCultureInfo(locale);
-            return culture.DisplayName;
-        }
-        catch
-        {
-            return locale ?? "Not specified";
-        }
+        string languageCode = DeriveLanguageCode(locale);
+
+        if (string.IsNullOrWhiteSpace(languageCode))
+            return "Not specified";
+
+        Language? language = Geography.Languages.Get(languageCode);
+
+        if (language is null)
+            return languageCode;
+
+        return language.Name == language.NativeName
+            ? language.Name
+            : $"{language.Name} — {language.NativeName}";
     }
 
     private static string FormatRegionalFormats(string? locale)
     {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(locale))
-                return "Not specified";
-            var culture = CultureInfo.GetCultureInfo(locale);
-            var sample = DateTimeOffset.Now.ToString("f", culture);
-            return $"{culture.DisplayName}; {sample}";
-        }
-        catch
-        {
-            return locale ?? "Not specified";
-        }
+        CultureInfo? culture = TryGetCulture(locale);
+
+        if (culture is null)
+            return string.IsNullOrWhiteSpace(locale) ? "Not specified" : locale!;
+
+        string sample = FormatSample(locale);
+
+        return string.IsNullOrEmpty(sample) ? culture.DisplayName : $"{culture.DisplayName} · {sample}";
     }
 }

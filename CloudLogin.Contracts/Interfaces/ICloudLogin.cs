@@ -89,20 +89,51 @@ public interface ICloudLogin
     // Account-registry surface for the signed-in user (organizations, subscriptions, billing references).
     // Returns empty results when the account registry isn't configured on the host.
     Task<List<CloudLoginOrganization>> GetMyOrganizations();
-    Task<List<AccountSubscription>> GetMySubscriptions();
+
+    /// <summary>
+    /// The signed-in user's subscriptions. By default only the running ones; pass
+    /// <paramref name="includeInactive"/> to include expired, cancelled, and suspended entries.
+    /// </summary>
+    Task<List<AccountSubscription>> GetMySubscriptions(bool includeInactive = false);
+
     Task<AccountBillingProfile?> GetMyBillingProfile();
 
-    /// <summary>Creates a new organization owned by the signed-in user.</summary>
+    /// <summary>How many organizations the signed-in user owns and belongs to, against the host's configured caps.</summary>
+    Task<OrganizationQuota> GetMyOrganizationQuota();
+
+    /// <summary>Creates a new organization owned by the signed-in user. Throws <see cref="OrganizationLimitReachedException"/> once the user's allowance is used up.</summary>
     Task<CloudLoginOrganization> CreateOrganization(string name);
 
     /// <summary>Invites a recipient (email or phone) to an organization the signed-in user owns/administers.</summary>
     Task<CloudLoginOrganizationInvitation> InviteToOrganization(Guid organizationId, string recipient, IReadOnlyList<string>? roles = null);
 
-    /// <summary>Updates an organization's profile fields (Name, BillingEmail, BillingContactName). Caller must be the owner/admin.</summary>
+    /// <summary>Updates an organization's profile and billing information. Caller must be the owner/admin.</summary>
     Task<CloudLoginOrganization> UpdateOrganization(CloudLoginOrganization organization);
 
-    /// <summary>Adds or updates a saved payment-method reference for the signed-in user (or an organization they belong to).</summary>
+    /// <summary>
+    /// The signed-in user's view of one organization — profile, members, subscriptions, and
+    /// billing — in a single call. Null when the user isn't a member of it.
+    /// </summary>
+    Task<OrganizationWorkspace?> GetOrganizationWorkspace(Guid organizationId);
+
+    /// <summary>
+    /// Deletes an organization the signed-in user owns, along with its memberships, invitations,
+    /// billing profile, and removable subscriptions. Throws
+    /// <see cref="OrganizationDeletionBlockedException"/> while a subscription still blocks it.
+    /// </summary>
+    Task DeleteOrganization(Guid organizationId);
+
+    /// <summary>
+    /// Removes a subscription entry the signed-in user (or an organization they administer) owns,
+    /// honouring its <see cref="AccountSubscription.DeletionPolicy"/>.
+    /// </summary>
+    Task DeleteSubscription(Guid subscriptionId);
+
+    /// <summary>Adds or updates a saved payment-method reference for the signed-in user (or an organization they administer).</summary>
     Task<AccountBillingProfile> AddPaymentMethod(AccountPaymentMethodReference method, Guid? organizationId = null);
+
+    /// <summary>Removes a saved payment-method reference from the signed-in user's account (or an organization they administer).</summary>
+    Task<AccountBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? organizationId = null);
 
     /// <summary>Looks up an organization by id, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
     Task<CloudLoginOrganization?> GetOrganizationById(Guid organizationId);
@@ -118,4 +149,41 @@ public interface ICloudLogin
 
     /// <summary>Returns every subscription in the registry, regardless of owner or status. Used by the service-to-service lookup endpoint.</summary>
     Task<List<AccountSubscription>> GetAllSubscriptions();
+
+    // ── Security (self-service, always scoped to the signed-in user) ──────────
+    // No method here takes a user id: the server resolves the acting user from the
+    // authenticated session, so this surface can't be used to reach another account.
+
+    /// <summary>Display-safe summary of the signed-in user's security state. Contains no secrets.</summary>
+    Task<SecurityOverview> GetSecurityOverview();
+
+    /// <summary>The signed-in user's sign-in history, newest first.</summary>
+    Task<List<LoginHistoryEntry>> GetMyLoginHistory();
+
+    /// <summary>Sets or changes the signed-in user's password.</summary>
+    Task ChangeMyPassword(ChangePasswordRequest request);
+
+    /// <summary>Unlinks a provider from the signed-in user's account.</summary>
+    Task DisconnectProvider(string providerCode, string input);
+
+    /// <summary>Begins authenticator-app enrollment, returning the secret and its otpauth URI.</summary>
+    Task<AuthenticatorEnrollmentModel> BeginAuthenticatorEnrollment();
+
+    /// <summary>Confirms enrollment with a code produced by the authenticator app.</summary>
+    Task<bool> ConfirmAuthenticatorEnrollment(string code);
+
+    /// <summary>Removes the authenticator-app enrollment.</summary>
+    Task DisableAuthenticator();
+
+    /// <summary>WebAuthn creation options, as JSON for <c>navigator.credentials.create()</c>.</summary>
+    Task<string> BeginPasskeyRegistration();
+
+    /// <summary>Verifies an attestation response and stores the resulting passkey.</summary>
+    Task<PasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name);
+
+    /// <summary>Removes a registered passkey.</summary>
+    Task RemovePasskey(string credentialId);
+
+    /// <summary>Renames a registered passkey.</summary>
+    Task RenamePasskey(string credentialId, string name);
 }

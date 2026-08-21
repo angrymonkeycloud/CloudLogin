@@ -7,6 +7,13 @@
       "runtimeArgs": ["run", "--project", "demo/CloudLogin.Demo.Embedded/CloudLogin.Demo.Embedded.csproj", "--urls", "http://localhost:7301"],
       "port": 7301,
       "url": "http://localhost:7301"
+    },
+    {
+      "name": "CloudLogin.Demo",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "demo/CloudLogin.Demo/CloudLogin.Demo.csproj", "--urls", "http://localhost:7101"],
+      "port": 7101,
+      "url": "http://localhost:7101"
     }
   ]
 }

@@ -4,12 +4,17 @@ using AngryMonkey.CloudLogin.Interfaces;
 
 namespace CloudLogin.Demo;
 
-public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory)
+public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, Guid ownerUserId)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private bool _initialized;
 
-    public Guid OwnerUserId { get; } = Guid.NewGuid();
+    /// <summary>
+    /// The demo admin's user id, so the seeded organizations, subscriptions, and billing
+    /// belong to the account you sign in as — the account page shows them straight away
+    /// instead of an empty workspace.
+    /// </summary>
+    public Guid OwnerUserId { get; } = ownerUserId;
     public IReadOnlyList<CloudLoginOrganization> Organizations { get; private set; } = [];
     public IReadOnlyList<CloudLoginOrganizationInvitation> Invitations { get; private set; } = [];
 
@@ -31,6 +36,30 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory)
 
             CloudLoginOrganization cedarLabs = await organizations.CreateAsync("Cedar Labs", OwnerUserId);
             CloudLoginOrganization northstarClinic = await organizations.CreateAsync("Northstar Clinic", OwnerUserId);
+
+            // Filled in so the organization workspace has real information and billing details
+            // to show, the way a set-up organization would.
+            cedarLabs.LegalName = "Cedar Labs SARL";
+            cedarLabs.Website = "https://cedarlabs.example";
+            cedarLabs.Phone = "+961 1 000 000";
+            cedarLabs.BillingEmail = "billing@cedarlabs.example";
+            cedarLabs.BillingContactName = "Rita Haddad";
+            cedarLabs.TaxId = "LB-1234567";
+            cedarLabs.BillingAddress = new OrganizationAddress
+            {
+                Line1 = "12 Cedar Street",
+                Line2 = "4th floor",
+                City = "Beirut",
+                PostalCode = "1103",
+                Country = "Lebanon"
+            };
+            cedarLabs = await organizations.UpdateAsync(cedarLabs, OwnerUserId);
+
+            northstarClinic.BillingEmail = "accounts@northstar.example";
+            northstarClinic.BillingContactName = "Dr. Karim Nasr";
+            northstarClinic.BillingAddress = new OrganizationAddress { Line1 = "88 West Bay", City = "Doha", Country = "Qatar" };
+            northstarClinic = await organizations.UpdateAsync(northstarClinic, OwnerUserId);
+
             Organizations = [cedarLabs, northstarClinic];
 
             await AddMemberAsync(accounts, organizations, cedarLabs.Id, ["BillingAdmin", "Developer"], ["billing.manage", "subscriptions.read"]);
@@ -57,6 +86,7 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory)
                     ["premiumModels"] = JsonSerializer.SerializeToElement(true)
                 }
             });
+            // Expired and under the default policy, so the account page offers to remove it.
             await subscriptions.SaveAsync(new()
             {
                 UserId = OwnerUserId,
@@ -66,6 +96,20 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory)
                 ExpiresOn = DateTimeOffset.UtcNow.AddDays(-40),
                 Provider = "Stripe",
                 ProviderReference = "sub_demo_expired"
+            });
+
+            // Long expired but marked Never, to show an entry the account holder can't clear and
+            // that keeps its organization from being deleted.
+            await subscriptions.SaveAsync(new()
+            {
+                OrganizationId = northstarClinic.Id,
+                Application = "clinic-ledger",
+                Reference = "audit-2023",
+                Status = AccountSubscriptionStatuses.Expired,
+                ExpiresOn = DateTimeOffset.UtcNow.AddYears(-1),
+                Provider = "SkipCash",
+                ProviderReference = "sub_demo_audit",
+                DeletionPolicy = SubscriptionDeletionPolicies.Never
             });
             await subscriptions.SaveAsync(new()
             {

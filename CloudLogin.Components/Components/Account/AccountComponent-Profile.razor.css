@@ -136,10 +136,33 @@
   border-radius: 6px;
   font-size: 14px;
   color: #212529;
+  background-color: #fff;
 }
 .form-input:focus {
   outline: none;
   border-color: var(--amc-accentColor);
+  box-shadow: 0 0 0 3px var(--amc-accentColor-soft, rgba(0, 120, 212, 0.12));
+}
+select.form-input {
+  appearance: none;
+  padding-right: 34px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 7.5 10 12l4.5-4.5' stroke='%236c757d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px 16px;
+}
+select.form-input:hover {
+  border-color: #495057;
+}
+.field-preview {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #6c757d;
+}
+.field-preview strong {
+  color: #495057;
+  font-weight: 600;
 }
 .edit-fields {
   display: flex;
@@ -229,8 +252,10 @@
 .kv-row {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 4px;
-  padding: 14px 0;
+  align-items: center;
+  gap: 6px;
+  min-height: 56px;
+  padding: 18px 0;
   border-top: 1px solid #f8f9fa;
 }
 .kv-row:first-child {

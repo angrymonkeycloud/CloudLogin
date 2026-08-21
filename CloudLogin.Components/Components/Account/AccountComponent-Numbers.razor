@@ -1,44 +1,94 @@
-﻿@namespace AngryMonkey.CloudLogin
+@namespace AngryMonkey.CloudLogin
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @inject ICloudLogin cloudLogin
 
-<div class="account-section">
-    <div class="section-header">
-        <h3>Phone Numbers</h3>
-        <p class="section-description">Manage your phone numbers</p>
+<div class="card contacts-card">
+    <div class="card-header">
+        <h4>Phone numbers</h4>
+        @if (!_verification.IsAwaitingCode && !_isAdding)
+        {
+            <button class="link-action" @onclick="StartAdd" disabled="@_isProcessing">Add phone</button>
+        }
     </div>
 
-    <div class="add-input-section">
-        <div class="input-group">
-            <input type="tel" 
-                   class="form-input" 
-                   @bind="NewPhoneNumber" 
-                   placeholder="Add new phone number (e.g., +1 555-123-4567)" 
-                   disabled="@_isProcessing" />
-            <button class="btn btn-secondary" 
-                    @onclick="AddPhoneNumber" 
-                    disabled="@(_isProcessing || string.IsNullOrWhiteSpace(NewPhoneNumber) || !IsValidPhoneNumber(NewPhoneNumber))">
-                @if (_isProcessing)
-                {
-                    <span class="loading-spinner"></span>
-                }
-                else
-                {
-                    <span>Add Phone</span>
-                }
-            </button>
+    @if (_isAdding || _verification.IsAwaitingCode)
+    {
+        <div class="add-panel">
+            @if (!_verification.IsAwaitingCode)
+            {
+                <label class="add-label" for="new-phone">New phone number</label>
+                <div class="add-row">
+                    <input type="tel"
+                           id="new-phone"
+                           class="form-input"
+                           @bind="NewPhoneNumber"
+                           @bind:event="oninput"
+                           placeholder="+1 555-123-4567"
+                           disabled="@_isProcessing" />
+                    <button class="btn btn-primary"
+                            @onclick="SendCode"
+                            disabled="@(_isProcessing || !IsValidPhoneNumber(NewPhoneNumber))">
+                        @if (_isProcessing)
+                        {
+                            <span class="loading-spinner"></span>
+                            <span>Checking…</span>
+                        }
+                        else
+                        {
+                            <span>Send code</span>
+                        }
+                    </button>
+                    <button class="btn btn-outline" @onclick="CancelAdd" disabled="@_isProcessing">Cancel</button>
+                </div>
+                <p class="add-hint">Include the country code (e.g. +1 for US). We'll send a 6-digit code over WhatsApp to confirm the number is yours.</p>
+            }
+            else
+            {
+                <label class="add-label" for="phone-code">Enter the code sent to <strong>@FormatPhoneNumber(_verification.PendingInput)</strong></label>
+                <div class="add-row">
+                    <input type="text"
+                           id="phone-code"
+                           class="form-input code-input"
+                           inputmode="numeric"
+                           maxlength="6"
+                           autocomplete="one-time-code"
+                           @bind="_verification.EnteredCode"
+                           @bind:event="oninput"
+                           placeholder="000000"
+                           disabled="@_isProcessing" />
+                    <button class="btn btn-primary"
+                            @onclick="ConfirmCode"
+                            disabled="@(_isProcessing || string.IsNullOrWhiteSpace(_verification.EnteredCode))">
+                        @if (_isProcessing)
+                        {
+                            <span class="loading-spinner"></span>
+                            <span>Verifying…</span>
+                        }
+                        else
+                        {
+                            <span>Verify &amp; add</span>
+                        }
+                    </button>
+                    <button class="btn btn-outline" @onclick="CancelAdd" disabled="@_isProcessing">Cancel</button>
+                </div>
+                <p class="add-hint">
+                    Didn't get it?
+                    <button class="link-action" @onclick="ResendCode" disabled="@_isProcessing">Resend code</button>
+                </p>
+            }
         </div>
-        <small class="input-hint">Phone number must include country code (e.g., +1 for US)</small>
-    </div>
+    }
 
     @if (CurrentUser.PhoneNumbers.Any())
     {
-        <div class="items-list">
+        <div class="contact-list">
             @foreach (LoginInput phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
             {
-                <div class="item-row">
-                    <div class="item-info">
-                        <span class="item-text">@FormatPhoneNumber(phone.Input)</span>
+                <div class="contact-row">
+                    <div class="contact-main">
+                        <span class="contact-icon" aria-hidden="true"><PersonIcon /></span>
+                        <span class="contact-text">@FormatPhoneNumber(phone.Input)</span>
                         @if (phone.IsPrimary)
                         {
                             <span class="badge badge-primary">Primary</span>
@@ -48,19 +98,19 @@
                             <span class="badge badge-info">@phone.PhoneNumberCountryCode</span>
                         }
                     </div>
-                    <div class="item-actions">
+                    <div class="contact-actions">
                         @if (!phone.IsPrimary)
                         {
-                            <button class="btn btn-outline btn-sm" 
-                                    @onclick="() => SetPrimary(phone.Input)" 
+                            <button class="btn btn-outline btn-sm"
+                                    @onclick="() => SetPrimary(phone.Input)"
                                     disabled="@_isProcessing">
-                                Set Primary
+                                Make primary
                             </button>
                         }
                         @if (CurrentUser.PhoneNumbers.Count > 1 || CurrentUser.EmailAddresses.Any())
                         {
-                            <button class="btn btn-danger btn-sm" 
-                                    @onclick="() => RemovePhoneNumber(phone.Input)" 
+                            <button class="btn btn-danger btn-sm"
+                                    @onclick="() => RemovePhoneNumber(phone.Input)"
                                     disabled="@_isProcessing">
                                 Remove
                             </button>
@@ -88,18 +138,41 @@
 @code {
     [Parameter] public required UserModel CurrentUser { get; set; }
 
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
     private string NewPhoneNumber { get; set; } = string.Empty;
     private bool _isProcessing = false;
+    private bool _isAdding = false;
     private string _statusMessage = string.Empty;
     private bool _operationSuccess = false;
 
-    /// <summary>
-    /// Adds a new phone number to the user's account
-    /// </summary>
-    private async Task AddPhoneNumber()
+    private readonly AccountContactVerification _verification = new();
+
+    private void StartAdd()
     {
-        if (_isProcessing || string.IsNullOrWhiteSpace(NewPhoneNumber) || !IsValidPhoneNumber(NewPhoneNumber))
+        _isAdding = true;
+        NewPhoneNumber = string.Empty;
+        _statusMessage = string.Empty;
+    }
+
+    private void CancelAdd()
+    {
+        _isAdding = false;
+        NewPhoneNumber = string.Empty;
+        _verification.Reset();
+        _statusMessage = string.Empty;
+    }
+
+    /// <summary>
+    /// Confirms the number isn't already taken, then sends a verification code to it.
+    /// The input is not attached to the account until that code comes back.
+    /// </summary>
+    private async Task SendCode()
+    {
+        if (_isProcessing || !IsValidPhoneNumber(NewPhoneNumber))
             return;
+
+        string normalized = NormalizePhoneNumber(NewPhoneNumber);
 
         try
         {
@@ -107,56 +180,110 @@
             _statusMessage = string.Empty;
             StateHasChanged();
 
-            // Normalize phone number
-            string normalizedPhone = NormalizePhoneNumber(NewPhoneNumber);
-
-            // Check if phone already exists
-            if (CurrentUser.PhoneNumbers.Any(p => p.Input.Equals(normalizedPhone, StringComparison.OrdinalIgnoreCase)))
+            if (CurrentUser.PhoneNumbers.Any(p => p.Input.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
             {
-                _statusMessage = "This phone number is already associated with your account.";
-                _operationSuccess = false;
+                SetStatus("This phone number is already on your account.", false);
                 return;
             }
 
-            // Check if phone exists in system for another user
-            UserModel? existingUser = await cloudLogin.GetUserByPhoneNumber(normalizedPhone);
+            UserModel? existingUser = await cloudLogin.GetUserByPhoneNumber(normalized);
             if (existingUser != null && existingUser.ID != CurrentUser.ID)
             {
-                _statusMessage = "This phone number is already in use by another account.";
-                _operationSuccess = false;
+                SetStatus("This phone number is already in use by another account.", false);
                 return;
             }
 
-            var newPhoneInput = new LoginInput
-            {
-                Input = normalizedPhone,
-                Format = InputFormat.PhoneNumber,
-                IsPrimary = !CurrentUser.PhoneNumbers.Any() && !CurrentUser.EmailAddresses.Any(), // First contact becomes primary
-                Providers = []
-            };
+            string code = _verification.Start(normalized);
+            await cloudLogin.SendWhatsAppCode(normalized, code);
 
-            // Extract country information if available through CloudLogin service
-            try
-            {
-                string formattedNumber = cloudLogin.GetPhoneNumber(normalizedPhone);
-                // Additional phone number processing could be added here
-            }
-            catch
-            {
-                // Continue without additional formatting if service unavailable
-            }
-
-            CurrentUser.Inputs.Add(newPhoneInput);
-            await cloudLogin.UpdateUser(CurrentUser);
-            
-            NewPhoneNumber = string.Empty;
-            _statusMessage = "Phone number added successfully.";
-            _operationSuccess = true;
+            SetStatus($"We sent a code to {FormatPhoneNumber(normalized)}.", true);
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to add phone number: {ex.Message}";
-            _operationSuccess = false;
+            _verification.Reset();
+            SetStatus($"Failed to send verification code: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Phone numbers", _statusMessage, ex);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ResendCode()
+    {
+        if (_isProcessing || !_verification.IsAwaitingCode)
+            return;
+
+        try
+        {
+            _isProcessing = true;
+            StateHasChanged();
+
+            string code = _verification.Reissue();
+            await cloudLogin.SendWhatsAppCode(_verification.PendingInput, code);
+
+            SetStatus($"We sent a new code to {FormatPhoneNumber(_verification.PendingInput)}.", true);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Failed to resend code: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Phone numbers", _statusMessage, ex);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>Validates the entered code and, only on success, persists the new number.</summary>
+    private async Task ConfirmCode()
+    {
+        if (_isProcessing || !_verification.IsAwaitingCode)
+            return;
+
+        switch (_verification.Check())
+        {
+            case VerificationCodeResult.NotValid:
+                SetStatus("That code isn't correct. Please check and try again.", false);
+                return;
+
+            case VerificationCodeResult.Expired:
+                SetStatus("That code has expired. Request a new one.", false);
+                return;
+        }
+
+        try
+        {
+            _isProcessing = true;
+            StateHasChanged();
+
+            string verifiedInput = _verification.PendingInput;
+
+            LoginInput newPhoneInput = new()
+            {
+                Input = verifiedInput,
+                Format = InputFormat.PhoneNumber,
+                // First contact of any kind becomes primary.
+                IsPrimary = !CurrentUser.PhoneNumbers.Any() && !CurrentUser.EmailAddresses.Any(),
+                Providers = []
+            };
+
+            CurrentUser.Inputs.Add(newPhoneInput);
+            await cloudLogin.UpdateUser(CurrentUser);
+
+            _verification.Reset();
+            _isAdding = false;
+            NewPhoneNumber = string.Empty;
+
+            SetStatus("Phone number verified and added.", true);
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Failed to add phone number: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Phone numbers", _statusMessage, ex);
         }
         finally
         {
@@ -177,8 +304,7 @@
         // Ensure user has at least one contact method
         if (CurrentUser.PhoneNumbers.Count <= 1 && !CurrentUser.EmailAddresses.Any())
         {
-            _statusMessage = "You must have at least one contact method (email or phone).";
-            _operationSuccess = false;
+            SetStatus("You must have at least one contact method (email or phone).", false);
             await ClearStatusMessageAfterDelay();
             return;
         }
@@ -189,14 +315,13 @@
             _statusMessage = string.Empty;
             StateHasChanged();
 
-            var phoneToRemove = CurrentUser.Inputs.FirstOrDefault(p => 
-                p.Format == InputFormat.PhoneNumber && 
+            var phoneToRemove = CurrentUser.Inputs.FirstOrDefault(p =>
+                p.Format == InputFormat.PhoneNumber &&
                 p.Input.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase));
 
             if (phoneToRemove == null)
             {
-                _statusMessage = "Phone number not found.";
-                _operationSuccess = false;
+                SetStatus("Phone number not found.", false);
                 return;
             }
 
@@ -211,14 +336,13 @@
 
             CurrentUser.Inputs.Remove(phoneToRemove);
             await cloudLogin.UpdateUser(CurrentUser);
-            
-            _statusMessage = "Phone number removed successfully.";
-            _operationSuccess = true;
+
+            SetStatus("Phone number removed successfully.", true);
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to remove phone number: {ex.Message}";
-            _operationSuccess = false;
+            SetStatus($"Failed to remove phone number: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Phone numbers", _statusMessage, ex);
         }
         finally
         {
@@ -244,18 +368,17 @@
 
             // Update primary status for all inputs
             foreach (var input in CurrentUser.Inputs)
-                input.IsPrimary = input.Format == InputFormat.PhoneNumber && 
+                input.IsPrimary = input.Format == InputFormat.PhoneNumber &&
                                  input.Input.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase);
 
             await cloudLogin.UpdateUser(CurrentUser);
-            
-            _statusMessage = "Primary phone number updated successfully.";
-            _operationSuccess = true;
+
+            SetStatus("Primary phone number updated successfully.", true);
         }
         catch (Exception ex)
         {
-            _statusMessage = $"Failed to update primary phone number: {ex.Message}";
-            _operationSuccess = false;
+            SetStatus($"Failed to update primary phone number: {ex.Message}", false);
+            ErrorCenter?.Report("Profile — Phone numbers", _statusMessage, ex);
         }
         finally
         {
@@ -263,6 +386,12 @@
             StateHasChanged();
             await ClearStatusMessageAfterDelay();
         }
+    }
+
+    private void SetStatus(string message, bool success)
+    {
+        _statusMessage = message;
+        _operationSuccess = success;
     }
 
     /// <summary>
@@ -288,7 +417,7 @@
 
         // Remove all non-digit characters except +
         string cleaned = System.Text.RegularExpressions.Regex.Replace(phoneNumber.Trim(), @"[^\d+]", "");
-        
+
         // Ensure it starts with +
         if (!cleaned.StartsWith('+'))
             cleaned = "+" + cleaned;

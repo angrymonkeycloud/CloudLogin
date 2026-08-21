@@ -11,9 +11,13 @@ DemoInMemoryCloudLoginStore demoStore = new();
 
 // Seeded so the Admin tab in the Account UI (gated by UserModel.IsGlobalAdmin) is reachable
 // without any manual setup: pick "Demo Admin" from the Test Mode user list on the login screen.
+// The account registry seeds against this same id, so the organizations, subscriptions, and
+// billing below all belong to the account you sign in as.
+Guid demoAdminUserId = Guid.NewGuid();
+
 await demoStore.Create(new UserModel
 {
-    ID = Guid.NewGuid(),
+    ID = demoAdminUserId,
     FirstName = "Demo",
     LastName = "Admin",
     DisplayName = "Demo Admin (Global Admin)",
@@ -26,7 +30,7 @@ await demoStore.Create(new UserModel
 builder.Services.AddSingleton(demoInbox);
 builder.Services.AddSingleton<ICloudLoginStore>(demoStore);
 builder.Services.AddCloudLoginAccountRegistry();
-builder.Services.AddSingleton<DemoAccountRegistrySeed>();
+builder.Services.AddSingleton(services => new DemoAccountRegistrySeed(services.GetRequiredService<IServiceScopeFactory>(), demoAdminUserId));
 
 builder.AddCloudLoginWeb(options =>
 {
@@ -52,7 +56,12 @@ builder.AddCloudLoginWeb(options =>
     };
 
     options.Subscription = new();
-    options.Organization = new();
+    // Both caps are optional; omit them for the defaults (3 owned, 10 memberships).
+    options.Organization = new()
+    {
+        MaxOwnedPerUser = 3,
+        MaxPerUser = 6
+    };
     options.Payment = new();
 
     // Matches the fixed port used by demo/CloudLogin.Demo.Consumer.

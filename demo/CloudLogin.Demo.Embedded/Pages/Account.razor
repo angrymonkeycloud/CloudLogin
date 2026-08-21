@@ -1,4 +1,5 @@
 @page "/account"
+@page "/account/{*Path}"
 
 <PageTitle>CloudLogin account and administration demo</PageTitle>
 
@@ -9,7 +10,7 @@
 <div class="demo-boundary-banner"><span>SHIPPED COMPONENT</span><strong>&lt;AccountPageComponent /&gt;</strong><small>Overview · Profile · Emails · Phone Numbers · Admin · Logout · Delete</small></div>
 
 <DemoExample Title="Account management and global administration" Kind="Live account component" Artifact="PACKAGE COMPONENT" Description="Sign in through the authentication page first. Test accounts can update profile data and delete themselves; Demo Admin can also manage users." Code="@DemoCodeSamples.Account" FileName="Account.razor">
-    <div class="demo-account-stage"><AccountPageComponent /></div>
+    <div class="demo-account-stage"><AccountPageComponent BasePath="/account" /></div>
 </DemoExample>
 
 <section class="demo-account-capabilities">
@@ -18,3 +19,13 @@
     <article><span>Administration</span><strong>Role-gated user directory</strong><p>Available only when IsGlobalAdmin is true.</p></article>
     <article><span>Lifecycle</span><strong>Logout and test deletion</strong><p>Real session termination and account cleanup paths.</p></article>
 </section>
+
+@code {
+    /// <summary>
+    /// Unused: exists only so "/account/{*Path}" matches every account sub-page instead of
+    /// 404ing before the interactive component boots. See CloudLogin.Web/Pages/Account.razor
+    /// for the same pattern with a fuller explanation.
+    /// </summary>
+    [Parameter]
+    public string? Path { get; set; }
+}

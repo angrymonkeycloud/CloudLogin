@@ -1,4 +1,5 @@
 @page "/Account"
+@page "/Account/{*Path}"
 @using AngryMonkey.CloudBlazor.Web
 @using AngryMonkey.CloudLogin.Server
 @inject CloudLoginWebConfiguration Configuration
@@ -15,6 +16,15 @@
                                                     EnablePayments="@(Configuration.Payment is not null)" />
 
 @code{
+    /// <summary>
+    /// The tail of the URL after "/Account" (e.g. "Profile", "Org/{id}/Subscriptions"). Unused
+    /// here on purpose: it exists only so this route matches every account sub-page and the
+    /// server doesn't 404 before the interactive component boots. AccountComponent resolves
+    /// the active tab itself, directly from the browser's current URL.
+    /// </summary>
+    [Parameter]
+    public string? Path { get; set; }
+
     [SupplyParameterFromQuery]
     public string? Referer { get; set; }
 

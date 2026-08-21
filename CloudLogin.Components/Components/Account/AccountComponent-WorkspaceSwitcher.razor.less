@@ -1,0 +1,420 @@
+@import (reference) "../../Src/variable.less";
+
+// This component renders inside AccountComponent's rail, so it inherits that component's
+// brand/rail custom properties (--cloudlogin-brand*, --rail-width-*) and its own icon theming
+// (::deep .amc-svg-stroke/-fill) rather than redefining them here.
+
+.workspace-switcher {
+    position: relative;
+}
+
+// ── Trigger ──────────────────────────────────────────────────
+// Deliberately styled like the tab buttons around it so the switcher reads as part of the
+// same rail, not a bolted-on control — the chevron is the only tell that it opens something.
+
+.workspace-trigger {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 50px;
+    padding: 0 13px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: background-color .12s ease, border-color .12s ease;
+}
+
+.workspace-trigger:hover,
+.workspace-trigger._open {
+    background: #f2f2f2;
+}
+
+.workspace-trigger._open {
+    border-color: #e4e4e4;
+}
+
+.workspace-trigger-mark {
+    display: grid;
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 8px;
+    background: #eef0f2;
+    color: #4b4b4b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.workspace-trigger-mark._personal {
+    background: var(--cloudlogin-brand-soft);
+    color: var(--cloudlogin-brand-strong);
+}
+
+.workspace-trigger-mark ::deep svg {
+    width: 15px;
+    height: 15px;
+}
+
+// Shown/hidden state comes from the shared ".tab-label" rule (AccountComponent.razor.less):
+// display:none by default, display:block once the rail is expanded or at desktop width.
+// Matching ".profile-mini-copy" above it, the two lines are block-level so they stack without
+// needing this container itself to be a flex box.
+.workspace-trigger-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.workspace-trigger-eyebrow {
+    display: block;
+    color: #8a8886;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.workspace-trigger-name {
+    display: block;
+    overflow: hidden;
+    color: #161616;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workspace-trigger-chevron {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    color: #8a8886;
+    transform: rotate(-90deg);
+    transition: transform .15s ease;
+}
+
+.workspace-trigger._open .workspace-trigger-chevron {
+    transform: rotate(0deg);
+}
+
+.workspace-trigger-chevron ::deep svg {
+    width: 14px;
+    height: 14px;
+}
+
+// ── Backdrop ─────────────────────────────────────────────────
+
+.workspace-menu-backdrop {
+    position: fixed;
+    z-index: 60;
+    inset: 0;
+    background: transparent;
+}
+
+// ── Menu card ────────────────────────────────────────────────
+// position: fixed so the card escapes the rail's own clipping (the collapsed rail hides
+// overflow, and the tab list scrolls) regardless of where the trigger sits in the DOM. The
+// left/top offsets below line up with the rail's fixed geometry; the media queries retarget
+// them for the collapsed, expanded-mobile, and permanently-expanded desktop rail widths.
+
+.workspace-menu {
+    position: fixed;
+    z-index: 61;
+    top: 190px;
+    left: 78px;
+    display: flex;
+    width: 300px;
+    // Collapsed rail sits at left:78px, so the safe margin has to account for that offset too
+    // (not just a flat viewport margin) or a narrow phone clips the card's right edge.
+    max-width: calc(100vw - 90px);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e4e4e4;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.06);
+    animation: cloudlogin-workspace-menu-in .12s ease;
+}
+
+@keyframes cloudlogin-workspace-menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.account-management .sidebar._open .workspace-menu {
+    left: 16px;
+    max-width: calc(100vw - 32px);
+}
+
+.workspace-menu-header {
+    padding: 14px 16px 8px;
+    color: #8a8886;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.workspace-menu-list {
+    max-height: ~"min(360px, 50vh)";
+    overflow-y: auto;
+    padding: 4px 8px;
+}
+
+.workspace-menu-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: background-color .12s ease;
+}
+
+.workspace-menu-item:hover {
+    background: #f5f5f5;
+}
+
+.workspace-menu-item._active {
+    background: var(--cloudlogin-brand-soft);
+}
+
+.workspace-menu-item-mark {
+    display: grid;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 8px;
+    background: #eef0f2;
+    color: #4b4b4b;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.workspace-menu-item-mark._personal {
+    background: var(--cloudlogin-brand-soft);
+    color: var(--cloudlogin-brand-strong);
+}
+
+.workspace-menu-item-mark ::deep svg {
+    width: 16px;
+    height: 16px;
+}
+
+.workspace-menu-item-copy {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.workspace-menu-item-name {
+    overflow: hidden;
+    color: #161616;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workspace-menu-item-meta {
+    overflow: hidden;
+    color: #8a8886;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workspace-menu-item-check {
+    display: grid;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    place-items: center;
+    color: var(--cloudlogin-brand);
+}
+
+.workspace-menu-item-check ::deep svg {
+    width: 14px;
+    height: 14px;
+}
+
+.workspace-menu-divider {
+    height: 1px;
+    margin: 4px 12px;
+    background: #eee;
+}
+
+.workspace-menu-add {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    margin: 4px 8px 8px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--cloudlogin-brand-strong);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: left;
+    transition: background-color .12s ease;
+}
+
+.workspace-menu-add:hover {
+    background: var(--cloudlogin-brand-soft);
+}
+
+.workspace-menu-add-icon {
+    display: grid;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--cloudlogin-brand-soft);
+    color: var(--cloudlogin-brand-strong);
+}
+
+.workspace-menu-add-icon ::deep svg {
+    width: 13px;
+    height: 13px;
+}
+
+// ── Create-organization step ─────────────────────────────────
+// Swaps into the same card rather than opening a second surface — creating an organization
+// is a small enough act that a whole new page or modal would overstate it.
+
+.workspace-menu-create {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 16px 16px;
+}
+
+.workspace-menu-create-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 2px;
+    color: #161616;
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+.workspace-menu-back {
+    display: grid;
+    flex: 0 0 26px;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #4b4b4b;
+    cursor: pointer;
+    transition: background-color .12s ease;
+}
+
+.workspace-menu-back:hover {
+    background: #f2f2f2;
+}
+
+.workspace-menu-back-icon {
+    display: grid;
+    width: 14px;
+    height: 14px;
+    place-items: center;
+    transform: rotate(90deg);
+}
+
+.workspace-menu-back-icon ::deep svg {
+    width: 14px;
+    height: 14px;
+}
+
+.workspace-menu-input {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 12px;
+    border: 1px solid #c8c6c4;
+    border-radius: 7px;
+    background: #fff;
+    color: #242424;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .12s ease, box-shadow .12s ease;
+}
+
+.workspace-menu-input:focus {
+    border-color: var(--cloudlogin-brand);
+    box-shadow: 0 0 0 3px var(--cloudlogin-brand-soft);
+}
+
+.workspace-menu-input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.workspace-menu-create-submit {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--cloudlogin-brand);
+    border-radius: 7px;
+    background: var(--cloudlogin-brand);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.workspace-menu-create-submit:hover:not(:disabled) {
+    border-color: var(--cloudlogin-brand-strong);
+    background: var(--cloudlogin-brand-strong);
+}
+
+.workspace-menu-create-submit:disabled {
+    cursor: not-allowed;
+    opacity: .55;
+}
+
+@media @media-large {
+    .workspace-trigger {
+        padding: 0 12px;
+    }
+
+    .workspace-menu {
+        top: 142px;
+        left: 16px;
+        max-width: calc(100vw - 32px);
+    }
+}

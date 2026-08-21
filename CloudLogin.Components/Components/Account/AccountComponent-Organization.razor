@@ -1,0 +1,591 @@
+@using AngryMonkey.CloudLogin.Interfaces
+@inject ICloudLogin cloudLogin
+
+@namespace AngryMonkey.CloudLogin
+
+@* One organization, presented the way the personal account is: an identity header, its own
+   information and billing details, its people, and a danger zone the owner alone can reach. *@
+
+<div class="account-section organization-page">
+    <div class="section-header">
+        <h3>@Organization.Name</h3>
+        <p class="section-description">Everything this organization owns — its details, people, plans, and billing.</p>
+    </div>
+
+    <div class="card identity-card">
+        <div class="identity">
+            <div class="identity-mark" aria-hidden="true">@AccountDisplayHelpers.Initials(Organization.Name)</div>
+            <div class="identity-copy">
+                <div class="identity-name">@Organization.Name</div>
+                <div class="identity-meta">
+                    Created @Organization.CreatedOn.ToLocalTime().ToString("MMMM dd, yyyy")
+                    @if (Organization.UpdatedOn is DateTimeOffset updated)
+                    {
+                        <span aria-hidden="true">&middot;</span>
+                        <text>Updated @updated.ToLocalTime().ToString("MMMM dd, yyyy")</text>
+                    }
+                </div>
+                <div class="identity-chips">
+                    @if (Workspace.IsOwner)
+                    {
+                        <span class="chip chip--owner">Owner</span>
+                    }
+                    else
+                    {
+                        @foreach (string role in Workspace.Roles.Take(3))
+                        {
+                            <span class="chip">@role</span>
+                        }
+                        @if (Workspace.Roles.Count == 0)
+                        {
+                            <span class="chip">Member</span>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-row">
+            <button type="button" class="stat" @onclick='() => Navigate("Subscriptions")'>
+                <span class="stat-value">@RunningSubscriptions</span>
+                <span class="stat-label">Active subscription@(RunningSubscriptions == 1 ? "" : "s")</span>
+            </button>
+            <button type="button" class="stat" @onclick='() => Navigate("PaymentMethods")' disabled="@(!Workspace.CanManage)">
+                <span class="stat-value">@(Workspace.BillingProfile?.PaymentMethods.Count ?? 0)</span>
+                <span class="stat-label">Payment method@((Workspace.BillingProfile?.PaymentMethods.Count ?? 0) == 1 ? "" : "s")</span>
+            </button>
+            <div class="stat _static">
+                <span class="stat-value">@Workspace.Members.Count</span>
+                <span class="stat-label">Member@(Workspace.Members.Count == 1 ? "" : "s")</span>
+            </div>
+        </div>
+    </div>
+
+    @* ── Information ──────────────────────────────────────── *@
+    <div class="card">
+        <div class="card-header">
+            <h4>Information</h4>
+            @if (Workspace.CanManage && !_editingProfile)
+            {
+                <button class="link-action" @onclick="StartProfileEdit" disabled="@_busy">Edit</button>
+            }
+        </div>
+
+        @if (_editingProfile)
+        {
+            <div class="stack">
+                <div class="field-grid">
+                    <div class="field">
+                        <label class="field-label" for="org-name">Organization name</label>
+                        <input id="org-name" class="form-input" @bind="_name" @bind:event="oninput" disabled="@_busy" />
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="org-legal">Legal name</label>
+                        <input id="org-legal" class="form-input" @bind="_legalName" placeholder="Registered entity name" disabled="@_busy" />
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="org-website">Website</label>
+                        <input id="org-website" class="form-input" @bind="_website" placeholder="https://example.com" disabled="@_busy" />
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="org-phone">Phone</label>
+                        <input id="org-phone" class="form-input" @bind="_phone" placeholder="+1 555 0100" disabled="@_busy" />
+                    </div>
+                </div>
+                <div class="row-actions">
+                    <button class="btn btn-primary" @onclick="SaveProfile" disabled="@(_busy || string.IsNullOrWhiteSpace(_name))">Save changes</button>
+                    <button class="btn btn-outline" @onclick="() => _editingProfile = false" disabled="@_busy">Cancel</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <dl class="detail-list">
+                <div class="detail-row">
+                    <dt>Organization name</dt>
+                    <dd>@Organization.Name</dd>
+                </div>
+                <div class="detail-row">
+                    <dt>Legal name</dt>
+                    <dd class="@Muted(Organization.LegalName)">@Or(Organization.LegalName)</dd>
+                </div>
+                <div class="detail-row">
+                    <dt>Website</dt>
+                    <dd class="@Muted(Organization.Website)">@Or(Organization.Website)</dd>
+                </div>
+                <div class="detail-row">
+                    <dt>Phone</dt>
+                    <dd class="@Muted(Organization.Phone)">@Or(Organization.Phone)</dd>
+                </div>
+                <div class="detail-row">
+                    <dt>Organization ID</dt>
+                    <dd><code class="identifier">@Organization.Id</code></dd>
+                </div>
+            </dl>
+        }
+    </div>
+
+    @* ── Billing information ──────────────────────────────── *@
+    @if (Workspace.CanManage)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h4>Billing information</h4>
+                @if (!_editingBilling)
+                {
+                    <button class="link-action" @onclick="StartBillingEdit" disabled="@_busy">Edit</button>
+                }
+            </div>
+
+            @if (_editingBilling)
+            {
+                <div class="stack">
+                    <div class="field-grid">
+                        <div class="field">
+                            <label class="field-label" for="org-billing-email">Billing email</label>
+                            <input id="org-billing-email" class="form-input" @bind="_billingEmail" placeholder="billing@company.com" disabled="@_busy" />
+                        </div>
+                        <div class="field">
+                            <label class="field-label" for="org-billing-contact">Billing contact</label>
+                            <input id="org-billing-contact" class="form-input" @bind="_billingContactName" placeholder="Contact name" disabled="@_busy" />
+                        </div>
+                        <div class="field">
+                            <label class="field-label" for="org-tax">Tax / VAT number</label>
+                            <input id="org-tax" class="form-input" @bind="_taxId" disabled="@_busy" />
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <span class="field-group-label">Billing address</span>
+                        <div class="field-grid">
+                            <div class="field _wide">
+                                <label class="field-label" for="org-line1">Address line 1</label>
+                                <input id="org-line1" class="form-input" @bind="_line1" disabled="@_busy" />
+                            </div>
+                            <div class="field _wide">
+                                <label class="field-label" for="org-line2">Address line 2</label>
+                                <input id="org-line2" class="form-input" @bind="_line2" disabled="@_busy" />
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="org-city">City</label>
+                                <input id="org-city" class="form-input" @bind="_city" disabled="@_busy" />
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="org-state">State / region</label>
+                                <input id="org-state" class="form-input" @bind="_state" disabled="@_busy" />
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="org-postal">Postal code</label>
+                                <input id="org-postal" class="form-input" @bind="_postalCode" disabled="@_busy" />
+                            </div>
+                            <div class="field">
+                                <label class="field-label" for="org-country">Country</label>
+                                <input id="org-country" class="form-input" @bind="_country" disabled="@_busy" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row-actions">
+                        <button class="btn btn-primary" @onclick="SaveBilling" disabled="@_busy">Save changes</button>
+                        <button class="btn btn-outline" @onclick="() => _editingBilling = false" disabled="@_busy">Cancel</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <dl class="detail-list">
+                    <div class="detail-row">
+                        <dt>Billing email</dt>
+                        <dd class="@Muted(Organization.BillingEmail)">@Or(Organization.BillingEmail)</dd>
+                    </div>
+                    <div class="detail-row">
+                        <dt>Billing contact</dt>
+                        <dd class="@Muted(Organization.BillingContactName)">@Or(Organization.BillingContactName)</dd>
+                    </div>
+                    <div class="detail-row">
+                        <dt>Tax / VAT number</dt>
+                        <dd class="@Muted(Organization.TaxId)">@Or(Organization.TaxId)</dd>
+                    </div>
+                    <div class="detail-row">
+                        <dt>Billing address</dt>
+                        <dd class="@(Organization.BillingAddress.IsEmpty ? "_muted" : null)">
+                            @(Organization.BillingAddress.IsEmpty ? "Not specified" : Organization.BillingAddress.ToString())
+                        </dd>
+                    </div>
+                    <div class="detail-row">
+                        <dt>Billing account</dt>
+                        <dd class="@Muted(Workspace.BillingProfile?.ProviderCustomerReference)">@Or(Workspace.BillingProfile?.ProviderCustomerReference, "No provider customer linked")</dd>
+                    </div>
+                </dl>
+            }
+        </div>
+    }
+
+    @* ── Members ──────────────────────────────────────────── *@
+    <div class="card">
+        <div class="card-header">
+            <h4>Members</h4>
+            @if (Workspace.CanManage && !_inviting)
+            {
+                <button class="link-action" @onclick="StartInvite" disabled="@_busy">Invite someone</button>
+            }
+        </div>
+
+        @if (_inviting)
+        {
+            <div class="stack">
+                <div class="field">
+                    <label class="field-label" for="org-invite">Email address or phone number</label>
+                    <input id="org-invite" class="form-input" @bind="_inviteRecipient" @bind:event="oninput" placeholder="teammate@company.com" disabled="@_busy" />
+                </div>
+                <div class="row-actions">
+                    <button class="btn btn-primary" @onclick="SendInvite" disabled="@(_busy || string.IsNullOrWhiteSpace(_inviteRecipient))">Send invitation</button>
+                    <button class="btn btn-outline" @onclick="() => _inviting = false" disabled="@_busy">Cancel</button>
+                </div>
+            </div>
+        }
+
+        <div class="entry-list">
+            @foreach (OrganizationMemberProfile member in Workspace.Members)
+            {
+                <div class="entry-row">
+                    @if (!string.IsNullOrWhiteSpace(member.ProfilePicture))
+                    {
+                        <img class="entry-avatar" src="@member.ProfilePicture" alt="" />
+                    }
+                    else
+                    {
+                        <span class="entry-avatar initials" aria-hidden="true">@AccountDisplayHelpers.Initials(member.Label)</span>
+                    }
+                    <div class="entry-copy">
+                        <span class="entry-title">@member.Label</span>
+                        <span class="entry-meta">
+                            @if (!string.IsNullOrWhiteSpace(member.EmailAddress) && member.EmailAddress != member.Label)
+                            {
+                                @member.EmailAddress
+                                <span aria-hidden="true">&middot;</span>
+                            }
+                            Joined @member.JoinedOn.ToLocalTime().ToString("MMMM dd, yyyy")
+                        </span>
+                    </div>
+                    <div class="entry-tags">
+                        @if (member.IsOwner)
+                        {
+                            <span class="chip chip--owner">Owner</span>
+                        }
+                        @foreach (string role in member.Roles.Where(role => !role.Equals("Owner", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            <span class="chip">@role</span>
+                        }
+                        @if (member.State != OrganizationMembershipStates.Active)
+                        {
+                            <span class="chip chip--muted">@member.State</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── Danger zone ──────────────────────────────────────── *@
+    @if (Workspace.Deletion is OrganizationDeletionReport report)
+    {
+        <div class="card danger-card">
+            <div class="card-header">
+                <h4>Delete organization</h4>
+            </div>
+
+            @if (!report.CanDelete)
+            {
+                <p class="card-note">This organization can't be deleted yet.</p>
+                <ul class="blocker-list">
+                    @foreach (string reason in report.Reasons)
+                    {
+                        <li>@reason</li>
+                    }
+                </ul>
+            }
+            else if (!_confirmingDelete)
+            {
+                <p class="card-note">
+                    Deleting <strong>@Organization.Name</strong> permanently removes its billing details, saved payment
+                    references, and subscription records. This can't be undone.
+                </p>
+                <div class="row-actions">
+                    <button class="btn btn-danger" @onclick="StartDelete" disabled="@_busy">Delete organization</button>
+                </div>
+            }
+            else
+            {
+                <div class="stack">
+                    <p class="card-note">Deleting this organization will also remove:</p>
+                    <ul class="blocker-list">
+                        @if (report.OtherMemberCount > 0)
+                        {
+                            <li>@report.OtherMemberCount other member@(report.OtherMemberCount == 1 ? "" : "s") lose access.</li>
+                        }
+                        @if (report.RemovableSubscriptionCount > 0)
+                        {
+                            <li>@report.RemovableSubscriptionCount subscription record@(report.RemovableSubscriptionCount == 1 ? "" : "s").</li>
+                        }
+                        @if (report.PaymentMethodCount > 0)
+                        {
+                            <li>@report.PaymentMethodCount saved payment reference@(report.PaymentMethodCount == 1 ? "" : "s").</li>
+                        }
+                        <li>Its billing information and every invitation still pending.</li>
+                    </ul>
+                    <div class="field">
+                        <label class="field-label" for="org-confirm">Type <strong>@Organization.Name</strong> to confirm</label>
+                        <input id="org-confirm" class="form-input" @bind="_deleteConfirmation" @bind:event="oninput" autocomplete="off" disabled="@_busy" />
+                    </div>
+                    <div class="row-actions">
+                        <button class="btn btn-danger" @onclick="ConfirmDelete" disabled="@(_busy || !DeleteConfirmed)">
+                            @(_busy ? "Deleting…" : "Delete permanently")
+                        </button>
+                        <button class="btn btn-outline" @onclick="() => _confirmingDelete = false" disabled="@_busy">Cancel</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="@(_success ? "alert-success" : "alert-error")" role="status">@_message</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required OrganizationWorkspace Workspace { get; set; }
+
+    /// <summary>Asks the parent to reload this workspace after a change lands.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    /// <summary>Raised once the organization is gone, so the parent can leave its context.</summary>
+    [Parameter] public EventCallback OnDeleted { get; set; }
+
+    [Parameter] public EventCallback<string> OnNavigateToTab { get; set; }
+
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
+    private CloudLoginOrganization Organization => Workspace.Organization;
+    private int RunningSubscriptions => Workspace.Subscriptions.Count(subscription => subscription.IsRunning);
+
+    private bool _busy;
+    private string _message = string.Empty;
+    private bool _success;
+
+    private bool _editingProfile;
+    private string _name = string.Empty;
+    private string _legalName = string.Empty;
+    private string _website = string.Empty;
+    private string _phone = string.Empty;
+
+    private bool _editingBilling;
+    private string _billingEmail = string.Empty;
+    private string _billingContactName = string.Empty;
+    private string _taxId = string.Empty;
+    private string _line1 = string.Empty;
+    private string _line2 = string.Empty;
+    private string _city = string.Empty;
+    private string _state = string.Empty;
+    private string _postalCode = string.Empty;
+    private string _country = string.Empty;
+
+    private bool _inviting;
+    private string _inviteRecipient = string.Empty;
+
+    private bool _confirmingDelete;
+    private string _deleteConfirmation = string.Empty;
+
+    private bool DeleteConfirmed => string.Equals(_deleteConfirmation.Trim(), Organization.Name, StringComparison.OrdinalIgnoreCase);
+
+    private void StartProfileEdit()
+    {
+        _editingProfile = true;
+        _message = string.Empty;
+        _name = Organization.Name;
+        _legalName = Organization.LegalName ?? string.Empty;
+        _website = Organization.Website ?? string.Empty;
+        _phone = Organization.Phone ?? string.Empty;
+    }
+
+    private void StartBillingEdit()
+    {
+        _editingBilling = true;
+        _message = string.Empty;
+        _billingEmail = Organization.BillingEmail ?? string.Empty;
+        _billingContactName = Organization.BillingContactName ?? string.Empty;
+        _taxId = Organization.TaxId ?? string.Empty;
+        _line1 = Organization.BillingAddress.Line1 ?? string.Empty;
+        _line2 = Organization.BillingAddress.Line2 ?? string.Empty;
+        _city = Organization.BillingAddress.City ?? string.Empty;
+        _state = Organization.BillingAddress.State ?? string.Empty;
+        _postalCode = Organization.BillingAddress.PostalCode ?? string.Empty;
+        _country = Organization.BillingAddress.Country ?? string.Empty;
+    }
+
+    private void StartInvite()
+    {
+        _inviting = true;
+        _inviteRecipient = string.Empty;
+        _message = string.Empty;
+    }
+
+    private void StartDelete()
+    {
+        _confirmingDelete = true;
+        _deleteConfirmation = string.Empty;
+        _message = string.Empty;
+    }
+
+    private async Task SaveProfile()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+            return;
+
+        await Submit("Organization details saved.", async () =>
+        {
+            CloudLoginOrganization payload = Snapshot();
+            payload.Name = _name.Trim();
+            payload.LegalName = _legalName;
+            payload.Website = _website;
+            payload.Phone = _phone;
+
+            await cloudLogin.UpdateOrganization(payload);
+            _editingProfile = false;
+        });
+    }
+
+    private async Task SaveBilling()
+        => await Submit("Billing information saved.", async () =>
+        {
+            CloudLoginOrganization payload = Snapshot();
+            payload.BillingEmail = _billingEmail;
+            payload.BillingContactName = _billingContactName;
+            payload.TaxId = _taxId;
+            payload.BillingAddress = new OrganizationAddress
+            {
+                Line1 = _line1,
+                Line2 = _line2,
+                City = _city,
+                State = _state,
+                PostalCode = _postalCode,
+                Country = _country
+            };
+
+            await cloudLogin.UpdateOrganization(payload);
+            _editingBilling = false;
+        });
+
+    private async Task SendInvite()
+    {
+        if (string.IsNullOrWhiteSpace(_inviteRecipient))
+            return;
+
+        string recipient = _inviteRecipient.Trim();
+
+        await Submit($"Invitation sent to {recipient}.", async () =>
+        {
+            await cloudLogin.InviteToOrganization(Organization.Id, recipient);
+            _inviting = false;
+        });
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (!DeleteConfirmed)
+            return;
+
+        try
+        {
+            _busy = true;
+            _message = string.Empty;
+            StateHasChanged();
+
+            await cloudLogin.DeleteOrganization(Organization.Id);
+            await OnDeleted.InvokeAsync();
+        }
+        catch (Exception exception)
+        {
+            _message = exception.Message;
+            _success = false;
+            _confirmingDelete = false;
+            ErrorCenter?.Report("Organization — deleting the organization", exception.Message, exception);
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Runs one write, then asks the parent to reload so every card reflects what the server
+    /// actually stored rather than what was typed.
+    /// </summary>
+    private async Task Submit(string successMessage, Func<Task> operation)
+    {
+        if (_busy)
+            return;
+
+        try
+        {
+            _busy = true;
+            _message = string.Empty;
+            StateHasChanged();
+
+            await operation();
+
+            _message = successMessage;
+            _success = true;
+
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception exception)
+        {
+            _message = exception.Message;
+            _success = false;
+            ErrorCenter?.Report("Organization — saving changes", exception.Message, exception);
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// A full copy of the organization as it stands. Updates replace every field, so each card
+    /// sends the current values for the fields it doesn't own.
+    /// </summary>
+    private CloudLoginOrganization Snapshot() => new()
+    {
+        Id = Organization.Id,
+        Name = Organization.Name,
+        OwnerUserId = Organization.OwnerUserId,
+        CreatedOn = Organization.CreatedOn,
+        LegalName = Organization.LegalName,
+        Website = Organization.Website,
+        Phone = Organization.Phone,
+        BillingEmail = Organization.BillingEmail,
+        BillingContactName = Organization.BillingContactName,
+        TaxId = Organization.TaxId,
+        BillingAddress = new OrganizationAddress
+        {
+            Line1 = Organization.BillingAddress.Line1,
+            Line2 = Organization.BillingAddress.Line2,
+            City = Organization.BillingAddress.City,
+            State = Organization.BillingAddress.State,
+            PostalCode = Organization.BillingAddress.PostalCode,
+            Country = Organization.BillingAddress.Country
+        }
+    };
+
+    private async Task Navigate(string tab) => await OnNavigateToTab.InvokeAsync(tab);
+
+    private static string Or(string? value, string fallback = "Not specified")
+        => string.IsNullOrWhiteSpace(value) ? fallback : value!;
+
+    private static string? Muted(string? value) => string.IsNullOrWhiteSpace(value) ? "_muted" : null;
+}

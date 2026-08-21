@@ -137,8 +137,15 @@
 
 .meta-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
+}
+
+.meta-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
 }
 
 .meta-icon {
@@ -172,6 +179,13 @@
     color: @text;
 }
 
+// Secondary line: the exact timestamp beside "Member since", or the relative
+// age beside "Last signed in" — whichever the primary line isn't showing.
+.meta-relative {
+    font-size: .78rem;
+    color: @muted;
+}
+
 .hero-providers {
     display: flex;
     flex-wrap: wrap;
@@ -191,28 +205,53 @@
 
 /* ── Feature grid ──────────────────────────────────────────── */
 
+// One full-width row per feature. A single column keeps every destination equally
+// weighted and gives each card room for a real description instead of a truncated
+// one-liner, which is what the cramped multi-column grid forced.
 .feature-grid {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 14px;
 }
 
+// Hover is expressed purely through colour — no lift, no growth, no nudge. The
+// card stays exactly where it is; only the accent stripe, tint and border shift.
 .feature-card {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 18px;
+    gap: 20px;
+    width: 100%;
+    min-height: 132px;
+    padding: 26px 28px;
     border: 1px solid @border;
-    border-radius: 12px;
+    border-radius: 14px;
     background: @white;
     text-align: left;
     cursor: pointer;
-    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    overflow: hidden;
+    transition: border-color .15s ease, background-color .15s ease;
+
+    // Accent stripe pinned along the left edge; it fades in rather than growing.
+    &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--amc-accentColor);
+        opacity: 0;
+        transition: opacity .15s ease;
+    }
 
     &:hover {
         border-color: var(--amc-accentColor);
-        box-shadow: @shadow;
-        transform: translateY(-1px);
+        background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 4%, #fff));
+    }
+
+    &:hover::before {
+        opacity: 1;
     }
 
     &:focus-visible {
@@ -223,56 +262,71 @@
 
 .feature-icon {
     display: grid;
-    flex: 0 0 42px;
-    width: 42px;
-    height: 42px;
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
     place-items: center;
-    border-radius: 10px;
+    border-radius: 14px;
     background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 12%, #fff));
     color: var(--amc-accentColor);
+    transition: background-color .15s ease, color .15s ease;
 
     ::deep svg {
-        width: 21px;
-        height: 21px;
+        width: 25px;
+        height: 25px;
     }
+}
+
+.feature-card:hover .feature-icon {
+    background: var(--amc-accentColor);
+    color: @white;
 }
 
 .feature-copy {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 5px;
     min-width: 0;
     flex: 1 1 auto;
 }
 
 .feature-title {
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 700;
     color: @heading;
+    letter-spacing: -.01em;
 }
 
 .feature-stat {
-    font-size: 12.5px;
+    font-size: 13.5px;
     color: @muted;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.45;
 }
 
 .feature-chevron {
     display: grid;
-    flex: 0 0 18px;
+    flex: 0 0 20px;
     place-items: center;
     color: @placeholder;
+    transition: color .15s ease;
 
     ::deep svg {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
     }
 }
 
 .feature-card:hover .feature-chevron {
     color: var(--amc-accentColor);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .feature-card,
+    .feature-card::before,
+    .feature-icon,
+    .feature-chevron {
+        transition: none;
+    }
 }
 
 /* ── Danger zone ───────────────────────────────────────────── */
@@ -375,19 +429,9 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .feature-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .danger-row {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-    }
-}
-
-@media @media-large {
-    .feature-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }

@@ -114,8 +114,14 @@
 }
 .meta-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+}
+.meta-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .meta-icon {
   display: grid;
@@ -144,6 +150,10 @@
   font-weight: 600;
   color: #212529;
 }
+.meta-relative {
+  font-size: 0.78rem;
+  color: #6c757d;
+}
 .hero-providers {
   display: flex;
   flex-wrap: wrap;
@@ -161,26 +171,43 @@
 }
 /* ── Feature grid ──────────────────────────────────────────── */
 .feature-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 .feature-card {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px;
+  gap: 20px;
+  width: 100%;
+  min-height: 132px;
+  padding: 26px 28px;
   border: 1px solid #e9ecef;
-  border-radius: 12px;
+  border-radius: 14px;
   background: #fff;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.feature-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--amc-accentColor);
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 .feature-card:hover {
   border-color: var(--amc-accentColor);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 4%, #fff));
+}
+.feature-card:hover::before {
+  opacity: 1;
 }
 .feature-card:focus-visible {
   outline: 2px solid var(--amc-accentColor);
@@ -188,49 +215,62 @@
 }
 .feature-icon {
   display: grid;
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 12%, #fff));
   color: var(--amc-accentColor);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 .feature-icon ::deep svg {
-  width: 21px;
-  height: 21px;
+  width: 25px;
+  height: 25px;
+}
+.feature-card:hover .feature-icon {
+  background: var(--amc-accentColor);
+  color: #fff;
 }
 .feature-copy {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
   min-width: 0;
   flex: 1 1 auto;
 }
 .feature-title {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: #111827;
+  letter-spacing: -0.01em;
 }
 .feature-stat {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: #6c757d;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.45;
 }
 .feature-chevron {
   display: grid;
-  flex: 0 0 18px;
+  flex: 0 0 20px;
   place-items: center;
   color: #adb5bd;
+  transition: color 0.15s ease;
 }
 .feature-chevron ::deep svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 .feature-card:hover .feature-chevron {
   color: var(--amc-accentColor);
+}
+@media (prefers-reduced-motion: reduce) {
+  .feature-card,
+  .feature-card::before,
+  .feature-icon,
+  .feature-chevron {
+    transition: none;
+  }
 }
 /* ── Danger zone ───────────────────────────────────────────── */
 .danger-card {
@@ -314,17 +354,9 @@
   .hero-meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .feature-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .danger-row {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-  }
-}
-@media (min-width: 992px) {
-  .feature-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

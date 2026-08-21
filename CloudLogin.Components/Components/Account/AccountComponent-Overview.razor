@@ -1,4 +1,5 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using System.Globalization
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
@@ -36,16 +37,18 @@
         <div class="hero-meta">
             <div class="meta-item">
                 <span class="meta-icon" aria-hidden="true"><CalendarIcon /></span>
-                <div>
+                <div class="meta-copy">
                     <div class="meta-label">Member since</div>
-                    <div class="meta-value">@FormatDateTime(CurrentUser.CreatedOn)</div>
+                    <div class="meta-value">@FormatAbsolute(CurrentUser.CreatedOn, includeTime: false)</div>
+                    <div class="meta-relative">@FormatRelative(CurrentUser.CreatedOn)</div>
                 </div>
             </div>
             <div class="meta-item">
                 <span class="meta-icon" aria-hidden="true"><ClockIcon /></span>
-                <div>
+                <div class="meta-copy">
                     <div class="meta-label">Last signed in</div>
-                    <div class="meta-value">@FormatDateTime(CurrentUser.LastSignedIn)</div>
+                    <div class="meta-value">@FormatRelative(CurrentUser.LastSignedIn)</div>
+                    <div class="meta-relative">@FormatAbsolute(CurrentUser.LastSignedIn, includeTime: true)</div>
                 </div>
             </div>
         </div>
@@ -66,7 +69,7 @@
             <span class="feature-icon" aria-hidden="true"><PersonIcon /></span>
             <span class="feature-copy">
                 <span class="feature-title">Profile</span>
-                <span class="feature-stat">Your info, @CurrentUser.EmailAddresses.Count() email(s), @CurrentUser.PhoneNumbers.Count() phone(s)</span>
+                <span class="feature-stat">Your name, photo, and regional settings — plus @ContactSummary().</span>
             </span>
             <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
         </button>
@@ -77,7 +80,7 @@
                 <span class="feature-icon" aria-hidden="true"><CreditCardIcon /></span>
                 <span class="feature-copy">
                     <span class="feature-title">Subscriptions</span>
-                    <span class="feature-stat">@(_loadingSubscriptions ? "Loading…" : SubscriptionsSummary())</span>
+                    <span class="feature-stat">Applications and plans linked to your account — @(_loadingSubscriptions ? "loading…" : SubscriptionsSummary()).</span>
                 </span>
                 <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
             </button>
@@ -89,7 +92,7 @@
                 <span class="feature-icon" aria-hidden="true"><BuildingIcon /></span>
                 <span class="feature-copy">
                     <span class="feature-title">Organizations</span>
-                    <span class="feature-stat">@(_loadingOrganizations ? "Loading…" : OrganizationsSummary())</span>
+                    <span class="feature-stat">Teams you belong to and their billing details — @(_loadingOrganizations ? "loading…" : OrganizationsSummary()).</span>
                 </span>
                 <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
             </button>
@@ -101,7 +104,7 @@
                 <span class="feature-icon" aria-hidden="true"><WalletIcon /></span>
                 <span class="feature-copy">
                     <span class="feature-title">Payment options</span>
-                    <span class="feature-stat">@(_loadingPaymentMethods ? "Loading…" : PaymentMethodsSummary())</span>
+                    <span class="feature-stat">Saved provider references, never card data — @(_loadingPaymentMethods ? "loading…" : PaymentMethodsSummary()).</span>
                 </span>
                 <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
             </button>
@@ -113,7 +116,7 @@
                 <span class="feature-icon" aria-hidden="true"><ShieldCheckIcon /></span>
                 <span class="feature-copy">
                     <span class="feature-title">Administration</span>
-                    <span class="feature-stat">Manage users, roles, and access</span>
+                    <span class="feature-stat">Manage every user, role, and access level across this CloudLogin host.</span>
                 </span>
                 <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
             </button>
@@ -211,13 +214,25 @@
     }
 
     private string SubscriptionsSummary()
-        => _subscriptionCount == 0 ? "No subscriptions yet" : $"{_subscriptionCount} subscription{(_subscriptionCount == 1 ? "" : "s")}";
+        => _subscriptionCount == 0 ? "none yet" : $"{_subscriptionCount} active";
 
     private string OrganizationsSummary()
-        => _organizationCount == 0 ? "Not a member of any organization" : $"{_organizationCount} organization{(_organizationCount == 1 ? "" : "s")}";
+        => _organizationCount == 0 ? "you're not a member of any yet" : $"{_organizationCount} joined";
 
     private string PaymentMethodsSummary()
-        => _paymentMethodCount == 0 ? "No payment methods saved" : $"{_paymentMethodCount} saved method{(_paymentMethodCount == 1 ? "" : "s")}";
+        => _paymentMethodCount == 0 ? "none saved yet" : $"{_paymentMethodCount} saved";
+
+    private string ContactSummary()
+    {
+        int emails = CurrentUser.EmailAddresses.Count;
+        int phones = CurrentUser.PhoneNumbers.Count;
+
+        string emailPart = $"{emails} email address{(emails == 1 ? "" : "es")}";
+
+        return phones == 0
+            ? emailPart
+            : $"{emailPart} and {phones} phone number{(phones == 1 ? "" : "s")}";
+    }
 
     private async Task Navigate(string tab) => await OnNavigateToTab.InvokeAsync(tab);
 
@@ -229,7 +244,17 @@
         _deleting = true;
         StateHasChanged();
 
-        await OnDeleteAccount.InvokeAsync();
+        try
+        {
+            await OnDeleteAccount.InvokeAsync();
+        }
+        catch
+        {
+            // The parent already recorded this in the account-wide error center; here we
+            // only need to stop the button spinning forever and let the user try again.
+            _deleting = false;
+            StateHasChanged();
+        }
     }
 
     private string GetDisplayName()
@@ -254,29 +279,94 @@
         return string.IsNullOrWhiteSpace(initials) ? "?" : initials;
     }
 
-    private static string FormatDateTime(DateTimeOffset dateTime)
+    /// <summary>
+    /// The culture used to render dates, honouring the regional format the user picked on
+    /// the Profile tab and falling back to the browser's culture. Cultures the runtime only
+    /// synthesizes (trimmed ICU accepts well-formed but unknown tags) are rejected, since
+    /// they'd silently format as invariant.
+    /// </summary>
+    private CultureInfo DisplayCulture
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(CurrentUser.Locale))
+                try
+                {
+                    CultureInfo culture = CultureInfo.GetCultureInfo(CurrentUser.Locale);
+
+                    const int LocaleCustomUnspecified = 0x1000;
+
+                    if (!string.IsNullOrEmpty(culture.Name) && culture.LCID != LocaleCustomUnspecified)
+                        return culture;
+                }
+                catch (CultureNotFoundException) { }
+
+            return CultureInfo.CurrentCulture;
+        }
+    }
+
+    /// <summary>
+    /// Human-friendly elapsed time. Rounds to whole units and names the very recent and the
+    /// near-past ("Right now", "Yesterday") rather than emitting a bare "0 minutes ago".
+    /// </summary>
+    private static string FormatRelative(DateTimeOffset dateTime)
     {
         if (dateTime == DateTimeOffset.MinValue)
             return "Not available";
 
-        var timeAgo = DateTimeOffset.UtcNow - dateTime;
+        TimeSpan ago = DateTimeOffset.UtcNow - dateTime;
 
-        if (timeAgo.TotalDays < 1 && timeAgo.TotalHours < 1)
-            return $"{(int)timeAgo.TotalMinutes} minutes ago";
+        // A clock a little ahead of the server shouldn't render as a negative age.
+        if (ago < TimeSpan.Zero)
+            ago = TimeSpan.Zero;
 
-        if (timeAgo.TotalDays < 1)
-            return $"{(int)timeAgo.TotalHours} hours ago";
+        if (ago.TotalSeconds < 45)
+            return "Right now";
 
-        if (timeAgo.TotalDays < 7)
-            return $"{(int)timeAgo.TotalDays} days ago";
+        if (ago.TotalMinutes < 2)
+            return "A minute ago";
 
-        if (timeAgo.TotalDays < 30)
-            return $"{(int)(timeAgo.TotalDays / 7)} weeks ago";
+        if (ago.TotalMinutes < 60)
+            return $"{(int)ago.TotalMinutes} minutes ago";
 
-        if (timeAgo.TotalDays < 365)
-            return $"{(int)(timeAgo.TotalDays / 30)} months ago";
+        if (ago.TotalHours < 2)
+            return "An hour ago";
 
-        return dateTime.ToString("MMMM dd, yyyy");
+        if (ago.TotalHours < 24)
+            return $"{(int)ago.TotalHours} hours ago";
+
+        if (ago.TotalDays < 2)
+            return "Yesterday";
+
+        if (ago.TotalDays < 7)
+            return $"{(int)ago.TotalDays} days ago";
+
+        if (ago.TotalDays < 14)
+            return "Last week";
+
+        if (ago.TotalDays < 30)
+            return $"{(int)(ago.TotalDays / 7)} weeks ago";
+
+        if (ago.TotalDays < 60)
+            return "Last month";
+
+        if (ago.TotalDays < 365)
+            return $"{(int)(ago.TotalDays / 30)} months ago";
+
+        if (ago.TotalDays < 730)
+            return "Last year";
+
+        return $"{(int)(ago.TotalDays / 365)} years ago";
+    }
+
+    /// <summary>The exact date, in the user's regional format and local time zone.</summary>
+    private string FormatAbsolute(DateTimeOffset dateTime, bool includeTime)
+    {
+        if (dateTime == DateTimeOffset.MinValue)
+            return "Not available";
+
+        // "D" = long date, "f" = long date plus short time.
+        return dateTime.ToLocalTime().ToString(includeTime ? "f" : "D", DisplayCulture);
     }
 
     private static string FormatProviderName(string provider)

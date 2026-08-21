@@ -55,4 +55,32 @@ public sealed class CloudLoginSecurityOptions
     /// in browser code. This is insecure and must remain disabled in production.
     /// </summary>
     public bool EnableLegacyClientVerificationCodes { get; set; }
+
+    /// <summary>
+    /// Most recent sign-in records kept per user. Older records are pruned on write so the
+    /// per-user history blob stays a bounded size.
+    /// </summary>
+    public int LoginHistoryMaximumEntries { get; set; } = 100;
+
+    /// <summary>
+    /// How long a sign-in record is retained. Records older than this are pruned on write
+    /// even when the account is well under <see cref="LoginHistoryMaximumEntries"/>.
+    /// </summary>
+    public TimeSpan LoginHistoryRetention { get; set; } = TimeSpan.FromDays(180);
+
+    /// <summary>
+    /// Relying Party ID for WebAuthn (passkeys). Must be the site's registrable domain —
+    /// e.g. "example.com" for https://login.example.com. Leave null to derive it from the
+    /// request host, which is correct for single-host deployments.
+    /// </summary>
+    public string? WebAuthnRelyingPartyId { get; set; }
+
+    /// <summary>Display name shown by the authenticator during passkey registration.</summary>
+    public string WebAuthnRelyingPartyName { get; set; } = "CloudLogin";
+
+    /// <summary>
+    /// Additional origins accepted during WebAuthn ceremonies. The request's own origin is
+    /// always accepted; add entries here only for extra hosts that share the RP ID.
+    /// </summary>
+    public ISet<string> WebAuthnAllowedOrigins { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 }

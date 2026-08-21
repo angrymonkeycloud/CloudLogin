@@ -7,10 +7,13 @@
 
 @namespace AngryMonkey.CloudLogin
 
+@implements IDisposable
+
 @if (RendererInfo.IsInteractive)
 {
     @if (CurrentUser != null)
     {
+    <CascadingValue Value="_errorCenter">
         <div class="account-management @(activeTab == "Admin" ? "_admin" : "")">
             <div class="account-shell">
                 <nav class="sidebar @(navOpen ? "_open" : "")" aria-label="Account navigation">
@@ -43,31 +46,73 @@
                     </div>
 
                     <div class="tabs">
-                        @foreach (var tab in Tabs)
+                        @* Which account is acting — the signed-in user, or one of their
+                           organizations — is a single switcher, not a list of nav buttons: an
+                           organization is its own account with its own billing, members, and
+                           plans, so moving into one is framed like switching accounts rather
+                           than opening a tab. *@
+                        @if (EnableOrganizations)
                         {
-                            <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)" title="@tab.DisplayName">
-                                <span class="tab-icon" aria-hidden="true">@TabIcon(tab.Name)</span>
-                                <span class="tab-label">@tab.DisplayName</span>
-                            </button>
+                            <div class="rail-group">
+                                <AccountComponent_WorkspaceSwitcher CurrentOrganizationId="activeOrganizationId"
+                                                                    Organizations="myOrganizations"
+                                                                    CurrentUserId="CurrentUser.ID"
+                                                                    AccountLabel="@GetPrimaryEmail()"
+                                                                    BasePath="@BasePath"
+                                                                    OnOrganizationCreated="RefreshOrganizations" />
+                            </div>
+
+                            <div class="rail-divider" role="presentation"></div>
                         }
-                        @if (CurrentUser.IsGlobalAdmin)
-                        {
-                            <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")' title="Admin">
-                                <span class="tab-icon" aria-hidden="true"><ShieldCheckIcon /></span>
-                                <span class="tab-label">Admin<span class="admin-tab-badge">&#9733;</span></span>
-                            </button>
-                        }
+
+                        <div class="rail-group">
+                            @if (EnableOrganizations)
+                            {
+                                <span class="rail-group-label">@ActiveWorkspaceName</span>
+                            }
+
+                            @foreach (var tab in Tabs)
+                            {
+                                <button class="tab-button @(activeTab == tab.Name ? "active" : "")" @onclick="() => SwitchTab(tab.Name)" title="@tab.DisplayName">
+                                    <span class="tab-icon" aria-hidden="true">@TabIcon(tab.Name)</span>
+                                    <span class="tab-label">@tab.DisplayName</span>
+                                </button>
+                            }
+                            @if (CurrentUser.IsGlobalAdmin && activeOrganizationId is null)
+                            {
+                                <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")' title="Admin">
+                                    <span class="tab-icon" aria-hidden="true"><ShieldCheckIcon /></span>
+                                    <span class="tab-label">Admin<span class="admin-tab-badge">&#9733;</span></span>
+                                </button>
+                            }
+                        </div>
                     </div>
 
-                    @if (string.IsNullOrEmpty(Referer))
-                    {
-                        <div class="sidebar-footer">
+                    <div class="sidebar-footer">
+                        @if (_errorCenter.Entries.Count > 0)
+                        {
+                            <button type="button" class="account-error-pill" @onclick="OpenErrorDialog" title="@ErrorPillTitle">
+                                <span class="account-error-icon" aria-hidden="true">
+                                    <AlertTriangleIcon />
+                                    <span class="account-error-badge">@_errorCenter.Entries.Count</span>
+                                </span>
+                                <span class="tab-label">@ErrorPillTitle</span>
+                            </button>
+                        }
+
+                        <div class="account-security-pill" title="Your CloudLogin session is protected">
+                            <span class="account-security-icon" aria-hidden="true"><ShieldCheckIcon /></span>
+                            <span class="tab-label">Secure session</span>
+                        </div>
+
+                        @if (string.IsNullOrEmpty(Referer))
+                        {
                             <button class="tab-button tab-button--logout" @onclick="SignOut" title="Log out">
                                 <span class="tab-icon" aria-hidden="true"><SignOutIcon /></span>
                                 <span class="tab-label">Log out</span>
                             </button>
-                        </div>
-                    }
+                        }
+                    </div>
                 </nav>
 
                 @if (navOpen)
@@ -75,49 +120,95 @@
                     <div class="nav-backdrop" @onclick="CollapseNav"></div>
                 }
 
+                <AccountComponent_ErrorDialog @ref="_errorDialog" />
+
                 <div class="tab-content">
-                    <header class="account-page-header">
-                        <div>
-                            <span class="account-page-eyebrow">CloudLogin account</span>
-                            <h1>@GetActiveTabDisplayName()</h1>
-                        </div>
-                        <div class="account-security-pill" title="Your CloudLogin session is protected">
-                            <span aria-hidden="true">&#10003;</span>
-                            Secure session
-                        </div>
-                    </header>
-                    @if (activeTab == "Profile")
-                    {
-                        <AccountComponent_Profile CurrentUser="CurrentUser" />
-                    }
-                    else if (activeTab == "Subscriptions")
-                    {
-                        <AccountComponent_Subscriptions TargetSubscriptionId="@TargetEntityId" />
-                    }
-                    else if (activeTab == "Organizations")
-                    {
-                        <AccountComponent_Organizations TargetOrganizationId="@TargetEntityId" />
-                    }
-                    else if (activeTab == "PaymentMethods")
-                    {
-                        <AccountComponent_PaymentMethods />
-                    }
-                    else if (activeTab == "Admin" && CurrentUser.IsGlobalAdmin)
-                    {
-                        <AdminComponent AdminUserId="@AdminUserId" />
-                    }
-                    else
-                    {
-                        <AccountComponent_Overview CurrentUser="CurrentUser"
-                                                    EnableSubscriptions="EnableSubscriptions"
-                                                    EnableOrganizations="EnableOrganizations"
-                                                    EnablePayments="EnablePayments"
-                                                    OnNavigateToTab="SwitchTab"
-                                                    OnDeleteAccount="DeleteAccount" />
-                    }
+                    <div class="tab-content-inner">
+                        <header class="account-page-header">
+                            <div>
+                                <span class="account-page-eyebrow">@(activeOrganizationId is null ? "CloudLogin account" : ActiveWorkspaceName)</span>
+                                <h1>@GetActiveTabDisplayName()</h1>
+                            </div>
+                        </header>
+                        @if (activeOrganizationId is Guid workspaceId)
+                        {
+                            @* Organization context. Subscriptions and payment options read from the
+                               workspace the rail already loaded, so switching tabs inside an
+                               organization costs no extra round trip. *@
+                            if (loadingWorkspace)
+                            {
+                                <div class="workspace-loading" role="status" aria-label="Loading organization">
+                                    <span class="workspace-spinner"></span>
+                                </div>
+                            }
+                            else if (activeWorkspace is null)
+                            {
+                                <div class="workspace-missing">
+                                    <p>This organization is no longer available to you. It may have been deleted, or your membership may have ended.</p>
+                                    <button type="button" class="workspace-missing-action" @onclick="LeaveWorkspace">Back to personal account</button>
+                                </div>
+                            }
+                            else if (activeTab == "Subscriptions")
+                            {
+                                <AccountComponent_Subscriptions @key="RouteKey"
+                                                                OrganizationId="activeOrganizationId"
+                                                                Subscriptions="activeWorkspace.Subscriptions"
+                                                                CanManage="activeWorkspace.CanManage"
+                                                                TargetSubscriptionId="@targetHighlightId"
+                                                                OnChanged="ReloadWorkspace" />
+                            }
+                            else if (activeTab == "PaymentMethods")
+                            {
+                                <AccountComponent_PaymentMethods @key="RouteKey"
+                                                                 OrganizationId="activeOrganizationId"
+                                                                 Profile="activeWorkspace.BillingProfile"
+                                                                 CanManage="activeWorkspace.CanManage"
+                                                                 OnChanged="ReloadWorkspace" />
+                            }
+                            else
+                            {
+                                <AccountComponent_Organization @key="RouteKey"
+                                                               Workspace="activeWorkspace"
+                                                               OnChanged="ReloadWorkspace"
+                                                               OnDeleted="HandleOrganizationDeleted"
+                                                               OnNavigateToTab="SwitchTab" />
+                            }
+                        }
+                        else if (activeTab == "Profile")
+                        {
+                            <AccountComponent_Profile @key="RouteKey" CurrentUser="CurrentUser" />
+                        }
+                        else if (activeTab == "Security")
+                        {
+                            <AccountComponent_Security @key="RouteKey" CurrentUser="CurrentUser" />
+                        }
+                        else if (activeTab == "Subscriptions")
+                        {
+                            <AccountComponent_Subscriptions @key="RouteKey" TargetSubscriptionId="@targetHighlightId" />
+                        }
+                        else if (activeTab == "PaymentMethods")
+                        {
+                            <AccountComponent_PaymentMethods @key="RouteKey" />
+                        }
+                        else if (activeTab == "Admin" && CurrentUser.IsGlobalAdmin)
+                        {
+                            <AdminComponent @key="RouteKey" AdminUserId="@AdminUserId" />
+                        }
+                        else
+                        {
+                            <AccountComponent_Overview @key="RouteKey"
+                                                        CurrentUser="CurrentUser"
+                                                        EnableSubscriptions="EnableSubscriptions"
+                                                        EnableOrganizations="EnableOrganizations"
+                                                        EnablePayments="EnablePayments"
+                                                        OnNavigateToTab="SwitchTab"
+                                                        OnDeleteAccount="DeleteAccount" />
+                        }
+                    </div>
                 </div>
             </div>
         </div>
+    </CascadingValue>
     }
 
 }
@@ -149,44 +240,133 @@ else
     /// <summary>When set (and the signed-in user is a global admin), opens straight to this user in the Admin tab.</summary>
     [Parameter] public Guid? AdminUserId { get; set; }
 
-    /// <summary>Initial account section selected by a trusted deep link.</summary>
+    /// <summary>
+    /// Legacy deep-link section name (e.g. "Subscriptions", "Organizations"). Honoured only on
+    /// first load, and only when the browser URL carries no path segments of its own — once
+    /// present, translated into the canonical path-based URL below so every later navigation,
+    /// refresh, and share link uses one consistent scheme.
+    /// </summary>
     [Parameter] public string? InitialSection { get; set; }
 
-    /// <summary>Specific organization or subscription addressed by the deep link.</summary>
+    /// <summary>Legacy deep-link target (an organization id for "Organizations", a subscription id otherwise). See <see cref="InitialSection"/>.</summary>
     [Parameter] public Guid? TargetEntityId { get; set; }
 
     [Parameter] public bool EnableSubscriptions { get; set; }
     [Parameter] public bool EnableOrganizations { get; set; }
     [Parameter] public bool EnablePayments { get; set; }
 
+    /// <summary>
+    /// The path this account page is mounted at (e.g. "/Account"). Every tab and organization
+    /// URL this component builds or parses is relative to it, so a host mounting the page
+    /// somewhere else only needs to pass that path here — nothing else changes.
+    /// </summary>
+    [Parameter] public string BasePath { get; set; } = "/Account";
+
     private UserModel? CurrentUser { get; set; }
     private bool navOpen = false;
+
+    // Collects failures from every tab (see AccountErrorCenter) so the nav rail can surface
+    // "something went wrong" regardless of which tab the user is currently looking at.
+    private readonly AccountErrorCenter _errorCenter = new();
+    private AccountComponent_ErrorDialog? _errorDialog;
+
+    private string ErrorPillTitle
+        => _errorCenter.Entries.Count == 1 ? "1 error" : $"{_errorCenter.Entries.Count} errors";
 
     protected override async Task OnInitializedAsync()
     {
         CurrentUser = await cloudLogin.CurrentUser();
 
-        if (AdminUserId.HasValue && CurrentUser is { IsGlobalAdmin: true })
-            activeTab = "Admin";
-        if (!string.IsNullOrWhiteSpace(InitialSection) && Tabs.Any(tab => tab.Name == InitialSection))
-            activeTab = InitialSection;
+        _errorCenter.Changed += OnErrorCenterChanged;
+        navigationManager.LocationChanged += OnLocationChanged;
 
+        await RefreshOrganizations();
+
+        string? legacyUrl = BuildLegacyRedirect();
+
+        if (legacyUrl is not null)
+        {
+            // The event handler subscribed above picks this back up and runs ApplyRoute for
+            // the canonical URL, so nothing further happens on this pass.
+            navigationManager.NavigateTo(legacyUrl, replace: true);
+            return;
+        }
+
+        ApplyRoute();
+
+        if (activeOrganizationId is Guid organizationId)
+            await LoadWorkspace(organizationId);
+    }
+
+    private void OnErrorCenterChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task OpenErrorDialog()
+    {
+        if (_errorDialog is not null)
+            await _errorDialog.Open();
+    }
+
+    public void Dispose()
+    {
+        _errorCenter.Changed -= OnErrorCenterChanged;
+        navigationManager.LocationChanged -= OnLocationChanged;
     }
 
     private string activeTab = "Overview";
 
+    private List<CloudLoginOrganization> myOrganizations = [];
+
+    /// <summary>The organization currently in context. Null means the user's personal account.</summary>
+    private Guid? activeOrganizationId;
+
+    private OrganizationWorkspace? activeWorkspace;
+    private bool loadingWorkspace;
+
+    /// <summary>An id carried on the URL (?highlight=) to scroll a specific row into view once its list has loaded.</summary>
+    private Guid? targetHighlightId;
+
+    private string ActiveWorkspaceName => activeOrganizationId is null
+        ? "Personal account"
+        : activeWorkspace?.Organization.Name
+            ?? myOrganizations.FirstOrDefault(organization => organization.Id == activeOrganizationId)?.Name
+            ?? "Organization";
+
+    /// <summary>
+    /// A fresh value every time the resolved (workspace, tab) pair changes, keyed onto the
+    /// rendered tab component so a navigation always tears down and rebuilds it — the same
+    /// guarantee a real page load gives, even though this stays one long-lived component.
+    /// </summary>
+    private string RouteKey => activeOrganizationId is Guid organizationId ? $"org:{organizationId}:{activeTab}" : $"me:{activeTab}";
+
+    /// <summary>
+    /// The sections available in the current context. An organization has its own details, plans,
+    /// and payment options; the personal-only sections (profile, security) stay behind the
+    /// personal workspace. The organization directory itself isn't a section any more — the
+    /// workspace switcher above already lists and creates organizations.
+    /// </summary>
     private IEnumerable<TabItem> Tabs
     {
         get
         {
+            if (activeOrganizationId is not null)
+            {
+                yield return new() { Name = "Organization", DisplayName = "Organization" };
+
+                if (EnableSubscriptions)
+                    yield return new() { Name = "Subscriptions", DisplayName = "Subscriptions" };
+
+                if (EnablePayments)
+                    yield return new() { Name = "PaymentMethods", DisplayName = "Payment options" };
+
+                yield break;
+            }
+
             yield return new() { Name = "Overview", DisplayName = "Overview" };
             yield return new() { Name = "Profile", DisplayName = "Profile" };
+            yield return new() { Name = "Security", DisplayName = "Security" };
 
             if (EnableSubscriptions)
                 yield return new() { Name = "Subscriptions", DisplayName = "Subscriptions" };
-
-            if (EnableOrganizations)
-                yield return new() { Name = "Organizations", DisplayName = "Organizations" };
 
             if (EnablePayments)
                 yield return new() { Name = "PaymentMethods", DisplayName = "Payment options" };
@@ -201,8 +381,160 @@ else
 
     private void SwitchTab(string tab)
     {
-        activeTab = tab;
         navOpen = false;
+
+        string url = activeOrganizationId is Guid organizationId ? BuildOrgUrl(organizationId, tab) : BuildTabUrl(tab);
+        navigationManager.NavigateTo(url);
+    }
+
+    // ── Routing ──────────────────────────────────────────────────────────────
+    // The address bar is the single source of truth for which tab and which workspace are
+    // showing: every navigation (tab click, browser back/forward, a pasted deep link, a
+    // refresh) flows through here rather than through separately-maintained UI state.
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        => _ = InvokeAsync(async () =>
+        {
+            Guid? previousOrganizationId = activeOrganizationId;
+
+            ApplyRoute();
+
+            if (activeOrganizationId is Guid organizationId && (organizationId != previousOrganizationId || activeWorkspace is null))
+                await LoadWorkspace(organizationId);
+            else if (activeOrganizationId is null)
+                activeWorkspace = null;
+
+            StateHasChanged();
+        });
+
+    private void ApplyRoute()
+    {
+        (string tab, Guid? organizationId, Guid? highlight) = ParseRoute();
+
+        activeTab = tab;
+        activeOrganizationId = organizationId;
+        targetHighlightId = highlight;
+        navOpen = false;
+    }
+
+    private (string Tab, Guid? OrganizationId, Guid? Highlight) ParseRoute()
+    {
+        string relative = navigationManager.ToBaseRelativePath(navigationManager.Uri);
+        int queryIndex = relative.IndexOf('?');
+        string path = queryIndex >= 0 ? relative[..queryIndex] : relative;
+        string queryString = queryIndex >= 0 ? relative[queryIndex..] : string.Empty;
+
+        System.Collections.Specialized.NameValueCollection query = HttpUtility.ParseQueryString(queryString);
+        Guid? highlight = Guid.TryParse(query["highlight"], out Guid highlightId) ? highlightId : null;
+
+        string baseSegment = BasePath.Trim('/');
+        string remainder = path.StartsWith(baseSegment, StringComparison.OrdinalIgnoreCase)
+            ? path[baseSegment.Length..].Trim('/')
+            : string.Empty;
+
+        string[] segments = remainder.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (segments.Length >= 2 && segments[0].Equals("Org", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(segments[1], out Guid organizationId))
+        {
+            string orgTab = segments.Length >= 3 ? NormalizeTabName(segments[2]) : "Organization";
+            return (orgTab == "Overview" ? "Organization" : orgTab, organizationId, highlight);
+        }
+
+        return (segments.Length >= 1 ? NormalizeTabName(segments[0]) : "Overview", null, highlight);
+    }
+
+    private static string NormalizeTabName(string segment) => segment switch
+    {
+        var s when s.Equals("Profile", StringComparison.OrdinalIgnoreCase) => "Profile",
+        var s when s.Equals("Security", StringComparison.OrdinalIgnoreCase) => "Security",
+        var s when s.Equals("Subscriptions", StringComparison.OrdinalIgnoreCase) => "Subscriptions",
+        var s when s.Equals("PaymentMethods", StringComparison.OrdinalIgnoreCase) => "PaymentMethods",
+        var s when s.Equals("Admin", StringComparison.OrdinalIgnoreCase) => "Admin",
+        _ => "Overview"
+    };
+
+    private string NormalizedBasePath => "/" + BasePath.Trim('/');
+
+    private string BuildTabUrl(string tab, Guid? highlight = null)
+    {
+        string path = tab.Equals("Overview", StringComparison.OrdinalIgnoreCase) ? NormalizedBasePath : $"{NormalizedBasePath}/{tab}";
+        return highlight is Guid id ? $"{path}?highlight={id}" : path;
+    }
+
+    private string BuildOrgUrl(Guid organizationId, string tab, Guid? highlight = null)
+    {
+        string path = tab.Equals("Organization", StringComparison.OrdinalIgnoreCase)
+            ? $"{NormalizedBasePath}/Org/{organizationId}"
+            : $"{NormalizedBasePath}/Org/{organizationId}/{tab}";
+        return highlight is Guid id ? $"{path}?highlight={id}" : path;
+    }
+
+    /// <summary>
+    /// Translates the pre-routing deep-link parameters (still accepted for backward
+    /// compatibility) into the canonical path-based URL. Returns null once the browser URL
+    /// already carries its own path — nothing to translate.
+    /// </summary>
+    private string? BuildLegacyRedirect()
+    {
+        (string tab, Guid? organizationId, _) = ParseRoute();
+
+        if (tab != "Overview" || organizationId is not null)
+            return null;
+
+        if (AdminUserId.HasValue && CurrentUser is { IsGlobalAdmin: true })
+            return BuildTabUrl("Admin");
+
+        if (string.IsNullOrWhiteSpace(InitialSection))
+            return null;
+
+        if (InitialSection.Equals("Organizations", StringComparison.OrdinalIgnoreCase))
+            return TargetEntityId is Guid legacyOrganizationId ? BuildOrgUrl(legacyOrganizationId, "Organization") : null;
+
+        string[] known = ["Profile", "Security", "Subscriptions", "PaymentMethods", "Admin"];
+        string? match = known.FirstOrDefault(name => name.Equals(InitialSection, StringComparison.OrdinalIgnoreCase));
+
+        return match is null ? null : BuildTabUrl(match, TargetEntityId);
+    }
+
+    /// <summary>
+    /// Fetches a workspace. <paramref name="showLoading"/> swaps the page for a spinner, which is
+    /// right when arriving with nothing to show; a refresh after a save leaves it off, so the
+    /// section keeps its place — and its confirmation message — instead of being torn down and
+    /// rebuilt around the new data.
+    /// </summary>
+    private async Task LoadWorkspace(Guid organizationId, bool showLoading = true)
+    {
+        try
+        {
+            loadingWorkspace = showLoading;
+
+            if (showLoading)
+                StateHasChanged();
+
+            activeWorkspace = await cloudLogin.GetOrganizationWorkspace(organizationId);
+        }
+        finally
+        {
+            loadingWorkspace = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ReloadWorkspace()
+    {
+        if (activeOrganizationId is Guid organizationId)
+            await LoadWorkspace(organizationId, showLoading: false);
+    }
+
+    /// <summary>Leaving a workspace — deliberately, or because it's gone — is a full account switch back to personal, same as picking it from the menu.</summary>
+    private void LeaveWorkspace() => navigationManager.NavigateTo(NormalizedBasePath, forceLoad: true);
+
+    private void HandleOrganizationDeleted() => LeaveWorkspace();
+
+    private async Task RefreshOrganizations()
+    {
+        if (EnableOrganizations)
+            myOrganizations = await cloudLogin.GetMyOrganizations();
     }
 
     private void ToggleNav() => navOpen = !navOpen;
@@ -212,8 +544,9 @@ else
     {
         "Overview" => @<GridIcon />,
         "Profile" => @<PersonIcon />,
+        "Security" => @<ShieldCheckIcon />,
         "Subscriptions" => @<CreditCardIcon />,
-        "Organizations" => @<BuildingIcon />,
+        "Organization" => @<BuildingIcon />,
         "PaymentMethods" => @<WalletIcon />,
         "Admin" => @<ShieldCheckIcon />,
         _ => @<GridIcon />
@@ -256,7 +589,18 @@ else
         if (CurrentUser == null)
             return;
 
-        await cloudLogin.DeleteUser(CurrentUser.ID);
+        try
+        {
+            await cloudLogin.DeleteUser(CurrentUser.ID);
+        }
+        catch (Exception ex)
+        {
+            // Surfaced through the error center rather than left to fail silently: without
+            // this, a failed deletion left the Overview page's confirm button spinning
+            // forever with no indication anything had gone wrong.
+            _errorCenter.Report("Overview — Delete account", $"Failed to delete your account: {ex.Message}", ex);
+            throw;
+        }
 
         navigationManager.NavigateTo("/CloudLogin/Logout", true);
     }

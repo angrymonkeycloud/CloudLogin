@@ -3,33 +3,44 @@
 
 @namespace AngryMonkey.CloudLogin
 
+@* Subscriptions for whichever account is in context — the signed-in user, or the organization
+   they switched into. Removal is governed by each entry's deletion policy, not by the UI. *@
+
 <div class="account-section">
     <div class="section-header">
         <h3>Subscriptions</h3>
-        <p class="section-description">Applications and plans linked to your account</p>
+        <p class="section-description">
+            @(OrganizationId is null
+                ? "Applications and plans linked to your account."
+                : "Applications and plans this organization pays for.")
+        </p>
     </div>
 
     @if (_loading)
     {
         <div class="loading-spinner"></div>
     }
-    else if (_subscriptions.Count == 0)
+    else if (Items.Count == 0)
     {
-        <div class="empty-state">You don't have any subscriptions yet.</div>
+        <div class="empty-state">
+            <p>@(OrganizationId is null ? "You don't have any subscriptions yet." : "This organization doesn't have any subscriptions yet.")</p>
+        </div>
     }
     else
     {
         <div class="items-list">
-            @foreach (var subscription in _subscriptions)
+            @foreach (AccountSubscription subscription in Ordered)
             {
-                <div id="cloudlogin-subscription-@subscription.Id" class="item-row @(TargetSubscriptionId == subscription.Id ? "deep-link-target" : null)">
+                <div id="cloudlogin-subscription-@subscription.Id" class="item-row @(TargetSubscriptionId == subscription.Id ? "deep-link-target" : null) @(subscription.IsRunning ? null : "_inactive")">
                     <div class="item-info">
                         <div class="item-copy">
                             <span class="item-text">@subscription.Application</span>
                             <span class="item-meta">
                                 @subscription.Reference
                                 <span aria-hidden="true">&middot;</span>
-                                @(subscription.ExpiresOn?.ToString("MMMM dd, yyyy") ?? "No expiry")
+                                @(subscription.ExpiresOn is DateTimeOffset expiry
+                                    ? $"{(subscription.IsRunning ? "Renews" : "Ended")} {expiry.ToLocalTime():MMMM dd, yyyy}"
+                                    : "No expiry")
                                 @if (!string.IsNullOrWhiteSpace(subscription.Provider))
                                 {
                                     <span aria-hidden="true">&middot;</span>
@@ -39,9 +50,32 @@
                         </div>
                         <span class="badge @StatusBadgeClass(subscription.Status)">@subscription.Status</span>
                     </div>
+
                     <div class="item-actions">
                         <span class="badge badge-info">Auto-renew @(subscription.AutoRenew ? "on" : "off")</span>
+                        <span class="policy-note">@PolicyNote(subscription)</span>
+
+                        @if (CanManage)
+                        {
+                            @if (_confirmingId == subscription.Id)
+                            {
+                                <span class="confirm-copy">Remove this record?</span>
+                                <button class="btn btn-danger btn-sm" @onclick="() => RemoveAsync(subscription)" disabled="@_busy">
+                                    @(_busy ? "Removing…" : "Remove")
+                                </button>
+                                <button class="btn btn-outline btn-sm" @onclick="() => _confirmingId = null" disabled="@_busy">Cancel</button>
+                            }
+                            else if (subscription.CanDelete)
+                            {
+                                <button class="btn btn-outline btn-sm" @onclick="() => StartRemove(subscription.Id)" disabled="@_busy">Remove</button>
+                            }
+                        }
                     </div>
+
+                    @if (_messageId == subscription.Id && !string.IsNullOrEmpty(_message))
+                    {
+                        <div class="alert-error" role="status">@_message</div>
+                    }
                 </div>
             }
         </div>
@@ -49,21 +83,107 @@
 </div>
 
 @code {
-    private List<AccountSubscription> _subscriptions = [];
-    private bool _loading = true;
     [Parameter] public Guid? TargetSubscriptionId { get; set; }
 
+    /// <summary>The organization whose subscriptions to show. Null shows the signed-in user's own.</summary>
+    [Parameter] public Guid? OrganizationId { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    /// <summary>
+    /// Subscriptions already loaded by the parent for an organization context. Personal
+    /// subscriptions are fetched here instead, so the personal tab needs no wiring.
+    /// </summary>
+    [Parameter] public IReadOnlyList<AccountSubscription>? Subscriptions { get; set; }
+
+    /// <summary>Whether the viewer may remove entries. Organization members who aren't admins may not.</summary>
+    [Parameter] public bool CanManage { get; set; } = true;
+
+    /// <summary>Asks the parent to reload after a removal, so its own counts stay right.</summary>
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
+    private List<AccountSubscription> _mine = [];
+    private bool _loading = true;
+    private bool _loadedMine;
+
+    private Guid? _confirmingId;
+    private Guid? _messageId;
+    private string _message = string.Empty;
+    private bool _busy;
+
+    private IReadOnlyList<AccountSubscription> Items => OrganizationId is null ? _mine : Subscriptions ?? [];
+
+    /// <summary>Running plans first, then the most recently ended.</summary>
+    private IEnumerable<AccountSubscription> Ordered => Items
+        .OrderByDescending(subscription => subscription.IsRunning)
+        .ThenByDescending(subscription => subscription.ExpiresOn ?? DateTimeOffset.MaxValue)
+        .ThenBy(subscription => subscription.Application);
+
+    protected override async Task OnParametersSetAsync()
     {
-        _subscriptions = await cloudLogin.GetMySubscriptions();
+        // An organization's list arrives as a parameter and re-renders on its own. The personal
+        // list is fetched once, not on every re-render the parent triggers; removals refresh it.
+        if (OrganizationId is null && !_loadedMine)
+        {
+            _mine = await cloudLogin.GetMySubscriptions(includeInactive: true);
+            _loadedMine = true;
+        }
+
         _loading = false;
     }
+
+    private void StartRemove(Guid subscriptionId)
+    {
+        _confirmingId = subscriptionId;
+        _message = string.Empty;
+        _messageId = null;
+    }
+
+    private async Task RemoveAsync(AccountSubscription subscription)
+    {
+        if (_busy)
+            return;
+
+        try
+        {
+            _busy = true;
+            _message = string.Empty;
+            StateHasChanged();
+
+            await cloudLogin.DeleteSubscription(subscription.Id);
+            _confirmingId = null;
+
+            if (OrganizationId is null)
+                _mine = await cloudLogin.GetMySubscriptions(includeInactive: true);
+
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception exception)
+        {
+            _messageId = subscription.Id;
+            _message = exception.Message;
+            _confirmingId = null;
+            ErrorCenter?.Report("Subscriptions — removing a subscription", exception.Message, exception);
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string PolicyNote(AccountSubscription subscription) => subscription.DeletionPolicy switch
+    {
+        SubscriptionDeletionPolicies.Never => "Kept on record by the application",
+        SubscriptionDeletionPolicies.Always => string.Empty,
+        _ => subscription.IsRunning ? "Removable once it ends" : string.Empty
+    };
 
     private static string StatusBadgeClass(AccountSubscriptionStatuses status) => status switch
     {
         AccountSubscriptionStatuses.Active => "badge-primary",
         AccountSubscriptionStatuses.Pending => "badge-info",
+        AccountSubscriptionStatuses.Suspended => "badge-warning",
         _ => "badge-secondary"
     };
 }

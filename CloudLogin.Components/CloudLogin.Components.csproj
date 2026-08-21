@@ -39,6 +39,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\CloudComponents\CloudComponents.DataGrid\CloudComponents.DataGrid.csproj" />
 		<ProjectReference Include="..\..\CloudComponents\CloudComponents.Icons\CloudComponents.Icons.csproj" />
+		<ProjectReference Include="..\..\CloudComponents\CloudComponents\CloudComponents.csproj" />
 		<ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
 	</ItemGroup>
 
@@ -55,7 +56,6 @@
 		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
 		<None Include="compilerconfig.json" />
 		<None Include="Components\Account\AccountComponent-Emails.razor.min.css" />
-		<None Include="Components\Account\AccountComponent-Organizations.razor.min.css" />
 		<None Include="Components\Account\AccountComponent-PaymentMethods.razor.min.css" />
 		<None Include="mateconfig.json" />
 	</ItemGroup>

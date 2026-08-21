@@ -25,6 +25,84 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
         DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
         await ProcessUserSignIn(principal, cosmosMethods, currentDateTime);
+        await RecordLoginHistory(principal, context, cosmosMethods, currentDateTime);
+    }
+
+    /// <summary>
+    /// Appends this sign-in to the user's security timeline. Best-effort by design: writing an
+    /// audit record must never be able to fail an otherwise successful authentication.
+    /// </summary>
+    private static async Task RecordLoginHistory(
+        ClaimsPrincipal principal,
+        HttpContext context,
+        CosmosMethods cosmosMethods,
+        DateTimeOffset signedInOn)
+    {
+        try
+        {
+            CloudLoginServer? server = context.RequestServices.GetService<CloudLoginServer>();
+
+            if (server is null)
+                return;
+
+            InputFormat format = principal.HasClaim(claim => claim.Type == ClaimTypes.Email)
+                ? InputFormat.EmailAddress
+                : InputFormat.PhoneNumber;
+
+            string input = GetUserInput(principal, format);
+
+            UserModel? user = format == InputFormat.EmailAddress
+                ? await cosmosMethods.GetUserByEmailAddress(input)
+                : await cosmosMethods.GetUserByPhoneNumber(input);
+
+            if (user is null)
+                return;
+
+            string? userAgent = context.Request.Headers.UserAgent.ToString();
+
+            await server.RecordSignInForUser(user.ID, new LoginHistoryEntry
+            {
+                SignedInOn = signedInOn,
+                Provider = GetProviderName(principal),
+                IpAddress = context.Connection.RemoteIpAddress?.ToString(),
+                UserAgent = string.IsNullOrWhiteSpace(userAgent) ? null : userAgent,
+                Device = DescribeDevice(userAgent)
+            });
+        }
+        catch
+        {
+            // Intentionally ignored — see summary.
+        }
+    }
+
+    /// <summary>
+    /// Coarse, dependency-free device description from a user agent string. Deliberately
+    /// approximate: it exists to help someone recognise their own session in the timeline,
+    /// not to fingerprint the client.
+    /// </summary>
+    private static string? DescribeDevice(string? userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent))
+            return null;
+
+        string browser =
+            userAgent.Contains("Edg/", StringComparison.OrdinalIgnoreCase) ? "Edge" :
+            userAgent.Contains("OPR/", StringComparison.OrdinalIgnoreCase) ? "Opera" :
+            userAgent.Contains("Firefox/", StringComparison.OrdinalIgnoreCase) ? "Firefox" :
+            userAgent.Contains("Chrome/", StringComparison.OrdinalIgnoreCase) ? "Chrome" :
+            userAgent.Contains("Safari/", StringComparison.OrdinalIgnoreCase) ? "Safari" :
+            "Browser";
+
+        string platform =
+            userAgent.Contains("Windows", StringComparison.OrdinalIgnoreCase) ? "Windows" :
+            userAgent.Contains("Android", StringComparison.OrdinalIgnoreCase) ? "Android" :
+            userAgent.Contains("iPhone", StringComparison.OrdinalIgnoreCase) ? "iPhone" :
+            userAgent.Contains("iPad", StringComparison.OrdinalIgnoreCase) ? "iPad" :
+            userAgent.Contains("Mac OS", StringComparison.OrdinalIgnoreCase) ? "macOS" :
+            userAgent.Contains("Linux", StringComparison.OrdinalIgnoreCase) ? "Linux" :
+            "Unknown device";
+
+        return $"{browser} on {platform}";
     }
 
     private async Task ProcessUserSignIn(ClaimsPrincipal principal, CosmosMethods cosmosMethods, DateTimeOffset currentDateTime)

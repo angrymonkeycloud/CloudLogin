@@ -156,10 +156,141 @@
   padding: 10px 10px;
   overflow-y: auto;
 }
-.account-management .sidebar-footer {
+/* ── Rail groups ──────────────────────────────────────────────
+   Shared spacing for the two stacks in the rail: the workspace
+   switcher (AccountComponent-WorkspaceSwitcher.razor, styled in
+   its own file) sits in the first one, the tab buttons for the
+   current context in the second. */
+.account-management .rail-group {
+  display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-management .rail-group-label {
+  display: none;
+  padding: 10px 15px 6px;
+  color: #8a8886;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-management .sidebar._open .rail-group-label {
+  display: block;
+}
+.account-management .rail-divider {
+  flex: 0 0 auto;
+  height: 1px;
+  margin: 8px 5px;
+  background: #f0f0f0;
+}
+.account-management .sidebar-footer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
   padding: 10px;
   border-top: 1px solid #f0f0f0;
+}
+/* Session-state indicator. Lives in the rail (not on each page) so it reads as a
+   property of the session rather than of whichever tab happens to be open. It
+   collapses to just the shield when the rail is icon-only, matching the tabs. */
+.account-management .account-security-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 8px;
+  background: var(--cloudlogin-brand-soft);
+  color: var(--cloudlogin-brand-strong);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.account-management .account-security-icon {
+  display: grid;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+}
+.account-management .account-security-icon ::deep svg {
+  width: 18px;
+  height: 18px;
+}
+/* Error pill — only rendered when the error center has entries, so by default there is
+   nothing here at all. Styling matches the security pill's shape but in the danger palette,
+   and stays a plain button: colour changes on hover only, nothing moves or resizes. */
+.account-management .account-error-pill {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 40px;
+  padding: 0 15px;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #a4262c;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.account-management .account-error-pill:hover {
+  background: #fbdad7;
+  border-color: #f3b4b0;
+}
+.account-management .account-error-pill:focus-visible {
+  outline: 2px solid #a4262c;
+  outline-offset: 2px;
+}
+.account-management .account-error-icon {
+  position: relative;
+  display: grid;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+}
+.account-management .account-error-icon ::deep svg {
+  width: 18px;
+  height: 18px;
+}
+/* Collapsed rail: a plain dot on the icon's corner — enough to notice without a hidden
+   label to explain it. Expanded rail / desktop: a normal count badge after the label. */
+.account-management .account-error-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #a4262c;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+.account-management .sidebar._open .account-error-badge {
+  position: static;
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border: none;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
 }
 .account-management .tab-button {
   position: relative;
@@ -265,14 +396,21 @@
   }
 }
 /* ── Content ──────────────────────────────────────────────── */
+/* Content column. `.tab-content` owns the offset that clears the fixed rail;
+   `.tab-content-inner` holds the reading column itself, capped so long lines
+   stay comfortable rather than stretching the full width of a wide monitor. */
 .account-management .tab-content {
   flex: 1 1 auto;
   width: 100%;
   min-width: 0;
-  max-width: 1160px;
   margin-left: var(--rail-width-collapsed);
   padding: 24px 18px 64px;
   overflow-x: hidden;
+}
+.account-management .tab-content-inner {
+  width: 100%;
+  max-width: 1160px;
+  margin-inline: auto;
 }
 .account-management .account-page-header {
   display: flex;
@@ -280,7 +418,6 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
-  min-height: 46px;
   margin-bottom: 22px;
 }
 .account-management .account-page-eyebrow {
@@ -299,27 +436,55 @@
   font-weight: 600;
   letter-spacing: -0.02em;
 }
-.account-management .account-security-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 12px;
-  border: 1px solid #d8d8d8;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #424242;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.account-management .account-security-pill span {
+/* States for an organization workspace being fetched, or no longer reachable. */
+.account-management .workspace-loading {
   display: grid;
-  width: 18px;
-  height: 18px;
   place-items: center;
+  min-height: 220px;
+}
+.account-management .workspace-spinner {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  border-top-color: var(--cloudlogin-brand);
   border-radius: 50%;
-  background: var(--cloudlogin-brand-soft);
-  color: var(--cloudlogin-brand-strong);
-  font-weight: 700;
+  animation: cloudlogin-workspace-spin 0.7s linear infinite;
+}
+@keyframes cloudlogin-workspace-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.account-management .workspace-missing {
+  padding: 28px 24px;
+  border: 1px dashed #dcdcdc;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+}
+.account-management .workspace-missing p {
+  margin: 0 0 14px;
+  color: #605e5c;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.account-management .workspace-missing-action {
+  min-height: 40px;
+  padding: 8px 18px;
+  border: 1px solid var(--cloudlogin-brand);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cloudlogin-brand);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.account-management .workspace-missing-action:hover {
+  background: var(--cloudlogin-brand);
+  color: #fff;
 }
 .account-management .tab-content ::deep .account-section {
   gap: 18px;
@@ -356,7 +521,7 @@
 }
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card {
-  padding: 18px;
+  padding: 22px;
 }
 .account-management .tab-content ::deep .account-section > .form-container {
   max-width: 760px;
@@ -407,9 +572,13 @@
   border-color: var(--cloudlogin-brand);
   box-shadow: none;
 }
+/* Baseline button sizing for content that doesn't style its own controls.
+   `.feature-card` is excluded: it's a full-size card that happens to be a
+   <button>, and this rule's specificity (0,4,1) would otherwise flatten its
+   own padding and min-height back down to control-sized. */
 .account-management .tab-content ::deep .btn,
 .account-management .tab-content ::deep .admin-action-btn,
-.account-management .tab-content ::deep button:not(.link-action):not(.admin-tab) {
+.account-management .tab-content ::deep button:not(.link-action):not(.admin-tab):not(.feature-card) {
   min-height: 40px;
   padding: 8px 16px;
   border-radius: 6px;
@@ -481,7 +650,7 @@
   }
   .account-management .tab-content ::deep .card,
   .account-management .tab-content ::deep .header-card {
-    padding: 20px 24px;
+    padding: 26px 28px;
   }
   .account-management .tab-content ::deep .account-section > .form-container {
     padding: 24px;
@@ -496,8 +665,12 @@
     display: none;
   }
   .account-management .profile-mini-copy,
+  .account-management .rail-group-label,
   .account-management .tab-label {
     display: block;
+  }
+  .account-management .account-error-badge {
+    display: inline-block;
   }
   .account-management .tab-button.active::before {
     left: 0;
@@ -508,6 +681,11 @@
   .account-management .tab-content {
     margin-left: var(--rail-width-desktop);
     padding: 38px clamp(32px, 5vw, 72px) 72px;
+  }
+  /* Narrow the reading column to ~80% of the available content area once
+       there's room for it, so cards don't run edge to edge on wide screens. */
+  .account-management .tab-content-inner {
+    width: 80%;
   }
 }
 @keyframes skelton {

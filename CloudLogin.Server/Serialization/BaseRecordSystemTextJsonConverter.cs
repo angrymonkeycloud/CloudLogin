@@ -5,9 +5,9 @@ using System.Text.Json.Serialization;
 namespace AngryMonkey.CloudLogin.Server.Serialization;
 
 /// <summary>
-/// Custom System.Text.Json converter for BaseRecord that handles conditional legacy property serialization
+/// Custom System.Text.Json converter for CloudLoginBaseRecord that handles conditional legacy property serialization
 /// </summary>
-public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : BaseRecord
+public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : CloudLoginBaseRecord
 {
     public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -42,7 +42,7 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : B
 
         // Parse type/discriminator properties
         string? typeValue = null;
-        if (root.TryGetProperty(BaseRecord.GetTypePropertyName(), out JsonElement typeElement))
+        if (root.TryGetProperty(CloudLoginBaseRecord.GetTypePropertyName(), out JsonElement typeElement))
             typeValue = typeElement.GetString();
         else if (root.TryGetProperty("Discriminator", out JsonElement discriminatorElement))
             typeValue = discriminatorElement.GetString();
@@ -52,7 +52,7 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : B
 
         // Parse partition key properties
         string? partitionKeyValue = null;
-        if (root.TryGetProperty(BaseRecord.GetPartitionKeyJsonPropertyName(), out JsonElement pkElement))
+        if (root.TryGetProperty(CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName(), out JsonElement pkElement))
             partitionKeyValue = pkElement.GetString();
         else if (root.TryGetProperty("PartitionKey", out JsonElement legacyPkElement))
             partitionKeyValue = legacyPkElement.GetString();
@@ -93,10 +93,10 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : B
         // Always write standard properties
         writer.WriteString("id", value.id);
         writer.WriteString("pk", value.pk);
-        writer.WriteString(BaseRecord.GetTypePropertyName(), value.TypeValue);
+        writer.WriteString(CloudLoginBaseRecord.GetTypePropertyName(), value.TypeValue);
 
         // Conditionally write legacy properties
-        if (BaseRecord.ShouldIncludeLegacySchema())
+        if (CloudLoginBaseRecord.ShouldIncludeLegacySchema())
         {
             writer.WriteString("ID", value.GetId().ToString());
             writer.WriteString("PartitionKey", value.PartitionKeyValue);
@@ -147,19 +147,19 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : B
         if (ignoreAttr != null)
             return true;
 
-        // Skip internal BaseRecord properties that shouldn't be serialized directly
-        return property.Name == nameof(BaseRecord.TypeValue) ||
-               property.Name == nameof(BaseRecord.PartitionKeyValue) ||
-               property.Name == nameof(BaseRecord.InternalId) ||
-               property.Name == nameof(BaseRecord.ExtensionData);
+        // Skip internal CloudLoginBaseRecord properties that shouldn't be serialized directly
+        return property.Name == nameof(CloudLoginBaseRecord.TypeValue) ||
+               property.Name == nameof(CloudLoginBaseRecord.PartitionKeyValue) ||
+               property.Name == nameof(CloudLoginBaseRecord.InternalId) ||
+               property.Name == nameof(CloudLoginBaseRecord.ExtensionData);
     }
 
     private static bool IsStandardProperty(string propertyName)
     {
         return propertyName == "id" ||
                propertyName == "pk" ||
-               propertyName == BaseRecord.GetTypePropertyName() ||
-               propertyName == BaseRecord.GetPartitionKeyJsonPropertyName() ||
+               propertyName == CloudLoginBaseRecord.GetTypePropertyName() ||
+               propertyName == CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName() ||
                propertyName == "ID" ||
                propertyName == "PartitionKey" ||
                propertyName == "Discriminator";

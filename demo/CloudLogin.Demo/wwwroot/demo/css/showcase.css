@@ -264,13 +264,13 @@ body {
   font-size: 18px;
   line-height: 1.6;
 }
-.authority-organization-grid,
+.authority-workspace-grid,
 .authority-billing-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
-.authority-organization-grid > article,
+.authority-workspace-grid > article,
 .authority-billing-card,
 .authority-subscription-scope {
   padding: 24px;
@@ -278,7 +278,7 @@ body {
   border-radius: 18px;
   background: var(--authority-surface);
 }
-.authority-organization-grid article > header,
+.authority-workspace-grid article > header,
 .authority-billing-card > header,
 .authority-subscription-scope > header,
 .authority-subscription-card > header {
@@ -287,7 +287,7 @@ body {
   justify-content: space-between;
   gap: 14px;
 }
-.authority-organization-grid article > header > span {
+.authority-workspace-grid article > header > span {
   display: grid;
   width: 48px;
   height: 48px;
@@ -298,19 +298,19 @@ body {
   color: var(--authority-accent);
   font-weight: 900;
 }
-.authority-organization-grid h2,
+.authority-workspace-grid h2,
 .authority-billing-card h2,
 .authority-subscription-scope h2,
 .authority-subscription-card h3 {
   margin: 2px 0;
 }
-.authority-organization-grid small,
+.authority-workspace-grid small,
 .authority-billing-card small,
 .authority-subscription-scope span,
 .authority-subscription-card span {
   color: var(--authority-muted);
 }
-.authority-organization-grid code,
+.authority-workspace-grid code,
 .authority-billing-card code,
 .authority-subscription-scope code,
 .authority-subscription-card code {
@@ -567,7 +567,7 @@ dd {
     font-size: 43px;
   }
   .authority-feature-grid,
-  .authority-organization-grid,
+  .authority-workspace-grid,
   .authority-billing-grid,
   .authority-subscriptions {
     grid-template-columns: 1fr;

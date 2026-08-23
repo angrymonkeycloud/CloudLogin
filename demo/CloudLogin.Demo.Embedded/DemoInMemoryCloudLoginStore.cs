@@ -10,23 +10,23 @@ namespace CloudLogin.Demo.Embedded;
 /// </summary>
 public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
 {
-    private readonly Dictionary<Guid, UserModel> _users = [];
+    private readonly Dictionary<Guid, CloudUser> _users = [];
     private readonly Dictionary<Guid, Guid> _requests = [];
     private readonly Lock _gate = new();
 
-    public Task<List<UserModel>> GetUsers()
+    public Task<List<CloudUser>> GetUsers()
     {
         lock (_gate)
             return Task.FromResult(_users.Values.ToList());
     }
 
-    public Task<UserModel?> GetUserById(Guid id)
+    public Task<CloudUser?> GetUserById(Guid id)
     {
         lock (_gate)
             return Task.FromResult(_users.GetValueOrDefault(id));
     }
 
-    public Task<List<UserModel>> GetUsersByDisplayName(string displayName)
+    public Task<List<CloudUser>> GetUsersByDisplayName(string displayName)
     {
         lock (_gate)
             return Task.FromResult(_users.Values
@@ -34,51 +34,51 @@ public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
                 .ToList());
     }
 
-    public async Task<UserModel?> GetUserByDisplayName(string displayName) =>
+    public async Task<CloudUser?> GetUserByDisplayName(string displayName) =>
         (await GetUsersByDisplayName(displayName)).FirstOrDefault();
 
-    public Task<UserModel?> GetUserByInput(string input)
+    public Task<CloudUser?> GetUserByInput(string input)
     {
         lock (_gate)
             return Task.FromResult(FindByInput(input));
     }
 
-    public Task<UserModel?> GetUserByEmailAddress(string emailAddress)
+    public Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
     {
         lock (_gate)
-            return Task.FromResult(FindByInput(emailAddress, InputFormat.EmailAddress));
+            return Task.FromResult(FindByInput(emailAddress, CloudLoginInputFormat.EmailAddress));
     }
 
-    public Task<UserModel?> GetUserByPhoneNumber(string number)
+    public Task<CloudUser?> GetUserByPhoneNumber(string number)
     {
         lock (_gate)
-            return Task.FromResult(FindByInput(number, InputFormat.PhoneNumber));
+            return Task.FromResult(FindByInput(number, CloudLoginInputFormat.PhoneNumber));
     }
 
-    public Task<UserModel?> GetUserByRequestId(Guid requestId)
+    public Task<CloudUser?> GetUserByRequestId(Guid requestId)
     {
         lock (_gate)
         {
             if (!_requests.Remove(requestId, out Guid userId))
-                return Task.FromResult<UserModel?>(null);
+                return Task.FromResult<CloudUser?>(null);
 
             return Task.FromResult(_users.GetValueOrDefault(userId));
         }
     }
 
-    public Task<LoginRequest> CreateRequest(Guid userId, Guid? requestId = null)
+    public Task<AngryMonkey.CloudLogin.Server.CloudRequest> CreateRequest(Guid userId, Guid? requestId = null)
     {
         Guid id = requestId ?? Guid.NewGuid();
 
         lock (_gate)
             _requests[id] = userId;
 
-        LoginRequest request = new() { UserId = userId };
+        AngryMonkey.CloudLogin.Server.CloudRequest request = new() { UserId = userId };
         request.SetId(id);
         return Task.FromResult(request);
     }
 
-    public Task Update(UserModel user)
+    public Task Update(CloudUser user)
     {
         lock (_gate)
             _users[user.ID] = user;
@@ -86,7 +86,7 @@ public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
         return Task.CompletedTask;
     }
 
-    public Task Create(UserModel user)
+    public Task Create(CloudUser user)
     {
         lock (_gate)
             _users[user.ID] = user;
@@ -102,7 +102,7 @@ public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
         return Task.CompletedTask;
     }
 
-    public Task AddInput(Guid userId, LoginInput input)
+    public Task AddInput(Guid userId, CloudLoginInput input)
     {
         lock (_gate)
             _users[userId].Inputs.Add(input);
@@ -116,7 +116,7 @@ public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
             return Task.FromResult(_users.Count);
     }
 
-    private UserModel? FindByInput(string input, InputFormat? format = null) =>
+    private CloudUser? FindByInput(string input, CloudLoginInputFormat? format = null) =>
         _users.Values.FirstOrDefault(user => user.Inputs.Any(candidate =>
             (!format.HasValue || candidate.Format == format.Value) &&
             string.Equals(candidate.Input, input, StringComparison.OrdinalIgnoreCase)));

@@ -18,7 +18,7 @@ public class UsersController(ILogger<UsersController> logger) : ControllerBase
         {
             if (!User.Identity?.IsAuthenticated ?? true)
             {
-                return Ok((UserModel?)null);
+                return Ok((CloudUser?)null);
             }
 
             // Extract user information from claims
@@ -32,11 +32,11 @@ public class UsersController(ILogger<UsersController> logger) : ControllerBase
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
                 _logger.LogWarning("Invalid or missing user ID in claims");
-                return Ok((UserModel?)null);
+                return Ok((CloudUser?)null);
             }
 
             // Create User object from claims
-            var user = new UserModel
+            var user = new CloudUser
             {
                 ID = userId,
                 DisplayName = displayName,
@@ -49,10 +49,10 @@ public class UsersController(ILogger<UsersController> logger) : ControllerBase
             // Add email to inputs if available
             if (!string.IsNullOrEmpty(email))
             {
-                user.Inputs.Add(new LoginInput
+                user.Inputs.Add(new CloudLoginInput
                 {
                     Input = email,
-                    Format = InputFormat.EmailAddress,
+                    Format = CloudLoginInputFormat.EmailAddress,
                     IsPrimary = true,
                     Providers = []
                 });

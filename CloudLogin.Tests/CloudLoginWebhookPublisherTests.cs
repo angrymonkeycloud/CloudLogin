@@ -16,10 +16,10 @@ public class CloudLoginWebhookPublisherTests
             HttpStatusCode.InternalServerError,
             HttpStatusCode.NoContent);
         CloudLoginWebConfiguration configuration = Configuration(
-            "Organization.Updated");
+            "Workspace.Updated");
         CloudLoginEvent cloudEvent = CloudLoginEvent.Create(
-            "Organization.Updated",
-            "Organization",
+            "Workspace.Updated",
+            "Workspace",
             Guid.NewGuid(),
             "Updated",
             new { Name = "Acme" });
@@ -44,7 +44,7 @@ public class CloudLoginWebhookPublisherTests
             delivered.Body,
             CloudLoginSerialization.Options)!;
         Assert.Equal(1, parsed.Version);
-        Assert.Equal("Organization", parsed.EntityType);
+        Assert.Equal("Workspace", parsed.EntityType);
         Assert.Equal("Updated", parsed.Operation);
     }
 
@@ -124,9 +124,9 @@ public class CloudLoginWebhookPublisherTests
             scope.ServiceProvider.GetRequiredService<CloudLoginWebConfiguration>());
         Assert.IsType<CloudLoginWebhookPublisher>(
             scope.ServiceProvider.GetRequiredService<ICloudLoginEventPublisher>());
-        Assert.IsType<OrganizationRegistry>(
-            scope.ServiceProvider.GetRequiredService<IOrganizationRegistry>());
+        Assert.IsType<WorkspaceRegistry>(
+            scope.ServiceProvider.GetRequiredService<ICloudLoginWorkspaceRegistry>());
         Assert.IsType<SubscriptionRegistry>(
-            scope.ServiceProvider.GetRequiredService<ISubscriptionRegistry>());
+            scope.ServiceProvider.GetRequiredService<ICloudLoginSubscriptionRegistry>());
     }
 }

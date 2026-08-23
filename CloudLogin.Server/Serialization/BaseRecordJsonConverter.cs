@@ -1,12 +1,43 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Reflection;
+using AngryMonkey.CloudLogin.Server.Tokens;
 
 namespace AngryMonkey.CloudLogin.Server.Serialization;
 
-public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
+public class BaseRecordJsonConverter : JsonConverter<CloudLoginBaseRecord>
 {
-    public override BaseRecord? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    /// <summary>
+    /// Maps a stored type discriminator to the concrete record it deserializes into.
+    /// <para>
+    /// A registry rather than a hardcoded switch, because adding a record type in one
+    /// place and forgetting to teach the serializer about it in another fails only at
+    /// runtime, on the first read or write of that type.
+    /// </para>
+    /// </summary>
+    private static readonly Dictionary<string, Func<CloudLoginBaseRecord>> Factories =
+        new(StringComparer.Ordinal)
+        {
+            ["UserInfo"] = () => new CloudUserInfo(),
+            ["User"] = () => new CloudUserInfo(),
+            ["Request"] = () => new CloudRequest(),
+            ["SigningKey"] = () => new CloudLoginSigningKey(),
+            ["RefreshToken"] = () => new CloudLoginRefreshToken()
+        };
+
+    /// <summary>
+    /// Registers an additional record type. Call before the first Cosmos operation
+    /// that touches the type.
+    /// </summary>
+    public static void Register(string typeValue, Func<CloudLoginBaseRecord> factory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(typeValue);
+        ArgumentNullException.ThrowIfNull(factory);
+
+        Factories[typeValue] = factory;
+    }
+
+    public override CloudLoginBaseRecord? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
             throw new JsonException("Expected StartObject token");
@@ -15,8 +46,8 @@ public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
         JsonElement root = document.RootElement;
 
         // Get configured property names
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        string typePropertyName = CloudLoginBaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName();
 
         // First, determine the document type
         string? typeValue = GetPropertyValue(root, typePropertyName, "type", "$type", "Discriminator");
@@ -24,17 +55,16 @@ public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
             throw new JsonException("Cannot determine document type - type property is missing");
 
         // Create the appropriate concrete type
-        BaseRecord? instance = typeValue switch
-        {
-            "UserInfo" or "User" => new UserInfo(),
-            "Request" => new LoginRequest(),
-            _ => throw new JsonException($"Unknown BaseRecord type: {typeValue}")
-        };
+        if (!Factories.TryGetValue(typeValue, out Func<CloudLoginBaseRecord>? factory))
+            throw new JsonException(
+                $"Unknown CloudLoginBaseRecord type: {typeValue}. Register it with BaseRecordJsonConverter.Register.");
+
+        CloudLoginBaseRecord instance = factory();
 
         // Set the basic properties - try multiple possible property names
         SetIdFromJson(root, instance);
-        SetPropertyFromJson(root, instance, typePropertyName, nameof(BaseRecord.TypeValue));
-        SetPropertyFromJson(root, instance, partitionKeyPropertyName, nameof(BaseRecord.PartitionKeyValue));
+        SetPropertyFromJson(root, instance, typePropertyName, nameof(CloudLoginBaseRecord.TypeValue));
+        SetPropertyFromJson(root, instance, partitionKeyPropertyName, nameof(CloudLoginBaseRecord.PartitionKeyValue));
 
         // Handle additional properties for the specific type
         DeserializeAdditionalProperties(root, instance, options);
@@ -74,23 +104,23 @@ public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
         return false;
     }
 
-    private static void SetIdFromJson(JsonElement root, BaseRecord instance)
+    private static void SetIdFromJson(JsonElement root, CloudLoginBaseRecord instance)
     {
         // Try to get ID from various possible property names
         string? idValue = GetPropertyValue(root, "id", "ID");
         if (!string.IsNullOrEmpty(idValue))
         {
-            Guid parsedId = BaseRecord.ParseId(idValue);
+            Guid parsedId = CloudLoginBaseRecord.ParseId(idValue);
             if (parsedId != Guid.Empty)
                 instance.SetId(parsedId);
         }
     }
 
-    private static void SetPropertyFromJson(JsonElement root, BaseRecord instance, string jsonPropertyName, string objectPropertyName)
+    private static void SetPropertyFromJson(JsonElement root, CloudLoginBaseRecord instance, string jsonPropertyName, string objectPropertyName)
     {
         if (TryGetProperty(root, jsonPropertyName, out string? value) && !string.IsNullOrEmpty(value))
         {
-            PropertyInfo? property = typeof(BaseRecord).GetProperty(objectPropertyName);
+            PropertyInfo? property = typeof(CloudLoginBaseRecord).GetProperty(objectPropertyName);
             
             if (property != null && property.CanWrite)
             {
@@ -105,10 +135,10 @@ public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
         }
     }
 
-    private static void DeserializeAdditionalProperties(JsonElement root, BaseRecord instance, JsonSerializerOptions options)
+    private static void DeserializeAdditionalProperties(JsonElement root, CloudLoginBaseRecord instance, JsonSerializerOptions options)
     {
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        string typePropertyName = CloudLoginBaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName();
 
         HashSet<string> excludedProperties = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -135,19 +165,19 @@ public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
         }
     }
 
-    public override void Write(Utf8JsonWriter writer, BaseRecord value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, CloudLoginBaseRecord value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 
-        JsonCompatibilityMode compatibilityMode = BaseRecord.GetJsonCompatibilityMode();
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        JsonCompatibilityMode compatibilityMode = CloudLoginBaseRecord.GetJsonCompatibilityMode();
+        string typePropertyName = CloudLoginBaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName();
 
-        // Write the lowercase 'id' field using the BaseRecord's getter
+        // Write the lowercase 'id' field using the CloudLoginBaseRecord's getter
         writer.WriteString("id", value.id);
 
         // Write uppercase 'ID' field only if legacy schema is enabled
-        if (BaseRecord.ShouldIncludeLegacySchema())
+        if (CloudLoginBaseRecord.ShouldIncludeLegacySchema())
             writer.WriteString("ID", value.GetId().ToString());
 
         // Write Type with configured property name
@@ -169,8 +199,8 @@ public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
         // Write other properties
         IEnumerable<PropertyInfo> properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.Name != "InternalId" && 
-                       p.Name != nameof(BaseRecord.TypeValue) && 
-                       p.Name != nameof(BaseRecord.PartitionKeyValue) &&
+                       p.Name != nameof(CloudLoginBaseRecord.TypeValue) && 
+                       p.Name != nameof(CloudLoginBaseRecord.PartitionKeyValue) &&
                        p.Name != "id" &&
                        p.CanRead &&
                        !p.GetCustomAttributes<JsonIgnoreAttribute>().Any());
@@ -202,5 +232,5 @@ public class BaseRecordJsonConverter : JsonConverter<BaseRecord>
         return property.Name;
     }
 
-    public override bool CanConvert(Type typeToConvert) => typeof(BaseRecord).IsAssignableFrom(typeToConvert);
+    public override bool CanConvert(Type typeToConvert) => typeof(CloudLoginBaseRecord).IsAssignableFrom(typeToConvert);
 }

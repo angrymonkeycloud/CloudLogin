@@ -83,7 +83,7 @@
     @if (CurrentUser.EmailAddresses.Any())
     {
         <div class="contact-list">
-            @foreach (LoginInput email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
+            @foreach (CloudLoginInputModel email in CurrentUser.EmailAddresses.OrderByDescending(e => e.IsPrimary))
             {
                 <div class="contact-row">
                     <div class="contact-main">
@@ -132,7 +132,7 @@
 </div>
 
 @code {
-    [Parameter] public required UserModel CurrentUser { get; set; }
+    [Parameter] public required CloudUserModel CurrentUser { get; set; }
 
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
@@ -182,7 +182,7 @@
                 return;
             }
 
-            UserModel? existingUser = await cloudLogin.GetUserByEmailAddress(normalized);
+            CloudUser? existingUser = await cloudLogin.GetUserByEmailAddress(normalized);
             if (existingUser != null && existingUser.ID != CurrentUser.ID)
             {
                 SetStatus("This email address is already in use by another account.", false);
@@ -258,16 +258,16 @@
 
             string verifiedInput = _verification.PendingInput;
 
-            LoginInput newEmailInput = new()
+            CloudLoginInputModel newEmailInput = new()
             {
                 Input = verifiedInput,
-                Format = InputFormat.EmailAddress,
+                Format = CloudLoginInputFormat.EmailAddress,
                 IsPrimary = !CurrentUser.EmailAddresses.Any(),
                 Providers = []
             };
 
             CurrentUser.Inputs.Add(newEmailInput);
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             _verification.Reset();
             _isAdding = false;
@@ -303,7 +303,7 @@
             StateHasChanged();
 
             var emailToRemove = CurrentUser.Inputs.FirstOrDefault(e =>
-                e.Format == InputFormat.EmailAddress &&
+                e.Format == CloudLoginInputFormat.EmailAddress &&
                 e.Input.Equals(email, StringComparison.OrdinalIgnoreCase));
 
             if (emailToRemove == null)
@@ -321,7 +321,7 @@
             }
 
             CurrentUser.Inputs.Remove(emailToRemove);
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             SetStatus("Email address removed successfully.", true);
         }
@@ -356,7 +356,7 @@
             foreach (var e in CurrentUser.EmailAddresses)
                 e.IsPrimary = e.Input.Equals(email, StringComparison.OrdinalIgnoreCase);
 
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             SetStatus("Primary email address updated successfully.", true);
         }

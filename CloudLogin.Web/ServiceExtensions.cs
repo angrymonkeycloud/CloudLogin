@@ -97,8 +97,8 @@ public static class MvcServiceCollectionExtensions
         if (!loginConfig.Cosmos.IsValid())
             return;
 
-        // Configure BaseRecord with Cosmos configuration for property naming
-        BaseRecord.CosmosConfiguration = loginConfig.Cosmos;
+        // Configure CloudLoginBaseRecord with Cosmos configuration for property naming
+        CloudLoginBaseRecord.CosmosConfiguration = loginConfig.Cosmos;
 
         // Create CosmosClient with custom serialization using configurable property names
         CosmosClientOptions cosmosClientOptions = new()

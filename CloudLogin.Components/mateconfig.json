@@ -21,13 +21,13 @@
       "minify": false
     },
     {
-      "input": "Components/Account/AccountComponent-Organization.razor.less",
-      "output": "Components/Account/AccountComponent-Organization.razor.css",
+      "input": "Components/Account/AccountComponent-Workspace.razor.less",
+      "output": "Components/Account/AccountComponent-Workspace.razor.css",
       "minify": false
     },
     {
-      "input": "Components/Account/AccountComponent-WorkspaceSwitcher.razor.less",
-      "output": "Components/Account/AccountComponent-WorkspaceSwitcher.razor.css",
+      "input": "Components/Account/AccountComponent-WorkspacePicker.razor.less",
+      "output": "Components/Account/AccountComponent-WorkspacePicker.razor.css",
       "minify": false
     },
     {

@@ -90,24 +90,24 @@
     private bool HasError { get; set; }
     private bool IsValid { get; set; }
     private string? ErrorMessage { get; set; }
-    private InputFormat _currentFormat = InputFormat.Other;
-    private InputFormat _lastKnownFormat = InputFormat.Other;
+    private CloudLoginInputFormat _currentFormat = CloudLoginInputFormat.Other;
+    private CloudLoginInputFormat _lastKnownFormat = CloudLoginInputFormat.Other;
     private bool HasValue => !string.IsNullOrEmpty(Value);
 
-    private InputFormat[] AllowedFormats
+    private CloudLoginInputFormat[] AllowedFormats
     {
         get
         {
-            List<InputFormat> formats = [];
+            List<CloudLoginInputFormat> formats = [];
 
             if (AllowEmailInput)
-                formats.Add(InputFormat.EmailAddress);
+                formats.Add(CloudLoginInputFormat.EmailAddress);
 
             if (AllowPhoneInput)
-                formats.Add(InputFormat.PhoneNumber);
+                formats.Add(CloudLoginInputFormat.PhoneNumber);
 
             if (AllowUsernameInput)
-                formats.Add(InputFormat.Other);
+                formats.Add(CloudLoginInputFormat.Other);
 
             return formats.ToArray();
         }
@@ -117,36 +117,36 @@
 
     private string InputType => _currentFormat switch
     {
-        InputFormat.EmailAddress => "email",
-        InputFormat.PhoneNumber => "tel",
+        CloudLoginInputFormat.EmailAddress => "email",
+        CloudLoginInputFormat.PhoneNumber => "tel",
         _ => "text"
     };
 
     private string AutoComplete => _currentFormat switch
     {
-        InputFormat.EmailAddress => "email",
-        InputFormat.PhoneNumber => "tel",
+        CloudLoginInputFormat.EmailAddress => "email",
+        CloudLoginInputFormat.PhoneNumber => "tel",
         _ => "username"
     };
 
     private string DisplayLabel => Label ?? _currentFormat switch
     {
-        InputFormat.EmailAddress => "Email Address",
-        InputFormat.PhoneNumber => "Phone Number",
+        CloudLoginInputFormat.EmailAddress => "Email Address",
+        CloudLoginInputFormat.PhoneNumber => "Phone Number",
         _ => GetDynamicLabel()
     };
 
     private string DisplayPlaceholder => Placeholder ?? _currentFormat switch
     {
-        InputFormat.EmailAddress => "Enter your email address",
-        InputFormat.PhoneNumber => "Enter your phone number",
+        CloudLoginInputFormat.EmailAddress => "Enter your email address",
+        CloudLoginInputFormat.PhoneNumber => "Enter your phone number",
         _ => GetDynamicPlaceholder()
     };
 
     private string? FormatHint => _currentFormat switch
     {
-        InputFormat.PhoneNumber => "Include country code (e.g., +1 555-123-4567)",
-        InputFormat.EmailAddress => "Enter a valid email address",
+        CloudLoginInputFormat.PhoneNumber => "Include country code (e.g., +1 555-123-4567)",
+        CloudLoginInputFormat.EmailAddress => "Enter a valid email address",
         _ => null
     };
 
@@ -246,7 +246,7 @@
         await ValueChanged.InvokeAsync(Value);
         await OnClear.InvokeAsync();
 
-        _currentFormat = InputFormat.Other;
+        _currentFormat = CloudLoginInputFormat.Other;
         HasError = false;
         IsValid = false;
         ErrorMessage = null;
@@ -258,11 +258,11 @@
     {
         if (string.IsNullOrWhiteSpace(Value))
         {
-            _currentFormat = InputFormat.Other;
+            _currentFormat = CloudLoginInputFormat.Other;
             return;
         }
 
-        InputFormat detectedFormat = cloudLogin.GetInputFormat(Value);
+        CloudLoginInputFormat detectedFormat = cloudLogin.GetInputFormat(Value);
 
         if (detectedFormat != _lastKnownFormat)
         {
@@ -316,9 +316,9 @@
 
         return _currentFormat switch
         {
-            InputFormat.EmailAddress => ValidateEmail(),
-            InputFormat.PhoneNumber => ValidatePhoneNumber(),
-            InputFormat.Other => ValidateGeneral(),
+            CloudLoginInputFormat.EmailAddress => ValidateEmail(),
+            CloudLoginInputFormat.PhoneNumber => ValidatePhoneNumber(),
+            CloudLoginInputFormat.Other => ValidateGeneral(),
             _ => new ValidationResult { IsValid = false, ErrorMessage = "Invalid input format" }
         };
     }
@@ -361,7 +361,7 @@
     private ValidationResult ValidateGeneral()
     {
         // Check if it might be a username
-        if (!AllowUsernameInput && _currentFormat == InputFormat.Other)
+        if (!AllowUsernameInput && _currentFormat == CloudLoginInputFormat.Other)
             return new ValidationResult { IsValid = false, ErrorMessage = "This input format is not allowed" };
 
         // Basic username validation (if it's not email or phone)
@@ -369,7 +369,7 @@
             return new ValidationResult { IsValid = false, ErrorMessage = "Input must be at least 3 characters long" };
 
         // Check for invalid characters in username
-        if (_currentFormat == InputFormat.Other && (Value?.Any(c => !char.IsLetterOrDigit(c) && c != '_' && c != '-' && c != '.') ?? false))
+        if (_currentFormat == CloudLoginInputFormat.Other && (Value?.Any(c => !char.IsLetterOrDigit(c) && c != '_' && c != '-' && c != '.') ?? false))
             return new ValidationResult { IsValid = false, ErrorMessage = "Username can only contain letters, numbers, underscores, hyphens, and periods" };
 
         return new ValidationResult { IsValid = true };
@@ -434,8 +434,8 @@
 
     public class InputFormatChangedEventArgs
     {
-        public InputFormat PreviousFormat { get; set; }
-        public InputFormat CurrentFormat { get; set; }
+        public CloudLoginInputFormat PreviousFormat { get; set; }
+        public CloudLoginInputFormat CurrentFormat { get; set; }
         public string? Value { get; set; }
     }
 
@@ -444,7 +444,7 @@
         public bool IsValid { get; set; }
         public bool HasError { get; set; }
         public string? ErrorMessage { get; set; }
-        public InputFormat Format { get; set; }
+        public CloudLoginInputFormat Format { get; set; }
         public string? Value { get; set; }
     }
 

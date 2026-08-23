@@ -9,13 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 DemoInboxService demoInbox = new();
 DemoInMemoryCloudLoginStore demoStore = new();
 
-// Seeded so the Admin tab in the Account UI (gated by UserModel.IsGlobalAdmin) is reachable
+// Seeded so the Admin tab in the Account UI (gated by CloudUser.IsGlobalAdmin) is reachable
 // without any manual setup: pick "Demo Admin" from the Test Mode user list on the login screen.
-// The account registry seeds against this same id, so the organizations, subscriptions, and
+// The account registry seeds against this same id, so the workspaces, subscriptions, and
 // billing below all belong to the account you sign in as.
 Guid demoAdminUserId = Guid.NewGuid();
 
-await demoStore.Create(new UserModel
+await demoStore.Create(new CloudUser
 {
     ID = demoAdminUserId,
     FirstName = "Demo",
@@ -24,7 +24,7 @@ await demoStore.Create(new UserModel
     IsTest = true,
     IsGlobalAdmin = true,
     CreatedOn = DateTimeOffset.UtcNow,
-    Inputs = [new LoginInput { Input = "admin@demo.cloudlogin", Format = InputFormat.EmailAddress, IsPrimary = true }]
+    Inputs = [new CloudLoginInput { Input = "admin@demo.cloudlogin", Format = CloudLoginInputFormat.EmailAddress, IsPrimary = true }]
 });
 
 builder.Services.AddSingleton(demoInbox);
@@ -57,10 +57,14 @@ builder.AddCloudLoginWeb(options =>
 
     options.Subscription = new();
     // Both caps are optional; omit them for the defaults (3 owned, 10 memberships).
-    options.Organization = new()
+    // SingularLabel/PluralLabel show the concept as "Business"/"Businesses" here —
+    // everything internal (routes, JSON, webhook events) still says "Workspace".
+    options.Workspace = new()
     {
         MaxOwnedPerUser = 3,
-        MaxPerUser = 6
+        MaxPerUser = 6,
+        SingularLabel = "Business",
+        PluralLabel = "Businesses"
     };
     options.Payment = new();
 

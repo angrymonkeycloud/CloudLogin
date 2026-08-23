@@ -54,7 +54,7 @@
             {
                 <div class="login-form">
                     <div class="amc-cloudlogin-providers">
-                        @foreach (ProviderDefinition provider in Providers)
+                        @foreach (CloudLoginProviderDefinitionModel provider in Providers)
                         {
                             <button class="amc-cloudlogin-provider @provider.CssClass @(Auth.IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                                 <div class="amc-cloudlogin-provider-label">@provider.Label</div>
@@ -68,7 +68,7 @@
         {
             <div class="login-form">
                 <div class="amc-cloudlogin-providers">
-                    @foreach (ProviderDefinition provider in Auth.Input!.Providers)
+                    @foreach (CloudLoginProviderDefinitionModel provider in Auth.Input!.Providers)
                     {
                         <button class="amc-cloudlogin-provider @provider.CssClass @(Auth.IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                             <div class="amc-cloudlogin-provider-label">@provider.Label</div>
@@ -213,7 +213,7 @@
                 @if (!string.IsNullOrEmpty(InputValue))
                 {
                     <div class="login-form-next">
-                        <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || InputValueFormat == InputFormat.EmailAddress) ? "" : "--disable")" @onclick="OnRegistrationInputNextClicked">
+                        <button class="amc-cloudlogin-button @((InputValueFormat == CloudLoginInputFormat.PhoneNumber || InputValueFormat == CloudLoginInputFormat.EmailAddress) ? "" : "--disable")" @onclick="OnRegistrationInputNextClicked">
                             <span>Next</span>
                             <AngryMonkey.CloudComponents.Icons.LoadingButton />
                         </button>
@@ -355,7 +355,7 @@
                 {
                     <div class="login-form-title">Sign in as a test user</div>
                     <div class="amc-cloudlogin-providers">
-                        @foreach (UserModel testUser in TestUsers)
+                        @foreach (CloudUserModel testUser in TestUsers)
                         {
                             <button class="amc-cloudlogin-provider _testmode @(Auth.IsLoading ? "--disable" : "")" @onclick="() => OnTestModeSignInAsync(testUser)">
                                 <div class="amc-cloudlogin-provider-label">@testUser.DisplayName</div>
@@ -407,7 +407,7 @@
                     @if (!string.IsNullOrEmpty(InputValue))
                     {
                         <div class="login-form-next ">
-                            <button class="amc-cloudlogin-button @((InputValueFormat == InputFormat.PhoneNumber || (InputValueFormat == InputFormat.EmailAddress)) ? "" : "--disable")" @onclick="OnInputNextClicked">
+                            <button class="amc-cloudlogin-button @((InputValueFormat == CloudLoginInputFormat.PhoneNumber || (InputValueFormat == CloudLoginInputFormat.EmailAddress)) ? "" : "--disable")" @onclick="OnInputNextClicked">
                                 <span>Next</span>
                                 <AngryMonkey.CloudComponents.Icons.LoadingButton />
                             </button>
@@ -430,7 +430,7 @@
                 {
                     <div class="login-form-title">or sign in with</div>
                     <div class="amc-cloudlogin-providers">
-                        @foreach (ProviderDefinition provider in ExternalProviders)
+                        @foreach (CloudLoginProviderDefinitionModel provider in ExternalProviders)
                         {
                             <button class="amc-cloudlogin-provider @provider.CssClass @(Auth.IsLoading ? $"--disable" : "") " @onclick="() => OnProviderClickedAsync(provider)">
                                 <div class="amc-cloudlogin-provider-label">@provider.Label</div>

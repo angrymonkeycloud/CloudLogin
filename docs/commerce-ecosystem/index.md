@@ -26,7 +26,7 @@ CloudPayments, CloudLogistics, and CloudBooking never reference CloudCommerce. N
 
 ## Existing Angry Monkey Cloud capabilities reused
 
-- CloudLogin remains the identity and account boundary. Its lightweight organization, membership, billing-reference, and subscription registries carry account state without executing payments or defining application entitlements.
+- CloudLogin remains the identity and account boundary. Its lightweight workspace, membership, billing-reference, and subscription registries carry account state without executing payments or defining application entitlements.
 - CloudGeography supplies money, countries, subdivisions, and time-zone data. CloudLogistics only adds the postal fields missing from that geographic dataset and stores CloudGeography country/subdivision codes.
 - CloudComponents remains the reusable Blazor component infrastructure. CloudCommerce Components uses the active component project rather than creating a competing framework.
 - CloudComponents.Maps is the current map package. There is no separate CloudMaps repository in the supplied workspace; location UI can compose that package when a map is required.
@@ -34,13 +34,13 @@ CloudPayments, CloudLogistics, and CloudBooking never reference CloudCommerce. N
 
 ## Conflict decisions
 
-CDM already contains private organization, business-unit, and role storage. Those types remain implementation details and do not become public identity contracts. CloudLogin now defines the public organization and membership semantics, and a private adapter maps them when CDM persistence is selected.
+CDM already contains private organization, business-unit, and role storage. Those types remain implementation details and do not become public identity contracts. CloudLogin now defines the public workspace and membership semantics, and a private adapter maps them when CDM persistence is selected.
 
 CloudGeography does not expose a postal-address contract. `LogisticsAddress` therefore contains delivery lines and locality while referencing CloudGeography codes instead of duplicating country or subdivision entities.
 
 ## Domain documentation
 
-- [CloudLogin organizations and subscriptions](../account-registry.md)
+- [CloudLogin workspaces and subscriptions](../account-registry.md)
 - [CloudPayments](../../CloudPayments/docs/index.md)
 - [Payment providers](../../CloudPayments/docs/providers.md)
 - [Shipping carriers](../../CloudLogistics/docs/carriers.md)

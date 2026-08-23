@@ -9,7 +9,7 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public partial class CloudLoginServer
 {
-    public async Task<UserModel?> ValidateEmailPassword(string email, string password)
+    public async Task<CloudUser?> ValidateEmailPassword(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             return null;
@@ -17,7 +17,7 @@ public partial class CloudLoginServer
         // Normalize email
         email = email.Trim().ToLowerInvariant();
 
-        UserModel? user = await GetUserByEmailAddress(email);
+        CloudUser? user = await GetUserByEmailAddress(email);
 
         if (user == null || user.IsLocked)
             return null;
@@ -26,7 +26,7 @@ public partial class CloudLoginServer
         if (user.IsTest)
             return null;
 
-        LoginProvider? passwordProvider = user.Inputs
+        CloudLoginProvider? passwordProvider = user.Inputs
             .SelectMany(key => key.Providers)
             .FirstOrDefault(key => key.Code.Equals("password", StringComparison.OrdinalIgnoreCase));
         string? passwordHash = passwordProvider?.PasswordHash;

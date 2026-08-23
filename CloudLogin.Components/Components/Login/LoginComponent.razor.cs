@@ -51,22 +51,22 @@ public partial class LoginComponent : IDisposable
         }
     }
 
-    List<InputFormat> AvailableFormats
+    List<CloudLoginInputFormat> AvailableFormats
     {
         get
         {
-            List<InputFormat> formats = [];
+            List<CloudLoginInputFormat> formats = [];
 
             if (EmailAddressEnabled)
-                formats.Add(InputFormat.EmailAddress);
+                formats.Add(CloudLoginInputFormat.EmailAddress);
 
             if (PhoneNumberEnabled)
-                formats.Add(InputFormat.PhoneNumber);
+                formats.Add(CloudLoginInputFormat.PhoneNumber);
 
             return formats;
         }
     }
-    protected InputFormat InputValueFormat => cloudLogin.GetInputFormat(InputValue);
+    protected CloudLoginInputFormat InputValueFormat => cloudLogin.GetInputFormat(InputValue);
     #endregion
 
     #region UI State
@@ -94,11 +94,11 @@ public partial class LoginComponent : IDisposable
     #endregion
 
     #region Provider Management
-    List<ProviderDefinition> Providers { get; set; } = [];
-    List<ProviderDefinition> ExternalProviders => [.. Providers.Where(key => key.IsExternal)];
+    List<CloudLoginProviderDefinitionModel> Providers { get; set; } = [];
+    List<CloudLoginProviderDefinitionModel> ExternalProviders => [.. Providers.Where(key => key.IsExternal)];
     public bool EmailAddressEnabled => Providers.Any(key => key.HandlesEmailAddress);
     public bool PhoneNumberEnabled => Providers.Any(key => key.HandlesPhoneNumber);
-    public ProviderDefinition? SelectedProvider { get; set; }
+    public CloudLoginProviderDefinitionModel? SelectedProvider { get; set; }
     #endregion
 
     #region Verification Management
@@ -112,8 +112,8 @@ public partial class LoginComponent : IDisposable
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
-    public List<ProviderDefinition> NonExternalProviders => [.. Providers.Where(key => !key.IsExternal)];
-    public List<ProviderDefinition> AvailableRegistrationProviders => [.. NonExternalProviders.Where(p =>
+    public List<CloudLoginProviderDefinitionModel> NonExternalProviders => [.. Providers.Where(key => !key.IsExternal)];
+    public List<CloudLoginProviderDefinitionModel> AvailableRegistrationProviders => [.. NonExternalProviders.Where(p =>
         p.Code.Equals("code", StringComparison.OrdinalIgnoreCase) ||
         p.Code.Equals("password", StringComparison.OrdinalIgnoreCase))];
     public bool HasCodeProvider => AvailableRegistrationProviders.Any(p => p.Code.Equals("code", StringComparison.OrdinalIgnoreCase));
@@ -123,8 +123,8 @@ public partial class LoginComponent : IDisposable
     #endregion
 
     #region Test Mode State
-    private List<UserModel> TestUsers { get; set; } = [];
-    private ProviderDefinition? TestModeProvider => Providers.FirstOrDefault(p => p.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase));
+    private List<CloudUserModel> TestUsers { get; set; } = [];
+    private CloudLoginProviderDefinitionModel? TestModeProvider => Providers.FirstOrDefault(p => p.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase));
     #endregion
 
     #region Lifecycle Methods
@@ -137,7 +137,7 @@ public partial class LoginComponent : IDisposable
         }
 
         Auth.OnStateChanged += StateHasChanged;
-        Providers = await cloudLogin.GetProviders();
+        Providers = [.. (await cloudLogin.GetProviders()).Select(provider => provider.ToModel())];
         OnInput = StateHasChanged;
 
         await Auth.SwitchStep(ProcessStep.InputValue);
@@ -162,7 +162,7 @@ public partial class LoginComponent : IDisposable
         Auth.StartLoading();
         InputValue = InputValue.ToLower();
 
-        UserModel? user = await cloudLogin.GetUserByInput(InputValue);
+        CloudUser? user = await cloudLogin.GetUserByInput(InputValue);
 
         if (user != null)
         {
@@ -174,7 +174,7 @@ public partial class LoginComponent : IDisposable
 
             foreach (string providerCode in user.Providers)
             {
-                ProviderDefinition? provider = Providers.FirstOrDefault(p => p.Code.Equals(providerCode, StringComparison.OrdinalIgnoreCase));
+                CloudLoginProviderDefinitionModel? provider = Providers.FirstOrDefault(p => p.Code.Equals(providerCode, StringComparison.OrdinalIgnoreCase));
 
                 if (provider != null)
                     Auth.Input.Providers.Add(provider);
@@ -213,7 +213,7 @@ public partial class LoginComponent : IDisposable
         if (string.IsNullOrEmpty(InputValue))
             return;
 
-        if (InputValueFormat != InputFormat.EmailAddress && InputValueFormat != InputFormat.PhoneNumber)
+        if (InputValueFormat != CloudLoginInputFormat.EmailAddress && InputValueFormat != CloudLoginInputFormat.PhoneNumber)
         {
             Auth.Errors.Add("Please enter a valid email address or phone number.");
             return;
@@ -222,7 +222,7 @@ public partial class LoginComponent : IDisposable
         Auth.StartLoading();
         InputValue = InputValue.ToLower();
 
-        UserModel? user = await cloudLogin.GetUserByInput(InputValue);
+        CloudUser? user = await cloudLogin.GetUserByInput(InputValue);
 
         if (user != null)
         {
@@ -276,7 +276,7 @@ public partial class LoginComponent : IDisposable
     #endregion
 
     #region Provider Selection
-    private async Task OnProviderClickedAsync(ProviderDefinition provider)
+    private async Task OnProviderClickedAsync(CloudLoginProviderDefinitionModel provider)
     {
         if (provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase))
         {
@@ -334,16 +334,16 @@ public partial class LoginComponent : IDisposable
         {
             string email = GenerateTestEmail(DisplayName, TestUsers);
 
-            PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
+            CloudLoginPasswordRegistrationRequest request = CloudLoginPasswordRegistrationRequest.Create(
                 email,
-                InputFormat.EmailAddress,
+                CloudLoginInputFormat.EmailAddress,
                 password: null,
                 FirstName,
                 LastName,
                 DisplayName);
 
-            UserModel newUser = await cloudLogin.PasswordRegistration(request);
-            await OnTestModeSignInAsync(newUser);
+            CloudUser newUser = await cloudLogin.PasswordRegistration(request);
+            await OnTestModeSignInAsync(newUser.ToModel());
         }
         catch (Exception ex)
         {
@@ -352,7 +352,7 @@ public partial class LoginComponent : IDisposable
         }
     }
 
-    private static string GenerateTestEmail(string displayName, List<UserModel> existingTestUsers)
+    private static string GenerateTestEmail(string displayName, List<CloudUserModel> existingTestUsers)
     {
         string slug = new string([.. displayName.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '_')]).Trim('_').Replace("_", string.Empty);
 
@@ -383,7 +383,7 @@ public partial class LoginComponent : IDisposable
     private async Task OnTestModeClickedAsync()
     {
         Auth.StartLoading();
-        TestUsers = await cloudLogin.GetTestUsers();
+        TestUsers = [.. (await cloudLogin.GetTestUsers()).Select(user => user.ToModel())];
         FirstName = string.Empty;
         LastName = string.Empty;
         DisplayName = string.Empty;
@@ -391,7 +391,7 @@ public partial class LoginComponent : IDisposable
         Auth.EndLoading();
     }
 
-    private async Task OnTestModeSignInAsync(UserModel user)
+    private async Task OnTestModeSignInAsync(CloudUserModel user)
     {
         Auth.StartLoading();
         Auth.Errors.Clear();
@@ -456,14 +456,14 @@ public partial class LoginComponent : IDisposable
 
         try
         {
-            CodeRegistrationRequest request = CodeRegistrationRequest.Create(
+            CloudLoginCodeRegistrationRequest request = CloudLoginCodeRegistrationRequest.Create(
                 Auth.Input!.Input,
                 InputValueFormat,
                 FirstName,
                 LastName,
                 DisplayName);
 
-            UserModel newUser = await cloudLogin.CodeRegistration(request);
+            CloudUser newUser = await cloudLogin.CodeRegistration(request);
             await CustomSignInChallengeAsync(newUser);
         }
         catch (Exception ex)
@@ -508,7 +508,7 @@ public partial class LoginComponent : IDisposable
 
         try
         {
-            PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
+            CloudLoginPasswordRegistrationRequest request = CloudLoginPasswordRegistrationRequest.Create(
                 Auth.Input!.Input,
                 InputValueFormat,
                 Password,
@@ -516,7 +516,7 @@ public partial class LoginComponent : IDisposable
                 LastName,
                 DisplayName);
 
-            UserModel newUser = await cloudLogin.PasswordRegistration(request);
+            CloudUser newUser = await cloudLogin.PasswordRegistration(request);
             await CustomSignInChallengeAsync(newUser);
         }
         catch (Exception ex)
@@ -546,7 +546,7 @@ public partial class LoginComponent : IDisposable
         }
 
         EndLoading();
-        UserModel? checkUser = SelectedProvider?.Code?.ToLower() switch
+        CloudUser? checkUser = SelectedProvider?.Code?.ToLower() switch
         {
             "whatsapp" => await cloudLogin.GetUserByPhoneNumber(InputValue),
             "custom" => await cloudLogin.GetUserByEmailAddress(InputValue),
@@ -592,7 +592,7 @@ public partial class LoginComponent : IDisposable
             return;
         }
 
-        UserModel? checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
+        CloudUser? checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
 
         if (checkUser == null || checkUser.ID == Guid.Empty)
         {
@@ -623,7 +623,7 @@ public partial class LoginComponent : IDisposable
 
         Auth.StartLoading();
 
-        UserModel userValues = new()
+        CloudUser userValues = new()
         {
             ID = Guid.NewGuid(),
             FirstName = FirstName,
@@ -656,11 +656,11 @@ public partial class LoginComponent : IDisposable
         {
             case "Enter":
                 if (Auth.CurrentStep == ProcessStep.InputValue)
-                    if (InputValueFormat == InputFormat.EmailAddress || InputValueFormat == InputFormat.PhoneNumber)
+                    if (InputValueFormat == CloudLoginInputFormat.EmailAddress || InputValueFormat == CloudLoginInputFormat.PhoneNumber)
                         await OnInputNextClicked();
 
                 if (Auth.CurrentStep == ProcessStep.RegistrationInput)
-                    if (InputValueFormat == InputFormat.EmailAddress || InputValueFormat == InputFormat.PhoneNumber)
+                    if (InputValueFormat == CloudLoginInputFormat.EmailAddress || InputValueFormat == CloudLoginInputFormat.PhoneNumber)
                         await OnRegistrationInputNextClicked();
 
                 if (Auth.CurrentStep == ProcessStep.RegistrationDetails)
@@ -723,7 +723,7 @@ public partial class LoginComponent : IDisposable
     #region Authentication Actions
     private void ProviderSignInChallenge(string provider)
     {
-        RedirectParameters redirectParams = RedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RefererValue, true, string.Empty, null, InputValue);
+        CloudLoginRedirectParameters redirectParams = CloudLoginRedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RefererValue, true, string.Empty, null, InputValue);
 
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }
@@ -751,7 +751,7 @@ public partial class LoginComponent : IDisposable
             Auth.StartLoading();
             Auth.Errors.Clear();
 
-            PasswordLoginRequest request = PasswordLoginRequest.Create(Auth.Input!.Input, Password, KeepMeSignedIn);
+            CloudLoginPasswordLoginRequest request = CloudLoginPasswordLoginRequest.Create(Auth.Input!.Input, Password, KeepMeSignedIn);
             bool result = await cloudLogin.PasswordLogin(request);
 
             EndLoading();
@@ -784,10 +784,10 @@ public partial class LoginComponent : IDisposable
                 return;
             }
 
-            PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(Email, Password, FirstName, LastName);
-            UserModel user = await cloudLogin.PasswordRegistration(request);
+            CloudLoginPasswordRegistrationRequest request = CloudLoginPasswordRegistrationRequest.Create(Email, Password, FirstName, LastName);
+            CloudUser user = await cloudLogin.PasswordRegistration(request);
 
-            PasswordLoginRequest loginRequest = PasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
+            CloudLoginPasswordLoginRequest loginRequest = CloudLoginPasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, Password, KeepMeSignedIn);
             bool result = await cloudLogin.PasswordLogin(loginRequest);
 
             EndLoading();
@@ -807,7 +807,7 @@ public partial class LoginComponent : IDisposable
         }
     }
 
-    private async Task CustomSignInChallengeAsync(UserModel user)
+    private async Task CustomSignInChallengeAsync(CloudUser user)
     {
         if (IsQrCodeRequest)
         {
@@ -829,7 +829,7 @@ public partial class LoginComponent : IDisposable
         navigationManager.NavigateTo(BuildCustomLoginUrl(user), true);
     }
 
-    private string BuildCustomLoginUrl(UserModel user)
+    private string BuildCustomLoginUrl(CloudUser user)
     {
         string referer = RefererValue;
         bool sameSite = !Uri.TryCreate(referer, UriKind.Absolute, out _) ||
@@ -925,7 +925,7 @@ public partial class LoginComponent : IDisposable
 
             try
             {
-                UserModel? user = await cloudLogin.GetUserByRequestId(requestId);
+                CloudUser? user = await cloudLogin.GetUserByRequestId(requestId);
 
                 if (user == null)
                     continue;
@@ -953,7 +953,7 @@ public partial class LoginComponent : IDisposable
         }
     }
 
-    private Task QrCodeSignInAsync(UserModel user)
+    private Task QrCodeSignInAsync(CloudUser user)
     {
         navigationManager.NavigateTo(BuildCustomLoginUrl(user), true);
         return Task.CompletedTask;
@@ -1007,9 +1007,9 @@ public partial class LoginComponent : IDisposable
         else if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification || Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
         {
             string targetInput = Auth.Input?.Input ?? InputValue;
-            InputFormat format = cloudLogin.GetInputFormat(targetInput);
+            CloudLoginInputFormat format = cloudLogin.GetInputFormat(targetInput);
 
-            if (format == InputFormat.PhoneNumber)
+            if (format == CloudLoginInputFormat.PhoneNumber)
                 await SendWhatsAppCode(targetInput, VerificationCode);
             else
                 await SendEmailCode(targetInput, VerificationCode);
@@ -1080,18 +1080,18 @@ public partial class LoginComponent : IDisposable
     {
         get
         {
-            if (InputValueFormat == InputFormat.EmailAddress)
+            if (InputValueFormat == CloudLoginInputFormat.EmailAddress)
                 return "Email";
 
-            if (InputValueFormat == InputFormat.PhoneNumber)
+            if (InputValueFormat == CloudLoginInputFormat.PhoneNumber)
                 return "Phone";
 
             List<string> label = [];
 
-            if (AvailableFormats.Contains(InputFormat.EmailAddress))
+            if (AvailableFormats.Contains(CloudLoginInputFormat.EmailAddress))
                 label.Add("Email");
 
-            if (AvailableFormats.Contains(InputFormat.PhoneNumber))
+            if (AvailableFormats.Contains(CloudLoginInputFormat.PhoneNumber))
                 label.Add("Phone");
 
             return string.Join(" or ", label);
@@ -1107,7 +1107,7 @@ public partial class LoginComponent : IDisposable
     {
         public readonly string Input = input;
         public bool IsFound { get; set; } = false;
-        public List<ProviderDefinition> Providers { get; set; } = [];
+        public List<CloudLoginProviderDefinitionModel> Providers { get; set; } = [];
     }
     #endregion
 }

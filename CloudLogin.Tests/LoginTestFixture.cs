@@ -63,7 +63,7 @@ internal sealed class LoginTestFixture
     public HttpContextAccessor Accessor { get; } = new();
     public CloudLoginServer Server { get; }
 
-    public void AuthenticateAs(UserModel user)
+    public void AuthenticateAs(CloudUser user)
     {
         ClaimsIdentity identity = new(
         [
@@ -76,15 +76,15 @@ internal sealed class LoginTestFixture
         HttpContext.Request.Headers.Cookie = $"{Configuration.CookieName}=unit-test-cookie";
     }
 
-    public async Task<UserModel> AddPasswordUserAsync(
+    public async Task<CloudUser> AddPasswordUserAsync(
         string email = "person@example.com",
         string password = "Valid#123456",
         bool isTest = false)
     {
-        UserModel user = CreateUser(email, isTest);
+        CloudUser user = CreateUser(email, isTest);
         if (!isTest)
         {
-            user.Inputs[0].Providers.Add(new LoginProvider
+            user.Inputs[0].Providers.Add(new CloudLoginProvider
             {
                 Code = "Password",
                 PasswordHash = await Server.HashPassword(password)
@@ -95,7 +95,7 @@ internal sealed class LoginTestFixture
         return user;
     }
 
-    public static UserModel CreateUser(string email = "person@example.com", bool isTest = false) => new()
+    public static CloudUser CreateUser(string email = "person@example.com", bool isTest = false) => new()
     {
         ID = Guid.NewGuid(),
         FirstName = "Test",
@@ -105,10 +105,10 @@ internal sealed class LoginTestFixture
         CreatedOn = DateTimeOffset.UtcNow.AddDays(-1),
         Inputs =
         [
-            new LoginInput
+            new CloudLoginInput
             {
                 Input = email,
-                Format = InputFormat.EmailAddress,
+                Format = CloudLoginInputFormat.EmailAddress,
                 IsPrimary = true
             }
         ]
@@ -154,59 +154,59 @@ internal sealed class RecordingAuthenticationService : IAuthenticationService
 
 internal sealed class InMemoryCloudLoginStore : ICloudLoginStore
 {
-    public Dictionary<Guid, UserModel> Users { get; } = [];
+    public Dictionary<Guid, CloudUser> Users { get; } = [];
     public Dictionary<Guid, Guid> Requests { get; } = [];
     public int UpdateCount { get; private set; }
     public int CreateRequestCount { get; private set; }
 
-    public Task<List<UserModel>> GetUsers() => Task.FromResult(Users.Values.ToList());
+    public Task<List<CloudUser>> GetUsers() => Task.FromResult(Users.Values.ToList());
 
-    public Task<UserModel?> GetUserById(Guid id) =>
+    public Task<CloudUser?> GetUserById(Guid id) =>
         Task.FromResult(Users.GetValueOrDefault(id));
 
-    public Task<List<UserModel>> GetUsersByDisplayName(string displayName) =>
+    public Task<List<CloudUser>> GetUsersByDisplayName(string displayName) =>
         Task.FromResult(Users.Values.Where(user =>
             string.Equals(user.DisplayName, displayName, StringComparison.OrdinalIgnoreCase)).ToList());
 
-    public async Task<UserModel?> GetUserByDisplayName(string displayName) =>
+    public async Task<CloudUser?> GetUserByDisplayName(string displayName) =>
         (await GetUsersByDisplayName(displayName)).FirstOrDefault();
 
-    public Task<UserModel?> GetUserByInput(string input) =>
+    public Task<CloudUser?> GetUserByInput(string input) =>
         Task.FromResult(FindByInput(input));
 
-    public Task<UserModel?> GetUserByEmailAddress(string emailAddress) =>
-        Task.FromResult(FindByInput(emailAddress, InputFormat.EmailAddress));
+    public Task<CloudUser?> GetUserByEmailAddress(string emailAddress) =>
+        Task.FromResult(FindByInput(emailAddress, CloudLoginInputFormat.EmailAddress));
 
-    public Task<UserModel?> GetUserByPhoneNumber(string number) =>
-        Task.FromResult(FindByInput(number, InputFormat.PhoneNumber));
+    public Task<CloudUser?> GetUserByPhoneNumber(string number) =>
+        Task.FromResult(FindByInput(number, CloudLoginInputFormat.PhoneNumber));
 
-    public Task<UserModel?> GetUserByRequestId(Guid requestId)
+    public Task<CloudUser?> GetUserByRequestId(Guid requestId)
     {
         if (!Requests.Remove(requestId, out Guid userId))
-            return Task.FromResult<UserModel?>(null);
+            return Task.FromResult<CloudUser?>(null);
 
         return GetUserById(userId);
     }
 
-    public Task<LoginRequest> CreateRequest(Guid userId, Guid? requestId = null)
+    public Task<AngryMonkey.CloudLogin.Server.CloudRequest> CreateRequest(Guid userId, Guid? requestId = null)
     {
         Guid id = requestId ?? Guid.NewGuid();
         Requests[id] = userId;
         CreateRequestCount++;
 
-        LoginRequest request = new() { UserId = userId };
+        AngryMonkey.CloudLogin.Server.CloudRequest request = new() { UserId = userId };
         request.SetId(id);
         return Task.FromResult(request);
     }
 
-    public Task Update(UserModel user)
+    public Task Update(CloudUser user)
     {
         Users[user.ID] = user;
         UpdateCount++;
         return Task.CompletedTask;
     }
 
-    public Task Create(UserModel user)
+    public Task Create(CloudUser user)
     {
         Users[user.ID] = user;
         return Task.CompletedTask;
@@ -218,7 +218,7 @@ internal sealed class InMemoryCloudLoginStore : ICloudLoginStore
         return Task.CompletedTask;
     }
 
-    public Task AddInput(Guid userId, LoginInput input)
+    public Task AddInput(Guid userId, CloudLoginInput input)
     {
         Users[userId].Inputs.Add(input);
         return Task.CompletedTask;
@@ -226,7 +226,7 @@ internal sealed class InMemoryCloudLoginStore : ICloudLoginStore
 
     public Task<int> GetUserCount() => Task.FromResult(Users.Count);
 
-    private UserModel? FindByInput(string input, InputFormat? format = null) =>
+    private CloudUser? FindByInput(string input, CloudLoginInputFormat? format = null) =>
         Users.Values.FirstOrDefault(user => user.Inputs.Any(candidate =>
             (!format.HasValue || candidate.Format == format.Value) &&
             string.Equals(candidate.Input, input, StringComparison.OrdinalIgnoreCase)));

@@ -21,8 +21,10 @@ else
                                                InitialSection="@InitialSection"
                                                TargetEntityId="@TargetEntityId"
                                                EnableSubscriptions="@EnableSubscriptions"
-                                               EnableOrganizations="@EnableOrganizations"
+                                               EnableWorkspaces="@EnableWorkspaces"
                                                EnablePayments="@EnablePayments"
+                                               WorkspaceLabel="@WorkspaceLabel"
+                                               WorkspaceLabelPlural="@WorkspaceLabelPlural"
                                                BasePath="@BasePath" />
 }
 
@@ -32,9 +34,15 @@ else
     [Parameter] public string? InitialSection { get; set; }
     [Parameter] public Guid? TargetEntityId { get; set; }
     [Parameter] public bool EnableSubscriptions { get; set; }
-    [Parameter] public bool EnableOrganizations { get; set; }
+    [Parameter] public bool EnableWorkspaces { get; set; }
     [Parameter] public bool EnablePayments { get; set; }
 
-    /// <summary>The path the host mounted this page at, e.g. "/Account". Used to build and parse every tab and organization URL.</summary>
+    /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>
+    [Parameter] public string WorkspaceLabel { get; set; } = "Workspace";
+
+    /// <summary>Display name for many workspaces (e.g. "Organizations", "Businesses"). Defaults to "Workspaces".</summary>
+    [Parameter] public string WorkspaceLabelPlural { get; set; } = "Workspaces";
+
+    /// <summary>The path the host mounted this page at, e.g. "/Account". Used to build and parse every tab and workspace URL.</summary>
     [Parameter] public string BasePath { get; set; } = "/Account";
 }

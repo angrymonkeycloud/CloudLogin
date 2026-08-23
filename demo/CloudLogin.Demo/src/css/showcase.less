@@ -98,13 +98,13 @@ body { margin: 0; background: var(--authority-canvas); color: var(--authority-te
 .authority-page-header h1 { margin: 0; font-size: clamp(38px, 6vw, 62px); line-height: 1; letter-spacing: -.045em; }
 .authority-page-header > span { display: block; max-width: 780px; margin-top: 16px; color: var(--authority-muted); font-size: 18px; line-height: 1.6; }
 
-.authority-organization-grid, .authority-billing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.authority-organization-grid > article, .authority-billing-card, .authority-subscription-scope { padding: 24px; border: 1px solid var(--authority-line); border-radius: @radius; background: var(--authority-surface); }
-.authority-organization-grid article > header, .authority-billing-card > header, .authority-subscription-scope > header, .authority-subscription-card > header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.authority-organization-grid article > header > span { display: grid; width: 48px; height: 48px; flex: 0 0 auto; place-items: center; border-radius: 14px; background: var(--authority-accent-soft); color: var(--authority-accent); font-weight: 900; }
-.authority-organization-grid h2, .authority-billing-card h2, .authority-subscription-scope h2, .authority-subscription-card h3 { margin: 2px 0; }
-.authority-organization-grid small, .authority-billing-card small, .authority-subscription-scope span, .authority-subscription-card span { color: var(--authority-muted); }
-.authority-organization-grid code, .authority-billing-card code, .authority-subscription-scope code, .authority-subscription-card code { overflow-wrap: anywhere; color: var(--authority-muted); }
+.authority-workspace-grid, .authority-billing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.authority-workspace-grid > article, .authority-billing-card, .authority-subscription-scope { padding: 24px; border: 1px solid var(--authority-line); border-radius: @radius; background: var(--authority-surface); }
+.authority-workspace-grid article > header, .authority-billing-card > header, .authority-subscription-scope > header, .authority-subscription-card > header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.authority-workspace-grid article > header > span { display: grid; width: 48px; height: 48px; flex: 0 0 auto; place-items: center; border-radius: 14px; background: var(--authority-accent-soft); color: var(--authority-accent); font-weight: 900; }
+.authority-workspace-grid h2, .authority-billing-card h2, .authority-subscription-scope h2, .authority-subscription-card h3 { margin: 2px 0; }
+.authority-workspace-grid small, .authority-billing-card small, .authority-subscription-scope span, .authority-subscription-card span { color: var(--authority-muted); }
+.authority-workspace-grid code, .authority-billing-card code, .authority-subscription-scope code, .authority-subscription-card code { overflow-wrap: anywhere; color: var(--authority-muted); }
 dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
 dl > div { padding: 11px; border-radius: 11px; background: var(--authority-soft); }
 dt { color: var(--authority-muted); font-size: 11px; }
@@ -160,7 +160,7 @@ dd { margin: 3px 0 0; font-weight: 800; }
   .authority-brand small { display: none; }
   .authority-hero { padding: 28px 22px; border-radius: 20px; }
   .authority-hero h1 { font-size: 43px; }
-  .authority-feature-grid, .authority-organization-grid, .authority-billing-grid, .authority-subscriptions { grid-template-columns: 1fr; }
+  .authority-feature-grid, .authority-workspace-grid, .authority-billing-grid, .authority-subscriptions { grid-template-columns: 1fr; }
   .authority-people li { grid-template-columns: auto minmax(0, 1fr); }
   .authority-people .authority-tags { grid-column: 1 / -1; }
   dl { grid-template-columns: 1fr; }

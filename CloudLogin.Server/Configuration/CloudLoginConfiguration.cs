@@ -8,11 +8,11 @@ public class CloudLoginWebConfiguration
     public List<ProviderConfiguration> Providers { get; set; } = [];
     public string? BaseAddress { get; set; }
     public TimeSpan LoginDuration { get; set; } = TimeSpan.FromDays(30);
-    public List<Link> FooterLinks { get; set; } = [];
+    public List<CloudLoginLink> FooterLinks { get; set; } = [];
     public string? RedirectUri { get; set; }
     public CosmosConfiguration Cosmos { get; set; } = new();
     internal string? EmailMessageBody { get; set; }
-    public Func<SendCodeValue, Task>? EmailSendCodeRequest { get; set; }
+    public Func<CloudLoginSendCodeValue, Task>? EmailSendCodeRequest { get; set; }
     public CloudLoginEmailConfiguration? EmailConfiguration { get; set; }
     public Action<CloudWebConfig> WebConfig { get; set; } = static _ => { };
     public string? Logo { get; set; }
@@ -24,9 +24,9 @@ public class CloudLoginWebConfiguration
     public SubscriptionConfiguration? Subscription { get; set; }
 
     /// <summary>
-    /// Optional organization feature. When omitted, the organization account page and API are disabled.
+    /// Optional workspace feature. When omitted, the workspace account page and API are disabled.
     /// </summary>
-    public OrganizationConfiguration? Organization { get; set; }
+    public WorkspaceConfiguration? Workspace { get; set; }
 
     /// <summary>
     /// Optional payment feature. When omitted, the payment account page and API are disabled.
@@ -41,14 +41,17 @@ public class CloudLoginWebConfiguration
 
     /// <summary>
     /// Optional exact origins for websites hosted separately from CloudLogin.
-    /// When empty, relative and same-origin redirects continue to work while
-    /// cross-origin redirects are denied.
+    /// When empty, no website allowlist has been configured, so every
+    /// cross-origin redirect target is allowed — there is nothing to restrict
+    /// against. Add entries here to restrict handoffs to only those origins.
     /// </summary>
     public List<string> AllowedRedirectOrigins { get; set; } = [];
 
     /// <summary>
-    /// Optional callback schemes for native applications. When empty, custom
-    /// application-scheme redirects are denied.
+    /// Optional callback schemes for native applications. When empty, no app
+    /// allowlist has been configured, so every custom application-scheme
+    /// redirect is allowed. Add entries here to restrict handoffs to only
+    /// those schemes.
     /// </summary>
     public List<string> AllowedMobileSchemes { get; set; } = [];
     public string CookieName { get; set; } = "__Host-CloudLogin";
@@ -58,7 +61,7 @@ public class CloudLoginWebConfiguration
     /// <summary>
     /// Shared secrets accepted by the "ServiceKey" authentication scheme, used by trusted
     /// backend services (not browsers) to call the service-to-service lookup endpoints
-    /// (e.g. <c>CloudLogin/Service/Organizations/{id}</c>). Empty by default — those
+    /// (e.g. <c>CloudLogin/Service/Workspaces/{id}</c>). Empty by default — those
     /// endpoints reject every request until at least one key is configured. Never expose
     /// these to a browser; store them via user secrets / a secret manager on both sides.
     /// </summary>

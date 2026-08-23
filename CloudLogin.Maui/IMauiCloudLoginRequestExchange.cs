@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin;
 /// </summary>
 public interface IMauiCloudLoginRequestExchange
 {
-    Task<UserModel?> ExchangeAsync(
+    Task<CloudUser?> ExchangeAsync(
         string requestId,
         CancellationToken cancellationToken = default);
 }

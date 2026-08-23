@@ -1,4 +1,5 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @using System.Globalization
 @using QRCoder
 @inject ICloudLogin cloudLogin
@@ -148,7 +149,7 @@
                 else
                 {
                     <div class="entry-list">
-                        @foreach (PasskeySummary passkey in _overview.Passkeys)
+                        @foreach (CloudLoginPasskeySummaryModel passkey in _overview.Passkeys)
                         {
                             <div class="entry-row">
                                 <span class="entry-icon" aria-hidden="true"><ShieldCheckIcon /></span>
@@ -187,7 +188,7 @@
             else
             {
                 <div class="entry-list">
-                    @foreach (ConnectedProvider provider in _overview.ConnectedProviders)
+                    @foreach (CloudLoginConnectedProviderModel provider in _overview.ConnectedProviders)
                     {
                         <div class="entry-row">
                             <span class="entry-icon" aria-hidden="true"><PersonIcon /></span>
@@ -213,7 +214,7 @@
                 <div class="available-block">
                     <span class="field-label">Available to connect</span>
                     <div class="provider-chips">
-                        @foreach (ProviderDefinition provider in _overview.AvailableProviders)
+                        @foreach (CloudLoginProviderDefinitionModel provider in _overview.AvailableProviders)
                         {
                             <button class="provider-chip" @onclick="() => Connect(provider)" disabled="@_busy">@provider.Label</button>
                         }
@@ -235,7 +236,7 @@
             else
             {
                 <div class="entry-list">
-                    @foreach (LoginHistoryEntry entry in _history)
+                    @foreach (CloudLoginHistoryEntryModel entry in _history)
                     {
                         <div class="entry-row">
                             <span class="entry-icon" aria-hidden="true"><ClockIcon /></span>
@@ -279,12 +280,12 @@
 </div>
 
 @code {
-    [Parameter] public required UserModel CurrentUser { get; set; }
+    [Parameter] public required CloudUserModel CurrentUser { get; set; }
 
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
-    private SecurityOverview _overview = new();
-    private List<LoginHistoryEntry> _history = [];
+    private CloudLoginSecurityOverviewModel _overview = new();
+    private List<CloudLoginHistoryEntryModel> _history = [];
 
     private bool _loading = true;
     private bool _busy;
@@ -298,7 +299,7 @@
     private string _confirmPassword = string.Empty;
 
     // Authenticator
-    private AuthenticatorEnrollmentModel? _enrollment;
+    private CloudLoginAuthenticatorEnrollmentModel? _enrollment;
     private string _qrSvg = string.Empty;
     private string _totpCode = string.Empty;
 
@@ -341,8 +342,8 @@
 
         try
         {
-            _overview = await cloudLogin.GetSecurityOverview();
-            _history = await cloudLogin.GetMyLoginHistory();
+            _overview = (await cloudLogin.GetSecurityOverview()).ToModel();
+            _history = [.. (await cloudLogin.GetMyLoginHistory()).Select(entry => entry.ToModel())];
         }
         catch (Exception ex)
         {
@@ -377,7 +378,7 @@
 
         await Run("Password", async () =>
         {
-            await cloudLogin.ChangeMyPassword(new ChangePasswordRequest
+            await cloudLogin.ChangeMyPassword(new CloudLoginChangePasswordRequest
             {
                 CurrentPassword = _overview.HasPassword ? _currentPassword : null,
                 NewPassword = _newPassword
@@ -395,7 +396,7 @@
     {
         await Run("Authenticator app", async () =>
         {
-            _enrollment = await cloudLogin.BeginAuthenticatorEnrollment();
+            _enrollment = (await cloudLogin.BeginAuthenticatorEnrollment()).ToModel();
             _qrSvg = GenerateQrCodeSvg(_enrollment.ProvisioningUri);
             _totpCode = string.Empty;
         });
@@ -487,7 +488,7 @@
 
     // ── Providers ────────────────────────────────────────────────────────────
 
-    private async Task Disconnect(ConnectedProvider provider)
+    private async Task Disconnect(CloudLoginConnectedProviderModel provider)
     {
         await Run("Sign-in providers", async () =>
         {
@@ -501,12 +502,12 @@
     /// Linking a provider is an authentication ceremony, so it goes through the normal
     /// provider sign-in URL rather than an API call.
     /// </summary>
-    private void Connect(ProviderDefinition provider)
+    private void Connect(CloudLoginProviderDefinitionModel provider)
         => navigationManager.NavigateTo(cloudLogin.GetProviderLoginUrl(provider.Code, navigationManager.Uri), true);
 
     // ── History ──────────────────────────────────────────────────────────────
 
-    private async Task OpenMap(LoginHistoryEntry entry)
+    private async Task OpenMap(CloudLoginHistoryEntryModel entry)
     {
         if (!entry.HasCoordinates)
             return;

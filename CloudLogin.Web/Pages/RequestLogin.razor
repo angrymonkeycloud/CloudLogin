@@ -40,7 +40,7 @@ else
 @code {
     [Parameter] public Guid RequestId { get; set; }
 
-    public UserModel? CurrentUser { get; set; }
+    public CloudUser? CurrentUser { get; set; }
     public bool IsAuthorized { get; set; } = false;
     public bool IsCompleted { get; set; } = false;
     public bool HasError { get; set; } = false;

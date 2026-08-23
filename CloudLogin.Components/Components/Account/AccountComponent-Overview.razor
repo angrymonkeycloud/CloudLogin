@@ -1,4 +1,5 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @using System.Globalization
 @inject ICloudLogin cloudLogin
 
@@ -86,13 +87,13 @@
             </button>
         }
 
-        @if (EnableOrganizations)
+        @if (EnableWorkspaces)
         {
-            <button type="button" class="feature-card" @onclick='() => Navigate("Organizations")'>
+            <button type="button" class="feature-card" @onclick='() => Navigate("Workspaces")'>
                 <span class="feature-icon" aria-hidden="true"><BuildingIcon /></span>
                 <span class="feature-copy">
-                    <span class="feature-title">Organizations</span>
-                    <span class="feature-stat">Teams you belong to and their billing details — @(_loadingOrganizations ? "loading…" : OrganizationsSummary()).</span>
+                    <span class="feature-title">@WorkspaceLabelPlural</span>
+                    <span class="feature-stat">Teams you belong to and their billing details — @(_loadingWorkspaces ? "loading…" : WorkspacesSummary()).</span>
                 </span>
                 <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
             </button>
@@ -157,18 +158,25 @@
 </div>
 
 @code {
-    [Parameter] public required UserModel CurrentUser { get; set; }
+    [Parameter] public required CloudUserModel CurrentUser { get; set; }
     [Parameter] public bool EnableSubscriptions { get; set; }
-    [Parameter] public bool EnableOrganizations { get; set; }
+    [Parameter] public bool EnableWorkspaces { get; set; }
     [Parameter] public bool EnablePayments { get; set; }
+
+    /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>
+    [Parameter] public string WorkspaceLabel { get; set; } = "Workspace";
+
+    /// <summary>Display name for many workspaces (e.g. "Organizations", "Businesses"). Defaults to "Workspaces".</summary>
+    [Parameter] public string WorkspaceLabelPlural { get; set; } = "Workspaces";
+
     [Parameter] public EventCallback<string> OnNavigateToTab { get; set; }
     [Parameter] public EventCallback OnDeleteAccount { get; set; }
 
     private bool _loadingSubscriptions;
-    private bool _loadingOrganizations;
+    private bool _loadingWorkspaces;
     private bool _loadingPaymentMethods;
     private int _subscriptionCount;
-    private int _organizationCount;
+    private int _workspaceCount;
     private int _paymentMethodCount;
 
     private bool _confirmingDelete;
@@ -181,8 +189,8 @@
         if (EnableSubscriptions)
             tasks.Add(LoadSubscriptionsAsync());
 
-        if (EnableOrganizations)
-            tasks.Add(LoadOrganizationsAsync());
+        if (EnableWorkspaces)
+            tasks.Add(LoadWorkspacesAsync());
 
         if (EnablePayments)
             tasks.Add(LoadPaymentMethodsAsync());
@@ -198,17 +206,17 @@
         _loadingSubscriptions = false;
     }
 
-    private async Task LoadOrganizationsAsync()
+    private async Task LoadWorkspacesAsync()
     {
-        _loadingOrganizations = true;
-        _organizationCount = (await cloudLogin.GetMyOrganizations()).Count;
-        _loadingOrganizations = false;
+        _loadingWorkspaces = true;
+        _workspaceCount = (await cloudLogin.GetMyWorkspaces()).Count;
+        _loadingWorkspaces = false;
     }
 
     private async Task LoadPaymentMethodsAsync()
     {
         _loadingPaymentMethods = true;
-        AccountBillingProfile? profile = await cloudLogin.GetMyBillingProfile();
+        CloudBillingProfile? profile = await cloudLogin.GetMyBillingProfile();
         _paymentMethodCount = profile?.PaymentMethods.Count() ?? 0;
         _loadingPaymentMethods = false;
     }
@@ -216,8 +224,8 @@
     private string SubscriptionsSummary()
         => _subscriptionCount == 0 ? "none yet" : $"{_subscriptionCount} active";
 
-    private string OrganizationsSummary()
-        => _organizationCount == 0 ? "you're not a member of any yet" : $"{_organizationCount} joined";
+    private string WorkspacesSummary()
+        => _workspaceCount == 0 ? "you're not a member of any yet" : $"{_workspaceCount} joined";
 
     private string PaymentMethodsSummary()
         => _paymentMethodCount == 0 ? "none saved yet" : $"{_paymentMethodCount} saved";

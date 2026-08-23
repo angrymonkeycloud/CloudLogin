@@ -34,6 +34,8 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.10" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.10" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
+		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.2" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
 		<PackageReference Include="Microsoft.Graph" Version="6.2.0" />
 		<PackageReference Include="Microsoft.Kiota.Abstractions" Version="2.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

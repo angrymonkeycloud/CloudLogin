@@ -178,7 +178,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 
                 if (!string.IsNullOrWhiteSpace(json))
                 {
-                    User = JsonSerializer.Deserialize<UserModel>(json, JsonOptions);
+                    User = JsonSerializer.Deserialize<CloudUser>(json, JsonOptions);
 
                     if (User != null)
                     {
@@ -211,7 +211,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         }
     }
 
-    private async void OnUserChangedInternal(UserModel? user)
+    private async void OnUserChangedInternal(CloudUser? user)
     {
         if (user != null)
             await PersistUserSessionAsync(user);
@@ -219,7 +219,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
             await ClearStoredSessionAsync();
     }
 
-    private async Task PersistUserSessionAsync(UserModel user)
+    private async Task PersistUserSessionAsync(CloudUser user)
     {
         try
         {
@@ -444,7 +444,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
             }
             else
             {
-                UserModel? exchangedUser = null;
+                CloudUser? exchangedUser = null;
                 foreach (IMauiCloudLoginRequestExchange exchange in _requestExchanges)
                 {
                     exchangedUser = await exchange.ExchangeAsync(requestId);

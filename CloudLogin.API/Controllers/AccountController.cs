@@ -10,16 +10,16 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 [ApiController]
 public class AccountController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
-    [HttpGet("Organizations")]
+    [HttpGet("Workspaces")]
     [Authorize]
-    public async Task<ActionResult<List<CloudLoginOrganization>>> Organizations()
+    public async Task<ActionResult<List<CloudWorkspace>>> Workspaces()
     {
-        if (Configuration.Organization is null)
+        if (Configuration.Workspace is null)
             return NotFound();
 
         try
         {
-            return Ok(await _server.GetMyOrganizations());
+            return Ok(await _server.GetMyWorkspaces());
         }
         catch
         {
@@ -27,16 +27,16 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpGet("Organizations/Quota")]
+    [HttpGet("Workspaces/Quota")]
     [Authorize]
-    public async Task<ActionResult<OrganizationQuota>> OrganizationQuota()
+    public async Task<ActionResult<CloudWorkspaceQuota>> CloudWorkspaceQuota()
     {
-        if (Configuration.Organization is null)
+        if (Configuration.Workspace is null)
             return NotFound();
 
         try
         {
-            return Ok(await _server.GetMyOrganizationQuota());
+            return Ok(await _server.GetMyWorkspaceQuota());
         }
         catch
         {
@@ -44,19 +44,19 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpGet("Organizations/{organizationId:guid}/Workspace")]
+    [HttpGet("Workspaces/{workspaceId:guid}/Detail")]
     [Authorize]
-    public async Task<ActionResult<OrganizationWorkspace>> OrganizationWorkspace(Guid organizationId)
+    public async Task<ActionResult<CloudWorkspaceDetail>> CloudWorkspaceDetail(Guid workspaceId)
     {
-        if (Configuration.Organization is null)
+        if (Configuration.Workspace is null)
             return NotFound();
 
         try
         {
-            OrganizationWorkspace? workspace = await _server.GetOrganizationWorkspace(organizationId);
+            CloudWorkspaceDetail? workspace = await _server.GetWorkspaceDetail(workspaceId);
 
-            // A non-member gets the same answer as a missing organization: an identifier alone
-            // must not reveal that someone else's organization exists.
+            // A non-member gets the same answer as a missing workspace: an identifier alone
+            // must not reveal that someone else's workspace exists.
             if (workspace is null)
                 return NotFound();
 
@@ -70,7 +70,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
     [HttpGet("Subscriptions")]
     [Authorize]
-    public async Task<ActionResult<List<AccountSubscription>>> Subscriptions([FromQuery] bool includeInactive = false)
+    public async Task<ActionResult<List<CloudSubscription>>> Subscriptions([FromQuery] bool includeInactive = false)
     {
         if (Configuration.Subscription is null)
             return NotFound();
@@ -87,7 +87,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
     [HttpGet("BillingProfile")]
     [Authorize]
-    public async Task<ActionResult<AccountBillingProfile?>> BillingProfile()
+    public async Task<ActionResult<CloudBillingProfile?>> BillingProfile()
     {
         if (Configuration.Payment is null)
             return NotFound();
@@ -102,11 +102,11 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpPost("Organizations")]
+    [HttpPost("Workspaces")]
     [Authorize]
-    public async Task<ActionResult<CloudLoginOrganization>> CreateOrganization([FromBody] CreateOrganizationRequest request)
+    public async Task<ActionResult<CloudWorkspace>> CreateWorkspace([FromBody] CloudLoginCreateWorkspaceRequest request)
     {
-        if (Configuration.Organization is null)
+        if (Configuration.Workspace is null)
             return NotFound();
 
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -114,9 +114,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
         try
         {
-            return Ok(await _server.CreateOrganization(request.Name));
+            return Ok(await _server.CreateWorkspace(request.Name));
         }
-        catch (OrganizationLimitReachedException exception)
+        catch (CloudWorkspaceLimitReachedException exception)
         {
             return Problem(detail: exception.Message, statusCode: StatusCodes.Status409Conflict);
         }
@@ -130,11 +130,11 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpPost("Organizations/{organizationId:guid}/Invite")]
+    [HttpPost("Workspaces/{workspaceId:guid}/Invite")]
     [Authorize]
-    public async Task<ActionResult<CloudLoginOrganizationInvitation>> InviteToOrganization(Guid organizationId, [FromBody] InviteToOrganizationRequest request)
+    public async Task<ActionResult<CloudWorkspaceInvitation>> InviteToWorkspace(Guid workspaceId, [FromBody] CloudLoginInviteToWorkspaceRequest request)
     {
-        if (Configuration.Organization is null)
+        if (Configuration.Workspace is null)
             return NotFound();
 
         if (string.IsNullOrWhiteSpace(request.Recipient))
@@ -142,9 +142,9 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
         try
         {
-            return Ok(await _server.InviteToOrganization(organizationId, request.Recipient, request.Roles));
+            return Ok(await _server.InviteToWorkspace(workspaceId, request.Recipient, request.Roles));
         }
-        catch (OrganizationLimitReachedException exception)
+        catch (CloudWorkspaceLimitReachedException exception)
         {
             return Problem(detail: exception.Message, statusCode: StatusCodes.Status409Conflict);
         }
@@ -162,19 +162,19 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpPut("Organizations/{organizationId:guid}")]
+    [HttpPut("Workspaces/{workspaceId:guid}")]
     [Authorize]
-    public async Task<ActionResult<CloudLoginOrganization>> UpdateOrganization(Guid organizationId, [FromBody] CloudLoginOrganization organization)
+    public async Task<ActionResult<CloudWorkspace>> UpdateWorkspace(Guid workspaceId, [FromBody] CloudWorkspace workspace)
     {
-        if (Configuration.Organization is null)
+        if (Configuration.Workspace is null)
             return NotFound();
 
-        if (organizationId != organization.Id)
+        if (workspaceId != workspace.Id)
             return BadRequest("Route id and body id must match.");
 
         try
         {
-            return Ok(await _server.UpdateOrganization(organization));
+            return Ok(await _server.UpdateWorkspace(workspace));
         }
         catch (UnauthorizedAccessException)
         {
@@ -190,19 +190,19 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpDelete("Organizations/{organizationId:guid}")]
+    [HttpDelete("Workspaces/{workspaceId:guid}")]
     [Authorize]
-    public async Task<IActionResult> DeleteOrganization(Guid organizationId)
+    public async Task<IActionResult> DeleteWorkspace(Guid workspaceId)
     {
-        if (Configuration.Organization is null)
+        if (Configuration.Workspace is null)
             return NotFound();
 
         try
         {
-            await _server.DeleteOrganization(organizationId);
+            await _server.DeleteWorkspace(workspaceId);
             return NoContent();
         }
-        catch (OrganizationDeletionBlockedException exception)
+        catch (CloudWorkspaceDeletionBlockedException exception)
         {
             return Problem(detail: exception.Message, statusCode: StatusCodes.Status409Conflict);
         }
@@ -237,7 +237,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
             await _server.DeleteSubscription(subscriptionId);
             return NoContent();
         }
-        catch (SubscriptionDeletionBlockedException exception)
+        catch (CloudSubscriptionDeletionBlockedException exception)
         {
             return Problem(detail: exception.Message, statusCode: StatusCodes.Status409Conflict);
         }
@@ -261,7 +261,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
     [HttpPost("BillingProfile/PaymentMethods")]
     [Authorize]
-    public async Task<ActionResult<AccountBillingProfile>> AddPaymentMethod([FromBody] AddPaymentMethodRequest request)
+    public async Task<ActionResult<CloudBillingProfile>> AddPaymentMethod([FromBody] CloudLoginAddPaymentMethodRequest request)
     {
         if (Configuration.Payment is null)
             return NotFound();
@@ -271,7 +271,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
         try
         {
-            return Ok(await _server.AddPaymentMethod(request.Method, request.OrganizationId));
+            return Ok(await _server.AddPaymentMethod(request.Method, request.WorkspaceId));
         }
         catch (UnauthorizedAccessException)
         {
@@ -289,7 +289,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
     [HttpPost("BillingProfile/PaymentMethods/Remove")]
     [Authorize]
-    public async Task<ActionResult<AccountBillingProfile>> RemovePaymentMethod([FromBody] RemovePaymentMethodRequest request)
+    public async Task<ActionResult<CloudBillingProfile>> RemovePaymentMethod([FromBody] CloudLoginRemovePaymentMethodRequest request)
     {
         if (Configuration.Payment is null)
             return NotFound();
@@ -299,7 +299,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
 
         try
         {
-            return Ok(await _server.RemovePaymentMethod(request.Provider, request.Reference, request.OrganizationId));
+            return Ok(await _server.RemovePaymentMethod(request.Provider, request.Reference, request.WorkspaceId));
         }
         catch (UnauthorizedAccessException)
         {

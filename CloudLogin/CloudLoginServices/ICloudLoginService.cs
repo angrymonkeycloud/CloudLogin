@@ -13,11 +13,11 @@ public interface ICloudLoginService
     public Task<string> ProfileUrl();
     public Task Logout();
     public Task FetchUser();
-    public Task<UserModel?> FetchUserByEmail(string emailAddress);
+    public Task<CloudUser?> FetchUserByEmail(string emailAddress);
     public string? RequestId { get; }
-    public UserModel? User { get; }
+    public CloudUser? User { get; }
 
-    public event Action<UserModel?>? UserChanged;
+    public event Action<CloudUser?>? UserChanged;
     // Raised when a new RequestId is received (e.g., from native URL callback)
     public event Action<string>? RequestIdChanged;
 

@@ -18,7 +18,7 @@ public partial class CloudLoginServer
     public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? currentUser, string? returnUrl, bool keepMeSignedIn, bool _ = false)
     {
         // Resolve user from requestId or serialized user payload
-        UserModel? cloudUser = await ResolveUserFromRequest(requestId, currentUser);
+        CloudUser? cloudUser = await ResolveUserFromRequest(requestId, currentUser);
         if (cloudUser == null)
             return Login(request, returnUrl, false); // Restart login flow if user vanished (e.g. expired request)
 
@@ -138,13 +138,13 @@ public partial class CloudLoginServer
     /// <summary>
     /// Resolves user from either request ID or serialized user data
     /// </summary>
-    private async Task<UserModel?> ResolveUserFromRequest(Guid requestId, string? currentUser)
+    private async Task<CloudUser?> ResolveUserFromRequest(Guid requestId, string? currentUser)
     {
         if (requestId != Guid.Empty)
             return await GetUserByRequestId(requestId);
 
         if (!string.IsNullOrEmpty(currentUser))
-            return JsonSerializer.Deserialize<UserModel>(currentUser, CloudLoginSerialization.Options);
+            return JsonSerializer.Deserialize<CloudUser>(currentUser, CloudLoginSerialization.Options);
 
         return null;
     }
@@ -152,7 +152,7 @@ public partial class CloudLoginServer
     /// <summary>
     /// Creates an authenticated session for the user
     /// </summary>
-    private static async Task CreateAuthenticatedSession(HttpContext context, UserModel user, bool keepMeSignedIn)
+    private static async Task CreateAuthenticatedSession(HttpContext context, CloudUser user, bool keepMeSignedIn)
     {
         ClaimsIdentity claimsIdentity = new(
         [

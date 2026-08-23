@@ -1,0 +1,101 @@
+@page "/workspaces"
+@rendermode InteractiveServer
+@inject DemoAccountRegistryState DemoState
+
+<PageTitle>CloudLogin workspaces and teams</PageTitle>
+
+<DemoPageHeader Eyebrow="ICloudLoginWorkspaceRegistry" Title="Workspaces, teams, roles, permissions, and invitations." Description="Every interaction uses the real CloudLogin account-registry contracts. The generated identities are demo data; the workspace and membership behavior is package behavior.">
+    <a class="demo-button demo-button--secondary" href="/subscriptions">Continue to subscriptions</a>
+</DemoPageHeader>
+
+<DemoExample Title="Business identity and membership" Kind="Live public service workflow" Description="Create a workspace, switch business context, add a member with application-defined roles and permissions, or issue an expiring invitation." Code="@DemoCodeSamples.Workspaces" FileName="Workspaces.razor">
+    <div class="demo-org-workspace">
+        <aside>
+            <header><span>Workspaces</span><b>@DemoState.Workspaces.Count</b></header>
+            @foreach (CloudWorkspace workspaceSummary in DemoState.Workspaces)
+            {
+                <button type="button" class="@(workspaceSummary.Id == DemoState.SelectedWorkspaceId ? "active" : null)" @onclick="() => SelectAsync(workspaceSummary.Id)">
+                    <span>@Initials(workspaceSummary.Name)</span><div><strong>@workspaceSummary.Name</strong><small>@ShortId(workspaceSummary.Id)</small></div>
+                </button>
+            }
+            <div class="demo-form-block"><label><span>New workspace</span><input @bind="_workspaceName" placeholder="Workspace name" /></label><button class="demo-button demo-button--primary" disabled="@string.IsNullOrWhiteSpace(_workspaceName)" @onclick="CreateAsync">Create</button></div>
+        </aside>
+
+        <section>
+            @if (DemoState.SelectedWorkspace is CloudWorkspace workspace)
+            {
+                <header class="demo-org-header"><span>@Initials(workspace.Name)</span><div><small>Selected business</small><h2>@workspace.Name</h2><code>@workspace.Id</code></div><dl><div><dt>Owner</dt><dd>@ShortId(workspace.OwnerUserId)</dd></div><div><dt>Created</dt><dd>@workspace.CreatedOn.ToLocalTime().ToString("dd MMM yyyy")</dd></div></dl></header>
+                <div class="demo-section-tabs"><a class="active" href="#members">Members</a><a href="#invitations">Invitations</a><a href="/subscriptions">Subscriptions</a><a href="/billing">Billing</a></div>
+
+                <div id="members" class="demo-registry-panel">
+                    <header><div><span>Team directory</span><h3>@DemoState.Members.Count members</h3></div><small>Roles and permissions stay application-defined</small></header>
+                    <div class="demo-member-list">
+                        @foreach (CloudWorkspaceMember member in DemoState.Members)
+                        {
+                            <article><span>@(member.IsOwner ? "OW" : "MB")</span><div><strong>@(member.IsOwner ? "Workspace owner" : $"Member {ShortId(member.UserId)}")</strong><small>@member.UserId</small></div><div class="demo-tags">@foreach (string role in member.Roles) { <b>@role</b> } @foreach (string permission in member.Permissions) { <b class="permission">@permission</b> }</div><em>@member.State</em></article>
+                        }
+                    </div>
+                    <div class="demo-inline-form"><label><span>Roles</span><input @bind="_memberRoles" /></label><label><span>Permissions</span><input @bind="_memberPermissions" /></label><button class="demo-button demo-button--primary" @onclick="AddMemberAsync">Add generated member</button></div>
+                </div>
+
+                <div id="invitations" class="demo-registry-panel">
+                    <header><div><span>Pending access</span><h3>Invitations</h3></div><small>Recipient, inviter, roles, creation, and expiry</small></header>
+                    <div class="demo-invitation-list">
+                        @foreach (CloudWorkspaceInvitation invitation in DemoState.Invitations.Where(item => item.WorkspaceId == workspace.Id))
+                        {
+                        <article><div><strong>@invitation.Recipient</strong><small>By @ShortId(invitation.InvitedByUserId)</small></div><div class="demo-tags">@foreach (string role in invitation.Roles) {
+                            <b>@role</b>
+                        }
+                    </div><time>@invitation.ExpiresOn.ToLocalTime().ToString("dd MMM, HH:mm")</time></article>
+                        }
+                    </div>
+                    <div class="demo-inline-form"><label><span>Recipient</span><input type="email" @bind="_inviteEmail" /></label><label><span>Roles</span><input @bind="_inviteRoles" /></label><button class="demo-button demo-button--primary" disabled="@string.IsNullOrWhiteSpace(_inviteEmail)" @onclick="InviteAsync">Create invitation</button></div>
+                </div>
+            }
+        </section>
+    </div>
+    <p class="demo-status" role="status">@_message</p>
+</DemoExample>
+
+<DemoCallout Title="CloudLogin owns account structure—not application authorization policy" Icon="i">The registry stores role and permission codes. Your application decides what billing.manage, orders.read, or any other permission means.</DemoCallout>
+
+@code {
+    private string _workspaceName = string.Empty;
+    private string _memberRoles = "Developer, BillingAdmin";
+    private string _memberPermissions = "orders.read, billing.manage";
+    private string _inviteEmail = "developer@example.invalid";
+    private string _inviteRoles = "Developer";
+    private string _message = "A realistic workspace workspace has been seeded for this browser session.";
+
+    protected override async Task OnInitializedAsync() => await DemoState.InitializeAsync();
+
+    private async Task SelectAsync(Guid workspaceId)
+    {
+        await DemoState.SelectWorkspaceAsync(workspaceId);
+        _message = $"Switched to {DemoState.SelectedWorkspace?.Name}.";
+    }
+
+    private async Task CreateAsync()
+    {
+        CloudWorkspace workspace = await DemoState.CreateWorkspaceAsync(_workspaceName);
+        _workspaceName = string.Empty;
+        _message = $"Created {workspace.Name} with an automatic owner membership.";
+    }
+
+    private async Task AddMemberAsync()
+    {
+        CloudWorkspaceMember member = await DemoState.AddMemberAsync(Guid.NewGuid(), Split(_memberRoles), Split(_memberPermissions));
+        _message = $"Added member {ShortId(member.UserId)} with roles and permissions.";
+    }
+
+    private async Task InviteAsync()
+    {
+        CloudWorkspaceInvitation invitation = await DemoState.InviteAsync(_inviteEmail, Split(_inviteRoles));
+        _inviteEmail = string.Empty;
+        _message = $"Created invitation {ShortId(invitation.Id)} with a seven-day expiry.";
+    }
+
+    private static string[] Split(string value) => value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    private static string ShortId(Guid value) => value.ToString("N")[..8];
+    private static string Initials(string value) => string.Concat(value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+}

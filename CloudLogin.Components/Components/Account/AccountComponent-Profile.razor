@@ -1,4 +1,5 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Forms
 @using AngryMonkey.Cloud
@@ -192,7 +193,7 @@
 </div>
 
 @code {
-    [Parameter] public required UserModel CurrentUser { get; set; }
+    [Parameter] public required CloudUserModel CurrentUser { get; set; }
 
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
@@ -445,10 +446,10 @@
             CurrentUser.ProfilePicture = CurrentUser.ProviderProfilePicture;
             CurrentUser.IsCustomProfilePicture = false;
 
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             // Re-fetch to get the normalized default picture URL from the server.
-            UserModel? refreshed = await cloudLogin.CurrentUser();
+            CloudUser? refreshed = await cloudLogin.CurrentUser();
             if (refreshed != null)
             {
                 CurrentUser.ProfilePicture = refreshed.ProfilePicture;
@@ -508,7 +509,7 @@
                 ? string.Join(" ", new[] { CurrentUser.FirstName, CurrentUser.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)))
                 : _editDisplayName.Trim();
 
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             _isEditingName = false;
             _statusMessage = "Name updated successfully.";
@@ -568,7 +569,7 @@
             CurrentUser.Country = string.IsNullOrWhiteSpace(_editCountry) ? null : _editCountry.Trim();
             CurrentUser.Locale = string.IsNullOrWhiteSpace(_editLocale) ? null : _editLocale.Trim();
 
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             _isEditingProfile = false;
             _statusMessage = "Profile info updated successfully.";

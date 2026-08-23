@@ -51,15 +51,15 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
 
     [HttpPost("Update")]
     [Authorize]
-    public async Task<ActionResult> Update([FromBody] UserModel user)
+    public async Task<ActionResult> Update([FromBody] CloudUser user)
     {
         try
         {
-            UserModel? currentUser = await _server.CurrentUser();
+            CloudUser? currentUser = await _server.CurrentUser();
             if (currentUser is null || (currentUser.ID != user.ID && !currentUser.IsGlobalAdmin))
                 return Forbid();
 
-            UserModel? storedUser = await _server.GetUserById(user.ID);
+            CloudUser? storedUser = await _server.GetUserById(user.ID);
             if (storedUser is null)
                 return NotFound();
 
@@ -85,7 +85,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
 
     [HttpPost("Create")]
     [Authorize]
-    public async Task<ActionResult> Create([FromBody] UserModel user)
+    public async Task<ActionResult> Create([FromBody] CloudUser user)
     {
         try
         {
@@ -104,7 +104,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
 
     [HttpPost("AddUserInput")]
     [Authorize]
-    public async Task<ActionResult> AddInput(Guid userId, [FromBody] LoginInput Input)
+    public async Task<ActionResult> AddInput(Guid userId, [FromBody] CloudLoginInput Input)
     {
         try
         {
@@ -178,14 +178,14 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
 
     [HttpGet("All")]
     [Authorize]
-    public async Task<ActionResult<List<UserModel>>> All()
+    public async Task<ActionResult<List<CloudUser>>> All()
     {
         try
         {
             if (!await IsGlobalAdminAsync())
                 return Forbid();
 
-            List<UserModel> users = await _server.GetAllUsers();
+            List<CloudUser> users = await _server.GetAllUsers();
             users = [.. users.Select(NormalizeUser)];
             return Ok(users);
         }
@@ -196,12 +196,12 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetAllUsers")]
-    public async Task<ActionResult<List<UserModel>>> GetAllUsers()
+    public async Task<ActionResult<List<CloudUser>>> GetAllUsers()
     {
         try
         {
           
-            List<UserModel> user = [.. (await _server.GetAllUsers()).Select(NormalizeUser)];
+            List<CloudUser> user = [.. (await _server.GetAllUsers()).Select(NormalizeUser)];
 
             return Ok(user);
         }
@@ -213,11 +213,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
 
     [HttpGet("GetTestUsers")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<ActionResult<List<UserModel>>> GetTestUsers()
+    public async Task<ActionResult<List<CloudUser>>> GetTestUsers()
     {
         try
         {
-            List<UserModel> users = await _server.GetTestUsers();
+            List<CloudUser> users = await _server.GetTestUsers();
             users = [.. users.Select(NormalizeUser)];
 
             return Ok(users);
@@ -230,14 +230,14 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
 
     [HttpGet("GetUserById")]
     //[Authorize]
-    public async Task<ActionResult<UserModel?>> GetUserById(Guid id)
+    public async Task<ActionResult<CloudUser?>> GetUserById(Guid id)
     {
         try
         {
             //if (!await CanAccessUserAsync(id))
             //    return Forbid();
 
-            UserModel? user = await _server.GetUserById(id);
+            CloudUser? user = await _server.GetUserById(id);
             if (user is null)
                 return NotFound();
 
@@ -252,14 +252,14 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
     [HttpGet("GetUsersByDisplayName")]
     [Authorize]
-    public async Task<ActionResult<List<UserModel>>> GetUsersByDisplayName(string displayname)
+    public async Task<ActionResult<List<CloudUser>>> GetUsersByDisplayName(string displayname)
     {
         try
         {
             if (!await IsGlobalAdminAsync())
                 return Forbid();
 
-            List<UserModel> user = [.. (await _server.GetUsersByDisplayName(displayname)).Select(NormalizeUser)];
+            List<CloudUser> user = [.. (await _server.GetUsersByDisplayName(displayname)).Select(NormalizeUser)];
             return Ok(user);
         }
         catch
@@ -269,14 +269,14 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
     [HttpGet("GetUserByDisplayName")]
     [Authorize]
-    public async Task<ActionResult<UserModel?>> GetUserByDisplayName(string displayname)
+    public async Task<ActionResult<CloudUser?>> GetUserByDisplayName(string displayname)
     {
         try
         {
             if (!await IsGlobalAdminAsync())
                 return Forbid();
 
-            UserModel? user = await _server.GetUserByDisplayName(displayname);
+            CloudUser? user = await _server.GetUserByDisplayName(displayname);
             if (user is null)
                 return NotFound();
 
@@ -290,11 +290,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
     [HttpGet("GetUserByInput")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<ActionResult<UserModel>> GetUserByInput(string input)
+    public async Task<ActionResult<CloudUser>> GetUserByInput(string input)
     {
         try
         {
-            UserModel? user = CloudLoginTransportSecurity.ForAnonymousDiscovery(
+            CloudUser? user = CloudLoginTransportSecurity.ForAnonymousDiscovery(
                 await _server.GetUserByInput(input));
 
             return Ok(user);
@@ -306,11 +306,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
     [HttpGet("GetUserByEmailAdress")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<ActionResult<UserModel>> GetUserByEmailAdress(string email)
+    public async Task<ActionResult<CloudUser>> GetUserByEmailAdress(string email)
     {
         try
         {
-            UserModel? user = await _server.GetUserByEmailAddress(email);
+            CloudUser? user = await _server.GetUserByEmailAddress(email);
 
             if (user == null)
                 return NotFound();
@@ -325,11 +325,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
     [HttpGet("GetUserByPhoneNumber")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<ActionResult<UserModel>> GetUsersByPhoneNumber(string number)
+    public async Task<ActionResult<CloudUser>> GetUsersByPhoneNumber(string number)
     {
         try
         {
-            UserModel? user = await _server.GetUserByPhoneNumber(number);
+            CloudUser? user = await _server.GetUserByPhoneNumber(number);
 
             if (user == null)
                 return NotFound();
@@ -344,11 +344,11 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
     [HttpGet("CurrentUser")]
     [Authorize]
-    public async Task<ActionResult<UserModel?>> CurrentUser()
+    public async Task<ActionResult<CloudUser?>> CurrentUser()
     {
         try
         {
-            UserModel? user = await _server.CurrentUser();
+            CloudUser? user = await _server.CurrentUser();
 
             if (user == null)
                 return NotFound();
@@ -478,18 +478,18 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
 
     private async Task<bool> IsGlobalAdminAsync()
     {
-        UserModel? currentUser = await _server.CurrentUser();
+        CloudUser? currentUser = await _server.CurrentUser();
 
         return currentUser?.IsGlobalAdmin == true;
     }
 
     private async Task<bool> CanAccessUserAsync(Guid userId)
     {
-        UserModel? currentUser = await _server.CurrentUser();
+        CloudUser? currentUser = await _server.CurrentUser();
         return currentUser is not null && (currentUser.ID == userId || currentUser.IsGlobalAdmin);
     }
 
-    private UserModel NormalizeUser(UserModel user)
+    private CloudUser NormalizeUser(CloudUser user)
     {
         user = CloudLoginTransportSecurity.ForTransport(user)!;
         if (!string.IsNullOrWhiteSpace(user.ProfilePicture))

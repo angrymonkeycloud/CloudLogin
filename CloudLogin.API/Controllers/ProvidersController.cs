@@ -13,7 +13,7 @@ public class ProvidersController(CloudLoginWebConfiguration configuration, IClou
     {
         try
         {
-            List<ProviderDefinition> providers = await _server.GetProviders();
+            List<CloudLoginProviderDefinition> providers = await _server.GetProviders();
 
             return Ok(providers);
         }

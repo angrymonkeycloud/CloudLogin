@@ -105,7 +105,7 @@ The implementation uses a custom JSON serialization system that:
 ### Architecture Components
 
 - `CosmosConfiguration`: Holds the configuration values
-- `BaseRecord`: Abstract base class with static configuration holder
+- `CloudLoginBaseRecord`: Abstract base class with static configuration holder
 - `BaseRecordJsonConverter`: Custom JSON converter for dynamic property names
 - `ConfigurableCosmosSerializer`: Cosmos DB serializer that uses the custom converter
 

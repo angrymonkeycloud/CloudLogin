@@ -22,7 +22,7 @@ public partial class CloudLoginServer
         if (_accessor.HttpContext?.User.Identity?.IsAuthenticated != true)
             throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
 
-        UserModel? currentUser = await CurrentUser();
+        CloudUser? currentUser = await CurrentUser();
         if (currentUser is null || currentUser.ID == Guid.Empty || currentUser.IsLocked)
             throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
 
@@ -114,7 +114,7 @@ public partial class CloudLoginServer
             if (string.IsNullOrEmpty(referer) || referer == "/" || referer == baseUrl || referer == $"{baseUrl}/")
                 return new RedirectResult($"{baseUrl}/Account");
 
-            UserModel? currentUser = await CurrentUser();
+            CloudUser? currentUser = await CurrentUser();
 
             if (currentUser is not null && currentUser.ID != Guid.Empty && !currentUser.IsLocked)
             {
@@ -144,7 +144,7 @@ public partial class CloudLoginServer
         if (!IsAllowedRedirect(referer))
             return new BadRequestObjectResult("The requested return URL is not allowed.");
 
-        UserModel? user = await GetUserById(userId);
+        CloudUser? user = await GetUserById(userId);
         if (user is null || user.IsTest || user.IsLocked)
             return new UnauthorizedResult();
 
@@ -181,10 +181,10 @@ public partial class CloudLoginServer
                 new Claim(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
             ], "CloudLogin");
 
-        if (user.Inputs.FirstOrDefault()?.Format == InputFormat.PhoneNumber)
+        if (user.Inputs.FirstOrDefault()?.Format == CloudLoginInputFormat.PhoneNumber)
             claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
 
-        if (user.Inputs.FirstOrDefault()?.Format == InputFormat.EmailAddress)
+        if (user.Inputs.FirstOrDefault()?.Format == CloudLoginInputFormat.EmailAddress)
             claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
 
         ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
@@ -215,7 +215,7 @@ public partial class CloudLoginServer
         ClaimsIdentity userIdentity = _request.HttpContext.User.Identities.First();
         string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;
 
-        UserModel user = (_configuration.Cosmos != null ? await _cosmosMethods.GetUserByInput(emailaddress) : new()) ?? new();
+        CloudUser user = (_configuration.Cosmos != null ? await _cosmosMethods.GetUserByInput(emailaddress) : new()) ?? new();
 
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
 
@@ -289,7 +289,7 @@ public partial class CloudLoginServer
                 [
                     new()
                     {
-                        Format = InputFormat.EmailAddress,
+                        Format = CloudLoginInputFormat.EmailAddress,
                         Input = emailaddress,
                         IsPrimary = true
                     }

@@ -14,7 +14,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
     internal static PartitionKey GetPartitionKey<T>(string partitionKey) =>
         !string.IsNullOrEmpty(partitionKey) ? new PartitionKey(partitionKey) : new PartitionKey(typeof(T).Name);
 
-    internal static PartitionKey GetPartitionKey<T>(T record) where T : BaseRecord => new(record.PartitionKeyValue);
+    internal static PartitionKey GetPartitionKey<T>(T record) where T : CloudLoginBaseRecord => new(record.PartitionKeyValue);
 
     #endregion
 
@@ -25,10 +25,10 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
     /// </summary>
     private static string BuildTypeCondition(string userType)
     {
-        string typePropertyName = BaseRecord.GetTypePropertyName();
-        string partitionKeyPropertyName = BaseRecord.GetPartitionKeyJsonPropertyName();
+        string typePropertyName = CloudLoginBaseRecord.GetTypePropertyName();
+        string partitionKeyPropertyName = CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName();
         
-        if (BaseRecord.ShouldIncludeLegacySchema())
+        if (CloudLoginBaseRecord.ShouldIncludeLegacySchema())
         {
             // When legacy schema is included, check both modern and legacy property names
             // This handles cases where data might exist with either naming convention
@@ -54,9 +54,9 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
     #endregion
 
-    public async Task<UserModel?> GetUserByEmailAddress(string emailAddress)
+    public async Task<CloudUser?> GetUserByEmailAddress(string emailAddress)
     {
-        string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string userType = CloudLoginBaseRecord.GetEffectiveTypeValue("UserInfo");
         string typeCondition = BuildTypeCondition(userType);
         
         // Note: use normal escaped quotes (\") so Cosmos SQL doesn't see backslashes
@@ -65,23 +65,23 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType)
             .WithParameter("@emailAddress", emailAddress.Trim());
 
-        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+        FeedIterator<CloudUserInfo> iterator = _container.GetItemQueryIterator<CloudUserInfo>(
             queryDefinition,
             requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userType) });
 
-        List<UserInfo> users = [];
+        List<CloudUserInfo> users = [];
         while (iterator.HasMoreResults)
         {
-            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            FeedResponse<CloudUserInfo> response = await iterator.ReadNextAsync();
             users.AddRange(response);
         }
 
         return Parse(users.FirstOrDefault());
     }
 
-    public async Task<UserModel?> GetUserByInput(string input)
+    public async Task<CloudUser?> GetUserByInput(string input)
     {
-        UserModel? user = await GetUserByEmailAddress(input);
+        CloudUser? user = await GetUserByEmailAddress(input);
 
         if (user == null)
             return await GetUserByPhoneNumber(CloudGeography.PhoneNumbers.Get(input));
@@ -89,7 +89,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return user;
     }
 
-    public async Task<UserModel?> GetUserByPhoneNumber(string number)
+    public async Task<CloudUser?> GetUserByPhoneNumber(string number)
     {
         if (string.IsNullOrEmpty(number))
             return null;
@@ -97,9 +97,9 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return await GetUserByPhoneNumber(CloudGeography.PhoneNumbers.Get(number));
     }
 
-    public async Task<UserModel?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
+    public async Task<CloudUser?> GetUserByPhoneNumber(PhoneNumber phoneNumber)
     {
-        string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string userType = CloudLoginBaseRecord.GetEffectiveTypeValue("UserInfo");
         string typeCondition = BuildTypeCondition(userType);
         
         string sql = $"SELECT VALUE root FROM root WHERE {typeCondition} AND EXISTS(SELECT VALUE 1 FROM input IN root.Inputs WHERE input.Format = \"PhoneNumber\" AND input.Input = @phoneNumber AND (@countryCode = \"\" OR input.PhoneNumberCountryCode = @countryCode))";
@@ -108,31 +108,31 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
             .WithParameter("@phoneNumber", phoneNumber.Number)
             .WithParameter("@countryCode", phoneNumber.CountryCode ?? string.Empty);
 
-        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+        FeedIterator<CloudUserInfo> iterator = _container.GetItemQueryIterator<CloudUserInfo>(
             queryDefinition,
             requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userType) });
 
-        List<UserInfo> users = [];
+        List<CloudUserInfo> users = [];
         while (iterator.HasMoreResults)
         {
-            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            FeedResponse<CloudUserInfo> response = await iterator.ReadNextAsync();
             users.AddRange(response);
         }
 
         return Parse(users.FirstOrDefault());
     }
 
-    public async Task<UserModel?> GetUserByRequestId(Guid requestId)
+    public async Task<CloudUser?> GetUserByRequestId(Guid requestId)
     {
-        LoginRequest request = new();
+        CloudRequest request = new();
         request.SetId(requestId);
         
         // When using legacy schema with TypePrefixed save mode, use the formatted ID
         string documentId = request.GetFormattedId();
         
-        ItemResponse<LoginRequest> response = await _container.ReadItemAsync<LoginRequest>(documentId, GetPartitionKey(request));
-        await _container.DeleteItemAsync<LoginRequest>(documentId, GetPartitionKey(request));
-        LoginRequest selectedRequest = response.Resource;
+        ItemResponse<CloudRequest> response = await _container.ReadItemAsync<CloudRequest>(documentId, GetPartitionKey(request));
+        await _container.DeleteItemAsync<CloudRequest>(documentId, GetPartitionKey(request));
+        CloudRequest selectedRequest = response.Resource;
 
         if (selectedRequest.UserId == null)
             return null;
@@ -140,9 +140,9 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return await GetUserById(selectedRequest.UserId.Value);
     }
 
-    public async Task<UserModel?> GetUserByDisplayName(string displayName)
+    public async Task<CloudUser?> GetUserByDisplayName(string displayName)
     {
-        string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string userType = CloudLoginBaseRecord.GetEffectiveTypeValue("UserInfo");
         string typeCondition = BuildTypeCondition(userType);
         
         string sql = $"SELECT VALUE root FROM root WHERE {typeCondition} AND UPPER(root.DisplayName) = UPPER(@displayName)";
@@ -150,23 +150,23 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType)
             .WithParameter("@displayName", displayName);
 
-        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+        FeedIterator<CloudUserInfo> iterator = _container.GetItemQueryIterator<CloudUserInfo>(
             queryDefinition,
             requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userType) });
 
-        List<UserInfo> users = [];
+        List<CloudUserInfo> users = [];
         while (iterator.HasMoreResults)
         {
-            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            FeedResponse<CloudUserInfo> response = await iterator.ReadNextAsync();
             users.AddRange(response);
         }
 
         return Parse(users.FirstOrDefault());
     }
 
-    public async Task<List<UserModel>> GetUsersByDisplayName(string displayName)
+    public async Task<List<CloudUser>> GetUsersByDisplayName(string displayName)
     {
-        string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string userType = CloudLoginBaseRecord.GetEffectiveTypeValue("UserInfo");
         string typeCondition = BuildTypeCondition(userType);
         
         string sql = $"SELECT VALUE root FROM root WHERE {typeCondition} AND UPPER(root.DisplayName) = UPPER(@displayName)";
@@ -174,59 +174,59 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType)
             .WithParameter("@displayName", displayName);
 
-        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+        FeedIterator<CloudUserInfo> iterator = _container.GetItemQueryIterator<CloudUserInfo>(
             queryDefinition,
             requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userType) });
 
-        List<UserInfo> users = [];
+        List<CloudUserInfo> users = [];
         while (iterator.HasMoreResults)
         {
-            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            FeedResponse<CloudUserInfo> response = await iterator.ReadNextAsync();
             users.AddRange(response);
         }
 
         return Parse(users) ?? [];
     }
 
-    public async Task<UserModel?> GetUserById(Guid id)
+    public async Task<CloudUser?> GetUserById(Guid id)
     {
-        UserInfo user = new();
+        CloudUserInfo user = new();
         user.SetId(id);
         
         // When using legacy schema with TypePrefixed save mode, use the formatted ID
         string documentId = user.GetFormattedId();
         
-        ItemResponse<UserInfo> response = await _container.ReadItemAsync<UserInfo>(documentId, GetPartitionKey(user));
+        ItemResponse<CloudUserInfo> response = await _container.ReadItemAsync<CloudUserInfo>(documentId, GetPartitionKey(user));
 
         return Parse(response.Resource);
     }
 
-    public async Task<List<UserModel>> GetUsers()
+    public async Task<List<CloudUser>> GetUsers()
     {
-        string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string userType = CloudLoginBaseRecord.GetEffectiveTypeValue("UserInfo");
         string typeCondition = BuildTypeCondition(userType);
         
         string sql = $"SELECT VALUE root FROM root WHERE {typeCondition}";
 
         QueryDefinition queryDefinition = CreateUserQueryDefinition(sql, userType);
 
-        FeedIterator<UserInfo> iterator = _container.GetItemQueryIterator<UserInfo>(
+        FeedIterator<CloudUserInfo> iterator = _container.GetItemQueryIterator<CloudUserInfo>(
             queryDefinition,
             requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userType) });
 
-        List<UserInfo> users = [];
+        List<CloudUserInfo> users = [];
         while (iterator.HasMoreResults)
         {
-            FeedResponse<UserInfo> response = await iterator.ReadNextAsync();
+            FeedResponse<CloudUserInfo> response = await iterator.ReadNextAsync();
             users.AddRange(response);
         }
 
         return Parse(users) ?? [];
     }
 
-    public async Task<LoginRequest> CreateRequest(Guid userId, Guid? requestId = null)
+    public async Task<CloudRequest> CreateRequest(Guid userId, Guid? requestId = null)
     {
-        LoginRequest request = new();
+        CloudRequest request = new();
         request.SetId(requestId ?? Guid.NewGuid());
         request.UserId = userId;
         await _container.CreateItemAsync(request, GetPartitionKey(request));
@@ -234,7 +234,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return request;
     }
 
-    public async Task Update(UserModel user)
+    public async Task Update(CloudUser user)
     {
         // Do not generate a new ID on updates.
         if (user.ID == Guid.Empty)
@@ -246,7 +246,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
 
             if (!string.IsNullOrWhiteSpace(candidate))
             {
-                UserModel? existing = await GetUserByInput(candidate);
+                CloudUser? existing = await GetUserByInput(candidate);
                 if (existing != null)
                     user.ID = existing.ID;
             }
@@ -255,13 +255,13 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
                 throw new InvalidOperationException("Cannot update user with empty ID. Provide a valid ID or use Create.");
         }
 
-        UserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
+        CloudUserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
         await _container.UpsertItemAsync(dbUser, GetPartitionKey(dbUser));
     }
 
     public async Task UpdateLastSignedIn(Guid userId, DateTimeOffset lastSignedIn)
     {
-        UserInfo userInfo = new();
+        CloudUserInfo userInfo = new();
         userInfo.SetId(userId);
         PartitionKey partitionKey = GetPartitionKey(userInfo);
 
@@ -271,12 +271,12 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         string lastSignedInPath = "/LastSignedIn";
         List<PatchOperation> patchOperations = [PatchOperation.Replace(lastSignedInPath, lastSignedIn)];
 
-        await _container.PatchItemAsync<UserInfo>(documentId, partitionKey, patchOperations);
+        await _container.PatchItemAsync<CloudUserInfo>(documentId, partitionKey, patchOperations);
     }
 
     public async Task<int> GetUserCount()
     {
-        string userType = BaseRecord.GetEffectiveTypeValue(nameof(UserInfo));
+        string userType = CloudLoginBaseRecord.GetEffectiveTypeValue("UserInfo");
         string typeCondition = BuildTypeCondition(userType);
 
         string sql = $"SELECT VALUE COUNT(1) FROM root WHERE {typeCondition}";
@@ -300,7 +300,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         return count;
     }
 
-    public async Task Create(UserModel user)
+    public async Task Create(CloudUser user)
     {
         // The first user ever created becomes a Global Admin
         if (!user.IsGlobalAdmin)
@@ -311,7 +311,7 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
                 user.IsGlobalAdmin = true;
         }
 
-        UserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
+        CloudUserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
 
         if (dbUser.GetId() == Guid.Empty)
             dbUser.SetId(Guid.NewGuid());
@@ -319,18 +319,18 @@ public class CosmosMethods(CloudGeographyClient cloudGeography, Container contai
         await _container.UpsertItemAsync(dbUser, GetPartitionKey(dbUser));
     }
 
-    public async Task AddInput(Guid userId, LoginInput Input)
+    public async Task AddInput(Guid userId, CloudLoginInput Input)
     {
-        UserModel user = await GetUserById(userId) ?? throw new Exception("User not found.");
+        CloudUser user = await GetUserById(userId) ?? throw new Exception("User not found.");
         user.Inputs.Add(Input);
         
-        UserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
+        CloudUserInfo dbUser = Parse(user) ?? throw new NullReferenceException(nameof(user));
         await _container.UpsertItemAsync(dbUser, GetPartitionKey(dbUser));
     }
 
     public async Task DeleteUser(Guid userId)
     {
-        UserInfo user = new();
+        CloudUserInfo user = new();
         user.SetId(userId);
         
         // When using legacy schema with TypePrefixed save mode, use the formatted ID

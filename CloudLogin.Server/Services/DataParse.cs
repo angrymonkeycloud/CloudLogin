@@ -1,0 +1,86 @@
+using AngryMonkey.CloudLogin;
+using System.Linq;
+using System.Collections.Generic;
+
+namespace AngryMonkey.CloudLogin.Server;
+
+public class DataParse
+{
+    public static CloudUserInfo? Parse(CloudUser? user)
+    {
+        if (user == null)
+            return null;
+
+        CloudUserInfo userInformation = new()
+        {
+            DisplayName = user.DisplayName,
+            FirstName = user.FirstName,
+            IsLocked = user.IsLocked,
+            IsTest = user.IsTest,
+            IsGlobalAdmin = user.IsGlobalAdmin,
+            LastName = user.LastName,
+            CreatedOn = user.CreatedOn,
+            DateOfBirth = user.DateOfBirth,
+            LastSignedIn = user.LastSignedIn,
+            Inputs = user.Inputs,
+            Username = user.Username,
+            // Added profile fields
+            ProfilePicture = user.ProfilePicture,
+            IsCustomProfilePicture = user.IsCustomProfilePicture,
+            ProviderProfilePicture = user.ProviderProfilePicture,
+            Country = user.Country,
+            Locale = user.Locale
+        };
+
+        userInformation.SetId(user.ID);
+
+        return userInformation;
+    }
+
+    public static List<CloudUser>? Parse(List<CloudUserInfo> Users)
+    {
+        if (Users == null)
+            return [];
+
+        return Users.Select(Parse).Where(user => user != null).ToList()!;
+    }
+
+    public static CloudUser? Parse(CloudUserInfo? dbUser)
+    {
+        if (dbUser == null)
+            return null;
+
+        // Ensure ID is properly parsed from the lowercase 'id' field
+        dbUser.ProcessExtensionData();
+
+        return new()
+        {
+            ID = dbUser.GetId(),
+            DisplayName = dbUser.DisplayName,
+            FirstName = dbUser.FirstName,
+            IsLocked = dbUser.IsLocked,
+            IsTest = dbUser.IsTest,
+            IsGlobalAdmin = dbUser.IsGlobalAdmin,
+            LastName = dbUser.LastName,
+            CreatedOn = dbUser.CreatedOn,
+            DateOfBirth = dbUser.DateOfBirth,
+            LastSignedIn = dbUser.LastSignedIn,
+            Inputs = dbUser.Inputs,
+            Username = dbUser.Username,
+            // Added profile fields
+            ProfilePicture = dbUser.ProfilePicture,
+            IsCustomProfilePicture = dbUser.IsCustomProfilePicture,
+            ProviderProfilePicture = dbUser.ProviderProfilePicture,
+            Country = dbUser.Country,
+            Locale = dbUser.Locale
+        };
+    }
+
+    public static List<CloudUserInfo> Parse(List<CloudUser> Users)
+    {
+        if (Users == null)
+            return [];
+
+        return Users.Select(Parse).Where(user => user != null).ToList()!;
+    }
+}

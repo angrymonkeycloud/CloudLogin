@@ -42,9 +42,9 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
     /// Produces the creation options the browser passes to <c>navigator.credentials.create()</c>.
     /// Existing credentials are excluded so the same authenticator isn't enrolled twice.
     /// </summary>
-    public async Task<CredentialCreateOptions> BeginRegistration(UserModel user, Uri origin)
+    public async Task<CredentialCreateOptions> BeginRegistration(CloudUser user, Uri origin)
     {
-        UserSecurityDocument credentials = await _store.GetCredentials(user.ID);
+        CloudLoginUserSecurityDocument credentials = await _store.GetCredentials(user.ID);
 
         Fido2User fidoUser = new()
         {
@@ -75,8 +75,8 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
     /// <summary>
     /// Verifies the authenticator's attestation response and stores the resulting credential.
     /// </summary>
-    public async Task<PasskeySummary> CompleteRegistration(
-        UserModel user,
+    public async Task<CloudLoginPasskeySummary> CompleteRegistration(
+        CloudUser user,
         Uri origin,
         CredentialCreateOptions originalOptions,
         AuthenticatorAttestationRawResponse attestationResponse,
@@ -91,14 +91,14 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
                 // The credential must not already be registered to this account. A global check
                 // isn't possible here because credentials are stored per user, and isn't needed:
                 // passkeys are used as a second factor once the user is already identified.
-                UserSecurityDocument existing = await _store.GetCredentials(user.ID);
+                CloudLoginUserSecurityDocument existing = await _store.GetCredentials(user.ID);
                 string candidate = Base64Url.EncodeToString(args.CredentialId);
 
                 return !existing.Passkeys.Any(p => p.CredentialId == candidate);
             }
         });
 
-        UserPasskey passkey = new()
+        CloudLoginPasskey passkey = new()
         {
             CredentialId = Base64Url.EncodeToString(credential.Id),
             PublicKey = credential.PublicKey,
@@ -125,7 +125,7 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
     /// </summary>
     public async Task<AssertionOptions> BeginAssertion(Guid userId, Uri origin)
     {
-        UserSecurityDocument credentials = await _store.GetCredentials(userId);
+        CloudLoginUserSecurityDocument credentials = await _store.GetCredentials(userId);
 
         if (credentials.Passkeys.Count == 0)
             throw new InvalidOperationException("This account has no registered passkeys.");
@@ -150,11 +150,11 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
         AssertionOptions originalOptions,
         AuthenticatorAssertionRawResponse assertionResponse)
     {
-        UserSecurityDocument credentials = await _store.GetCredentials(userId);
+        CloudLoginUserSecurityDocument credentials = await _store.GetCredentials(userId);
 
         // `Id` is already the Base64Url encoding of `RawId`, matching how credentials are stored.
         string credentialId = assertionResponse.Id;
-        UserPasskey? stored = credentials.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
+        CloudLoginPasskey? stored = credentials.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
 
         if (stored is null)
             return false;
@@ -183,7 +183,7 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
         // for the next assertion.
         await _store.UpdateCredentials(userId, document =>
         {
-            UserPasskey? target = document.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
+            CloudLoginPasskey? target = document.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
 
             if (target is null)
                 return;
@@ -202,13 +202,13 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
     public async Task RenamePasskey(Guid userId, string credentialId, string name)
         => await _store.UpdateCredentials(userId, document =>
         {
-            UserPasskey? target = document.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
+            CloudLoginPasskey? target = document.Passkeys.FirstOrDefault(p => p.CredentialId == credentialId);
 
             if (target is not null)
                 target.Name = string.IsNullOrWhiteSpace(name) ? "Passkey" : name.Trim();
         });
 
-    internal static PasskeySummary ToSummary(UserPasskey passkey) => new()
+    internal static CloudLoginPasskeySummary ToSummary(CloudLoginPasskey passkey) => new()
     {
         CredentialId = passkey.CredentialId,
         Name = passkey.Name,
@@ -217,7 +217,7 @@ public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, Clo
         IsBackedUp = passkey.IsBackedUp
     };
 
-    private static string GetAccountName(UserModel user)
+    private static string GetAccountName(CloudUser user)
         => (user.PrimaryEmailAddress ?? user.EmailAddresses.FirstOrDefault())?.Input
             ?? (user.PrimaryPhoneNumber ?? user.PhoneNumbers.FirstOrDefault())?.Input
             ?? user.ID.ToString();

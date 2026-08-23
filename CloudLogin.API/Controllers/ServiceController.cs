@@ -14,12 +14,12 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 [Authorize(AuthenticationSchemes = ServiceKeyAuthenticationDefaults.AuthenticationScheme)]
 public class ServiceController(CloudLoginWebConfiguration configuration, ICloudLogin server) : CloudLoginBaseController(configuration, server)
 {
-    [HttpGet("Organizations")]
-    public async Task<ActionResult<List<CloudLoginOrganization>>> GetAllOrganizations()
+    [HttpGet("Workspaces")]
+    public async Task<ActionResult<List<CloudWorkspace>>> GetAllWorkspaces()
     {
         try
         {
-            return Ok(await _server.GetAllOrganizations());
+            return Ok(await _server.GetAllWorkspaces());
         }
         catch
         {
@@ -27,17 +27,17 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpGet("Organizations/{organizationId:guid}")]
-    public async Task<ActionResult<CloudLoginOrganization>> GetOrganization(Guid organizationId)
+    [HttpGet("Workspaces/{workspaceId:guid}")]
+    public async Task<ActionResult<CloudWorkspace>> GetWorkspace(Guid workspaceId)
     {
         try
         {
-            CloudLoginOrganization? organization = await _server.GetOrganizationById(organizationId);
+            CloudWorkspace? workspace = await _server.GetWorkspaceById(workspaceId);
 
-            if (organization == null)
+            if (workspace == null)
                 return NotFound();
 
-            return Ok(organization);
+            return Ok(workspace);
         }
         catch
         {
@@ -45,12 +45,12 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpGet("Organizations/{organizationId:guid}/Members")]
-    public async Task<ActionResult<List<CloudLoginOrganizationMember>>> GetOrganizationMembers(Guid organizationId)
+    [HttpGet("Workspaces/{workspaceId:guid}/Members")]
+    public async Task<ActionResult<List<CloudWorkspaceMember>>> GetWorkspaceMembers(Guid workspaceId)
     {
         try
         {
-            return Ok(await _server.GetOrganizationMembers(organizationId));
+            return Ok(await _server.GetWorkspaceMembers(workspaceId));
         }
         catch
         {
@@ -59,7 +59,7 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
     }
 
     [HttpGet("Users")]
-    public async Task<ActionResult<List<UserModel>>> GetAllUsers()
+    public async Task<ActionResult<List<CloudUser>>> GetAllUsers()
     {
         try
         {
@@ -72,11 +72,11 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
     }
 
     [HttpGet("Users/{userId:guid}")]
-    public async Task<ActionResult<UserModel>> GetUser(Guid userId)
+    public async Task<ActionResult<CloudUser>> GetUser(Guid userId)
     {
         try
         {
-            UserModel? user = await _server.GetUserById(userId);
+            CloudUser? user = await _server.GetUserById(userId);
 
             if (user == null)
                 return NotFound();
@@ -90,7 +90,7 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
     }
 
     [HttpGet("Subscriptions")]
-    public async Task<ActionResult<List<AccountSubscription>>> GetAllSubscriptions()
+    public async Task<ActionResult<List<CloudSubscription>>> GetAllSubscriptions()
     {
         try
         {
@@ -103,11 +103,11 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
     }
 
     [HttpGet("Subscriptions/{subscriptionId:guid}")]
-    public async Task<ActionResult<AccountSubscription>> GetSubscription(Guid subscriptionId)
+    public async Task<ActionResult<CloudSubscription>> GetSubscription(Guid subscriptionId)
     {
         try
         {
-            AccountSubscription? subscription = await _server.GetSubscriptionById(subscriptionId);
+            CloudSubscription? subscription = await _server.GetSubscriptionById(subscriptionId);
 
             if (subscription == null)
                 return NotFound();

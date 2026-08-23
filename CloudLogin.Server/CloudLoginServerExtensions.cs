@@ -26,8 +26,8 @@ public static class CloudLoginServerExtensions
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        // Configure BaseRecord with Cosmos configuration for property naming.
-        BaseRecord.CosmosConfiguration = configuration.Cosmos;
+        // Configure CloudLoginBaseRecord with Cosmos configuration for property naming.
+        CloudLoginBaseRecord.CosmosConfiguration = configuration.Cosmos;
 
         return RegisterServices(services, configuration);
     }

@@ -57,7 +57,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, CloudLogi
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> PasswordSignIn([FromForm] string email, [FromForm] string password, [FromForm] bool keepMeSignedIn = false, [FromForm] string? referer = null)
     {
-        PasswordLoginRequest request = PasswordLoginRequest.Create(email, password, keepMeSignedIn);
+        CloudLoginPasswordLoginRequest request = CloudLoginPasswordLoginRequest.Create(email, password, keepMeSignedIn);
         bool result = await _server.PasswordLogin(request);
 
         if (!result)
@@ -82,11 +82,11 @@ public class LoginController(CloudLoginWebConfiguration configuration, CloudLogi
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> PasswordRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string? password, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? referer = null)
     {
-        if (!Enum.TryParse<InputFormat>(inputFormat, true, out InputFormat format))
+        if (!Enum.TryParse<CloudLoginInputFormat>(inputFormat, true, out CloudLoginInputFormat format))
             return BadRequest("Invalid input format.");
 
-        PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(input, format, password, firstName, lastName, displayName);
-        UserModel user = await _server.PasswordRegistration(request);
+        CloudLoginPasswordRegistrationRequest request = CloudLoginPasswordRegistrationRequest.Create(input, format, password, firstName, lastName, displayName);
+        CloudUser user = await _server.PasswordRegistration(request);
 
         if (user is null)
             return BadRequest("Registration failed.");
@@ -101,11 +101,11 @@ public class LoginController(CloudLoginWebConfiguration configuration, CloudLogi
         if (!Configuration.Security.EnableLegacyClientVerificationCodes)
             return NotFound();
 
-        if (!Enum.TryParse(inputFormat, true, out InputFormat format))
+        if (!Enum.TryParse(inputFormat, true, out CloudLoginInputFormat format))
             return BadRequest("Invalid input format.");
 
-        CodeRegistrationRequest request = CodeRegistrationRequest.Create(input, format, firstName, lastName, displayName);
-        UserModel user = await _server.CodeRegistration(request);
+        CloudLoginCodeRegistrationRequest request = CloudLoginCodeRegistrationRequest.Create(input, format, firstName, lastName, displayName);
+        CloudUser user = await _server.CodeRegistration(request);
 
         return Ok(CloudLoginTransportSecurity.ForTransport(user));
     }

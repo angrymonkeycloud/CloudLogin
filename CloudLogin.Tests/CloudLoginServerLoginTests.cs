@@ -16,11 +16,11 @@ public class CloudLoginServerLoginTests
     public async Task PasswordLogin_WithValidPassword_SignsInAndUpdatesUser()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         DateTimeOffset beforeLogin = DateTimeOffset.UtcNow;
 
         bool result = await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("  PERSON@EXAMPLE.COM ", "Valid#123456", true));
+            CloudLoginPasswordLoginRequest.Create("  PERSON@EXAMPLE.COM ", "Valid#123456", true));
 
         Assert.True(result);
         Assert.Equal(1, fixture.Authentication.SignInCount);
@@ -43,7 +43,7 @@ public class CloudLoginServerLoginTests
         await fixture.AddPasswordUserAsync();
 
         bool result = await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "Wrong#123456"));
+            CloudLoginPasswordLoginRequest.Create("person@example.com", "Wrong#123456"));
 
         Assert.False(result);
         Assert.Equal(0, fixture.Authentication.SignInCount);
@@ -54,11 +54,11 @@ public class CloudLoginServerLoginTests
     public async Task PasswordLogin_LockedAccount_DoesNotSignIn()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         user.IsLocked = true;
 
         bool result = await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "Valid#123456"));
+            CloudLoginPasswordLoginRequest.Create("person@example.com", "Valid#123456"));
 
         Assert.False(result);
         Assert.Equal(0, fixture.Authentication.SignInCount);
@@ -70,9 +70,9 @@ public class CloudLoginServerLoginTests
         LoginTestFixture fixture = new();
 
         await Assert.ThrowsAnyAsync<ArgumentException>(() => fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "")));
+            CloudLoginPasswordLoginRequest.Create("person@example.com", "")));
         await Assert.ThrowsAnyAsync<ArgumentException>(() => fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("", "Valid#123456")));
+            CloudLoginPasswordLoginRequest.Create("", "Valid#123456")));
         Assert.Equal(0, fixture.Authentication.SignInCount);
     }
 
@@ -80,15 +80,15 @@ public class CloudLoginServerLoginTests
     public async Task PasswordLogin_DoesNotAuthenticateTestAccount()
     {
         LoginTestFixture fixture = new(testModeEnabled: true);
-        UserModel user = await fixture.AddPasswordUserAsync(isTest: true);
-        user.Inputs[0].Providers.Add(new LoginProvider
+        CloudUser user = await fixture.AddPasswordUserAsync(isTest: true);
+        user.Inputs[0].Providers.Add(new CloudLoginProvider
         {
             Code = "Password",
             PasswordHash = await fixture.Server.HashPassword("Valid#123456")
         });
 
         bool result = await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "Valid#123456"));
+            CloudLoginPasswordLoginRequest.Create("person@example.com", "Valid#123456"));
 
         Assert.False(result);
         Assert.Equal(0, fixture.Authentication.SignInCount);
@@ -101,7 +101,7 @@ public class CloudLoginServerLoginTests
         await fixture.AddPasswordUserAsync();
 
         Assert.True(await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("person@example.com", "Valid#123456")));
+            CloudLoginPasswordLoginRequest.Create("person@example.com", "Valid#123456")));
 
         Assert.False(fixture.Authentication.SignedInProperties!.IsPersistent);
         Assert.Null(fixture.Authentication.SignedInProperties.ExpiresUtc);
@@ -111,7 +111,7 @@ public class CloudLoginServerLoginTests
     public async Task TestLogin_WhenEnabled_SignsInOnlyTestUser()
     {
         LoginTestFixture fixture = new(testModeEnabled: true);
-        UserModel testUser = await fixture.AddPasswordUserAsync(isTest: true);
+        CloudUser testUser = await fixture.AddPasswordUserAsync(isTest: true);
 
         bool result = await fixture.Server.TestLogin(testUser.ID, keepMeSignedIn: true);
 
@@ -126,7 +126,7 @@ public class CloudLoginServerLoginTests
     public async Task TestLogin_WhenDisabled_IsRejected()
     {
         LoginTestFixture fixture = new();
-        UserModel testUser = await fixture.AddPasswordUserAsync(isTest: true);
+        CloudUser testUser = await fixture.AddPasswordUserAsync(isTest: true);
 
         Assert.False(await fixture.Server.TestLogin(testUser.ID));
         Assert.Equal(0, fixture.Authentication.SignInCount);
@@ -137,7 +137,7 @@ public class CloudLoginServerLoginTests
     {
         LoginTestFixture fixture = new(testModeEnabled: true);
 
-        List<ProviderDefinition> providers = await fixture.Server.GetProviders();
+        List<CloudLoginProviderDefinition> providers = await fixture.Server.GetProviders();
 
         Assert.Contains(providers,
             provider => provider.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase));
@@ -156,7 +156,7 @@ public class CloudLoginServerLoginTests
         fixture.Configuration.Providers.Add(new LoginTestProviders.TestModeConfiguration(
             configurationValues.GetSection("TestMode")));
 
-        List<ProviderDefinition> providers = await fixture.Server.GetProviders();
+        List<CloudLoginProviderDefinition> providers = await fixture.Server.GetProviders();
 
         Assert.DoesNotContain(providers,
             provider => provider.Code.Equals("testmode", StringComparison.OrdinalIgnoreCase));
@@ -166,7 +166,7 @@ public class CloudLoginServerLoginTests
     public async Task TestLogin_RejectsRegularAndUnknownUsers()
     {
         LoginTestFixture fixture = new(testModeEnabled: true);
-        UserModel regularUser = await fixture.AddPasswordUserAsync();
+        CloudUser regularUser = await fixture.AddPasswordUserAsync();
 
         Assert.False(await fixture.Server.TestLogin(regularUser.ID));
         Assert.False(await fixture.Server.TestLogin(Guid.NewGuid()));
@@ -180,7 +180,7 @@ public class CloudLoginServerLoginTests
         LoginTestFixture fixture = new(
             testModeEnabled: true,
             allowedOrigins: ["https://portal.example:7443"]);
-        UserModel testUser = await fixture.AddPasswordUserAsync(isTest: true);
+        CloudUser testUser = await fixture.AddPasswordUserAsync(isTest: true);
 
         Assert.True(await fixture.Server.TestLogin(testUser.ID));
         fixture.AuthenticateAs(testUser);
@@ -205,14 +205,15 @@ public class CloudLoginServerLoginTests
     }
 
     [Theory]
-    [InlineData("https://attacker.example/callback")]
     [InlineData("//attacker.example/callback")]
     [InlineData("javascript:alert(1)")]
-    [InlineData("unknownapp://auth/callback")]
-    public async Task CompleteLoginRedirect_RejectsUnapprovedDestination(string destination)
+    public async Task CompleteLoginRedirect_AlwaysRejectsDangerousSchemes(string destination)
     {
+        // These never identify a website or a mobile app, so no allowlist
+        // (configured or not) makes them safe — they must stay rejected even
+        // when no allowlist is configured at all.
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -220,11 +221,42 @@ public class CloudLoginServerLoginTests
         Assert.Equal(0, fixture.Store.CreateRequestCount);
     }
 
+    [Theory]
+    [InlineData("https://attacker.example/callback")]
+    [InlineData("unknownapp://auth/callback")]
+    public async Task CompleteLoginRedirect_RejectsUnlistedDestination_WhenAllowlistConfigured(string destination)
+    {
+        LoginTestFixture fixture = new(
+            allowedOrigins: ["https://portal.example"],
+            allowedMobileSchemes: ["blusky"]);
+        CloudUser user = await fixture.AddPasswordUserAsync();
+        fixture.AuthenticateAs(user);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            fixture.Server.CompleteLoginRedirect(destination));
+        Assert.Equal(0, fixture.Store.CreateRequestCount);
+    }
+
+    [Theory]
+    [InlineData("https://anywebsite.example/callback")]
+    [InlineData("unknownapp://auth/callback")]
+    public async Task CompleteLoginRedirect_NoAllowlistConfigured_AllowsAnyWebsiteOrAppDestination(string destination)
+    {
+        LoginTestFixture fixture = new();
+        CloudUser user = await fixture.AddPasswordUserAsync();
+        fixture.AuthenticateAs(user);
+
+        string redirect = await fixture.Server.CompleteLoginRedirect(destination);
+
+        Assert.StartsWith(destination, redirect);
+        Assert.Equal(1, fixture.Store.CreateRequestCount);
+    }
+
     [Fact]
     public async Task CompleteLoginRedirect_SameOrigin_DoesNotCreateRequest()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
 
         string redirect = await fixture.Server.CompleteLoginRedirect(
@@ -238,7 +270,7 @@ public class CloudLoginServerLoginTests
     public async Task CompleteLoginRedirect_SameHostDifferentPort_CreatesRequest()
     {
         LoginTestFixture fixture = new(allowedOrigins: ["https://login.example:51671"]);
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
 
         string redirect = await fixture.Server.CompleteLoginRedirect(
@@ -253,7 +285,7 @@ public class CloudLoginServerLoginTests
     public async Task CompleteLoginRedirect_AllowedMobileScheme_AddsRequestAndMobileFlag()
     {
         LoginTestFixture fixture = new(allowedMobileSchemes: ["blusky"]);
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
 
         string redirect = await fixture.Server.CompleteLoginRedirect(
@@ -272,7 +304,7 @@ public class CloudLoginServerLoginTests
     public async Task CompleteLoginRedirect_EmptyDestination_GoesToAccount()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
 
         Assert.Equal("/Account", await fixture.Server.CompleteLoginRedirect());
@@ -299,12 +331,24 @@ public class CloudLoginServerLoginTests
     [Fact]
     public async Task Login_RejectsUnapprovedRefererBeforeProviderChallenge()
     {
-        LoginTestFixture fixture = new();
+        LoginTestFixture fixture = new(allowedOrigins: ["https://portal.example"]);
 
         IActionResult result = await fixture.Server.Login(
             "google", false, false, referer: "https://attacker.example/callback");
 
         Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Login_NoAllowlistConfigured_AllowsAnyReferer()
+    {
+        LoginTestFixture fixture = new();
+
+        IActionResult result = await fixture.Server.Login(
+            "google", false, false, referer: "https://anywebsite.example/callback");
+
+        ChallengeResult challenge = Assert.IsType<ChallengeResult>(result);
+        Assert.Equal("https://anywebsite.example/callback", challenge.Properties!.Items["referer"]);
     }
 
     [Fact]
@@ -321,7 +365,7 @@ public class CloudLoginServerLoginTests
     public async Task Login_AlreadyAuthenticated_CompletesExternalHandoff()
     {
         LoginTestFixture fixture = new(allowedOrigins: ["https://portal.example"]);
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
 
         IActionResult result = await fixture.Server.Login(
@@ -336,7 +380,7 @@ public class CloudLoginServerLoginTests
     public async Task CustomLogin_IsDisabledByDefault()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
 
         IActionResult result = await fixture.Server.CustomLogin(user.ID, false, "/Account");
 
@@ -407,10 +451,10 @@ public class CloudLoginServerLoginTests
     {
         LoginTestFixture fixture = new();
 
-        UserModel user = await fixture.Server.PasswordRegistration(
-            PasswordRegistrationRequest.Create(
+        CloudUser user = await fixture.Server.PasswordRegistration(
+            CloudLoginPasswordRegistrationRequest.Create(
                 "  NEW@EXAMPLE.COM ",
-                InputFormat.EmailAddress,
+                CloudLoginInputFormat.EmailAddress,
                 "Valid#123456",
                 "New",
                 "Person",
@@ -418,24 +462,24 @@ public class CloudLoginServerLoginTests
 
         Assert.False(user.IsTest);
         Assert.Equal("new@example.com", user.PrimaryEmailAddress!.Input);
-        LoginProvider passwordProvider = Assert.Single(user.Inputs[0].Providers, provider => provider.Code == "Password");
+        CloudLoginProvider passwordProvider = Assert.Single(user.Inputs[0].Providers, provider => provider.Code == "Password");
         Assert.NotEqual("Valid#123456", passwordProvider.PasswordHash);
         Assert.True(await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create("new@example.com", "Valid#123456")));
+            CloudLoginPasswordLoginRequest.Create("new@example.com", "Valid#123456")));
     }
 
     [Fact]
     public async Task PasswordRegistration_WithoutPassword_IsOnlyAllowedInTestMode()
     {
-        PasswordRegistrationRequest request = PasswordRegistrationRequest.Create(
-            "test@test.cloud", InputFormat.EmailAddress, null, "Test", "User", "Test User");
+        CloudLoginPasswordRegistrationRequest request = CloudLoginPasswordRegistrationRequest.Create(
+            "test@test.cloud", CloudLoginInputFormat.EmailAddress, null, "Test", "User", "Test User");
         LoginTestFixture regularFixture = new();
         LoginTestFixture testFixture = new(testModeEnabled: true);
 
         await Assert.ThrowsAnyAsync<ArgumentException>(() =>
             regularFixture.Server.PasswordRegistration(request));
 
-        UserModel testUser = await testFixture.Server.PasswordRegistration(request);
+        CloudUser testUser = await testFixture.Server.PasswordRegistration(request);
         Assert.True(testUser.IsTest);
         Assert.Empty(testUser.Inputs[0].Providers);
         Assert.True(await testFixture.Server.TestLogin(testUser.ID));
@@ -459,7 +503,7 @@ public class CloudLoginServerLoginTests
     {
         const string password = "Legacy#123456";
         LoginTestFixture fixture = new();
-        UserModel user = LoginTestFixture.CreateUser();
+        CloudUser user = LoginTestFixture.CreateUser();
         byte[] salt = RandomNumberGenerator.GetBytes(16);
         byte[] legacyHash = KeyDerivation.Pbkdf2(
             password,
@@ -467,7 +511,7 @@ public class CloudLoginServerLoginTests
             KeyDerivationPrf.HMACSHA256,
             100_000,
             32);
-        LoginProvider provider = new()
+        CloudLoginProvider provider = new()
         {
             Code = "Password",
             PasswordHash = Convert.ToBase64String(salt.Concat(legacyHash).ToArray())
@@ -476,7 +520,7 @@ public class CloudLoginServerLoginTests
         fixture.Store.Users[user.ID] = user;
 
         Assert.True(await fixture.Server.PasswordLogin(
-            PasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, password)));
+            CloudLoginPasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, password)));
         Assert.StartsWith("pbkdf2-sha256$600000$", provider.PasswordHash);
     }
 }

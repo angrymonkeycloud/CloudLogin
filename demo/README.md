@@ -44,13 +44,13 @@ when the application starts.
 | `/` | Packaged authentication UI with Password, Code, and Test Mode providers. |
 | `/Account` | Packaged account and global-administration UI. |
 | `/demo` | Feature overview and seed-data summary. |
-| `/demo/organizations` | Two organizations, owners, members, application-defined roles and permissions, and expiring invitations. |
+| `/demo/workspaces` | Two workspaces, owners, members, application-defined roles and permissions, and expiring invitations. |
 | `/demo/subscriptions` | Active and expired user subscriptions plus active Cedar Labs and Northstar Clinic subscriptions. |
-| `/demo/billing` | User and organization billing profiles with Stripe, MyFatoorah, and SkipCash references. |
+| `/demo/billing` | User and workspace billing profiles with Stripe, MyFatoorah, and SkipCash references. |
 | `/demo/inbox.html` | Verification codes captured from the real demo callback. |
 
 Each account-registry page includes expandable integration code. The records deliberately
-show both user and organization ownership, different subscription states, renewal behavior,
+show both user and workspace ownership, different subscription states, renewal behavior,
 application metadata, provider references, and multiple saved payment methods.
 
 - **External OAuth and WhatsApp** require real provider credentials and are intentionally not
@@ -67,12 +67,12 @@ is explicitly labelled so it cannot be confused with a package component.
 | `/login` | Shipped `CloudLoginPage` with Test Mode, Password, and email-code providers. |
 | `/providers` | Provider registration, production credential expectations, and the authentication pipeline. |
 | `/account` | Shipped `AccountPageComponent` with profile, contacts, administration, and account lifecycle features. |
-| `/organizations` | `IOrganizationRegistry`: organizations, members, roles, permissions, and expiring invitations. |
-| `/subscriptions` | `ISubscriptionRegistry`: user and organization subscriptions, status, expiry, auto-renew, provider references, and application metadata. |
+| `/workspaces` | `ICloudLoginWorkspaceRegistry`: workspaces, members, roles, permissions, and expiring invitations. |
+| `/subscriptions` | `ICloudLoginSubscriptionRegistry`: user and workspace subscriptions, status, expiry, auto-renew, provider references, and application metadata. |
 | `/billing` | `ICloudLoginAccountStore`: account-level provider customer and saved payment-method references. |
 | `/inbox` | Demo-only verification-code capture wired to the real email-code callback. |
 
-The organization, subscription, and billing labs perform real calls against CloudLogin's
+The workspace, subscription, and billing labs perform real calls against CloudLogin's
 public services. The demo supplies a scoped in-memory adapter; production applications can
 replace it with a private database adapter without adding a database dependency to public
 CloudLogin packages. CloudLogin stores billing references but never authorizes, captures, or

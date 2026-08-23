@@ -12,7 +12,7 @@ public class LoginTestProviders
     /// When <see cref="IsEnabled"/> is true:
     /// - Registration skips password and verification-code steps.
     /// - Created users only have basic inputs (Format, Input, IsPrimary) with no providers.
-    /// - Created users are flagged as test users (<see cref="UserModel.IsTest"/> = true).
+    /// - Created users are flagged as test users (<see cref="CloudUser.IsTest"/> = true).
     /// </summary>
     public class TestModeConfiguration : ProviderConfiguration
     {
@@ -34,6 +34,6 @@ public class LoginTestProviders
             IsCodeVerification = false;
         }
 
-        public override ProviderDefinition ToModel() => base.ToModel();
+        public override CloudLoginProviderDefinition ToModel() => base.ToModel();
     }
 }

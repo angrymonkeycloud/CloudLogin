@@ -10,7 +10,7 @@ public class CloudLoginControllerTests
     public async Task TestSignIn_ValidTestUser_ReturnsOk()
     {
         LoginTestFixture fixture = new(testModeEnabled: true);
-        UserModel user = await fixture.AddPasswordUserAsync(isTest: true);
+        CloudUser user = await fixture.AddPasswordUserAsync(isTest: true);
         LoginController controller = CreateLoginController(fixture);
 
         IActionResult result = await controller.TestSignIn(user.ID, keepMeSignedIn: true);
@@ -37,7 +37,7 @@ public class CloudLoginControllerTests
         LoginTestFixture fixture = new(
             testModeEnabled: true,
             allowedOrigins: ["https://portal.example"]);
-        UserModel user = await fixture.AddPasswordUserAsync(isTest: true);
+        CloudUser user = await fixture.AddPasswordUserAsync(isTest: true);
         LoginController controller = CreateLoginController(fixture);
         string legacyUserInfo = JsonSerializer.Serialize(new
         {
@@ -65,7 +65,7 @@ public class CloudLoginControllerTests
     public async Task LegacyTestSignIn_RejectsSpoofedRegularUser()
     {
         LoginTestFixture fixture = new(testModeEnabled: true);
-        UserModel user = await fixture.AddPasswordUserAsync(isTest: false);
+        CloudUser user = await fixture.AddPasswordUserAsync(isTest: false);
         LoginController controller = CreateLoginController(fixture);
         string legacyUserInfo = JsonSerializer.Serialize(new
         {
@@ -126,8 +126,8 @@ public class CloudLoginControllerTests
     [Fact]
     public async Task CompleteLogin_UnapprovedDestination_ReturnsBadRequest()
     {
-        LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        LoginTestFixture fixture = new(allowedOrigins: ["https://portal.example"]);
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
         LoginController controller = CreateLoginController(fixture);
 
@@ -138,10 +138,27 @@ public class CloudLoginControllerTests
     }
 
     [Fact]
+    public async Task CompleteLogin_NoAllowlistConfigured_AllowsAnyDestination()
+    {
+        LoginTestFixture fixture = new();
+        CloudUser user = await fixture.AddPasswordUserAsync();
+        fixture.AuthenticateAs(user);
+        LoginController controller = CreateLoginController(fixture);
+
+        IActionResult result = await controller.CompleteLogin("https://anywebsite.example/callback");
+
+        OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
+        string redirectUrl = Assert.IsType<string>(ok.Value);
+        Assert.StartsWith("https://anywebsite.example/callback", redirectUrl);
+        Assert.Contains("requestId=", redirectUrl);
+        Assert.Equal(1, fixture.Store.CreateRequestCount);
+    }
+
+    [Fact]
     public async Task CompleteLogin_ApprovedDestination_ReturnsOneTimeRedirect()
     {
         LoginTestFixture fixture = new(allowedOrigins: ["https://portal.example"]);
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
         LoginController controller = CreateLoginController(fixture);
 
@@ -168,7 +185,7 @@ public class CloudLoginControllerTests
     public async Task CreateRequest_DifferentUser_ReturnsForbidden()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
         RequestController controller = CreateRequestController(fixture);
 
@@ -182,7 +199,7 @@ public class CloudLoginControllerTests
     public async Task CreateRequest_CurrentUser_ReturnsRequestedIdentifier()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
         RequestController controller = CreateRequestController(fixture);
         Guid requestedId = Guid.NewGuid();
@@ -198,7 +215,7 @@ public class CloudLoginControllerTests
     public async Task RequestExchange_NeverReturnsPasswordHash()
     {
         LoginTestFixture fixture = new();
-        UserModel user = await fixture.AddPasswordUserAsync();
+        CloudUser user = await fixture.AddPasswordUserAsync();
         string originalHash = user.Inputs[0].Providers.Single().PasswordHash!;
         Guid requestId = Guid.NewGuid();
         fixture.Store.Requests[requestId] = user.ID;
@@ -206,7 +223,7 @@ public class CloudLoginControllerTests
 
         IActionResult result = await controller.GetUserByRequestId(requestId);
 
-        UserModel response = Assert.IsType<UserModel>(Assert.IsType<OkObjectResult>(result).Value);
+        CloudUser response = Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result).Value);
         Assert.Null(response.Inputs[0].Providers.Single().PasswordHash);
         Assert.Equal(originalHash, user.Inputs[0].Providers.Single().PasswordHash);
     }

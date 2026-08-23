@@ -26,7 +26,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public event Action<UserModel?>? UserChanged;
+    public event Action<CloudUser?>? UserChanged;
     public event Action<string>? RequestIdChanged;
 
     protected readonly string LocalLoginPagePath = "/cloudlogin/login";
@@ -45,8 +45,8 @@ public abstract class CloudLoginBaseService : ICloudLoginService
     }
     public void SetRequestId(string? requestId) => RequestId = requestId;
 
-    private static UserModel? _user;
-    public UserModel? User
+    private static CloudUser? _user;
+    public CloudUser? User
     {
         get => _user;
         protected set
@@ -85,7 +85,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
                 return;
             }
 
-            User = await resp.Content.ReadFromJsonAsync<UserModel>(JsonOptions);
+            User = await resp.Content.ReadFromJsonAsync<CloudUser>(JsonOptions);
             UserChanged?.Invoke(_user);
         }
         catch (Exception ex)
@@ -99,7 +99,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
     /// </summary>
     /// <param name="emailAddress">The email address to lookup</param>
     /// <returns>User object if found, null otherwise</returns>
-    public async Task<UserModel?> FetchUserByEmail(string emailAddress)
+    public async Task<CloudUser?> FetchUserByEmail(string emailAddress)
     {
         if (string.IsNullOrWhiteSpace(emailAddress))
             return null;
@@ -115,7 +115,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
                 return null;
             }
 
-            UserModel? user = await resp.Content.ReadFromJsonAsync<UserModel>(JsonOptions);
+            CloudUser? user = await resp.Content.ReadFromJsonAsync<CloudUser>(JsonOptions);
             return user;
         }
         catch (Exception ex)
@@ -133,7 +133,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
         User = null;
     }
 
-    protected void RaiseUserChanged(UserModel? user) => UserChanged?.Invoke(user);
+    protected void RaiseUserChanged(CloudUser? user) => UserChanged?.Invoke(user);
 
 
 }

@@ -1,10 +1,11 @@
-﻿@inject AngryMonkey.CloudLogin.Interfaces.ICloudLogin cloudLogin
+﻿@using AngryMonkey.CloudLogin.Models
+@inject AngryMonkey.CloudLogin.Interfaces.ICloudLogin cloudLogin
 
 @if (DisplayFooter)
 {
     <div class="amc-cloudlogin-footer">
         @*    <div class="amc-cloudlogin-footer-providers">
-        @foreach (ProviderDefinition provider in Providers)
+        @foreach (CloudLoginProviderDefinition provider in Providers)
         {
             <AngryMonkey.CloudLogin.Components.ProviderButton Provider="@provider" />
         }
@@ -15,7 +16,7 @@
 
         <div class="amc-cloudlogin-footer-links">
 
-            @foreach (Link link in Links)
+            @foreach (CloudLoginLink link in Links)
             {
                 <a target="_blank" href="@link.Url">@link.Title</a>
             }
@@ -24,12 +25,12 @@
 }
 
 @code {
-    List<ProviderDefinition> Providers { get; set; } = [];
-    List<Link> Links { get; set; } = [];
+    List<CloudLoginProviderDefinitionModel> Providers { get; set; } = [];
+    List<CloudLoginLink> Links { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
     {
-        Providers = await cloudLogin.GetProviders();
+        Providers = [.. (await cloudLogin.GetProviders()).Select(provider => provider.ToModel())];
         Providers = Providers.Where(k => k.HandlesPhoneNumber == false).ToList();
 
 

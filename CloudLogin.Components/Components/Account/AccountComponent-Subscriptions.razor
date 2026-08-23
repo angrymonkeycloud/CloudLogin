@@ -1,18 +1,19 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
 
-@* Subscriptions for whichever account is in context — the signed-in user, or the organization
+@* Subscriptions for whichever account is in context — the signed-in user, or the workspace
    they switched into. Removal is governed by each entry's deletion policy, not by the UI. *@
 
 <div class="account-section">
     <div class="section-header">
         <h3>Subscriptions</h3>
         <p class="section-description">
-            @(OrganizationId is null
+            @(WorkspaceId is null
                 ? "Applications and plans linked to your account."
-                : "Applications and plans this organization pays for.")
+                : $"Applications and plans this {WorkspaceLabelLower} pays for.")
         </p>
     </div>
 
@@ -23,13 +24,13 @@
     else if (Items.Count == 0)
     {
         <div class="empty-state">
-            <p>@(OrganizationId is null ? "You don't have any subscriptions yet." : "This organization doesn't have any subscriptions yet.")</p>
+            <p>@(WorkspaceId is null ? "You don't have any subscriptions yet." : $"This {WorkspaceLabelLower} doesn't have any subscriptions yet.")</p>
         </div>
     }
     else
     {
         <div class="items-list">
-            @foreach (AccountSubscription subscription in Ordered)
+            @foreach (CloudSubscriptionModel subscription in Ordered)
             {
                 <div id="cloudlogin-subscription-@subscription.Id" class="item-row @(TargetSubscriptionId == subscription.Id ? "deep-link-target" : null) @(subscription.IsRunning ? null : "_inactive")">
                     <div class="item-info">
@@ -85,16 +86,21 @@
 @code {
     [Parameter] public Guid? TargetSubscriptionId { get; set; }
 
-    /// <summary>The organization whose subscriptions to show. Null shows the signed-in user's own.</summary>
-    [Parameter] public Guid? OrganizationId { get; set; }
+    /// <summary>The workspace whose subscriptions to show. Null shows the signed-in user's own.</summary>
+    [Parameter] public Guid? WorkspaceId { get; set; }
+
+    /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>
+    [Parameter] public string WorkspaceLabel { get; set; } = "Workspace";
+
+    private string WorkspaceLabelLower => WorkspaceLabel.ToLowerInvariant();
 
     /// <summary>
-    /// Subscriptions already loaded by the parent for an organization context. Personal
+    /// Subscriptions already loaded by the parent for a workspace context. Personal
     /// subscriptions are fetched here instead, so the personal tab needs no wiring.
     /// </summary>
-    [Parameter] public IReadOnlyList<AccountSubscription>? Subscriptions { get; set; }
+    [Parameter] public IReadOnlyList<CloudSubscriptionModel>? Subscriptions { get; set; }
 
-    /// <summary>Whether the viewer may remove entries. Organization members who aren't admins may not.</summary>
+    /// <summary>Whether the viewer may remove entries. Workspace members who aren't admins may not.</summary>
     [Parameter] public bool CanManage { get; set; } = true;
 
     /// <summary>Asks the parent to reload after a removal, so its own counts stay right.</summary>
@@ -102,7 +108,7 @@
 
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
-    private List<AccountSubscription> _mine = [];
+    private List<CloudSubscriptionModel> _mine = [];
     private bool _loading = true;
     private bool _loadedMine;
 
@@ -111,21 +117,21 @@
     private string _message = string.Empty;
     private bool _busy;
 
-    private IReadOnlyList<AccountSubscription> Items => OrganizationId is null ? _mine : Subscriptions ?? [];
+    private IReadOnlyList<CloudSubscriptionModel> Items => WorkspaceId is null ? _mine : Subscriptions ?? [];
 
     /// <summary>Running plans first, then the most recently ended.</summary>
-    private IEnumerable<AccountSubscription> Ordered => Items
+    private IEnumerable<CloudSubscriptionModel> Ordered => Items
         .OrderByDescending(subscription => subscription.IsRunning)
         .ThenByDescending(subscription => subscription.ExpiresOn ?? DateTimeOffset.MaxValue)
         .ThenBy(subscription => subscription.Application);
 
     protected override async Task OnParametersSetAsync()
     {
-        // An organization's list arrives as a parameter and re-renders on its own. The personal
+        // A workspace's list arrives as a parameter and re-renders on its own. The personal
         // list is fetched once, not on every re-render the parent triggers; removals refresh it.
-        if (OrganizationId is null && !_loadedMine)
+        if (WorkspaceId is null && !_loadedMine)
         {
-            _mine = await cloudLogin.GetMySubscriptions(includeInactive: true);
+            _mine = [.. (await cloudLogin.GetMySubscriptions(includeInactive: true)).Select(subscription => subscription.ToModel())];
             _loadedMine = true;
         }
 
@@ -139,7 +145,7 @@
         _messageId = null;
     }
 
-    private async Task RemoveAsync(AccountSubscription subscription)
+    private async Task RemoveAsync(CloudSubscriptionModel subscription)
     {
         if (_busy)
             return;
@@ -153,8 +159,8 @@
             await cloudLogin.DeleteSubscription(subscription.Id);
             _confirmingId = null;
 
-            if (OrganizationId is null)
-                _mine = await cloudLogin.GetMySubscriptions(includeInactive: true);
+            if (WorkspaceId is null)
+                _mine = [.. (await cloudLogin.GetMySubscriptions(includeInactive: true)).Select(item => item.ToModel())];
 
             await OnChanged.InvokeAsync();
         }
@@ -172,18 +178,18 @@
         }
     }
 
-    private static string PolicyNote(AccountSubscription subscription) => subscription.DeletionPolicy switch
+    private static string PolicyNote(CloudSubscriptionModel subscription) => subscription.DeletionPolicy switch
     {
-        SubscriptionDeletionPolicies.Never => "Kept on record by the application",
-        SubscriptionDeletionPolicies.Always => string.Empty,
+        CloudSubscriptionDeletionPolicies.Never => "Kept on record by the application",
+        CloudSubscriptionDeletionPolicies.Always => string.Empty,
         _ => subscription.IsRunning ? "Removable once it ends" : string.Empty
     };
 
-    private static string StatusBadgeClass(AccountSubscriptionStatuses status) => status switch
+    private static string StatusBadgeClass(CloudSubscriptionStatuses status) => status switch
     {
-        AccountSubscriptionStatuses.Active => "badge-primary",
-        AccountSubscriptionStatuses.Pending => "badge-info",
-        AccountSubscriptionStatuses.Suspended => "badge-warning",
+        CloudSubscriptionStatuses.Active => "badge-primary",
+        CloudSubscriptionStatuses.Pending => "badge-info",
+        CloudSubscriptionStatuses.Suspended => "badge-warning",
         _ => "badge-secondary"
     };
 }

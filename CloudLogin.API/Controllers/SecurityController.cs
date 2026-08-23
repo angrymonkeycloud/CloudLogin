@@ -27,7 +27,7 @@ public class SecurityController(CloudLoginWebConfiguration configuration, ICloud
     public sealed record RenamePasskeyBody(string CredentialId, string Name);
 
     [HttpGet("Overview")]
-    public async Task<ActionResult<SecurityOverview>> Overview()
+    public async Task<ActionResult<CloudLoginSecurityOverview>> Overview()
     {
         try
         {
@@ -40,7 +40,7 @@ public class SecurityController(CloudLoginWebConfiguration configuration, ICloud
     }
 
     [HttpGet("LoginHistory")]
-    public async Task<ActionResult<List<LoginHistoryEntry>>> LoginHistory()
+    public async Task<ActionResult<List<CloudLoginHistoryEntry>>> LoginHistory()
     {
         try
         {
@@ -54,7 +54,7 @@ public class SecurityController(CloudLoginWebConfiguration configuration, ICloud
 
     [HttpPost("Password")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<IActionResult> Password([FromBody] ChangePasswordRequest request)
+    public async Task<IActionResult> Password([FromBody] CloudLoginChangePasswordRequest request)
     {
         try
         {
@@ -91,7 +91,7 @@ public class SecurityController(CloudLoginWebConfiguration configuration, ICloud
     }
 
     [HttpPost("Authenticator/Begin")]
-    public async Task<ActionResult<AuthenticatorEnrollmentModel>> BeginAuthenticator()
+    public async Task<ActionResult<CloudLoginAuthenticatorEnrollment>> BeginAuthenticator()
     {
         try
         {
@@ -155,7 +155,7 @@ public class SecurityController(CloudLoginWebConfiguration configuration, ICloud
 
     [HttpPost("Passkeys/Complete")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<ActionResult<PasskeySummary>> CompletePasskey([FromBody] CompletePasskeyBody body)
+    public async Task<ActionResult<CloudLoginPasskeySummary>> CompletePasskey([FromBody] CompletePasskeyBody body)
     {
         try
         {

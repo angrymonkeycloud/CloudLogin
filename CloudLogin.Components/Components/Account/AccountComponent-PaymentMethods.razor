@@ -1,18 +1,19 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
 
 @* Payment references for whichever account is in context — the signed-in user, or the
-   organization they switched into. CloudLogin stores provider references only. *@
+   workspace they switched into. CloudLogin stores provider references only. *@
 
 <div class="account-section">
     <div class="section-header">
         <h3>Payment options</h3>
         <p class="section-description">
-            @(OrganizationId is null
+            @(WorkspaceId is null
                 ? "Payment methods saved to your account."
-                : "Payment methods this organization pays with.")
+                : $"Payment methods this {WorkspaceLabelLower} pays with.")
             CloudLogin stores only provider references &mdash; never card data.
         </p>
     </div>
@@ -68,19 +69,19 @@
         }
         else
         {
-            <p class="read-only-note">Only the organization's owner or an admin can change its payment methods.</p>
+            <p class="read-only-note">Only the @WorkspaceLabelLower's owner or an admin can change its payment methods.</p>
         }
 
         if (_paymentMethods.Count == 0)
         {
             <div class="empty-state">
-                <p>@(OrganizationId is null ? "You don't have any saved payment methods yet." : "This organization doesn't have any saved payment methods yet.")</p>
+                <p>@(WorkspaceId is null ? "You don't have any saved payment methods yet." : $"This {WorkspaceLabelLower} doesn't have any saved payment methods yet.")</p>
             </div>
         }
         else
         {
             <div class="items-list">
-                @foreach (AccountPaymentMethodReference method in _paymentMethods)
+                @foreach (CloudPaymentMethodReferenceModel method in _paymentMethods)
                 {
                     <div class="item-row">
                         <span class="item-icon" aria-hidden="true"><CreditCardIcon /></span>
@@ -116,13 +117,18 @@
 </div>
 
 @code {
-    /// <summary>The organization whose payment methods to show. Null shows the signed-in user's own.</summary>
-    [Parameter] public Guid? OrganizationId { get; set; }
+    /// <summary>The workspace whose payment methods to show. Null shows the signed-in user's own.</summary>
+    [Parameter] public Guid? WorkspaceId { get; set; }
 
-    /// <summary>The organization's billing profile, already loaded by the parent.</summary>
-    [Parameter] public AccountBillingProfile? Profile { get; set; }
+    /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>
+    [Parameter] public string WorkspaceLabel { get; set; } = "Workspace";
 
-    /// <summary>Whether the viewer may add or remove methods. Organization members who aren't admins may not.</summary>
+    private string WorkspaceLabelLower => WorkspaceLabel.ToLowerInvariant();
+
+    /// <summary>The workspace's billing profile, already loaded by the parent.</summary>
+    [Parameter] public CloudBillingProfileModel? Profile { get; set; }
+
+    /// <summary>Whether the viewer may add or remove methods. Workspace members who aren't admins may not.</summary>
     [Parameter] public bool CanManage { get; set; } = true;
 
     /// <summary>Asks the parent to reload after a change, so its own counts stay right.</summary>
@@ -130,7 +136,7 @@
 
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
-    private List<AccountPaymentMethodReference> _paymentMethods = [];
+    private List<CloudPaymentMethodReferenceModel> _paymentMethods = [];
     private bool _loading = true;
     private bool _loadedMine;
 
@@ -145,15 +151,15 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        // An organization's profile arrives from the parent, which already fetched the whole
+        // A workspace's profile arrives from the parent, which already fetched the whole
         // workspace, so it just re-reads. The personal profile is fetched once rather than on
         // every re-render the parent triggers; writes below refresh it from their response.
-        if (OrganizationId is not null)
+        if (WorkspaceId is not null)
             _paymentMethods = Profile?.PaymentMethods.ToList() ?? [];
         else if (!_loadedMine)
         {
-            AccountBillingProfile? profile = await cloudLogin.GetMyBillingProfile();
-            _paymentMethods = profile?.PaymentMethods.ToList() ?? [];
+            CloudBillingProfile? profile = await cloudLogin.GetMyBillingProfile();
+            _paymentMethods = [.. profile?.PaymentMethods.Select(method => method.ToModel()) ?? []];
             _loadedMine = true;
         }
 
@@ -171,16 +177,18 @@
         if (_saving || string.IsNullOrWhiteSpace(_newReference))
             return;
 
-        AccountPaymentMethodReference method = new(
-            _newProvider,
-            _newReference.Trim(),
-            string.IsNullOrWhiteSpace(_newDisplayName) ? null : _newDisplayName.Trim(),
-            _newIsDefault);
+        CloudPaymentMethodReferenceModel method = new()
+        {
+            Provider = _newProvider,
+            Reference = _newReference.Trim(),
+            DisplayName = string.IsNullOrWhiteSpace(_newDisplayName) ? null : _newDisplayName.Trim(),
+            IsDefault = _newIsDefault
+        };
 
         await Submit("Payment method added.", "adding a payment method", async () =>
         {
-            AccountBillingProfile profile = await cloudLogin.AddPaymentMethod(method, OrganizationId);
-            _paymentMethods = profile.PaymentMethods.ToList();
+            CloudBillingProfile profile = await cloudLogin.AddPaymentMethod(method.ToContract(), WorkspaceId);
+            _paymentMethods = [.. profile.PaymentMethods.Select(item => item.ToModel())];
 
             _newReference = string.Empty;
             _newDisplayName = string.Empty;
@@ -188,11 +196,11 @@
         });
     }
 
-    private async Task RemoveAsync(AccountPaymentMethodReference method)
+    private async Task RemoveAsync(CloudPaymentMethodReferenceModel method)
         => await Submit("Payment method removed.", "removing a payment method", async () =>
         {
-            AccountBillingProfile profile = await cloudLogin.RemovePaymentMethod(method.Provider, method.Reference, OrganizationId);
-            _paymentMethods = profile.PaymentMethods.ToList();
+            CloudBillingProfile profile = await cloudLogin.RemovePaymentMethod(method.Provider, method.Reference, WorkspaceId);
+            _paymentMethods = [.. profile.PaymentMethods.Select(item => item.ToModel())];
             _confirmingReference = null;
         });
 

@@ -18,7 +18,7 @@ public class RequestController(CloudLoginWebConfiguration configuration, ICloudL
             if (User.Identity?.IsAuthenticated != true)
                 return Unauthorized();
 
-            UserModel? currentUser = await _server.CurrentUser();
+            CloudUser? currentUser = await _server.CurrentUser();
             if (currentUser is null || currentUser.ID == Guid.Empty || currentUser.ID != userId)
                 return Forbid();
 
@@ -37,7 +37,7 @@ public class RequestController(CloudLoginWebConfiguration configuration, ICloudL
     {
         try
         {
-            UserModel? user = await _server.GetUserByRequestId(requestId);
+            CloudUser? user = await _server.GetUserByRequestId(requestId);
             user = CloudLoginTransportSecurity.ForTransport(user);
 
             if (user != null && !string.IsNullOrWhiteSpace(user.ProfilePicture))

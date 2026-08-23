@@ -13,7 +13,7 @@ namespace AngryMonkey.CloudLogin.Server;
 /// <c>security/{userId}/login-history.json</c> and <c>security/{userId}/credentials.json</c>.
 /// They live outside the user record deliberately — sign-in history grows without bound on an
 /// active account, and credential material (TOTP secrets, passkey public keys) must never ride
-/// along with the <see cref="UserModel"/> that gets serialized to the browser.
+/// along with the <see cref="CloudUser"/> that gets serialized to the browser.
 /// </para>
 /// </summary>
 public sealed class CloudLoginSecurityStore(AzureStorageConfiguration storage, CloudLoginSecurityOptions security)
@@ -70,10 +70,10 @@ public sealed class CloudLoginSecurityStore(AzureStorageConfiguration storage, C
     // ── Login history ────────────────────────────────────────────────────────
 
     /// <summary>Returns the user's sign-in history, newest first, with retention already applied.</summary>
-    public async Task<List<LoginHistoryEntry>> GetLoginHistory(Guid userId)
+    public async Task<List<CloudLoginHistoryEntry>> GetLoginHistory(Guid userId)
     {
         BlobContainerClient container = await GetContainerAsync();
-        (LoginHistoryDocument? document, _) = await ReadAsync<LoginHistoryDocument>(container.GetBlobClient(HistoryPath(userId)));
+        (CloudLoginHistoryDocument? document, _) = await ReadAsync<CloudLoginHistoryDocument>(container.GetBlobClient(HistoryPath(userId)));
 
         if (document is null)
             return [];
@@ -85,15 +85,15 @@ public sealed class CloudLoginSecurityStore(AzureStorageConfiguration storage, C
     /// Appends a sign-in record and prunes anything beyond the configured limits.
     /// Never throws into the sign-in path — a storage failure must not block a valid login.
     /// </summary>
-    public async Task RecordSignIn(Guid userId, LoginHistoryEntry entry)
+    public async Task RecordSignIn(Guid userId, CloudLoginHistoryEntry entry)
     {
         BlobClient blob = (await GetContainerAsync()).GetBlobClient(HistoryPath(userId));
 
         for (int attempt = 0; attempt <= ConcurrencyRetries; attempt++)
         {
-            (LoginHistoryDocument? document, ETag? etag) = await ReadAsync<LoginHistoryDocument>(blob);
+            (CloudLoginHistoryDocument? document, ETag? etag) = await ReadAsync<CloudLoginHistoryDocument>(blob);
 
-            document ??= new LoginHistoryDocument { UserId = userId };
+            document ??= new CloudLoginHistoryDocument { UserId = userId };
             document.UserId = userId;
             document.Entries.Add(entry);
             document.Entries = [.. Prune(document.Entries)];
@@ -114,7 +114,7 @@ public sealed class CloudLoginSecurityStore(AzureStorageConfiguration storage, C
     /// Applies both retention rules: drop anything older than the retention window, then keep
     /// only the newest N records. Ordering is newest-first so the account page can render directly.
     /// </summary>
-    private IEnumerable<LoginHistoryEntry> Prune(IEnumerable<LoginHistoryEntry> entries)
+    private IEnumerable<CloudLoginHistoryEntry> Prune(IEnumerable<CloudLoginHistoryEntry> entries)
     {
         DateTimeOffset cutoff = DateTimeOffset.UtcNow - _security.LoginHistoryRetention;
 
@@ -133,27 +133,27 @@ public sealed class CloudLoginSecurityStore(AzureStorageConfiguration storage, C
 
     // ── Credentials (passkeys + authenticator app) ───────────────────────────
 
-    public async Task<UserSecurityDocument> GetCredentials(Guid userId)
+    public async Task<CloudLoginUserSecurityDocument> GetCredentials(Guid userId)
     {
         BlobContainerClient container = await GetContainerAsync();
-        (UserSecurityDocument? document, _) = await ReadAsync<UserSecurityDocument>(container.GetBlobClient(CredentialsPath(userId)));
+        (CloudLoginUserSecurityDocument? document, _) = await ReadAsync<CloudLoginUserSecurityDocument>(container.GetBlobClient(CredentialsPath(userId)));
 
-        return document ?? new UserSecurityDocument { UserId = userId };
+        return document ?? new CloudLoginUserSecurityDocument { UserId = userId };
     }
 
     /// <summary>
     /// Read-modify-write of the credential document under optimistic concurrency, so a passkey
     /// registration running alongside an authenticator enrollment can't overwrite the other.
     /// </summary>
-    public async Task UpdateCredentials(Guid userId, Action<UserSecurityDocument> mutate)
+    public async Task UpdateCredentials(Guid userId, Action<CloudLoginUserSecurityDocument> mutate)
     {
         BlobClient blob = (await GetContainerAsync()).GetBlobClient(CredentialsPath(userId));
 
         for (int attempt = 0; attempt <= ConcurrencyRetries; attempt++)
         {
-            (UserSecurityDocument? document, ETag? etag) = await ReadAsync<UserSecurityDocument>(blob);
+            (CloudLoginUserSecurityDocument? document, ETag? etag) = await ReadAsync<CloudLoginUserSecurityDocument>(blob);
 
-            document ??= new UserSecurityDocument { UserId = userId };
+            document ??= new CloudLoginUserSecurityDocument { UserId = userId };
             document.UserId = userId;
             mutate(document);
 

@@ -33,20 +33,20 @@ public static class DemoCodeSamples
         <AccountPageComponent />
         """;
 
-    public const string Organizations = """
-        @inject IOrganizationRegistry Organizations
+    public const string Workspaces = """
+        @inject ICloudLoginWorkspaceRegistry Workspaces
 
-        CloudLoginOrganization organization =
-            await Organizations.CreateAsync("Cedar Labs", ownerUserId);
+        CloudWorkspace workspace =
+            await Workspaces.CreateAsync("Cedar Labs", ownerUserId);
 
-        await Organizations.AddMemberAsync(
-            organization.Id,
+        await Workspaces.AddMemberAsync(
+            workspace.Id,
             memberUserId,
             roles: ["Developer", "BillingAdmin"]);
 
-        CloudLoginOrganizationInvitation invitation =
-            await Organizations.InviteAsync(
-                organization.Id,
+        CloudWorkspaceInvitation invitation =
+            await Workspaces.InviteAsync(
+                workspace.Id,
                 "developer@example.com",
                 ownerUserId,
                 DateTimeOffset.UtcNow.AddDays(7),
@@ -54,14 +54,14 @@ public static class DemoCodeSamples
         """;
 
     public const string Subscriptions = """
-        @inject ISubscriptionRegistry Subscriptions
+        @inject ICloudLoginSubscriptionRegistry Subscriptions
 
-        await Subscriptions.SaveAsync(new AccountSubscription
+        await Subscriptions.SaveAsync(new CloudSubscription
         {
-            OrganizationId = organizationId,
+            WorkspaceId = workspaceId,
             Application = "cloud-ai",
             Reference = "team-pro",
-            Status = AccountSubscriptionStatuses.Active,
+            Status = CloudSubscriptionStatuses.Active,
             ExpiresOn = DateTimeOffset.UtcNow.AddDays(30),
             AutoRenew = true,
             Provider = "Stripe",
@@ -74,15 +74,15 @@ public static class DemoCodeSamples
         });
 
         bool active = await Subscriptions.HasActiveAsync(
-            "cloud-ai", "team-pro", organizationId: organizationId);
+            "cloud-ai", "team-pro", workspaceId: workspaceId);
         """;
 
     public const string Billing = """
         @inject ICloudLoginAccountStore Accounts
 
-        await Accounts.SaveBillingProfileAsync(new AccountBillingProfile
+        await Accounts.SaveBillingProfileAsync(new CloudBillingProfile
         {
-            OrganizationId = organizationId,
+            WorkspaceId = workspaceId,
             ProviderCustomerReference = "cus_provider_reference",
             PaymentMethods =
             [

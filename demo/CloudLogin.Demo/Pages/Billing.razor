@@ -10,23 +10,23 @@
 
 <div class="authority-billing-grid">
     <BillingProfileCard Title="Demo account owner" Scope="USER ACCOUNT" Profile="_userProfile" />
-    @foreach (CloudLoginOrganization organization in Seed.Organizations)
+    @foreach (CloudWorkspace workspace in Seed.Workspaces)
     {
-        <BillingProfileCard Title="@organization.Name" Scope="ORGANIZATION" Profile="_organizationProfiles.GetValueOrDefault(organization.Id)" />
+        <BillingProfileCard Title="@workspace.Name" Scope="WORKSPACE" Profile="_workspaceProfiles.GetValueOrDefault(workspace.Id)" />
     }
 </div>
 
 <details class="authority-code"><summary>Billing-reference integration code</summary><pre><code>@DemoCodeSamples.Billing</code></pre></details>
 
 @code {
-    private AccountBillingProfile? _userProfile;
-    private readonly Dictionary<Guid, AccountBillingProfile?> _organizationProfiles = [];
+    private CloudBillingProfile? _userProfile;
+    private readonly Dictionary<Guid, CloudBillingProfile?> _workspaceProfiles = [];
 
     protected override async Task OnInitializedAsync()
     {
         await Seed.InitializeAsync();
         _userProfile = await Accounts.GetBillingProfileAsync(Seed.OwnerUserId, null);
-        foreach (CloudLoginOrganization organization in Seed.Organizations)
-            _organizationProfiles[organization.Id] = await Accounts.GetBillingProfileAsync(null, organization.Id);
+        foreach (CloudWorkspace workspace in Seed.Workspaces)
+            _workspaceProfiles[workspace.Id] = await Accounts.GetBillingProfileAsync(null, workspace.Id);
     }
 }

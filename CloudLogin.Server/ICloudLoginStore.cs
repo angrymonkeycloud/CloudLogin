@@ -6,18 +6,18 @@ namespace AngryMonkey.CloudLogin.Server;
 /// </summary>
 public interface ICloudLoginStore
 {
-    Task<List<UserModel>> GetUsers();
-    Task<UserModel?> GetUserById(Guid id);
-    Task<List<UserModel>> GetUsersByDisplayName(string displayName);
-    Task<UserModel?> GetUserByDisplayName(string displayName);
-    Task<UserModel?> GetUserByInput(string input);
-    Task<UserModel?> GetUserByEmailAddress(string emailAddress);
-    Task<UserModel?> GetUserByPhoneNumber(string number);
-    Task<UserModel?> GetUserByRequestId(Guid requestId);
-    Task<LoginRequest> CreateRequest(Guid userId, Guid? requestId = null);
-    Task Update(UserModel user);
-    Task Create(UserModel user);
+    Task<List<CloudUser>> GetUsers();
+    Task<CloudUser?> GetUserById(Guid id);
+    Task<List<CloudUser>> GetUsersByDisplayName(string displayName);
+    Task<CloudUser?> GetUserByDisplayName(string displayName);
+    Task<CloudUser?> GetUserByInput(string input);
+    Task<CloudUser?> GetUserByEmailAddress(string emailAddress);
+    Task<CloudUser?> GetUserByPhoneNumber(string number);
+    Task<CloudUser?> GetUserByRequestId(Guid requestId);
+    Task<CloudRequest> CreateRequest(Guid userId, Guid? requestId = null);
+    Task Update(CloudUser user);
+    Task Create(CloudUser user);
     Task DeleteUser(Guid userId);
-    Task AddInput(Guid userId, LoginInput input);
+    Task AddInput(Guid userId, CloudLoginInput input);
     Task<int> GetUserCount();
 }

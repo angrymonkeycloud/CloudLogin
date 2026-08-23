@@ -41,7 +41,7 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
             {
                 try
                 {
-                    UserModel? loaded = JsonSerializer.Deserialize<UserModel>(cached, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    CloudUser? loaded = JsonSerializer.Deserialize<CloudUser>(cached, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                     if (loaded is not null)
                     {
@@ -61,7 +61,7 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
         }
     }
 
-    private async void OnUserChangedAsync(UserModel? user)
+    private async void OnUserChangedAsync(CloudUser? user)
     {
         try
         {
@@ -80,11 +80,11 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
     }
 
     // Optional helper to refresh the user from the site backend
-    public async Task<UserModel?> RefreshUserAsync()
+    public async Task<CloudUser?> RefreshUserAsync()
     {
         await EnsureInitializedAsync();
 
-        UserModel? newUser = null;
+        CloudUser? newUser = null;
 
         try
         {
@@ -93,7 +93,7 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
 
             if (response.IsSuccessStatusCode)
             {
-                newUser = await response.Content.ReadFromJsonAsync<UserModel>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                newUser = await response.Content.ReadFromJsonAsync<CloudUser>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
         }
         catch (Exception ex)

@@ -8,7 +8,7 @@
     {
         <small>Provider customer reference</small><code>@Profile.ProviderCustomerReference</code>
         <div class="authority-payment-methods">
-            @foreach (AccountPaymentMethodReference method in Profile.PaymentMethods)
+            @foreach (CloudPaymentMethodReference method in Profile.PaymentMethods)
             {
                 <div><span>@method.Provider[..Math.Min(2, method.Provider.Length)].ToUpperInvariant()</span><div><strong>@method.DisplayName</strong><small>@method.Reference</small></div>@if (method.IsDefault) { <b>Default</b> }</div>
             }
@@ -19,5 +19,5 @@
 @code {
     [Parameter, EditorRequired] public required string Title { get; set; }
     [Parameter, EditorRequired] public required string Scope { get; set; }
-    [Parameter] public AccountBillingProfile? Profile { get; set; }
+    [Parameter] public CloudBillingProfile? Profile { get; set; }
 }

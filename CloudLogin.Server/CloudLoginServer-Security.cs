@@ -38,29 +38,29 @@ public partial class CloudLoginServer
     private CloudLoginWebAuthnService WebAuthn => _webAuthnService ??=
         new CloudLoginWebAuthnService(SecurityStore, _configuration.Security);
 
-    private async Task<UserModel> RequireCurrentUser()
+    private async Task<CloudUser> RequireCurrentUser()
         => await CurrentUser() ?? throw new UnauthorizedAccessException("No signed-in user.");
 
-    private static bool IsPasswordProvider(LoginProvider provider)
+    private static bool IsPasswordProvider(CloudLoginProvider provider)
         => provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase);
 
     // ── Overview ─────────────────────────────────────────────────────────────
 
     /// <summary>Display-safe summary of the signed-in user's security posture.</summary>
-    public async Task<SecurityOverview> GetSecurityOverview()
+    public async Task<CloudLoginSecurityOverview> GetSecurityOverview()
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
-        UserSecurityDocument credentials = _configuration.AzureStorage is null
-            ? new UserSecurityDocument { UserId = user.ID }
+        CloudLoginUserSecurityDocument credentials = _configuration.AzureStorage is null
+            ? new CloudLoginUserSecurityDocument { UserId = user.ID }
             : await SecurityStore.GetCredentials(user.ID);
 
-        List<ProviderDefinition> configured = await GetProviders();
+        List<CloudLoginProviderDefinition> configured = await GetProviders();
 
         // A provider is "connected" once it appears on any of the user's inputs.
-        List<ConnectedProvider> connected = [.. user.Inputs
+        List<CloudLoginConnectedProvider> connected = [.. user.Inputs
             .SelectMany(input => input.Providers.Select(provider => new { input, provider }))
-            .Select(pair => new ConnectedProvider
+            .Select(pair => new CloudLoginConnectedProvider
             {
                 Code = pair.provider.Code,
                 Label = configured.FirstOrDefault(p => p.Code.Equals(pair.provider.Code, StringComparison.OrdinalIgnoreCase))?.Label
@@ -72,12 +72,12 @@ public partial class CloudLoginServer
         // case is reported as not-disconnectable rather than being silently allowed.
         bool moreThanOneMethod = connected.Count > 1;
 
-        foreach (ConnectedProvider provider in connected)
+        foreach (CloudLoginConnectedProvider provider in connected)
             provider.CanDisconnect = moreThanOneMethod;
 
         bool hasPassword = user.Inputs.SelectMany(i => i.Providers).Any(p => IsPasswordProvider(p) && !string.IsNullOrEmpty(p.PasswordHash));
 
-        return new SecurityOverview
+        return new CloudLoginSecurityOverview
         {
             HasPassword = hasPassword,
             PasswordProviderConfigured = configured.Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase)),
@@ -96,9 +96,9 @@ public partial class CloudLoginServer
     // ── Login history ────────────────────────────────────────────────────────
 
     /// <summary>Sign-in history for the signed-in user, newest first.</summary>
-    public async Task<List<LoginHistoryEntry>> GetMyLoginHistory()
+    public async Task<List<CloudLoginHistoryEntry>> GetMyLoginHistory()
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
         if (_configuration.AzureStorage is null)
             return [];
@@ -110,7 +110,7 @@ public partial class CloudLoginServer
     /// Records a completed sign-in. Failures are swallowed: an audit write must never be able
     /// to fail an otherwise valid authentication.
     /// </summary>
-    public async Task RecordSignInForUser(Guid userId, LoginHistoryEntry entry)
+    public async Task RecordSignInForUser(Guid userId, CloudLoginHistoryEntry entry)
     {
         if (_configuration.AzureStorage is null)
             return;
@@ -132,14 +132,14 @@ public partial class CloudLoginServer
     /// password must be supplied and verified first, so a hijacked session can't silently
     /// take over the account.
     /// </summary>
-    public async Task ChangeMyPassword(ChangePasswordRequest request)
+    public async Task ChangeMyPassword(CloudLoginChangePasswordRequest request)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
         if (!IsValidPassword(request.NewPassword))
             throw new ArgumentException($"Password must be at least {_configuration.Security.MinimumPasswordLength} characters and not a commonly used password.");
 
-        LoginProvider? existing = user.Inputs
+        CloudLoginProvider? existing = user.Inputs
             .SelectMany(input => input.Providers)
             .FirstOrDefault(provider => IsPasswordProvider(provider) && !string.IsNullOrEmpty(provider.PasswordHash));
 
@@ -158,17 +158,17 @@ public partial class CloudLoginServer
         {
             // Keep every password provider entry in step, so the credential is consistent
             // regardless of which input the user signs in through.
-            foreach (LoginProvider provider in user.Inputs.SelectMany(i => i.Providers).Where(IsPasswordProvider))
+            foreach (CloudLoginProvider provider in user.Inputs.SelectMany(i => i.Providers).Where(IsPasswordProvider))
                 provider.PasswordHash = hashed;
         }
         else
         {
-            LoginInput target = user.PrimaryEmailAddress
+            CloudLoginInput target = user.PrimaryEmailAddress
                 ?? user.EmailAddresses.FirstOrDefault()
                 ?? user.Inputs.FirstOrDefault()
                 ?? throw new InvalidOperationException("This account has no input to attach a password to.");
 
-            target.Providers.Add(new LoginProvider { Code = "Password", PasswordHash = hashed });
+            target.Providers.Add(new CloudLoginProvider { Code = "Password", PasswordHash = hashed });
         }
 
         await UpdateUser(user);
@@ -182,17 +182,17 @@ public partial class CloudLoginServer
     /// </summary>
     public async Task DisconnectProvider(string providerCode, string input)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
         int totalMethods = user.Inputs.Sum(i => i.Providers.Count);
 
         if (totalMethods <= 1)
             throw new InvalidOperationException("You can't remove your only sign-in method.");
 
-        LoginInput? targetInput = user.Inputs
+        CloudLoginInput? targetInput = user.Inputs
             .FirstOrDefault(i => i.Input.Equals(input, StringComparison.OrdinalIgnoreCase));
 
-        LoginProvider? provider = targetInput?.Providers
+        CloudLoginProvider? provider = targetInput?.Providers
             .FirstOrDefault(p => p.Code.Equals(providerCode, StringComparison.OrdinalIgnoreCase));
 
         if (targetInput is null || provider is null)
@@ -210,13 +210,13 @@ public partial class CloudLoginServer
     /// The enrollment stays unconfirmed — and therefore inactive — until the user proves
     /// possession via <see cref="ConfirmAuthenticatorEnrollment"/>.
     /// </summary>
-    public async Task<AuthenticatorEnrollmentModel> BeginAuthenticatorEnrollment()
+    public async Task<CloudLoginAuthenticatorEnrollment> BeginAuthenticatorEnrollment()
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
         string secret = TotpAuthenticator.CreateSecret();
 
-        await SecurityStore.UpdateCredentials(user.ID, document => document.Authenticator = new UserAuthenticatorApp
+        await SecurityStore.UpdateCredentials(user.ID, document => document.Authenticator = new CloudLoginAuthenticatorApp
         {
             SecretKey = secret,
             EnrolledOn = DateTimeOffset.UtcNow,
@@ -227,7 +227,7 @@ public partial class CloudLoginServer
             ?? user.DisplayName
             ?? user.ID.ToString();
 
-        return new AuthenticatorEnrollmentModel
+        return new CloudLoginAuthenticatorEnrollment
         {
             SecretKey = secret,
             ProvisioningUri = TotpAuthenticator.BuildProvisioningUri(secret, accountName, _configuration.Security.WebAuthnRelyingPartyName)
@@ -237,9 +237,9 @@ public partial class CloudLoginServer
     /// <summary>Confirms enrollment by validating a code the authenticator app produced.</summary>
     public async Task<bool> ConfirmAuthenticatorEnrollment(string code)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
-        UserSecurityDocument credentials = await SecurityStore.GetCredentials(user.ID);
+        CloudLoginUserSecurityDocument credentials = await SecurityStore.GetCredentials(user.ID);
 
         if (credentials.Authenticator is null)
             return false;
@@ -259,16 +259,16 @@ public partial class CloudLoginServer
     /// <summary>Removes the authenticator enrollment entirely.</summary>
     public async Task DisableAuthenticator()
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
         await SecurityStore.UpdateCredentials(user.ID, document => document.Authenticator = null);
     }
 
     /// <summary>Validates a TOTP code against the signed-in user's confirmed enrollment.</summary>
     public async Task<bool> VerifyAuthenticatorCode(string code)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
-        UserSecurityDocument credentials = await SecurityStore.GetCredentials(user.ID);
+        CloudLoginUserSecurityDocument credentials = await SecurityStore.GetCredentials(user.ID);
 
         return credentials.Authenticator is { IsConfirmed: true }
             && TotpAuthenticator.VerifyCode(credentials.Authenticator.SecretKey, code);
@@ -283,16 +283,16 @@ public partial class CloudLoginServer
     /// <summary>Creation options for <c>navigator.credentials.create()</c>, as JSON.</summary>
     public async Task<string> BeginPasskeyRegistration()
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
         CredentialCreateOptions options = await WebAuthn.BeginRegistration(user, RequestOrigin());
 
         return JsonSerializer.Serialize(options, WebAuthnJsonOptions);
     }
 
     /// <summary>Verifies an attestation response and stores the credential.</summary>
-    public async Task<PasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name)
+    public async Task<CloudLoginPasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
         CredentialCreateOptions options = JsonSerializer.Deserialize<CredentialCreateOptions>(optionsJson, WebAuthnJsonOptions)
             ?? throw new ArgumentException("Invalid registration options.", nameof(optionsJson));
@@ -306,7 +306,7 @@ public partial class CloudLoginServer
     /// <summary>Request options for <c>navigator.credentials.get()</c>, as JSON.</summary>
     public async Task<string> BeginPasskeyAssertion()
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
         AssertionOptions options = await WebAuthn.BeginAssertion(user.ID, RequestOrigin());
 
         return JsonSerializer.Serialize(options, WebAuthnJsonOptions);
@@ -315,7 +315,7 @@ public partial class CloudLoginServer
     /// <summary>Verifies an assertion, e.g. when confirming a sensitive change.</summary>
     public async Task<bool> CompletePasskeyAssertion(string optionsJson, string assertionJson)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
 
         AssertionOptions options = JsonSerializer.Deserialize<AssertionOptions>(optionsJson, WebAuthnJsonOptions)
             ?? throw new ArgumentException("Invalid assertion options.", nameof(optionsJson));
@@ -328,13 +328,13 @@ public partial class CloudLoginServer
 
     public async Task RemovePasskey(string credentialId)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
         await WebAuthn.RemovePasskey(user.ID, credentialId);
     }
 
     public async Task RenamePasskey(string credentialId, string name)
     {
-        UserModel user = await RequireCurrentUser();
+        CloudUser user = await RequireCurrentUser();
         await WebAuthn.RenamePasskey(user.ID, credentialId, name);
     }
 

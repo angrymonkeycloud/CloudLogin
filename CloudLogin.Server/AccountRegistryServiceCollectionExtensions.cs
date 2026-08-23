@@ -7,15 +7,15 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class AccountRegistryServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the organization, subscription, and billing registries. Organization caps come
-    /// from <c>CloudLoginWebConfiguration.Organization</c>, so this may be called before or after
+    /// Registers the workspace, subscription, and billing registries. Workspace caps come
+    /// from <c>CloudLoginWebConfiguration.Workspace</c>, so this may be called before or after
     /// <c>AddCloudLoginWeb</c> — the configuration is resolved per request, not at registration.
     /// </summary>
     public static IServiceCollection AddCloudLoginAccountRegistry(this IServiceCollection services)
     {
         services.TryAddSingleton<ICloudLoginAccountStore, InMemoryCloudLoginAccountStore>();
-        services.TryAddScoped<IOrganizationRegistry, OrganizationRegistry>();
-        services.TryAddScoped<ISubscriptionRegistry, SubscriptionRegistry>();
+        services.TryAddScoped<ICloudLoginWorkspaceRegistry, WorkspaceRegistry>();
+        services.TryAddScoped<ICloudLoginSubscriptionRegistry, SubscriptionRegistry>();
         return services;
     }
 }

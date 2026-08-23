@@ -7,9 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Web;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -68,6 +70,7 @@ public class ProviderConfigurationService
                 options.ClientId = provider.ClientId;
                 options.ClientSecret = provider.ClientSecret;
                 options.SaveTokens = true;
+                options.Events.OnRemoteFailure = HandleRemoteFailure;
             });
         }
         else
@@ -116,6 +119,7 @@ public class ProviderConfigurationService
         X509Certificate2 certificate = await provider.GetCertificate();
         options.TokenValidationParameters = new TokenValidationParameters { ValidIssuer = options.Authority, ValidAudiences = [options.ClientId], NameClaimType = ClaimTypes.Name };
         options.Events.OnAuthorizationCodeReceived = async context => { await HandleMicrosoftAuthorizationCode(context, certificate, options); };
+        options.Events.OnRemoteFailure = HandleRemoteFailure;
     }
 
     private void ConfigureGoogleProvider(AuthenticationBuilder builder, LoginProviders.GoogleProviderConfiguration provider)
@@ -128,6 +132,7 @@ public class ProviderConfigurationService
             options.SaveTokens = true;
             options.ClaimActions.MapJsonKey("picture", "picture");
             options.ClaimActions.MapJsonKey("locale", "locale");
+            options.Events.OnRemoteFailure = HandleRemoteFailure;
         });
     }
 
@@ -152,6 +157,7 @@ public class ProviderConfigurationService
      });
             options.ClaimActions.MapJsonKey(ClaimTypes.DateOfBirth, "birthday");
             options.ClaimActions.MapJsonKey("locale", "locale");
+            options.Events.OnRemoteFailure = HandleRemoteFailure;
         });
     }
 
@@ -162,7 +168,36 @@ public class ProviderConfigurationService
             options.SignInScheme = "Cookies";
             options.ConsumerKey = provider.ClientId;
             options.ConsumerSecret = provider.ClientSecret;
+            options.Events.OnRemoteFailure = HandleRemoteFailure;
         });
+    }
+
+    /// <summary>
+    /// Runs when a user cancels or is denied at the external provider (e.g. clicking
+    /// "Cancel" on Google's consent screen). Without this, ASP.NET Core's remote
+    /// authentication handler rethrows the provider's error as an unhandled
+    /// <see cref="AuthenticationFailureException"/>, crashing the request instead of
+    /// letting the user pick another provider. Send them back to the login picker,
+    /// preserving the original referer so the surrounding flow isn't lost.
+    /// </summary>
+    private static Task HandleRemoteFailure(RemoteFailureContext context)
+    {
+        context.HandleResponse();
+
+        NameValueCollection query = HttpUtility.ParseQueryString(string.Empty);
+
+        if (context.Properties?.Items.TryGetValue("referer", out string? referer) == true && !string.IsNullOrEmpty(referer))
+            query["referer"] = referer;
+
+        if (context.Properties?.Items.TryGetValue("isMobileApp", out string? isMobileApp) == true && isMobileApp == "true")
+            query["isMobileApp"] = "true";
+
+        string baseUrl = $"{context.HttpContext.Request.Scheme}://{context.HttpContext.Request.Host}";
+        string queryString = query.Count > 0 ? $"?{query}" : string.Empty;
+
+        context.HttpContext.Response.Redirect($"{baseUrl}/{queryString}");
+
+        return Task.CompletedTask;
     }
 
     private void ConfigureWhatsAppProvider(AuthenticationBuilder builder, LoginProviders.WhatsAppProviderConfiguration provider) { }

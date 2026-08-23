@@ -1,4 +1,5 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
@@ -156,7 +157,7 @@
 </div>
 
 @code {
-    [Parameter] public required UserModel User { get; set; }
+    [Parameter] public required CloudUserModel User { get; set; }
     [Parameter] public EventCallback OnBack { get; set; }
     [Parameter] public EventCallback OnUserUpdated { get; set; }
 
@@ -187,7 +188,7 @@
         await RunAction("lock", async () =>
         {
             await cloudLogin.SetUserLocked(User.ID, !User.IsLocked);
-            User = User with { IsLocked = !User.IsLocked };
+            User.IsLocked = !User.IsLocked;
             ShowMessage(User.IsLocked ? "Account has been locked." : "Account has been unlocked.", false);
         });
     }
@@ -197,7 +198,7 @@
         await RunAction("admin", async () =>
         {
             await cloudLogin.SetGlobalAdmin(User.ID, !User.IsGlobalAdmin);
-            User = User with { IsGlobalAdmin = !User.IsGlobalAdmin };
+            User.IsGlobalAdmin = !User.IsGlobalAdmin;
             ShowMessage(User.IsGlobalAdmin ? "Global Admin role granted." : "Global Admin role removed.", false);
         });
     }

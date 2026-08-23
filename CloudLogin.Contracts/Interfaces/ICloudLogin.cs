@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace AngryMonkey.CloudLogin.Interfaces;
 
@@ -6,28 +6,28 @@ public interface ICloudLogin
 {
     string LoginUrl { get; }
     string? RedirectUri { get; set; } // Legacy property - will be deprecated
-    List<Link>? FooterLinks { get; set; }
-    InputFormat GetInputFormat(string input);
+    List<CloudLoginLink>? FooterLinks { get; set; }
+    CloudLoginInputFormat GetInputFormat(string input);
     Task<bool> AutomaticLogin();
-    Task<List<UserModel>> GetAllUsers();
-    Task<List<UserModel>> GetTestUsers();
-    Task<UserModel?> GetUserById(Guid userId);
-    Task<List<UserModel>> GetUsersByDisplayName(string displayName);
-    Task<UserModel?> GetUserByDisplayName(string displayName);
-    Task<UserModel?> GetUserByInput(string input);
-    Task<UserModel?> GetUserByEmailAddress(string email);
-    Task<UserModel?> GetUserByPhoneNumber(string number);
-    Task<UserModel?> GetUserByRequestId(Guid requestId);
+    Task<List<CloudUser>> GetAllUsers();
+    Task<List<CloudUser>> GetTestUsers();
+    Task<CloudUser?> GetUserById(Guid userId);
+    Task<List<CloudUser>> GetUsersByDisplayName(string displayName);
+    Task<CloudUser?> GetUserByDisplayName(string displayName);
+    Task<CloudUser?> GetUserByInput(string input);
+    Task<CloudUser?> GetUserByEmailAddress(string email);
+    Task<CloudUser?> GetUserByPhoneNumber(string number);
+    Task<CloudUser?> GetUserByRequestId(Guid requestId);
     Task<Guid> CreateLoginRequest(Guid userId, Guid? requestId = null);
     Task SendWhatsAppCode(string receiver, string code);
     Task SendEmailCode(string receiver, string code);
-    Task UpdateUser(UserModel user);
-    Task CreateUser(UserModel user);
+    Task UpdateUser(CloudUser user);
+    Task CreateUser(CloudUser user);
     Task DeleteUser(Guid userId);
-    Task<UserModel?> CurrentUser();
+    Task<CloudUser?> CurrentUser();
     Task<bool> IsAuthenticated();
-    Task AddUserInput(Guid userId, LoginInput input);
-    Task<List<ProviderDefinition>> GetProviders();
+    Task AddUserInput(Guid userId, CloudLoginInput input);
+    Task<List<CloudLoginProviderDefinition>> GetProviders();
 
     /// <summary>
     /// Uploads a custom profile picture for the user to blob storage and updates the user record.
@@ -47,11 +47,11 @@ public interface ICloudLogin
     Task<int> GetUserCount();
 
     // Authentication methods using models
-    Task<bool> PasswordLogin(PasswordLoginRequest request);
+    Task<bool> PasswordLogin(CloudLoginPasswordLoginRequest request);
     Task<bool> TestLogin(Guid userId, bool keepMeSignedIn = false);
     Task<string> CompleteLoginRedirect(string? referer = null, bool isMobileApp = false);
-    Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request);
-    Task<UserModel> CodeRegistration(CodeRegistrationRequest request);
+    Task<CloudUser> PasswordRegistration(CloudLoginPasswordRegistrationRequest request);
+    Task<CloudUser> CodeRegistration(CloudLoginCodeRegistrationRequest request);
 
     bool IsValidPassword(string password);
 
@@ -86,88 +86,88 @@ public interface ICloudLogin
     /// <returns>The complete custom login URL</returns>
     string GetCustomLoginUrl(string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false, string? userHint = null);
 
-    // Account-registry surface for the signed-in user (organizations, subscriptions, billing references).
+    // Account-registry surface for the signed-in user (workspaces, subscriptions, billing references).
     // Returns empty results when the account registry isn't configured on the host.
-    Task<List<CloudLoginOrganization>> GetMyOrganizations();
+    Task<List<CloudWorkspace>> GetMyWorkspaces();
 
     /// <summary>
     /// The signed-in user's subscriptions. By default only the running ones; pass
     /// <paramref name="includeInactive"/> to include expired, cancelled, and suspended entries.
     /// </summary>
-    Task<List<AccountSubscription>> GetMySubscriptions(bool includeInactive = false);
+    Task<List<CloudSubscription>> GetMySubscriptions(bool includeInactive = false);
 
-    Task<AccountBillingProfile?> GetMyBillingProfile();
+    Task<CloudBillingProfile?> GetMyBillingProfile();
 
-    /// <summary>How many organizations the signed-in user owns and belongs to, against the host's configured caps.</summary>
-    Task<OrganizationQuota> GetMyOrganizationQuota();
+    /// <summary>How many workspaces the signed-in user owns and belongs to, against the host's configured caps.</summary>
+    Task<CloudWorkspaceQuota> GetMyWorkspaceQuota();
 
-    /// <summary>Creates a new organization owned by the signed-in user. Throws <see cref="OrganizationLimitReachedException"/> once the user's allowance is used up.</summary>
-    Task<CloudLoginOrganization> CreateOrganization(string name);
+    /// <summary>Creates a new workspace owned by the signed-in user. Throws <see cref="CloudWorkspaceLimitReachedException"/> once the user's allowance is used up.</summary>
+    Task<CloudWorkspace> CreateWorkspace(string name);
 
-    /// <summary>Invites a recipient (email or phone) to an organization the signed-in user owns/administers.</summary>
-    Task<CloudLoginOrganizationInvitation> InviteToOrganization(Guid organizationId, string recipient, IReadOnlyList<string>? roles = null);
+    /// <summary>Invites a recipient (email or phone) to a workspace the signed-in user owns/administers.</summary>
+    Task<CloudWorkspaceInvitation> InviteToWorkspace(Guid workspaceId, string recipient, IReadOnlyList<string>? roles = null);
 
-    /// <summary>Updates an organization's profile and billing information. Caller must be the owner/admin.</summary>
-    Task<CloudLoginOrganization> UpdateOrganization(CloudLoginOrganization organization);
+    /// <summary>Updates a workspace's profile and billing information. Caller must be the owner/admin.</summary>
+    Task<CloudWorkspace> UpdateWorkspace(CloudWorkspace workspace);
 
     /// <summary>
-    /// The signed-in user's view of one organization — profile, members, subscriptions, and
+    /// The signed-in user's view of one workspace — profile, members, subscriptions, and
     /// billing — in a single call. Null when the user isn't a member of it.
     /// </summary>
-    Task<OrganizationWorkspace?> GetOrganizationWorkspace(Guid organizationId);
+    Task<CloudWorkspaceDetail?> GetWorkspaceDetail(Guid workspaceId);
 
     /// <summary>
-    /// Deletes an organization the signed-in user owns, along with its memberships, invitations,
+    /// Deletes a workspace the signed-in user owns, along with its memberships, invitations,
     /// billing profile, and removable subscriptions. Throws
-    /// <see cref="OrganizationDeletionBlockedException"/> while a subscription still blocks it.
+    /// <see cref="CloudWorkspaceDeletionBlockedException"/> while a subscription still blocks it.
     /// </summary>
-    Task DeleteOrganization(Guid organizationId);
+    Task DeleteWorkspace(Guid workspaceId);
 
     /// <summary>
-    /// Removes a subscription entry the signed-in user (or an organization they administer) owns,
-    /// honouring its <see cref="AccountSubscription.DeletionPolicy"/>.
+    /// Removes a subscription entry the signed-in user (or a workspace they administer) owns,
+    /// honouring its <see cref="CloudSubscription.DeletionPolicy"/>.
     /// </summary>
     Task DeleteSubscription(Guid subscriptionId);
 
-    /// <summary>Adds or updates a saved payment-method reference for the signed-in user (or an organization they administer).</summary>
-    Task<AccountBillingProfile> AddPaymentMethod(AccountPaymentMethodReference method, Guid? organizationId = null);
+    /// <summary>Adds or updates a saved payment-method reference for the signed-in user (or a workspace they administer).</summary>
+    Task<CloudBillingProfile> AddPaymentMethod(CloudPaymentMethodReference method, Guid? workspaceId = null);
 
-    /// <summary>Removes a saved payment-method reference from the signed-in user's account (or an organization they administer).</summary>
-    Task<AccountBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? organizationId = null);
+    /// <summary>Removes a saved payment-method reference from the signed-in user's account (or a workspace they administer).</summary>
+    Task<CloudBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? workspaceId = null);
 
-    /// <summary>Looks up an organization by id, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
-    Task<CloudLoginOrganization?> GetOrganizationById(Guid organizationId);
+    /// <summary>Looks up a workspace by id, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
+    Task<CloudWorkspace?> GetWorkspaceById(Guid workspaceId);
 
-    /// <summary>Returns every organization in the registry, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
-    Task<List<CloudLoginOrganization>> GetAllOrganizations();
+    /// <summary>Returns every workspace in the registry, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
+    Task<List<CloudWorkspace>> GetAllWorkspaces();
 
-    /// <summary>Returns organization membership and string permissions for trusted service integrations.</summary>
-    Task<List<CloudLoginOrganizationMember>> GetOrganizationMembers(Guid organizationId);
+    /// <summary>Returns workspace membership and string permissions for trusted service integrations.</summary>
+    Task<List<CloudWorkspaceMember>> GetWorkspaceMembers(Guid workspaceId);
 
     /// <summary>Looks up a subscription by id, regardless of owner. Used by the service-to-service lookup endpoint.</summary>
-    Task<AccountSubscription?> GetSubscriptionById(Guid subscriptionId);
+    Task<CloudSubscription?> GetSubscriptionById(Guid subscriptionId);
 
     /// <summary>Returns every subscription in the registry, regardless of owner or status. Used by the service-to-service lookup endpoint.</summary>
-    Task<List<AccountSubscription>> GetAllSubscriptions();
+    Task<List<CloudSubscription>> GetAllSubscriptions();
 
     // ── Security (self-service, always scoped to the signed-in user) ──────────
     // No method here takes a user id: the server resolves the acting user from the
     // authenticated session, so this surface can't be used to reach another account.
 
     /// <summary>Display-safe summary of the signed-in user's security state. Contains no secrets.</summary>
-    Task<SecurityOverview> GetSecurityOverview();
+    Task<CloudLoginSecurityOverview> GetSecurityOverview();
 
     /// <summary>The signed-in user's sign-in history, newest first.</summary>
-    Task<List<LoginHistoryEntry>> GetMyLoginHistory();
+    Task<List<CloudLoginHistoryEntry>> GetMyLoginHistory();
 
     /// <summary>Sets or changes the signed-in user's password.</summary>
-    Task ChangeMyPassword(ChangePasswordRequest request);
+    Task ChangeMyPassword(CloudLoginChangePasswordRequest request);
 
     /// <summary>Unlinks a provider from the signed-in user's account.</summary>
     Task DisconnectProvider(string providerCode, string input);
 
     /// <summary>Begins authenticator-app enrollment, returning the secret and its otpauth URI.</summary>
-    Task<AuthenticatorEnrollmentModel> BeginAuthenticatorEnrollment();
+    Task<CloudLoginAuthenticatorEnrollment> BeginAuthenticatorEnrollment();
 
     /// <summary>Confirms enrollment with a code produced by the authenticator app.</summary>
     Task<bool> ConfirmAuthenticatorEnrollment(string code);
@@ -179,7 +179,7 @@ public interface ICloudLogin
     Task<string> BeginPasskeyRegistration();
 
     /// <summary>Verifies an attestation response and stores the resulting passkey.</summary>
-    Task<PasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name);
+    Task<CloudLoginPasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name);
 
     /// <summary>Removes a registered passkey.</summary>
     Task RemovePasskey(string credentialId);

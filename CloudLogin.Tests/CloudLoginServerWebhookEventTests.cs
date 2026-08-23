@@ -7,7 +7,7 @@ public class CloudLoginServerWebhookEventTests
     {
         RecordingPublisher publisher = new();
         LoginTestFixture fixture = new(eventPublisher: publisher);
-        UserModel user = new() { ID = Guid.NewGuid(), DisplayName = "Webhook User" };
+        CloudUser user = new() { ID = Guid.NewGuid(), DisplayName = "Webhook User" };
 
         await fixture.Server.CreateUser(user);
         user.DisplayName = "Updated User";

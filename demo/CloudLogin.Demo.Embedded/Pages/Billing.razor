@@ -1,22 +1,22 @@
 @page "/billing"
 @rendermode InteractiveServer
-@inject DemoAccountRegistryWorkspace Workspace
+@inject DemoAccountRegistryState DemoState
 
 <PageTitle>CloudLogin billing references</PageTitle>
 
-<DemoPageHeader Eyebrow="ICloudLoginAccountStore" Title="Provider customer and payment-method references." Description="Store opaque provider-owned identifiers for a user or organization. No raw card data is accepted and no transaction is executed by CloudLogin.">
-    <a class="demo-button demo-button--secondary" href="/organizations">Back to organizations</a>
+<DemoPageHeader Eyebrow="ICloudLoginAccountStore" Title="Provider customer and payment-method references." Description="Store opaque provider-owned identifiers for a user or workspace. No raw card data is accepted and no transaction is executed by CloudLogin.">
+    <a class="demo-button demo-button--secondary" href="/workspaces">Back to workspaces</a>
 </DemoPageHeader>
 
 <DemoExample Title="Account billing profile" Kind="Live public store workflow" Description="Save and reload fictional customer and payment-method references through the real public persistence contract." Code="@DemoCodeSamples.Billing" FileName="Billing.razor">
     <div class="demo-billing-workspace">
         <section>
-            <header><div><span>Saved account state</span><h2>@ScopeLabel</h2></div><div class="demo-scope"><button class="@(!_organizationScope ? "active" : null)" @onclick="() => SetScopeAsync(false)">User</button><button class="@(_organizationScope ? "active" : null)" @onclick="() => SetScopeAsync(true)">Organization</button></div></header>
+            <header><div><span>Saved account state</span><h2>@ScopeLabel</h2></div><div class="demo-scope"><button class="@(!_workspaceScope ? "active" : null)" @onclick="() => SetScopeAsync(false)">User</button><button class="@(_workspaceScope ? "active" : null)" @onclick="() => SetScopeAsync(true)">Workspace</button></div></header>
             @if (_profile is null) { <div class="demo-empty"><span>+</span><h3>No billing profile</h3><p>Create one using the reference editor.</p></div> }
             else
             {
                 <article class="demo-customer"><span>Provider customer reference</span><strong>@(_profile.ProviderCustomerReference ?? "Not set")</strong><small>Opaque account identifier owned by the provider</small></article>
-                <div class="demo-payment-methods">@foreach (AccountPaymentMethodReference method in _profile.PaymentMethods) { <article><div class="demo-chip"><i></i><i></i><i></i></div><span>@method.Provider</span><strong>@(method.DisplayName ?? method.Reference)</strong><code>@method.Reference</code>@if (method.IsDefault) { <b>Default</b> }</article> }</div>
+                <div class="demo-payment-methods">@foreach (CloudPaymentMethodReference method in _profile.PaymentMethods) { <article><div class="demo-chip"><i></i><i></i><i></i></div><span>@method.Provider</span><strong>@(method.DisplayName ?? method.Reference)</strong><code>@method.Reference</code>@if (method.IsDefault) { <b>Default</b> }</article> }</div>
             }
         </section>
         <aside>
@@ -28,31 +28,31 @@
 </DemoExample>
 
 <DemoExample Title="Replace persistence, not the domain" Kind="Production extension point" Description="The demo uses the built-in in-memory implementation. Production applications replace only ICloudLoginAccountStore in their private infrastructure layer." Code="@DemoCodeSamples.Persistence" FileName="Infrastructure.cs">
-    <div class="demo-architecture-flow"><article><span>Public contracts</span><strong>Organizations · subscriptions · billing</strong><small>Stable application API</small></article><b>→</b><article><span>Private adapter</span><strong>ICloudLoginAccountStore</strong><small>Your implementation</small></article><b>→</b><article><span>Storage</span><strong>Cosmos · SQL · another database</strong><small>No public dependency</small></article></div>
+    <div class="demo-architecture-flow"><article><span>Public contracts</span><strong>Workspaces · subscriptions · billing</strong><small>Stable application API</small></article><b>→</b><article><span>Private adapter</span><strong>ICloudLoginAccountStore</strong><small>Your implementation</small></article><b>→</b><article><span>Storage</span><strong>Cosmos · SQL · another database</strong><small>No public dependency</small></article></div>
 </DemoExample>
 
 <DemoCallout Tone="warning" Icon="!" Title="CloudLogin is not a payment gateway">Authorization, capture, refund, void, webhooks, and recurring transactions belong to a payment package. CloudLogin stores only the account references needed to initiate those workflows.</DemoCallout>
 
 @code {
-    private bool _organizationScope = true;
-    private AccountBillingProfile? _profile;
+    private bool _workspaceScope = true;
+    private CloudBillingProfile? _profile;
     private string _customerReference = "cus_sandbox_reference";
     private string _provider = "Stripe";
     private string _paymentReference = "pm_sandbox_reference";
     private string _displayName = "Visa ending 4242";
     private bool _isDefault = true;
-    private string _message = "Loaded the seeded organization billing profile.";
-    private string ScopeLabel => _organizationScope ? $"Organization · {Workspace.SelectedOrganization?.Name}" : "Owner user";
+    private string _message = "Loaded the seeded workspace billing profile.";
+    private string ScopeLabel => _workspaceScope ? $"Workspace · {DemoState.SelectedWorkspace?.Name}" : "Owner user";
 
-    protected override async Task OnInitializedAsync() { await Workspace.InitializeAsync(); await LoadAsync(); }
-    private async Task SetScopeAsync(bool value) { _organizationScope = value; await LoadAsync(); }
+    protected override async Task OnInitializedAsync() { await DemoState.InitializeAsync(); await LoadAsync(); }
+    private async Task SetScopeAsync(bool value) { _workspaceScope = value; await LoadAsync(); }
 
     private async Task SaveAsync()
     {
-        await Workspace.SaveBillingProfileAsync(new AccountBillingProfile
+        await DemoState.SaveBillingProfileAsync(new CloudBillingProfile
         {
-            UserId = _organizationScope ? null : Workspace.OwnerUserId,
-            OrganizationId = _organizationScope ? Workspace.SelectedOrganizationId : null,
+            UserId = _workspaceScope ? null : DemoState.OwnerUserId,
+            WorkspaceId = _workspaceScope ? DemoState.SelectedWorkspaceId : null,
             ProviderCustomerReference = string.IsNullOrWhiteSpace(_customerReference) ? null : _customerReference,
             PaymentMethods = string.IsNullOrWhiteSpace(_paymentReference) ? [] : [new(_provider, _paymentReference, string.IsNullOrWhiteSpace(_displayName) ? null : _displayName, _isDefault)]
         });
@@ -62,7 +62,7 @@
 
     private async Task LoadAsync(bool setMessage = true)
     {
-        _profile = await Workspace.GetBillingProfileAsync(_organizationScope);
+        _profile = await DemoState.GetBillingProfileAsync(_workspaceScope);
         if (setMessage) _message = _profile is null ? $"No billing profile for {ScopeLabel}." : $"Loaded billing references for {ScopeLabel}.";
     }
 }

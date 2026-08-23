@@ -25,9 +25,9 @@ public abstract class ProviderConfiguration
     // Should Be private
     public string CssClass => string.Join(" ", [$"_{Code.ToLower()}"]);
 
-    public virtual ProviderDefinition ToModel()
+    public virtual CloudLoginProviderDefinition ToModel()
     {
-        return new ProviderDefinition(Code, HandleUpdateOnly, Label)
+        return new CloudLoginProviderDefinition(Code, HandleUpdateOnly, Label)
         {
             HandlesEmailAddress = HandlesEmailAddress,
             HandlesPhoneNumber = HandlesPhoneNumber,

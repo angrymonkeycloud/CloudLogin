@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using AngryMonkey.CloudLogin.Server.Tokens;
 using Microsoft.AspNetCore.DataProtection;
 using System.Collections.Specialized;
 using System.Net.Http.Json;
@@ -19,8 +21,16 @@ public class AuthController(
     CloudLoginServerConfiguration serverConfiguration,
     IHttpClientFactory httpClientFactory,
     ILogger<AuthController> logger,
-    IDataProtectionProvider dataProtectionProvider) : ControllerBase
+    IDataProtectionProvider dataProtectionProvider,
+    IOptions<CloudLoginTokenClientOptions>? tokenOptions = null) : ControllerBase
 {
+    /// <summary>
+    /// Service-client settings for the token exchange. Null when this application has
+    /// not registered as a service client, in which case sign-in still works but the
+    /// application cannot prove the user's identity to downstream services.
+    /// </summary>
+    private readonly CloudLoginTokenClientOptions? _tokenOptions = tokenOptions?.Value;
+
     private readonly string _loginBaseUrl = serverConfiguration.LoginUrl ?? configuration["LoginUrl"] ?? throw new InvalidOperationException("LoginUrl configuration is missing.");
     private readonly TimeSpan _sessionDuration = serverConfiguration.SessionDuration;
     private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
@@ -116,8 +126,14 @@ public class AuthController(
 
             string returnUrl = NormalizeLocalReturnUrl(DecodeReturnUrl(state));
 
-            // Get user information from CloudLogin
-            UserModel? user = await GetUserFromCloudLogin(parsedRequestId);
+            // Prefer the token exchange: it consumes the request id and returns both the
+            // user and the credentials this application needs to call other services on
+            // their behalf. GetUserFromCloudLogin is the fallback for deployments that
+            // have not registered a service client yet.
+            CloudLoginTokenResponse? tokens = await ExchangeRequestForTokens(parsedRequestId);
+            CloudUser? user = tokens?.User ?? (tokens is null
+                ? await GetUserFromCloudLogin(parsedRequestId)
+                : null);
 
             if (user == null)
             {
@@ -154,12 +170,37 @@ public class AuthController(
             ClaimsIdentity claimsIdentity = new(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
 
-            // Sign in the user
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, new AuthenticationProperties
+            AuthenticationProperties properties = new()
             {
                 IsPersistent = keepMeSignedIn,
                 ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(_sessionDuration) : null
-            });
+            };
+
+            // Tokens ride inside the authentication cookie, which Data Protection
+            // encrypts and the browser marks HttpOnly. They are therefore unreachable
+            // from JavaScript, unlike tokens kept in local storage.
+            if (tokens is not null)
+                properties.StoreTokens(
+                [
+                    new AuthenticationToken
+                    {
+                        Name = CloudLoginTokenProvider.AccessTokenName,
+                        Value = tokens.AccessToken
+                    },
+                    new AuthenticationToken
+                    {
+                        Name = CloudLoginTokenProvider.RefreshTokenName,
+                        Value = tokens.RefreshToken ?? string.Empty
+                    },
+                    new AuthenticationToken
+                    {
+                        Name = CloudLoginTokenProvider.ExpiresAtName,
+                        Value = DateTimeOffset.UtcNow.AddSeconds(tokens.ExpiresIn).ToString("o")
+                    }
+                ]);
+
+            // Sign in the user
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal, properties);
 
             _logger.LogInformation("Login callback completed successfully");
 
@@ -209,7 +250,57 @@ public class AuthController(
         }
     }
 
-    private async Task<UserModel?> GetUserFromCloudLogin(Guid requestId)
+    /// <summary>
+    /// Exchanges the single-use login request id for this application's tokens.
+    /// <para>
+    /// When service-client credentials are configured, the exchange returns an access
+    /// and refresh token as well as the user, and those tokens become what downstream
+    /// calls present. Without credentials it falls back to resolving just the user,
+    /// which still signs the browser in but leaves this application unable to prove
+    /// the user's identity to any other service.
+    /// </para>
+    /// </summary>
+    private async Task<CloudLoginTokenResponse?> ExchangeRequestForTokens(Guid requestId)
+    {
+        if (string.IsNullOrWhiteSpace(_tokenOptions?.ClientId) ||
+            string.IsNullOrWhiteSpace(_tokenOptions.ClientSecret) ||
+            string.IsNullOrWhiteSpace(_tokenOptions.Audience))
+            return null;
+
+        try
+        {
+            HttpClient httpClient = _httpClientFactory.CreateClient();
+            httpClient.BaseAddress = new Uri(_loginBaseUrl);
+
+            using HttpRequestMessage request = new(
+                HttpMethod.Post,
+                $"/CloudLogin/Token/FromRequest?requestId={Uri.EscapeDataString(requestId.ToString())}&audience={Uri.EscapeDataString(_tokenOptions.Audience)}");
+
+            string credentials = Convert.ToBase64String(
+                System.Text.Encoding.UTF8.GetBytes($"{_tokenOptions.ClientId}:{_tokenOptions.ClientSecret}"));
+
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+
+            using HttpResponseMessage response = await httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Token exchange with CloudLogin failed. Status: {Status}",
+                    response.StatusCode);
+                return null;
+            }
+
+            return await response.Content.ReadFromJsonAsync<CloudLoginTokenResponse>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exchanging the login request for tokens");
+            return null;
+        }
+    }
+
+    private async Task<CloudUser?> GetUserFromCloudLogin(Guid requestId)
     {
         try
         {
@@ -225,7 +316,7 @@ public class AuthController(
                 return null;
             }
 
-            UserModel? user = await response.Content.ReadFromJsonAsync<UserModel>();
+            CloudUser? user = await response.Content.ReadFromJsonAsync<CloudUser>();
             return user;
         }
         catch (Exception ex)

@@ -23,6 +23,7 @@ CloudLogin is secure by default: HTTPS-only cookies, exact redirect allowlists, 
 - [Feature overview](#feature-overview)
 - [Authentication providers](#authentication-providers)
 - [Configuration reference](#configuration-reference)
+- [Database schema](#database-schema)
 - [Endpoints developers commonly use](#endpoints-developers-commonly-use)
 - [Developer implementation checklist](#developer-implementation-checklist)
 - [Secure defaults](#secure-defaults)
@@ -94,7 +95,7 @@ builder.AddCloudLoginWeb(options =>
     options.Cosmos = new(builder.Configuration.GetSection("Cosmos"));
     options.AzureStorage = new(builder.Configuration.GetSection("Storage"));
     options.Subscription = new SubscriptionConfiguration();
-    options.Organization = new OrganizationConfiguration();
+    options.Workspace = new WorkspaceConfiguration();
     options.Payment = new PaymentConfiguration();
     options.Providers =
     [
@@ -110,65 +111,85 @@ builder.AddCloudLoginWeb(options =>
 await CloudLoginWeb.InitApp(builder);
 ```
 
-Subscription, organization, and payment account features are opt-in. Adding the
+Subscription, workspace, and payment account features are opt-in. Adding the
 corresponding configuration enables its account navigation item, page, and API;
 omitting it keeps that complete feature surface disabled.
 
-### Organization allowances
+### Workspace allowances
 
-`OrganizationConfiguration` caps how many organizations one user may accumulate. Both
+`WorkspaceConfiguration` caps how many workspaces one user may accumulate. Both
 caps are optional: leave them unset and CloudLogin applies its defaults.
 
 ```csharp
-options.Organization = new OrganizationConfiguration
+options.Workspace = new WorkspaceConfiguration
 {
-    // How many organizations one user may create and own. Default: 3.
+    // How many workspaces one user may create and own. Default: 3.
     MaxOwnedPerUser = 5,
 
-    // How many organizations one user may belong to in total, owned ones
+    // How many workspaces one user may belong to in total, owned ones
     // included. Default: 10.
     MaxPerUser = 20
 };
 ```
 
-- Set either cap to `OrganizationLimits.Unlimited` to remove it.
-- Set `MaxOwnedPerUser = 0` to stop users creating organizations entirely while still
+- Set either cap to `WorkspaceLimits.Unlimited` to remove it.
+- Set `MaxOwnedPerUser = 0` to stop users creating workspaces entirely while still
   letting them be invited into ones an administrator provisions.
-- A `MaxPerUser` below `MaxOwnedPerUser` wins, since every owned organization is also a
+- A `MaxPerUser` below `MaxOwnedPerUser` wins, since every owned workspace is also a
   membership.
 
-Creating past the cap throws `OrganizationLimitReachedException`, which the account API
+Creating past the cap throws `WorkspaceLimitReachedException`, which the account API
 returns as `409 Conflict` with the reason in the ProblemDetails `detail`. The account page
-reads the user's current standing from `GetMyOrganizationQuota()` and shows it as two
+reads the user's current standing from `GetMyWorkspaceQuota()` and shows it as two
 meters, so the limit is visible before it's hit rather than only when a create is refused.
 
-### Organizations as accounts
+"Workspace" is deliberately generic — it's the internal name for the concept everywhere
+in code, API routes, JSON, and webhook events, so it stays stable across every product
+that embeds CloudLogin. What end users actually *see* is configurable per deployment via
+`SingularLabel`/`PluralLabel`:
+
+```csharp
+options.Workspace = new WorkspaceConfiguration
+{
+    SingularLabel = "Organization",
+    PluralLabel = "Organizations"
+    // Or "Business"/"Businesses", "Team"/"Teams" — whatever the concept is
+    // called in your product. Defaults to "Workspace"/"Workspaces".
+};
+```
+
+The account UI reads these labels everywhere it names the concept — field labels,
+buttons, dialog titles, and messages like `WorkspaceLimitReachedException`'s. Routes,
+JSON property names, and webhook event names (`Workspace.Created`, `Workspace.Updated`, …)
+are unaffected; only the label a user reads changes.
+
+### Workspaces as accounts
 
 A user switches workspace from the account rail: their personal account, or any
-organization they belong to. Inside an organization the same account page shows that
-organization's information, billing information, members, subscriptions, and payment
-methods, each scoped to the organization instead of the user. `GetOrganizationWorkspace(id)`
+workspace they belong to. Inside a workspace the same account page shows that
+workspace's information, billing information, members, subscriptions, and payment
+methods, each scoped to the workspace instead of the user. `GetWorkspaceDetail(id)`
 returns all of it in one call and answers `null` for non-members, so an identifier alone
-never reveals someone else's organization.
+never reveals someone else's workspace.
 
-Reading an organization's workspace requires membership; editing its profile, billing, and
+Reading a workspace's detail requires membership; editing its profile, billing, and
 payment methods requires its owner or a member holding the `Admin` role. Deleting it
 requires the owner.
 
 ### Subscription deletion policy
 
-`AccountSubscription.DeletionPolicy` decides when a registry entry may be removed, and by
-extension when its organization can be deleted:
+`CloudSubscription.DeletionPolicy` decides when a registry entry may be removed, and by
+extension when its workspace can be deleted:
 
 | Policy | Meaning |
 | --- | --- |
-| `WhenExpired` | **Default.** Removable once the subscription has stopped running — past its expiry, or `Cancelled`/`Expired`. Blocks organization deletion while it is still running. |
+| `WhenExpired` | **Default.** Removable once the subscription has stopped running — past its expiry, or `Cancelled`/`Expired`. Blocks workspace deletion while it is still running. |
 | `Always` | Removable at any time, running or not. |
-| `Never` | Never removable through the account surface. Blocks organization deletion until the owning application clears it. |
+| `Never` | Never removable through the account surface. Blocks workspace deletion until the owning application clears it. |
 
-Deleting an organization removes its memberships, invitations, billing profile, and
-remaining subscription records in one operation, and publishes `Organization.Deleted`.
-It is refused with `OrganizationDeletionBlockedException` while any subscription still
+Deleting a workspace removes its memberships, invitations, billing profile, and
+remaining subscription records in one operation, and publishes `Workspace.Deleted`.
+It is refused with `WorkspaceDeletionBlockedException` while any subscription still
 blocks it; `GetDeletionReportAsync` returns the same blockers ahead of time, along with the
 member, payment-method, and subscription counts the account page shows in its confirmation.
 
@@ -179,11 +200,13 @@ removal regardless of policy.
 
 Custom `ICloudLoginAccountStore` implementations written before deletion existed keep
 compiling: the removal members carry default implementations that report the store doesn't
-support deletion. Implement them to let owners delete their organizations.
+support deletion. Implement them to let owners delete their workspaces.
 
 The redirect and mobile allowlists are optional. With no additional configuration,
-CloudLogin permits relative and same-origin redirects and denies external destinations.
-Only register callbacks for features the application uses:
+CloudLogin permits every relative, same-origin, and external redirect destination — there
+is no allowlist to restrict against. Once you register at least one website or mobile
+scheme, only the registered ones are trusted for that channel. Register callbacks for the
+specific websites and apps you expect:
 
 ```csharp
 builder.AddCloudLoginWeb(options =>
@@ -363,6 +386,10 @@ Minimal configuration template (fill only sections for enabled features/provider
 }
 ```
 
+## Database schema
+
+CloudLogin's own Cosmos DB and Azure Blob Storage documents — every container, field, and a realistic JSON sample — are documented in [`docs/database-schema.md`](docs/database-schema.md).
+
 ## Endpoints developers commonly use
 
 Consumer-site endpoints from `AuthController`:
@@ -502,11 +529,11 @@ CloudLogin is part of the [Angry Monkey Cloud](https://angrymonkeycloud.com) eco
 
 ## External integrations and webhooks
 
-CloudLogin remains authoritative for identity, users, organizations, memberships, permissions, subscriptions, and billing data. Applications such as CDM consume those entities through the authenticated service API and retain only their own application data plus stable CloudLogin identifiers.
+CloudLogin remains authoritative for identity, users, workspaces, memberships, permissions, subscriptions, and billing data. Applications such as CDM consume those entities through the authenticated service API and retain only their own application data plus stable CloudLogin identifiers.
 
-The service API exposes Organization, User, Subscription, and Organization-member reads for trusted server applications. Service keys belong on the server and must never be sent to WebAssembly or browser code.
+The service API exposes Workspace, User, Subscription, and Workspace-member reads for trusted server applications. Service keys belong on the server and must never be sent to WebAssembly or browser code.
 
-The account page is real, path-based routing rather than a client-side tab switch: `/Account/Profile`, `/Account/Subscriptions`, and `/Account/Org/{organizationId}` (optionally followed by `/Subscriptions` or `/PaymentMethods`) are each a distinct, refreshable, bookmarkable URL. An organization isn't a tab in the personal account — it's a separate workspace with its own information, billing, members, and plans, reached through the account switcher in the rail; moving into or out of one is a full navigation, the same as switching accounts. Older integrations that built links with `?Section=` and `?EntityId=` (including `Section=Organizations`) continue to work — CloudLogin translates them to the equivalent path on first load — but new integrations should link to the path directly. A host that mounts the account page somewhere other than `/Account` passes that path once via `AccountPageComponent.BasePath`.
+The account page is real, path-based routing rather than a client-side tab switch: `/Account/Profile`, `/Account/Subscriptions`, and `/Account/Workspace/{workspaceId}` (optionally followed by `/Subscriptions` or `/PaymentMethods`) are each a distinct, refreshable, bookmarkable URL. A workspace isn't a tab in the personal account — it's a separate workspace with its own information, billing, members, and plans, reached through the account switcher in the rail; moving into or out of one is a full navigation, the same as switching accounts. Older integrations that built links with `?Section=` and `?EntityId=` (including `Section=Workspaces`) continue to work — CloudLogin translates them to the equivalent path on first load — but new integrations should link to the path directly. A host that mounts the account page somewhere other than `/Account` passes that path once via `AccountPageComponent.BasePath`.
 
 ### Generic webhook registrations
 
@@ -521,7 +548,7 @@ new CloudLoginWebhookRegistration
     Events =
     [
         "User.Updated",
-        "Organization.Updated",
+        "Workspace.Updated",
         "Subscription.Updated",
         "Subscription.Cancelled"
     ]
@@ -530,7 +557,7 @@ new CloudLoginWebhookRegistration
 
 An empty event set subscribes to every published event. Production webhook URLs must use HTTPS. Development HTTP endpoints are accepted only for local development. Configuration validation rejects missing application names, invalid URLs, short secrets, and blank event names.
 
-CloudLogin mutation services publish a `CloudLoginEvent` through `ICloudLoginEventPublisher` after successful User, Organization, membership, invitation, and Subscription persistence. Current events include `User.Created`, `User.Updated`, `User.Deleted`, `Organization.Created`, `Organization.Updated`, `Organization.MembershipUpdated`, `Organization.InvitationCreated`, `Organization.Deleted`, `Subscription.Created`, `Subscription.Updated`, `Subscription.Cancelled`, and `Subscription.Deleted`. This remains application-neutral so CDM, Coverbox, Melon Cut, or any future application can consume the same stream. Events contain `EventId`, `EventType`, `EntityType`, `EntityId`, `Timestamp`, `Version`, `Operation`, and a JSON `Payload`.
+CloudLogin mutation services publish a `CloudLoginEvent` through `ICloudLoginEventPublisher` after successful User, Workspace, membership, invitation, and Subscription persistence. Current events include `User.Created`, `User.Updated`, `User.Deleted`, `Workspace.Created`, `Workspace.Updated`, `Workspace.MembershipUpdated`, `Workspace.InvitationCreated`, `Workspace.Deleted`, `Subscription.Created`, `Subscription.Updated`, `Subscription.Cancelled`, and `Subscription.Deleted`. This remains application-neutral so CDM, Coverbox, Melon Cut, or any future application can consume the same stream. Events contain `EventId`, `EventType`, `EntityType`, `EntityId`, `Timestamp`, `Version`, `Operation`, and a JSON `Payload`.
 
 Delivery signs the exact JSON body with HMAC-SHA256 and sends:
 
@@ -544,5 +571,5 @@ CloudLogin never creates application records in response to its own events. A co
 
 ### CDM mapping
 
-The initial native CDM mappings are Business ↔ Organization, Contact ↔ User, and Subscription ↔ Subscription. CDM can operate in a CloudLogin read-only view mode or a combined CloudLogin + CDM mode. CloudLogin-created lifecycle timestamps remain distinct from CDM's link time and actor. Manual Sync and record-specific Open in CloudLogin actions are provided by CDM's generic external-provider runtime.
+The initial native CDM mappings are Business ↔ Workspace, Contact ↔ User, and Subscription ↔ Subscription. CDM can operate in a CloudLogin read-only view mode or a combined CloudLogin + CDM mode. CloudLogin-created lifecycle timestamps remain distinct from CDM's link time and actor. Manual Sync and record-specific Open in CloudLogin actions are provided by CDM's generic external-provider runtime.
 

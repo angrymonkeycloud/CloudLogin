@@ -9,19 +9,19 @@ builder.Services.AddCloudLoginAccountRegistry();
 builder.Services.AddSingleton<ICloudLoginAccountStore, ApplicationAccountStore>();
 """;
 
-    public const string Organizations = """
-CloudLoginOrganization organization = await organizations.CreateAsync("Cedar Labs", ownerUserId);
-CloudLoginOrganizationMember member = await organizations.AddMemberAsync(
-    organization.Id, userId, ["BillingAdmin", "Developer"]);
-CloudLoginOrganizationInvitation invitation = await organizations.InviteAsync(
-    organization.Id, "developer@example.com", ownerUserId,
+    public const string Workspaces = """
+CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", ownerUserId);
+CloudWorkspaceMember member = await workspaces.AddMemberAsync(
+    workspace.Id, userId, ["BillingAdmin", "Developer"]);
+CloudWorkspaceInvitation invitation = await workspaces.InviteAsync(
+    workspace.Id, "developer@example.com", ownerUserId,
     DateTimeOffset.UtcNow.AddDays(7), ["Developer"]);
 """;
 
     public const string Subscriptions = """
-await subscriptions.SaveAsync(new AccountSubscription
+await subscriptions.SaveAsync(new CloudSubscription
 {
-    OrganizationId = organizationId,
+    WorkspaceId = workspaceId,
     Application = "cloud-business",
     Reference = "team-growth",
     AutoRenew = true,
@@ -31,13 +31,13 @@ await subscriptions.SaveAsync(new AccountSubscription
 });
 
 bool active = await subscriptions.HasActiveAsync(
-    "cloud-business", "team-growth", organizationId: organizationId);
+    "cloud-business", "team-growth", workspaceId: workspaceId);
 """;
 
     public const string Billing = """
-await accountStore.SaveBillingProfileAsync(new AccountBillingProfile
+await accountStore.SaveBillingProfileAsync(new CloudBillingProfile
 {
-    OrganizationId = organizationId,
+    WorkspaceId = workspaceId,
     ProviderCustomerReference = providerCustomerId,
     PaymentMethods =
     [

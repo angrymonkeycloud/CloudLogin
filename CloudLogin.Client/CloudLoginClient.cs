@@ -20,7 +20,7 @@ public class CloudLoginClient : ICloudLogin
     public string AccountRoute = "CloudLogin/Account";
     public string SecurityRoute = "CloudLogin/Security";
     public string? RedirectUri { get; set; }
-    public List<Link>? FooterLinks { get; set; }
+    public List<CloudLoginLink>? FooterLinks { get; set; }
 
     // URL Generation methods for login flows
     /// <summary>
@@ -110,7 +110,7 @@ public class CloudLoginClient : ICloudLogin
         return $"{baseUrl}/cloudlogin/login{queryString}";
     }
 
-    public async Task<List<ProviderDefinition>> GetProviders()
+    public async Task<List<CloudLoginProviderDefinition>> GetProviders()
     {
         HttpResponseMessage response = await HttpServer.GetAsync("api/providers");
 
@@ -127,7 +127,7 @@ public class CloudLoginClient : ICloudLogin
 
         try
         {
-            return JsonSerializer.Deserialize<List<ProviderDefinition>>(responseContent, CloudLoginSerialization.Options);
+            return JsonSerializer.Deserialize<List<CloudLoginProviderDefinition>>(responseContent, CloudLoginSerialization.Options);
         }
         catch (JsonException ex)
         {
@@ -141,18 +141,18 @@ public class CloudLoginClient : ICloudLogin
     public CloudGeographyClient CloudGeography => _cloudGepgraphy ??= new CloudGeographyClient();
 
     //Misc
-    public InputFormat GetInputFormat(string input)
+    public CloudLoginInputFormat GetInputFormat(string input)
     {
         if (string.IsNullOrEmpty(input))
-            return InputFormat.Other;
+            return CloudLoginInputFormat.Other;
 
         if (IsInputValidEmailAddress(input))
-            return InputFormat.EmailAddress;
+            return CloudLoginInputFormat.EmailAddress;
 
         if (IsInputValidPhoneNumber(input))
-            return InputFormat.PhoneNumber;
+            return CloudLoginInputFormat.PhoneNumber;
 
-        return InputFormat.Other;
+        return CloudLoginInputFormat.Other;
     }
 
     public static bool IsInputValidEmailAddress(string input) => Regex.IsMatch(input, @"\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*");
@@ -182,7 +182,7 @@ public class CloudLoginClient : ICloudLogin
     }
 
     //Get user(s) information from db
-    public async Task<List<UserModel>?> GetAllUsers()
+    public async Task<List<CloudUser>?> GetAllUsers()
     {
         try
         {
@@ -190,7 +190,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            List<UserModel>? selectedUser = await message.Content.ReadFromJsonAsync<List<UserModel>?>(CloudLoginSerialization.Options);
+            List<CloudUser>? selectedUser = await message.Content.ReadFromJsonAsync<List<CloudUser>?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -203,7 +203,7 @@ public class CloudLoginClient : ICloudLogin
 
     }
 
-    public async Task<List<UserModel>> GetTestUsers()
+    public async Task<List<CloudUser>> GetTestUsers()
     {
         try
         {
@@ -211,7 +211,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return [];
 
-            List<UserModel>? users = await message.Content.ReadFromJsonAsync<List<UserModel>>(CloudLoginSerialization.Options);
+            List<CloudUser>? users = await message.Content.ReadFromJsonAsync<List<CloudUser>>(CloudLoginSerialization.Options);
 
             return users ?? [];
         }
@@ -221,7 +221,7 @@ public class CloudLoginClient : ICloudLogin
         }
     }
 
-    public async Task<UserModel?> GetUserById(Guid userId)
+    public async Task<CloudUser?> GetUserById(Guid userId)
     {
         try
         {
@@ -229,7 +229,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
+            CloudUser? selectedUser = await message.Content.ReadFromJsonAsync<CloudUser?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -240,7 +240,7 @@ public class CloudLoginClient : ICloudLogin
             throw;
         }
     }
-    public async Task<List<UserModel>?> GetUsersByDisplayName(string displayName)
+    public async Task<List<CloudUser>?> GetUsersByDisplayName(string displayName)
     {
         try
         {
@@ -248,7 +248,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            List<UserModel>? selectedUsers = await message.Content.ReadFromJsonAsync<List<UserModel>?>(CloudLoginSerialization.Options);
+            List<CloudUser>? selectedUsers = await message.Content.ReadFromJsonAsync<List<CloudUser>?>(CloudLoginSerialization.Options);
 
             if (selectedUsers == null) return null;
 
@@ -260,7 +260,7 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
-    public async Task<UserModel?> GetUserByDisplayName(string displayName)
+    public async Task<CloudUser?> GetUserByDisplayName(string displayName)
     {
         if (!UsingDatabase)
             return null;
@@ -269,13 +269,13 @@ public class CloudLoginClient : ICloudLogin
 
         if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-        UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
+        CloudUser? selectedUser = await message.Content.ReadFromJsonAsync<CloudUser?>(CloudLoginSerialization.Options);
 
         if (selectedUser == null) return null;
 
         return selectedUser;
     }
-    public async Task<UserModel?> GetUserByInput(string input)
+    public async Task<CloudUser?> GetUserByInput(string input)
     {
         if (!UsingDatabase)
             return null;
@@ -286,7 +286,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent) return null;
 
-            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
+            CloudUser? selectedUser = await message.Content.ReadFromJsonAsync<CloudUser?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -298,7 +298,7 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
-    public async Task<UserModel?> GetUserByEmailAddress(string email)
+    public async Task<CloudUser?> GetUserByEmailAddress(string email)
     {
         if (!UsingDatabase)
             return null;
@@ -309,7 +309,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.NotFound || message.StatusCode == HttpStatusCode.InternalServerError) return null;
 
-            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
+            CloudUser? selectedUser = await message.Content.ReadFromJsonAsync<CloudUser?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -321,7 +321,7 @@ public class CloudLoginClient : ICloudLogin
         }
 
     }
-    public async Task<UserModel?> GetUserByPhoneNumber(string number)
+    public async Task<CloudUser?> GetUserByPhoneNumber(string number)
     {
         if (!UsingDatabase)
             return null;
@@ -332,7 +332,7 @@ public class CloudLoginClient : ICloudLogin
 
             if (message.StatusCode == HttpStatusCode.NoContent || message.StatusCode == HttpStatusCode.NotFound || message.StatusCode == HttpStatusCode.InternalServerError) return null;
 
-            UserModel? selectedUser = await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
+            CloudUser? selectedUser = await message.Content.ReadFromJsonAsync<CloudUser?>(CloudLoginSerialization.Options);
 
             if (selectedUser == null) return null;
 
@@ -346,7 +346,7 @@ public class CloudLoginClient : ICloudLogin
     }
 
     //Request based functions
-    public async Task<UserModel?> GetUserByRequestId(Guid requestId)
+    public async Task<CloudUser?> GetUserByRequestId(Guid requestId)
     {
         if (!UsingDatabase)
             return null;
@@ -356,7 +356,7 @@ public class CloudLoginClient : ICloudLogin
             HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Request/GetUserByRequestId?requestId={HttpUtility.UrlEncode(requestId.ToString())}");
 
             if (message.IsSuccessStatusCode)
-                return await message.Content.ReadFromJsonAsync<UserModel?>(CloudLoginSerialization.Options);
+                return await message.Content.ReadFromJsonAsync<CloudUser?>(CloudLoginSerialization.Options);
 
             return null;
         }
@@ -391,7 +391,7 @@ public class CloudLoginClient : ICloudLogin
     }
 
     //User configuration
-    public async Task UpdateUser(UserModel user)
+    public async Task UpdateUser(CloudUser user)
     {
         if (!UsingDatabase)
             return;
@@ -400,7 +400,7 @@ public class CloudLoginClient : ICloudLogin
 
         await HttpServer.PostAsync($"{UserRoute}/Update", content);
     }
-    public async Task CreateUser(UserModel user)
+    public async Task CreateUser(CloudUser user)
     {
         if (!UsingDatabase)
             return;
@@ -428,7 +428,7 @@ public class CloudLoginClient : ICloudLogin
 
         await HttpServer.DeleteAsync($"{UserRoute}/Delete?userId={userId}");
     }
-    public async Task<UserModel?> CurrentUser()
+    public async Task<CloudUser?> CurrentUser()
     {
         try
         {
@@ -437,7 +437,7 @@ public class CloudLoginClient : ICloudLogin
             if (message.StatusCode == HttpStatusCode.NoContent)
                 return null;
 
-            return await message.Content.ReadFromJsonAsync<UserModel>(CloudLoginSerialization.Options);
+            return await message.Content.ReadFromJsonAsync<CloudUser>(CloudLoginSerialization.Options);
         }
         catch
         {
@@ -457,7 +457,7 @@ public class CloudLoginClient : ICloudLogin
         }
         catch { return false; }
     }
-    public async Task AddUserInput(Guid userId, LoginInput Input)
+    public async Task AddUserInput(Guid userId, CloudLoginInput Input)
     {
         if (!UsingDatabase)
             return;
@@ -486,7 +486,7 @@ public class CloudLoginClient : ICloudLogin
     }
 
     // Model-based methods
-    public async Task<bool> PasswordLogin(PasswordLoginRequest request)
+    public async Task<bool> PasswordLogin(CloudLoginPasswordLoginRequest request)
     {
         MultipartFormDataContent form = new()
         {
@@ -499,7 +499,7 @@ public class CloudLoginClient : ICloudLogin
 
         if (!message.IsSuccessStatusCode)
         {
-            UserModel? currentUser = await CurrentUser();
+            CloudUser? currentUser = await CurrentUser();
 
             if (currentUser != null && currentUser.ID != Guid.Empty)
                 return true;
@@ -542,7 +542,7 @@ public class CloudLoginClient : ICloudLogin
         return target;
     }
 
-    public async Task<UserModel> PasswordRegistration(PasswordRegistrationRequest request)
+    public async Task<CloudUser> PasswordRegistration(CloudLoginPasswordRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -561,10 +561,10 @@ public class CloudLoginClient : ICloudLogin
         if (!message.IsSuccessStatusCode)
             throw new Exception("Password registration failed");
 
-        return (await message.Content.ReadFromJsonAsync<UserModel>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudUser>(CloudLoginSerialization.Options))!;
     }
 
-    public async Task<UserModel> CodeRegistration(CodeRegistrationRequest request)
+    public async Task<CloudUser> CodeRegistration(CloudLoginCodeRegistrationRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -579,7 +579,7 @@ public class CloudLoginClient : ICloudLogin
 
         HttpResponseMessage message = await HttpServer.PostAsync("CloudLogin/Login/CodeRegistration", form);
         if (!message.IsSuccessStatusCode) throw new Exception("Code registration failed");
-        return (await message.Content.ReadFromJsonAsync<UserModel>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudUser>(CloudLoginSerialization.Options))!;
     }
 
     // ── Admin methods ──────────────────────────────────────────────────
@@ -620,56 +620,56 @@ public class CloudLoginClient : ICloudLogin
             throw new Exception($"SetGlobalAdmin failed: {message.StatusCode}");
     }
 
-    // ── Account registry (organizations, subscriptions, billing) ──────────
+    // ── Account registry (workspaces, subscriptions, billing) ──────────
 
-    public async Task<List<CloudLoginOrganization>> GetMyOrganizations()
+    public async Task<List<CloudWorkspace>> GetMyWorkspaces()
     {
-        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Organizations");
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Workspaces");
 
         if (!message.IsSuccessStatusCode)
             return [];
 
-        List<CloudLoginOrganization>? organizations = await message.Content.ReadFromJsonAsync<List<CloudLoginOrganization>>(CloudLoginSerialization.Options);
+        List<CloudWorkspace>? workspaces = await message.Content.ReadFromJsonAsync<List<CloudWorkspace>>(CloudLoginSerialization.Options);
 
-        return organizations ?? [];
+        return workspaces ?? [];
     }
 
-    public async Task<List<AccountSubscription>> GetMySubscriptions(bool includeInactive = false)
+    public async Task<List<CloudSubscription>> GetMySubscriptions(bool includeInactive = false)
     {
         HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Subscriptions?includeInactive={includeInactive}");
 
         if (!message.IsSuccessStatusCode)
             return [];
 
-        List<AccountSubscription>? subscriptions = await message.Content.ReadFromJsonAsync<List<AccountSubscription>>(CloudLoginSerialization.Options);
+        List<CloudSubscription>? subscriptions = await message.Content.ReadFromJsonAsync<List<CloudSubscription>>(CloudLoginSerialization.Options);
 
         return subscriptions ?? [];
     }
 
-    public async Task<OrganizationQuota> GetMyOrganizationQuota()
+    public async Task<CloudWorkspaceQuota> GetMyWorkspaceQuota()
     {
-        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Organizations/Quota");
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Workspaces/Quota");
 
         // Without a reachable quota the UI shouldn't invent an allowance: report none left rather
         // than offering a create button the server would refuse.
         if (!message.IsSuccessStatusCode)
-            return new OrganizationQuota { Owned = 0, MaxOwned = 0, Total = 0, MaxTotal = 0 };
+            return new CloudWorkspaceQuota { Owned = 0, MaxOwned = 0, Total = 0, MaxTotal = 0 };
 
-        return await message.Content.ReadFromJsonAsync<OrganizationQuota>(CloudLoginSerialization.Options)
-            ?? new OrganizationQuota { Owned = 0, MaxOwned = 0, Total = 0, MaxTotal = 0 };
+        return await message.Content.ReadFromJsonAsync<CloudWorkspaceQuota>(CloudLoginSerialization.Options)
+            ?? new CloudWorkspaceQuota { Owned = 0, MaxOwned = 0, Total = 0, MaxTotal = 0 };
     }
 
-    public async Task<OrganizationWorkspace?> GetOrganizationWorkspace(Guid organizationId)
+    public async Task<CloudWorkspaceDetail?> GetWorkspaceDetail(Guid workspaceId)
     {
-        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Organizations/{organizationId}/Workspace");
+        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Workspaces/{workspaceId}/Detail");
 
         if (!message.IsSuccessStatusCode)
             return null;
 
-        return await message.Content.ReadFromJsonAsync<OrganizationWorkspace>(CloudLoginSerialization.Options);
+        return await message.Content.ReadFromJsonAsync<CloudWorkspaceDetail>(CloudLoginSerialization.Options);
     }
 
-    public async Task<AccountBillingProfile?> GetMyBillingProfile()
+    public async Task<CloudBillingProfile?> GetMyBillingProfile()
     {
         HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/BillingProfile");
 
@@ -681,48 +681,48 @@ public class CloudLoginClient : ICloudLogin
         if (string.IsNullOrWhiteSpace(body) || body == "null")
             return null;
 
-        return System.Text.Json.JsonSerializer.Deserialize<AccountBillingProfile?>(body, CloudLoginSerialization.Options);
+        return System.Text.Json.JsonSerializer.Deserialize<CloudBillingProfile?>(body, CloudLoginSerialization.Options);
     }
 
-    public async Task<CloudLoginOrganization> CreateOrganization(string name)
+    public async Task<CloudWorkspace> CreateWorkspace(string name)
     {
-        HttpContent content = JsonContent.Create(new CreateOrganizationRequest(name), options: CloudLoginSerialization.Options);
-        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Organizations", content);
+        HttpContent content = JsonContent.Create(new CloudLoginCreateWorkspaceRequest(name), options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Workspaces", content);
 
         if (!message.IsSuccessStatusCode)
-            throw await AccountFailure(message, "We couldn't create that organization.");
+            throw await AccountFailure(message, "We couldn't create that workspace.");
 
-        return (await message.Content.ReadFromJsonAsync<CloudLoginOrganization>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudWorkspace>(CloudLoginSerialization.Options))!;
     }
 
-    public async Task<CloudLoginOrganizationInvitation> InviteToOrganization(Guid organizationId, string recipient, IReadOnlyList<string>? roles = null)
+    public async Task<CloudWorkspaceInvitation> InviteToWorkspace(Guid workspaceId, string recipient, IReadOnlyList<string>? roles = null)
     {
-        HttpContent content = JsonContent.Create(new InviteToOrganizationRequest(recipient, roles), options: CloudLoginSerialization.Options);
-        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Organizations/{organizationId}/Invite", content);
+        HttpContent content = JsonContent.Create(new CloudLoginInviteToWorkspaceRequest(recipient, roles), options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/Workspaces/{workspaceId}/Invite", content);
 
         if (!message.IsSuccessStatusCode)
             throw await AccountFailure(message, "We couldn't send that invitation.");
 
-        return (await message.Content.ReadFromJsonAsync<CloudLoginOrganizationInvitation>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudWorkspaceInvitation>(CloudLoginSerialization.Options))!;
     }
 
-    public async Task<CloudLoginOrganization> UpdateOrganization(CloudLoginOrganization organization)
+    public async Task<CloudWorkspace> UpdateWorkspace(CloudWorkspace workspace)
     {
-        HttpContent content = JsonContent.Create(organization, options: CloudLoginSerialization.Options);
-        HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Organizations/{organization.Id}", content);
+        HttpContent content = JsonContent.Create(workspace, options: CloudLoginSerialization.Options);
+        HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Workspaces/{workspace.Id}", content);
 
         if (!message.IsSuccessStatusCode)
             throw await AccountFailure(message, "We couldn't save those changes.");
 
-        return (await message.Content.ReadFromJsonAsync<CloudLoginOrganization>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudWorkspace>(CloudLoginSerialization.Options))!;
     }
 
-    public async Task DeleteOrganization(Guid organizationId)
+    public async Task DeleteWorkspace(Guid workspaceId)
     {
-        HttpResponseMessage message = await HttpServer.DeleteAsync($"{AccountRoute}/Organizations/{organizationId}");
+        HttpResponseMessage message = await HttpServer.DeleteAsync($"{AccountRoute}/Workspaces/{workspaceId}");
 
         if (!message.IsSuccessStatusCode)
-            throw await AccountFailure(message, "We couldn't delete that organization.");
+            throw await AccountFailure(message, "We couldn't delete that workspace.");
     }
 
     public async Task DeleteSubscription(Guid subscriptionId)
@@ -733,26 +733,26 @@ public class CloudLoginClient : ICloudLogin
             throw await AccountFailure(message, "We couldn't remove that subscription.");
     }
 
-    public async Task<AccountBillingProfile> AddPaymentMethod(AccountPaymentMethodReference method, Guid? organizationId = null)
+    public async Task<CloudBillingProfile> AddPaymentMethod(CloudPaymentMethodReference method, Guid? workspaceId = null)
     {
-        HttpContent content = JsonContent.Create(new AddPaymentMethodRequest(method, organizationId), options: CloudLoginSerialization.Options);
+        HttpContent content = JsonContent.Create(new CloudLoginAddPaymentMethodRequest(method, workspaceId), options: CloudLoginSerialization.Options);
         HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/BillingProfile/PaymentMethods", content);
 
         if (!message.IsSuccessStatusCode)
             throw await AccountFailure(message, "We couldn't save that payment method.");
 
-        return (await message.Content.ReadFromJsonAsync<AccountBillingProfile>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudBillingProfile>(CloudLoginSerialization.Options))!;
     }
 
-    public async Task<AccountBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? organizationId = null)
+    public async Task<CloudBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? workspaceId = null)
     {
-        HttpContent content = JsonContent.Create(new RemovePaymentMethodRequest(provider, reference, organizationId), options: CloudLoginSerialization.Options);
+        HttpContent content = JsonContent.Create(new CloudLoginRemovePaymentMethodRequest(provider, reference, workspaceId), options: CloudLoginSerialization.Options);
         HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/BillingProfile/PaymentMethods/Remove", content);
 
         if (!message.IsSuccessStatusCode)
             throw await AccountFailure(message, "We couldn't remove that payment method.");
 
-        return (await message.Content.ReadFromJsonAsync<AccountBillingProfile>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudBillingProfile>(CloudLoginSerialization.Options))!;
     }
 
     /// <summary>
@@ -789,40 +789,40 @@ public class CloudLoginClient : ICloudLogin
         };
     }
 
-    public async Task<CloudLoginOrganization?> GetOrganizationById(Guid organizationId)
+    public async Task<CloudWorkspace?> GetWorkspaceById(Guid workspaceId)
     {
         // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
-        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Organizations/{organizationId}");
+        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Workspaces/{workspaceId}");
 
         if (!message.IsSuccessStatusCode)
             return null;
 
-        return await message.Content.ReadFromJsonAsync<CloudLoginOrganization?>(CloudLoginSerialization.Options);
+        return await message.Content.ReadFromJsonAsync<CloudWorkspace?>(CloudLoginSerialization.Options);
     }
 
-    public async Task<List<CloudLoginOrganization>> GetAllOrganizations()
+    public async Task<List<CloudWorkspace>> GetAllWorkspaces()
     {
         // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
-        HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/Service/Organizations");
+        HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/Service/Workspaces");
 
         if (!message.IsSuccessStatusCode)
             return [];
 
-        return await message.Content.ReadFromJsonAsync<List<CloudLoginOrganization>>(CloudLoginSerialization.Options) ?? [];
+        return await message.Content.ReadFromJsonAsync<List<CloudWorkspace>>(CloudLoginSerialization.Options) ?? [];
     }
 
-    public async Task<List<CloudLoginOrganizationMember>> GetOrganizationMembers(Guid organizationId)
+    public async Task<List<CloudWorkspaceMember>> GetWorkspaceMembers(Guid workspaceId)
     {
-        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Organizations/{organizationId}/Members");
+        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Workspaces/{workspaceId}/Members");
 
         if (!message.IsSuccessStatusCode)
             return [];
 
-        return await message.Content.ReadFromJsonAsync<List<CloudLoginOrganizationMember>>(CloudLoginSerialization.Options) ?? [];
+        return await message.Content.ReadFromJsonAsync<List<CloudWorkspaceMember>>(CloudLoginSerialization.Options) ?? [];
     }
 
 
-    public async Task<AccountSubscription?> GetSubscriptionById(Guid subscriptionId)
+    public async Task<CloudSubscription?> GetSubscriptionById(Guid subscriptionId)
     {
         // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
         HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Subscriptions/{subscriptionId}");
@@ -830,10 +830,10 @@ public class CloudLoginClient : ICloudLogin
         if (!message.IsSuccessStatusCode)
             return null;
 
-        return await message.Content.ReadFromJsonAsync<AccountSubscription?>(CloudLoginSerialization.Options);
+        return await message.Content.ReadFromJsonAsync<CloudSubscription?>(CloudLoginSerialization.Options);
     }
 
-    public async Task<List<AccountSubscription>> GetAllSubscriptions()
+    public async Task<List<CloudSubscription>> GetAllSubscriptions()
     {
         // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
         HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/Service/Subscriptions");
@@ -841,34 +841,34 @@ public class CloudLoginClient : ICloudLogin
         if (!message.IsSuccessStatusCode)
             return [];
 
-        return await message.Content.ReadFromJsonAsync<List<AccountSubscription>>(CloudLoginSerialization.Options) ?? [];
+        return await message.Content.ReadFromJsonAsync<List<CloudSubscription>>(CloudLoginSerialization.Options) ?? [];
     }
 
     // ── Security ─────────────────────────────────────────────────────────────
     // The server derives the acting user from the session cookie, so none of these
     // calls carries a user id.
 
-    public async Task<SecurityOverview> GetSecurityOverview()
+    public async Task<CloudLoginSecurityOverview> GetSecurityOverview()
     {
         HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/Overview");
 
         if (!message.IsSuccessStatusCode)
-            return new SecurityOverview();
+            return new CloudLoginSecurityOverview();
 
-        return await message.Content.ReadFromJsonAsync<SecurityOverview>(CloudLoginSerialization.Options) ?? new SecurityOverview();
+        return await message.Content.ReadFromJsonAsync<CloudLoginSecurityOverview>(CloudLoginSerialization.Options) ?? new CloudLoginSecurityOverview();
     }
 
-    public async Task<List<LoginHistoryEntry>> GetMyLoginHistory()
+    public async Task<List<CloudLoginHistoryEntry>> GetMyLoginHistory()
     {
         HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/LoginHistory");
 
         if (!message.IsSuccessStatusCode)
             return [];
 
-        return await message.Content.ReadFromJsonAsync<List<LoginHistoryEntry>>(CloudLoginSerialization.Options) ?? [];
+        return await message.Content.ReadFromJsonAsync<List<CloudLoginHistoryEntry>>(CloudLoginSerialization.Options) ?? [];
     }
 
-    public async Task ChangeMyPassword(ChangePasswordRequest request)
+    public async Task ChangeMyPassword(CloudLoginChangePasswordRequest request)
     {
         HttpContent content = JsonContent.Create(request, options: CloudLoginSerialization.Options);
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Password", content);
@@ -886,14 +886,14 @@ public class CloudLoginClient : ICloudLogin
             throw new Exception(await ReadProblem(message));
     }
 
-    public async Task<AuthenticatorEnrollmentModel> BeginAuthenticatorEnrollment()
+    public async Task<CloudLoginAuthenticatorEnrollment> BeginAuthenticatorEnrollment()
     {
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Authenticator/Begin", null);
 
         if (!message.IsSuccessStatusCode)
             throw new Exception(await ReadProblem(message));
 
-        return (await message.Content.ReadFromJsonAsync<AuthenticatorEnrollmentModel>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudLoginAuthenticatorEnrollment>(CloudLoginSerialization.Options))!;
     }
 
     public async Task<bool> ConfirmAuthenticatorEnrollment(string code)
@@ -925,7 +925,7 @@ public class CloudLoginClient : ICloudLogin
         return await message.Content.ReadAsStringAsync();
     }
 
-    public async Task<PasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name)
+    public async Task<CloudLoginPasskeySummary> CompletePasskeyRegistration(string optionsJson, string attestationJson, string? name)
     {
         HttpContent content = JsonContent.Create(new { optionsJson, attestationJson, name }, options: CloudLoginSerialization.Options);
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Complete", content);
@@ -933,7 +933,7 @@ public class CloudLoginClient : ICloudLogin
         if (!message.IsSuccessStatusCode)
             throw new Exception(await ReadProblem(message));
 
-        return (await message.Content.ReadFromJsonAsync<PasskeySummary>(CloudLoginSerialization.Options))!;
+        return (await message.Content.ReadFromJsonAsync<CloudLoginPasskeySummary>(CloudLoginSerialization.Options))!;
     }
 
     public async Task RemovePasskey(string credentialId)

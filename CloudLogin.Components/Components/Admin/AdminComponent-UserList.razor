@@ -1,4 +1,5 @@
 @using AngryMonkey.CloudLogin.Interfaces
+@using AngryMonkey.CloudLogin.Models
 @inject ICloudLogin cloudLogin
 
 @namespace AngryMonkey.CloudLogin
@@ -11,10 +12,10 @@
            RowsPerPage="15" />
 
 @code {
-    [Parameter] public EventCallback<UserModel> OnUserSelected { get; set; }
+    [Parameter] public EventCallback<CloudUserModel> OnUserSelected { get; set; }
 
     private CloudDataGrid? _grid;
-    private List<UserModel> _allUsers = [];
+    private List<CloudUserModel> _allUsers = [];
     private string _statusFilter = "";
     private string _roleFilter = "";
 
@@ -64,9 +65,9 @@
         // Fetch from API on initial load, sort change, search change, or explicit refresh
         // (identified by page 1 with no previously known total)
         if (_allUsers.Count == 0 || (request.Page == 1 && request.Total == 0))
-            _allUsers = (await cloudLogin.GetAllUsers()) ?? [];
+            _allUsers = [.. (await cloudLogin.GetAllUsers() ?? []).Select(user => user.ToModel())];
 
-        IEnumerable<UserModel> filtered = _allUsers;
+        IEnumerable<CloudUserModel> filtered = _allUsers;
 
         // Search
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -103,7 +104,7 @@
             _ => filtered.OrderByDescending(u => u.IsGlobalAdmin).ThenBy(u => u.DisplayName)
         };
 
-        List<UserModel> sorted = [.. filtered];
+        List<CloudUserModel> sorted = [.. filtered];
         int total = sorted.Count;
 
         List<CloudDataGridRow> rows = [.. sorted
@@ -120,7 +121,7 @@
         };
     }
 
-    private CloudDataGridRow UserToRow(UserModel user) => new()
+    private CloudDataGridRow UserToRow(CloudUserModel user) => new()
     {
         Id = user.ID,
         Attributes = new Dictionary<string, object>
@@ -142,7 +143,7 @@
     {
         Guid userId = args.RecordIds.FirstOrDefault();
         if (userId == Guid.Empty) return;
-        UserModel? user = _allUsers.FirstOrDefault(u => u.ID == userId);
+        CloudUserModel? user = _allUsers.FirstOrDefault(u => u.ID == userId);
         if (user != null) await OnUserSelected.InvokeAsync(user);
     }
 
@@ -152,7 +153,7 @@
             await _grid.ReloadAsync();
     }
 
-    private static string BuildName(UserModel user)
+    private static string BuildName(CloudUserModel user)
     {
         if (!string.IsNullOrWhiteSpace(user.DisplayName)) return user.DisplayName;
         string full = string.Join(" ", new[] { user.FirstName, user.LastName }

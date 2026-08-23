@@ -45,13 +45,13 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             if (server is null)
                 return;
 
-            InputFormat format = principal.HasClaim(claim => claim.Type == ClaimTypes.Email)
-                ? InputFormat.EmailAddress
-                : InputFormat.PhoneNumber;
+            CloudLoginInputFormat format = principal.HasClaim(claim => claim.Type == ClaimTypes.Email)
+                ? CloudLoginInputFormat.EmailAddress
+                : CloudLoginInputFormat.PhoneNumber;
 
             string input = GetUserInput(principal, format);
 
-            UserModel? user = format == InputFormat.EmailAddress
+            CloudUser? user = format == CloudLoginInputFormat.EmailAddress
                 ? await cosmosMethods.GetUserByEmailAddress(input)
                 : await cosmosMethods.GetUserByPhoneNumber(input);
 
@@ -60,7 +60,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
             string? userAgent = context.Request.Headers.UserAgent.ToString();
 
-            await server.RecordSignInForUser(user.ID, new LoginHistoryEntry
+            await server.RecordSignInForUser(user.ID, new CloudLoginHistoryEntry
             {
                 SignedInOn = signedInOn,
                 Provider = GetProviderName(principal),
@@ -107,15 +107,15 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
     private async Task ProcessUserSignIn(ClaimsPrincipal principal, CosmosMethods cosmosMethods, DateTimeOffset currentDateTime)
     {
-        InputFormat formatValue = principal.HasClaim(claim => claim.Type == ClaimTypes.Email)
-        ? InputFormat.EmailAddress
-        : InputFormat.PhoneNumber;
+        CloudLoginInputFormat formatValue = principal.HasClaim(claim => claim.Type == ClaimTypes.Email)
+        ? CloudLoginInputFormat.EmailAddress
+        : CloudLoginInputFormat.PhoneNumber;
 
         string input = GetUserInput(principal, formatValue);
         string providerName = GetProviderName(principal);
         string? providerIdentifier = GetProviderIdentifier(principal);
 
-        UserModel? user = await GetExistingUser(cosmosMethods, input, formatValue);
+        CloudUser? user = await GetExistingUser(cosmosMethods, input, formatValue);
 
         if (user != null)
         {
@@ -127,14 +127,14 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         }
     }
 
-    private static string GetUserInput(ClaimsPrincipal principal, InputFormat format)
+    private static string GetUserInput(ClaimsPrincipal principal, CloudLoginInputFormat format)
     {
-        string input = format == InputFormat.EmailAddress
+        string input = format == CloudLoginInputFormat.EmailAddress
         ? principal.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty
         : principal.FindFirst(ClaimTypes.MobilePhone)?.Value ?? string.Empty;
 
         // Normalize email addresses
-        if (format == InputFormat.EmailAddress)
+        if (format == CloudLoginInputFormat.EmailAddress)
         {
             input = input.Trim().ToLowerInvariant();
         }
@@ -172,14 +172,14 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         return null;
     }
 
-    private static async Task<UserModel?> GetExistingUser(CosmosMethods cosmosMethods, string input, InputFormat format)
+    private static async Task<CloudUser?> GetExistingUser(CosmosMethods cosmosMethods, string input, CloudLoginInputFormat format)
     {
-        return format == InputFormat.EmailAddress
+        return format == CloudLoginInputFormat.EmailAddress
         ? await cosmosMethods.GetUserByEmailAddress(input)
         : await cosmosMethods.GetUserByPhoneNumber(input);
     }
 
-    private async Task UpdateExistingUser(UserModel user, ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private async Task UpdateExistingUser(CloudUser user, ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, CloudLoginInputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
         // Update user information with latest from provider, but never override existing non-empty values
         user.FirstName = string.IsNullOrWhiteSpace(user.FirstName) ? (principal.FindFirst(ClaimTypes.GivenName)?.Value ?? user.FirstName) : user.FirstName;
@@ -223,18 +223,18 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         }
 
         // Normalize input for comparison
-        string normalizedInput = formatValue == InputFormat.EmailAddress
+        string normalizedInput = formatValue == CloudLoginInputFormat.EmailAddress
         ? input.Trim().ToLowerInvariant()
         : input;
 
         // Find the existing input that matches
-        LoginInput? existingInput = user.Inputs.FirstOrDefault(i =>
+        CloudLoginInput? existingInput = user.Inputs.FirstOrDefault(i =>
         string.Equals(i.Input, normalizedInput, StringComparison.OrdinalIgnoreCase));
 
         if (existingInput != null)
         {
             // Find existing provider or add new one
-            LoginProvider? existingProvider = existingInput.Providers.FirstOrDefault(p =>
+            CloudLoginProvider? existingProvider = existingInput.Providers.FirstOrDefault(p =>
             string.Equals(p.Code, providerName, StringComparison.OrdinalIgnoreCase));
 
             if (existingProvider != null)
@@ -248,7 +248,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             else
             {
                 // Add new provider with identifier
-                existingInput.Providers.Add(new LoginProvider
+                existingInput.Providers.Add(new CloudLoginProvider
                 {
                     Code = providerName,
                     Identifier = providerIdentifier
@@ -258,12 +258,12 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         else
         {
             // This shouldn't happen if the user was found by this input, but add it as fallback
-            user.Inputs.Add(new LoginInput
+            user.Inputs.Add(new CloudLoginInput
             {
                 Input = normalizedInput,
                 Format = formatValue,
                 IsPrimary = user.Inputs.Count == 0,
-                Providers = [new LoginProvider
+                Providers = [new CloudLoginProvider
  {
  Code = providerName,
  Identifier = providerIdentifier
@@ -276,12 +276,12 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         await PublishUserEvent("User.Updated", "Updated", user.ID);
     }
 
-    private async Task CreateNewUser(ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, InputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private async Task CreateNewUser(ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, CloudLoginInputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
     {
         (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
 
         // Ensure email is normalized
-        if (formatValue == InputFormat.EmailAddress)
+        if (formatValue == CloudLoginInputFormat.EmailAddress)
         {
             formattedInput = formattedInput.Trim().ToLowerInvariant();
         }
@@ -301,7 +301,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         string? locale = NormalizeLocale(GetLocale(principal));
         DateOnly? dob = GetDateOfBirth(principal);
 
-        UserModel user = new()
+        CloudUser user = new()
         {
             ID = Guid.NewGuid(),
             FirstName = firstName,
@@ -316,14 +316,14 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             DateOfBirth = dob,
             Inputs =
         [
-        new LoginInput()
+        new CloudLoginInput()
  {
  Input = formattedInput,
  Format = formatValue,
  IsPrimary = true,
  PhoneNumberCountryCode = countryCode,
  PhoneNumberCallingCode = callingCode,
- Providers = [new LoginProvider
+ Providers = [new CloudLoginProvider
  {
  Code = providerName,
  Identifier = providerIdentifier
@@ -351,9 +351,9 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
                 operation,
                 new { ID = userId }));
     }
-    private async Task<(string? countryCode, string? callingCode, string input)> ProcessPhoneNumber(InputFormat formatValue, string input)
+    private async Task<(string? countryCode, string? callingCode, string input)> ProcessPhoneNumber(CloudLoginInputFormat formatValue, string input)
     {
-        if (formatValue != InputFormat.PhoneNumber)
+        if (formatValue != CloudLoginInputFormat.PhoneNumber)
             return (null, null, input);
 
         CloudGeographyClient? cloudGeography = _serviceProvider.GetService<CloudGeographyClient>();

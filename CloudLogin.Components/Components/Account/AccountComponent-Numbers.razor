@@ -83,7 +83,7 @@
     @if (CurrentUser.PhoneNumbers.Any())
     {
         <div class="contact-list">
-            @foreach (LoginInput phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
+            @foreach (CloudLoginInputModel phone in CurrentUser.PhoneNumbers.OrderByDescending(p => p.IsPrimary))
             {
                 <div class="contact-row">
                     <div class="contact-main">
@@ -136,7 +136,7 @@
 </div>
 
 @code {
-    [Parameter] public required UserModel CurrentUser { get; set; }
+    [Parameter] public required CloudUserModel CurrentUser { get; set; }
 
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
@@ -186,7 +186,7 @@
                 return;
             }
 
-            UserModel? existingUser = await cloudLogin.GetUserByPhoneNumber(normalized);
+            CloudUser? existingUser = await cloudLogin.GetUserByPhoneNumber(normalized);
             if (existingUser != null && existingUser.ID != CurrentUser.ID)
             {
                 SetStatus("This phone number is already in use by another account.", false);
@@ -262,17 +262,17 @@
 
             string verifiedInput = _verification.PendingInput;
 
-            LoginInput newPhoneInput = new()
+            CloudLoginInputModel newPhoneInput = new()
             {
                 Input = verifiedInput,
-                Format = InputFormat.PhoneNumber,
+                Format = CloudLoginInputFormat.PhoneNumber,
                 // First contact of any kind becomes primary.
                 IsPrimary = !CurrentUser.PhoneNumbers.Any() && !CurrentUser.EmailAddresses.Any(),
                 Providers = []
             };
 
             CurrentUser.Inputs.Add(newPhoneInput);
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             _verification.Reset();
             _isAdding = false;
@@ -316,7 +316,7 @@
             StateHasChanged();
 
             var phoneToRemove = CurrentUser.Inputs.FirstOrDefault(p =>
-                p.Format == InputFormat.PhoneNumber &&
+                p.Format == CloudLoginInputFormat.PhoneNumber &&
                 p.Input.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase));
 
             if (phoneToRemove == null)
@@ -335,7 +335,7 @@
             }
 
             CurrentUser.Inputs.Remove(phoneToRemove);
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             SetStatus("Phone number removed successfully.", true);
         }
@@ -368,10 +368,10 @@
 
             // Update primary status for all inputs
             foreach (var input in CurrentUser.Inputs)
-                input.IsPrimary = input.Format == InputFormat.PhoneNumber &&
+                input.IsPrimary = input.Format == CloudLoginInputFormat.PhoneNumber &&
                                  input.Input.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase);
 
-            await cloudLogin.UpdateUser(CurrentUser);
+            await cloudLogin.UpdateUser(CurrentUser.ToContract());
 
             SetStatus("Primary phone number updated successfully.", true);
         }

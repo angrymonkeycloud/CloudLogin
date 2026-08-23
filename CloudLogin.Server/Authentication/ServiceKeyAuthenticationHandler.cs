@@ -14,7 +14,7 @@ public static class ServiceKeyAuthenticationDefaults
 
 /// <summary>
 /// Authenticates trusted backend callers (not browsers) via a shared-secret header, for
-/// service-to-service lookups such as <c>CloudLogin/Service/Organizations/{id}</c>. Cookie
+/// service-to-service lookups such as <c>CloudLogin/Service/Workspaces/{id}</c>. Cookie
 /// authentication for interactive users is a completely separate scheme and is unaffected.
 /// </summary>
 public class ServiceKeyAuthenticationHandler(

@@ -16,7 +16,7 @@ builder.Services.AddControllers()
 DemoInboxService demoInbox = new();
 DemoInMemoryCloudLoginStore demoStore = new();
 
-await demoStore.Create(new UserModel
+await demoStore.Create(new CloudUser
 {
     ID = Guid.NewGuid(),
     FirstName = "Demo",
@@ -25,13 +25,13 @@ await demoStore.Create(new UserModel
     IsTest = true,
     IsGlobalAdmin = true,
     CreatedOn = DateTimeOffset.UtcNow,
-    Inputs = [new LoginInput { Input = "admin@demo.cloudlogin", Format = InputFormat.EmailAddress, IsPrimary = true }]
+    Inputs = [new CloudLoginInput { Input = "admin@demo.cloudlogin", Format = CloudLoginInputFormat.EmailAddress, IsPrimary = true }]
 });
 
 builder.Services.AddSingleton(demoInbox);
 builder.Services.AddSingleton<ICloudLoginStore>(demoStore);
 builder.Services.AddCloudLoginAccountRegistry();
-builder.Services.AddScoped<DemoAccountRegistryWorkspace>();
+builder.Services.AddScoped<DemoAccountRegistryState>();
 
 CloudLoginWebConfiguration loginConfig = new()
 {

@@ -31,7 +31,7 @@ public sealed class CloudLoginSecurityStore(AzureStorageConfiguration storage, C
 
     private async Task<BlobContainerClient> GetContainerAsync()
     {
-        BlobContainerClient container = new(_storage.ConnectionString, _storage.ContainerName);
+        BlobContainerClient container = _storage.CreateContainerClient();
         await container.CreateIfNotExistsAsync();
         return container;
     }

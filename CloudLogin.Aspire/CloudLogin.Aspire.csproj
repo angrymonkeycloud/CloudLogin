@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AssemblyName>AngryMonkey.CloudLogin.Aspire</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin.Aspire</RootNamespace>
+		<Product>Cloud Login Aspire Client</Product>
+		<Authors>Angry Monkey</Authors>
+		<Company>Angry Monkey</Company>
+		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+		<FileVersion>$(PackageVersion)</FileVersion>
+		<Version>1.0.0</Version>
+		<PackageIcon>amc-logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Description>Aspire client integration for CloudLogin: binds the CloudLogin server's configuration from the host, including credential-based access to Cosmos and Azure Storage.</Description>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<Configurations>Debug;Release</Configurations>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Azure.Identity" Version="1.21.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\CloudLogin.Server\CloudLogin.Server.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\CloudLogin.Server\amc-logo.png" Pack="True" PackagePath="\" Link="amc-logo.png" />
+		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
+	</ItemGroup>
+
+</Project>

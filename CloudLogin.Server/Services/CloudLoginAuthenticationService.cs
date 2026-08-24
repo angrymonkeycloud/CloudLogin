@@ -538,7 +538,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             string fileName = $"{Guid.NewGuid():N}{ext}";
 
             // Upload to blob storage
-            BlobContainerClient container = new(config.AzureStorage.ConnectionString!, config.AzureStorage.ContainerName!);
+            BlobContainerClient container = config.AzureStorage.CreateContainerClient();
             await container.CreateIfNotExistsAsync();
             BlobClient blob = container.GetBlobClient(fileName);
             BlobHttpHeaders headers = new() { ContentType = contentType ?? "image/jpeg" };

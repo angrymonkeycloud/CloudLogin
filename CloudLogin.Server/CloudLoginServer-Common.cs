@@ -444,7 +444,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         string fileName = $"{Guid.NewGuid():N}{ext}";
 
-        Azure.Storage.Blobs.BlobContainerClient container = new(_configuration.AzureStorage.ConnectionString, _configuration.AzureStorage.ContainerName);
+        Azure.Storage.Blobs.BlobContainerClient container = _configuration.AzureStorage.CreateContainerClient();
         await container.CreateIfNotExistsAsync();
 
         Azure.Storage.Blobs.BlobClient blob = container.GetBlobClient(fileName);

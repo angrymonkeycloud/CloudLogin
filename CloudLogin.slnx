@@ -35,6 +35,12 @@
   <Project Path="CloudLogin.API/CloudLogin.API.csproj">
     <BuildType Solution="Release_Server|Any CPU" Project="Release" />
   </Project>
+  <Project Path="CloudLogin.Aspire.Hosting/CloudLogin.Aspire.Hosting.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
+  <Project Path="CloudLogin.Aspire/CloudLogin.Aspire.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
   <Project Path="CloudLogin.Client/CloudLogin.Client.csproj">
     <BuildType Solution="Release_Server|Any CPU" Project="Release" />
   </Project>

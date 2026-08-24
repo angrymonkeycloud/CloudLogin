@@ -97,6 +97,24 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
         return await _workspaceRegistry.UpdateAsync(workspace, user.ID);
     }
 
+    /// <summary>
+    /// Updates a workspace's profile fields on behalf of a trusted backend caller rather than a
+    /// signed-in end-user - <see cref="UpdateWorkspace"/> requires <see cref="CurrentUser"/>, which
+    /// a service-to-service request (e.g. CDM's ServiceKey-authenticated field sync) never carries.
+    /// The workspace's own recorded owner stands in as the audit actor: not a synthetic "system"
+    /// id, because the caller's ServiceKey credential is itself the trust boundary this bypasses,
+    /// and <see cref="ICloudLoginWorkspaceRegistry.UpdateAsync"/> only re-checks that the actor
+    /// still owns (or manages) the workspace being updated - which its own current owner trivially
+    /// satisfies.
+    /// </summary>
+    public async Task<CloudWorkspace> UpdateWorkspaceAsService(CloudWorkspace workspace)
+    {
+        if (_workspaceRegistry == null)
+            throw new InvalidOperationException("The account registry is not configured on this host.");
+
+        return await _workspaceRegistry.UpdateAsync(workspace, workspace.OwnerUserId);
+    }
+
     public async Task DeleteWorkspace(Guid workspaceId)
     {
         if (_workspaceRegistry == null)

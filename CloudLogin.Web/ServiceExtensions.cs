@@ -100,23 +100,11 @@ public static class MvcServiceCollectionExtensions
         // Configure CloudLoginBaseRecord with Cosmos configuration for property naming
         CloudLoginBaseRecord.CosmosConfiguration = loginConfig.Cosmos;
 
-        // Create CosmosClient with custom serialization using configurable property names
-        CosmosClientOptions cosmosClientOptions = new()
-        {
-            Serializer = new ConfigurableCosmosSerializer()
-        };
+        // Connection string or account endpoint with a credential - CosmosConfiguration owns that
+        // choice, along with the custom serializer every client in this repository must carry.
+        CosmosClient cosmosClient = loginConfig.Cosmos.CreateClient();
 
-        if (loginConfig.Cosmos.GatewayMode)
-        {
-            // Local emulators (the Linux-based Cosmos emulator) support Gateway mode only.
-            cosmosClientOptions.ConnectionMode = ConnectionMode.Gateway;
-            cosmosClientOptions.LimitToEndpoint = true;
-        }
-
-        CosmosClient cosmosClient = new(loginConfig.Cosmos.ConnectionString, cosmosClientOptions);
-
-        // Get container reference
-        var container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
+        Container container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
 
         // Register as singleton
         builder.Services.AddSingleton(container);

@@ -28,16 +28,40 @@ public static class CloudLoginHostingExtensions
     /// Adds the application's CloudLogin server project, marked so the wiring helpers below can
     /// tell it apart from every other project in the model.
     /// </summary>
-    public static IResourceBuilder<ProjectResource> AddCloudLogin<TProject>(
+    public static CloudLoginProjectBuilder AddCloudLogin<TProject>(
         this IDistributedApplicationBuilder builder,
         string name = "login")
         where TProject : IProjectMetadata, new()
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        return builder.AddProject<TProject>(name)
+        IResourceBuilder<ProjectResource> project = builder.AddProject<TProject>(name)
             .WithExternalHttpEndpoints()
             .WithAnnotation(new CloudLoginServerAnnotation());
+
+        return new CloudLoginProjectBuilder(project).ApplyCloudLoginDefaults();
+    }
+
+    /// <summary>
+    /// Adds the packaged CloudLogin server without requiring an application project.
+    /// </summary>
+    /// <param name="builder">The distributed application builder.</param>
+    /// <param name="name">The CloudLogin resource name.</param>
+    /// <returns>A CloudLogin project resource that can be referenced and deployed like any other project.</returns>
+    public static CloudLoginProjectBuilder AddCloudLogin(
+        this IDistributedApplicationBuilder builder,
+        string name = "login")
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        IResourceBuilder<ProjectResource> project = builder
+            .AddProject(name, CloudLoginStandaloneProject.Extract())
+            .WithHttpEndpoint(name: "http")
+            .WithExternalHttpEndpoints()
+            .WithAnnotation(new CloudLoginServerAnnotation());
+
+
+        return new CloudLoginProjectBuilder(project).ApplyCloudLoginDefaults();
     }
 
     /// <summary>
@@ -72,6 +96,16 @@ public static class CloudLoginHostingExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(cosmos);
         EnsureCloudLoginServer(builder, nameof(WithCloudLoginCosmos));
+
+        CloudLoginServerAnnotation annotation = GetCloudLoginServer(builder, nameof(WithCloudLoginCosmos));
+        annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
+        annotation.Apply(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
+
+        IResourceBuilder<AzureCosmosDBDatabaseResource> database = cosmos.AddCosmosDatabase(
+            $"{builder.Resource.Name}-cloudlogin-database", annotation.DatabaseId);
+        IResourceBuilder<AzureCosmosDBContainerResource> container = database.AddContainer(
+            $"{builder.Resource.Name}-cloudlogin-container", "/pk", annotation.ContainerId);
+        annotation.AddCosmosResources(database.Resource, container.Resource);
 
         // Deliberately no WithReference: that would add Aspire's own ConnectionStrings__cosmos alias
         // as well, and CloudLogin reads Cosmos:ConnectionString. On a deployed site the alias is a
@@ -308,7 +342,7 @@ public static class CloudLoginHostingExtensions
     /// the project actually exposes it, else <c>http</c>. Referencing an endpoint the launch profile
     /// does not define would silently stop the project starting during a local run.
     /// </summary>
-    private static EndpointReference GetPreferredEndpoint(IResourceBuilder<ProjectResource> project, string? endpointName)
+    internal static EndpointReference GetPreferredEndpoint(IResourceBuilder<ProjectResource> project, string? endpointName)
     {
         if (endpointName is not null)
             return project.GetEndpoint(endpointName);
@@ -326,15 +360,50 @@ public static class CloudLoginHostingExtensions
 
     private static void EnsureCloudLoginServer(IResourceBuilder<ProjectResource> builder, string method)
     {
-        if (!builder.Resource.Annotations.OfType<CloudLoginServerAnnotation>().Any())
-        {
-            throw new DistributedApplicationException(
-                $"Project '{builder.Resource.Name}' was not added with AddCloudLogin<TProject>(), so {method} has " +
-                "nothing to configure. These helpers write the CloudLogin server's own configuration section and " +
-                "only apply to the project hosting it.");
-        }
+        _ = GetCloudLoginServer(builder, method);
     }
+
+    internal static CloudLoginServerAnnotation GetCloudLoginServer(
+        IResourceBuilder<ProjectResource> builder,
+        string method) =>
+        builder.Resource.Annotations.OfType<CloudLoginServerAnnotation>().LastOrDefault()
+        ?? throw new DistributedApplicationException(
+            $"Project '{builder.Resource.Name}' was not added with AddCloudLogin<TProject>(), so {method} has " +
+            "nothing to configure. These helpers write the CloudLogin server's own configuration section and " +
+            "only apply to the project hosting it.");
 }
 
 /// <summary>Marks the project hosting the application's CloudLogin server.</summary>
-public sealed class CloudLoginServerAnnotation : IResourceAnnotation;
+public sealed class CloudLoginServerAnnotation : IResourceAnnotation
+{
+    private readonly List<(AzureCosmosDBDatabaseResource Database, AzureCosmosDBContainerResource Container)> _cosmosResources = [];
+
+    internal string DatabaseId { get; private set; } = "Users";
+    internal string ContainerId { get; private set; } = "Data";
+
+    internal void Apply(string key, string value)
+    {
+        switch (key)
+        {
+            case CloudLoginConfigurationKeys.Cosmos.DatabaseId:
+                DatabaseId = value;
+                break;
+            case CloudLoginConfigurationKeys.Cosmos.ContainerId:
+                ContainerId = value;
+                break;
+            default:
+                return;
+        }
+
+        foreach ((AzureCosmosDBDatabaseResource database, AzureCosmosDBContainerResource container) in _cosmosResources)
+        {
+            database.DatabaseName = DatabaseId;
+            container.ContainerName = ContainerId;
+        }
+    }
+
+    internal void AddCosmosResources(
+        AzureCosmosDBDatabaseResource database,
+        AzureCosmosDBContainerResource container) =>
+        _cosmosResources.Add((database, container));
+}

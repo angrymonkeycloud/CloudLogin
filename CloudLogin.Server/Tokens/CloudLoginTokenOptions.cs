@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+
 namespace AngryMonkey.CloudLogin.Server.Tokens;
 
 /// <summary>
@@ -78,6 +81,14 @@ public sealed class CloudLoginTokenOptions
         if (SigningKeyPublishGrace <= AccessTokenLifetime)
             throw new InvalidOperationException(
                 "SigningKeyPublishGrace must exceed AccessTokenLifetime, otherwise key rotation invalidates tokens that are still valid.");
+
+        foreach ((string key, CloudLoginServiceClient client) in ServiceClients)
+        {
+            if (string.IsNullOrWhiteSpace(client.ClientId))
+                client.ClientId = key;
+
+            client.NormalizeSecret();
+        }
     }
 }
 
@@ -89,13 +100,20 @@ public sealed class CloudLoginTokenOptions
 /// </summary>
 public sealed class CloudLoginServiceClient
 {
-    public required string ClientId { get; set; }
+    public string ClientId { get; set; } = string.Empty;
 
     /// <summary>
-    /// SHA-256 hash of the client secret, base64 encoded. The plaintext secret is
-    /// never held in configuration or memory on the authority side.
+    /// SHA-256 hash of the client secret, base64 encoded. Validated runtime options use this value
+    /// and do not retain the bound plaintext value.
     /// </summary>
-    public required string SecretHash { get; set; }
+    public string SecretHash { get; set; } = string.Empty;
+
+    /// <summary>
+    /// A secret supplied by a protected configuration provider. Options validation converts it to
+    /// <see cref="SecretHash"/> and clears this bound property, allowing an Aspire AppHost to give
+    /// the same generated value to both sides without storing it in source or a manifest.
+    /// </summary>
+    public string? ClientSecret { get; set; }
 
     /// <summary>Audiences this client may request delegated tokens for.</summary>
     public HashSet<string> AllowedAudiences { get; set; } = new(StringComparer.Ordinal);
@@ -116,4 +134,16 @@ public sealed class CloudLoginServiceClient
     public string? DisplayName { get; set; }
 
     public bool IsDisabled { get; set; }
+
+    internal void NormalizeSecret()
+    {
+        if (!string.IsNullOrWhiteSpace(ClientSecret))
+        {
+            SecretHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(ClientSecret)));
+            ClientSecret = null;
+        }
+
+        if (string.IsNullOrWhiteSpace(SecretHash))
+            throw new InvalidOperationException($"CloudLogin service client '{ClientId}' requires a secret or secret hash.");
+    }
 }

@@ -62,6 +62,10 @@ public static class MvcServiceCollectionExtensions
         ConfigureSecurity(builder.Services, loginConfig);
 
         builder.Services.AddCloudLoginWeb(loginConfig);
+
+        IConfigurationSection tokenConfiguration = builder.Configuration.GetSection("CloudLoginTokens");
+        if (!string.IsNullOrWhiteSpace(tokenConfiguration["Issuer"]))
+            builder.Services.AddCloudLoginTokenIssuer(tokenConfiguration);
     }
 
     /// <summary>Registers CloudLogin using a concise options callback.</summary>

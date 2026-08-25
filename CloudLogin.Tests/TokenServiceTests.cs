@@ -6,6 +6,7 @@ using AngryMonkey.CloudLogin.Server.Tokens;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -380,6 +381,37 @@ public class TokenServiceTests
     }
 
     // ── Service delegation ──────────────────────────────────────────────────
+
+    [Fact]
+    public void PlaintextServiceClientSecret_IsHashedAndClearedDuringValidation()
+    {
+        ServiceCollection services = new();
+        services.AddCloudLoginTokenIssuer(options =>
+        {
+            options.Issuer = Authority;
+            options.AllowedAudiences = [PortalAudience, CdmAudience];
+            options.ServiceClients["portal"] = new CloudLoginServiceClient
+            {
+                ClientSecret = "generated-by-aspire",
+                Audience = PortalAudience,
+                AllowedAudiences = [CdmAudience]
+            };
+        });
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        CloudLoginServiceClient client = provider
+            .GetRequiredService<IOptions<CloudLoginTokenOptions>>()
+            .Value
+            .ServiceClients["portal"];
+
+        string expected = Convert.ToBase64String(
+            SHA256.HashData(Encoding.UTF8.GetBytes("generated-by-aspire")));
+
+        Assert.Equal("portal", client.ClientId);
+        Assert.Equal(expected, client.SecretHash);
+        Assert.Null(client.ClientSecret);
+    }
 
     private static CloudLoginTokenOptions OptionsWithServiceClient(
         string clientId,

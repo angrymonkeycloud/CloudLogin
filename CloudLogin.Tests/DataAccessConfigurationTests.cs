@@ -106,6 +106,24 @@ public class DataAccessConfigurationTests
     }
 
     [Fact]
+    public void Storage_BindsAnExplicitBlobEndpointWithACredential()
+    {
+        AzureStorageConfiguration storage = AngryMonkey.CloudLogin.Aspire.CloudLoginAspireExtensions.BuildStorage(
+            new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Storage:BlobEndpoint"] = "https://examplestore.blob.core.windows.net/"
+                })
+                .Build(),
+            new StubCredential());
+
+        Assert.Equal("https://examplestore.blob.core.windows.net/", storage.BlobEndpoint?.AbsoluteUri);
+        Assert.Null(storage.ConnectionString);
+        Assert.NotNull(storage.Credential);
+        Assert.Equal("examplestore", storage.CreateContainerClient().AccountName);
+    }
+
+    [Fact]
     public void Storage_TreatsABareBlobEndpointAsAnAccountName()
     {
         // What Aspire publishes as the "connection string" of a storage account provisioned for

@@ -39,12 +39,56 @@ public static class CloudLoginConfigurationKeys
         /// <summary>Account key connection string. Mutually exclusive with <see cref="AccountName"/>.</summary>
         public const string ConnectionString = "Storage:ConnectionString";
 
+        /// <summary>Blob service endpoint reached with a credential rather than an account key.</summary>
+        public const string BlobEndpoint = "Storage:BlobEndpoint";
+
         /// <summary>Account name, reached with a credential rather than a key.</summary>
         public const string AccountName = "Storage:AccountName";
 
         /// <summary>Blob container holding CloudLogin's own files.</summary>
         public const string ContainerName = "Storage:ContainerName";
     }
+
+    /// <summary>Token-authority configuration inferred from CloudLogin resource references.</summary>
+    public static class Tokens
+    {
+        /// <summary>The absolute issuer URI used to mint and validate CloudLogin tokens.</summary>
+        public const string Issuer = "CloudLoginTokens:Issuer";
+
+        /// <summary>The audiences for which the authority may mint tokens.</summary>
+        public const string AllowedAudiences = "CloudLoginTokens:AllowedAudiences";
+
+        /// <summary>The confidential service clients allowed to request downstream tokens.</summary>
+        public const string ServiceClients = "CloudLoginTokens:ServiceClients";
+    }
+
+    /// <summary>Relying-party token configuration inferred from its CloudLogin reference.</summary>
+    public static class Client
+    {
+        /// <summary>The absolute URI of the CloudLogin authority.</summary>
+        public const string Authority = "CloudLogin:Authority";
+
+        /// <summary>The audience identifying the relying application.</summary>
+        public const string Audience = "CloudLogin:Audience";
+
+        /// <summary>The relying application's confidential client identifier.</summary>
+        public const string ClientId = "CloudLogin:ClientId";
+
+        /// <summary>The generated secret shared with the CloudLogin authority.</summary>
+        public const string ClientSecret = "CloudLogin:ClientSecret";
+    }
+
+    /// <summary>The primary color used by CloudLogin's UI.</summary>
+    public const string PrimaryColor = "CloudLogin:PrimaryColor";
+
+    /// <summary>The CloudLogin page title.</summary>
+    public const string Title = "CloudLogin:Title";
+
+    /// <summary>The Microsoft identity-provider configuration section.</summary>
+    public const string MicrosoftProvider = "Microsoft";
+
+    /// <summary>The Google identity-provider configuration section.</summary>
+    public const string GoogleProvider = "Google";
 
     /// <summary>The origin a relying party reaches the CloudLogin authority on.</summary>
     public const string LoginUrl = "LoginUrl";

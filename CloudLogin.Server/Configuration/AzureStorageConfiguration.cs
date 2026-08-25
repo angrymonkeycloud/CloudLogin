@@ -38,6 +38,9 @@ public class AzureStorageConfiguration
         ConnectionString = configurationSection["ConnectionString"];
         AccountName = configurationSection["AccountName"];
 
+        if (Uri.TryCreate(configurationSection["BlobEndpoint"], UriKind.Absolute, out Uri? blobEndpoint))
+            BlobEndpoint = blobEndpoint;
+
         if (configurationSection["ContainerName"] is { Length: > 0 } containerName)
             ContainerName = containerName;
 
@@ -54,6 +57,20 @@ public class AzureStorageConfiguration
     /// </summary>
     public string? AccountName { get; init; }
 
+    private Uri? _blobEndpoint;
+
+    /// <summary>
+    /// The explicit blob service endpoint used with <see cref="Credential"/>. When omitted, it is
+    /// derived from <see cref="AccountName"/> for compatibility with existing configuration.
+    /// </summary>
+    public Uri? BlobEndpoint
+    {
+        get => _blobEndpoint ?? (string.IsNullOrWhiteSpace(AccountName)
+            ? null
+            : new Uri($"https://{AccountName}.blob.core.windows.net"));
+        init => _blobEndpoint = value;
+    }
+
     /// <summary>
     /// The credential authenticating against <see cref="AccountName"/>. Set in code rather than
     /// bound from configuration - a credential is an object, not a value, and the whole point of
@@ -64,22 +81,11 @@ public class AzureStorageConfiguration
     public string ContainerName { get; set; } = "users";
 
     private string? _publicBaseUrl;
-    public string? PublicBaseUrl
-    {
-        get => _publicBaseUrl ?? TryBuildPublicBaseUrl();
-        set => _publicBaseUrl = value;
-    }
+    public string? PublicBaseUrl { get => _publicBaseUrl ?? TryBuildPublicBaseUrl(); set => _publicBaseUrl = value; }
 
     /// <summary>Whether either authentication mode has been configured.</summary>
-    public bool IsValid() =>
-        !string.IsNullOrWhiteSpace(ConnectionString) || !string.IsNullOrWhiteSpace(AccountName);
+    public bool IsValid() => !string.IsNullOrWhiteSpace(ConnectionString) || BlobEndpoint is not null;
 
-    /// <summary>
-    /// The blob service endpoint for <see cref="AccountName"/>, or <see langword="null"/> when no
-    /// account name is configured.
-    /// </summary>
-    public Uri? BlobEndpoint =>
-        string.IsNullOrWhiteSpace(AccountName) ? null : new Uri($"https://{AccountName}.blob.core.windows.net");
 
     /// <summary>
     /// Builds a client for the configured container. The single place either authentication mode is
@@ -99,8 +105,8 @@ public class AzureStorageConfiguration
             return new BlobContainerClient(ConnectionString, ContainerName);
 
         throw new InvalidOperationException(
-            "Azure Storage is not configured for CloudLogin. Set AzureStorage:AccountName together with a " +
-            "credential, or AzureStorage:ConnectionString.");
+            "Azure Storage is not configured for CloudLogin. Set Storage:BlobEndpoint together with a " +
+            "credential, or Storage:ConnectionString.");
     }
 
     /// <summary>
@@ -108,8 +114,8 @@ public class AzureStorageConfiguration
     /// </summary>
     private string? TryBuildPublicBaseUrl()
     {
-        if (!string.IsNullOrWhiteSpace(AccountName))
-            return $"https://{AccountName}.blob.core.windows.net/{ContainerName.Trim('/')}/";
+        if (BlobEndpoint is { } endpoint)
+            return $"{endpoint.AbsoluteUri.TrimEnd('/')}/{ContainerName.Trim('/')}/";
 
         if (string.IsNullOrWhiteSpace(ConnectionString))
             return null;

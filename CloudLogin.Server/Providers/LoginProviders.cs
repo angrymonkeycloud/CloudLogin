@@ -88,10 +88,18 @@ public class LoginProviders
         {
             ClientId = configurationSection["ClientId"];
             ClientSecret = configurationSection["ClientSecret"];
-            string label = configurationSection["Label"];
+            TenantId = configurationSection["TenantId"];
+            
+            if (Uri.TryCreate(configurationSection["VaultEndpoint"], UriKind.Absolute, out Uri? vaultEndpoint))
+                VaultEndpoint = vaultEndpoint;
+            
+            if (Enum.TryParse(configurationSection["Audience"], ignoreCase: true, out MicrosoftProviderAudience audience))
+                Audience = audience;
+
+            string? label = configurationSection["Label"];
 
             Init("Microsoft", true, label);
-            HandleUpdateOnly = handleUpdateOnly;
+            HandleUpdateOnly = configurationSection.GetValue("HandleUpdateOnly", handleUpdateOnly);
             HandlesEmailAddress = true;
         }
 

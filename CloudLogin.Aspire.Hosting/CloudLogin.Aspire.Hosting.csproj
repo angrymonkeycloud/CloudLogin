@@ -31,4 +31,14 @@
 		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<AssemblyMetadata Include="CloudLoginSourceRoot" Value="$(MSBuildProjectDirectory)\.." />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="Standalone\**\*.cs" />
+		<EmbeddedResource Include="Standalone\CloudLogin.Standalone.csproj" />
+		<EmbeddedResource Include="Standalone\Program.cs" />
+	</ItemGroup>
+
 </Project>

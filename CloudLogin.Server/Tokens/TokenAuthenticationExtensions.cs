@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -130,6 +132,26 @@ public static class CloudLoginTokenAuthenticationExtensions
             services.AddAuthorization();
 
         return services;
+    }
+
+    /// <summary>Configures token authentication from the canonical CloudLogin configuration section.</summary>
+    public static IServiceCollection AddCloudLoginTokenAuthentication(this IServiceCollection services, IConfiguration configuration, Action<CloudLoginTokenClientOptions>? configure = null)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        return services.AddCloudLoginTokenAuthentication(options =>
+        {
+            configuration.GetSection("CloudLogin").Bind(options);
+            configure?.Invoke(options);
+        });
+    }
+
+    /// <summary>Configures this relying party entirely from its host configuration.</summary>
+    public static IHostApplicationBuilder AddCloudLoginTokenAuthentication(this IHostApplicationBuilder builder, Action<CloudLoginTokenClientOptions>? configure = null)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        builder.Services.AddCloudLoginTokenAuthentication(builder.Configuration, configure);
+        return builder;
     }
 
     /// <summary>

@@ -48,8 +48,8 @@ public static class CloudLoginAspireExtensions
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(builder);
 
-        configuration.Cosmos = BuildCosmos(builder.Configuration, credential);
-        configuration.AzureStorage = BuildStorage(builder.Configuration, credential);
+        configuration.Cosmos = ApplyCosmosConfiguration(builder.Configuration, configuration.Cosmos, credential);
+        configuration.AzureStorage = ApplyStorageConfiguration(builder.Configuration, configuration.AzureStorage, credential);
 
         return configuration;
     }
@@ -62,7 +62,37 @@ public static class CloudLoginAspireExtensions
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        CosmosConfiguration cosmos = new(configuration.GetSection("Cosmos"));
+        return ApplyCosmosConfiguration(configuration, new CosmosConfiguration(configuration.GetSection("Cosmos")), credential);
+    }
+
+    private static CosmosConfiguration ApplyCosmosConfiguration(IConfiguration configuration, CosmosConfiguration cosmos, TokenCredential? credential)
+    {
+        IConfigurationSection section = configuration.GetSection("Cosmos");
+
+        if (section.Exists())
+        {
+            section.Bind(cosmos);
+
+            if (section["IncludeLegacySchema"] is null && section["UseLegacySchema"] is not null)
+                cosmos.IncludeLegacySchema = section.GetValue<bool>("UseLegacySchema");
+
+            if (section["SaveIdMode"] is null && Enum.TryParse(section["IdFormat"], ignoreCase: true, out IdSaveMode saveMode))
+                cosmos.SaveIdMode = saveMode;
+
+            bool hasEndpoint = section["AccountEndpoint"] is not null;
+            bool hasConnectionString = section["ConnectionString"] is not null;
+
+            if (hasEndpoint)
+            {
+                cosmos.ConnectionString = null;
+                cosmos.Credential = null;
+            }
+            else if (hasConnectionString && !IsBareEndpoint(cosmos.ConnectionString))
+            {
+                cosmos.AccountEndpoint = null;
+                cosmos.Credential = null;
+            }
+        }
 
         // A Cosmos account Aspire provisioned for credential access has no key to put in a connection
         // string, so what it publishes as one is the account endpoint on its own. Recognising that
@@ -75,7 +105,7 @@ public static class CloudLoginAspireExtensions
         }
 
         if (!string.IsNullOrWhiteSpace(cosmos.AccountEndpoint) && string.IsNullOrWhiteSpace(cosmos.ConnectionString))
-            cosmos.Credential = credential ?? new DefaultAzureCredential();
+            cosmos.Credential = credential ?? cosmos.Credential ?? new DefaultAzureCredential();
 
         return cosmos;
     }
@@ -98,22 +128,72 @@ public static class CloudLoginAspireExtensions
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        AzureStorageConfiguration storage = new(configuration.GetSection("Storage"));
+        return ApplyStorageConfiguration(configuration, null, credential)
+            ?? new AzureStorageConfiguration();
+    }
 
-        // Same as Cosmos: a storage account provisioned for credential access publishes its blob
-        // endpoint where a connection string would otherwise go. The account name is the first label
-        // of that host.
-        if (string.IsNullOrWhiteSpace(storage.AccountName) && IsBareEndpoint(storage.ConnectionString))
+    private static AzureStorageConfiguration? ApplyStorageConfiguration(
+        IConfiguration configuration,
+        AzureStorageConfiguration? projectStorage,
+        TokenCredential? credential)
+    {
+        IConfigurationSection section = configuration.GetSection("Storage");
+
+        if (!section.Exists())
         {
-            storage = new AzureStorageConfiguration
-            {
-                AccountName = new Uri(storage.ConnectionString!).Host.Split('.')[0],
-                ContainerName = storage.ContainerName
-            };
+            if (projectStorage?.BlobEndpoint is not null && string.IsNullOrWhiteSpace(projectStorage.ConnectionString))
+                projectStorage.Credential = credential ?? projectStorage.Credential ?? new DefaultAzureCredential();
+
+            return projectStorage;
         }
 
-        if (!string.IsNullOrWhiteSpace(storage.AccountName) && string.IsNullOrWhiteSpace(storage.ConnectionString))
-            storage.Credential = credential ?? new DefaultAzureCredential();
+        bool hasConnectionString = section["ConnectionString"] is not null;
+        bool hasBlobEndpoint = section["BlobEndpoint"] is not null;
+        bool hasAccountName = section["AccountName"] is not null;
+        string? configuredConnectionString = section["ConnectionString"];
+
+        if (hasConnectionString && IsBareEndpoint(configuredConnectionString))
+        {
+            hasBlobEndpoint = true;
+            configuredConnectionString = null;
+        }
+
+        Uri? configuredBlobEndpoint = null;
+        string? blobEndpointValue = section["BlobEndpoint"]
+            ?? (hasBlobEndpoint ? section["ConnectionString"] : null);
+        if (Uri.TryCreate(blobEndpointValue, UriKind.Absolute, out Uri? endpoint))
+            configuredBlobEndpoint = endpoint;
+
+        bool hostChangedAuthentication = hasConnectionString || hasBlobEndpoint || hasAccountName;
+        bool usesHostCredential = hasBlobEndpoint || hasAccountName;
+        string? accountName = hasAccountName
+            ? section["AccountName"]
+            : hasBlobEndpoint
+                ? configuredBlobEndpoint?.Host.Split('.')[0]
+                : hasConnectionString
+                    ? null
+                    : projectStorage?.AccountName;
+        Uri? blobEndpoint = hasBlobEndpoint
+            ? configuredBlobEndpoint
+            : hasAccountName || hasConnectionString ? null : projectStorage?.BlobEndpoint;
+        string? connectionString = usesHostCredential ? null : hasConnectionString ? configuredConnectionString : projectStorage?.ConnectionString;
+
+        AzureStorageConfiguration storage = new()
+        {
+            AccountName = accountName,
+            BlobEndpoint = blobEndpoint,
+            ConnectionString = connectionString,
+            ContainerName = section["ContainerName"] is { Length: > 0 } containerName
+                ? containerName
+                : projectStorage?.ContainerName ?? "users",
+            PublicBaseUrl = section["PublicBaseUrl"]
+                ?? (hostChangedAuthentication ? null : projectStorage?.PublicBaseUrl)
+        };
+
+        // Compatibility for deployments produced before managed identity values were projected
+        // under Storage:BlobEndpoint.
+        if (storage.BlobEndpoint is not null && string.IsNullOrWhiteSpace(storage.ConnectionString))
+            storage.Credential = credential ?? projectStorage?.Credential ?? new DefaultAzureCredential();
 
         return storage;
     }

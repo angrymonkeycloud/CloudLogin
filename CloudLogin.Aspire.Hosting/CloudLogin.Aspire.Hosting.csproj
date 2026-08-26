@@ -36,6 +36,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\CloudLogin.Server\CloudLogin.Server.csproj" />
+		<ProjectReference Include="..\..\..\CoconutSharp\CoconutSharpAspire\src\CoconutSharp.Aspire.Abstractions\CoconutSharp.Aspire.Abstractions.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

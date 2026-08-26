@@ -2,6 +2,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
 using AngryMonkey.CloudLogin.Server;
+using CoconutSharp.Aspire.Hosting;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 
@@ -83,32 +84,34 @@ public static class CloudLoginReferenceExtensions
                 .WithEnvironment("TestMode:IsEnabled", "true");
         }
 
-        List<AzureCosmosDBResource> cosmosResources = [.. builder.Resources.OfType<AzureCosmosDBResource>()];
-        IResourceBuilder<AzureCosmosDBResource>? cosmos = cosmosResources.Count switch
-        {
-            0 => builder.AddAzureCosmosDB($"{cloudLogin.Resource.Name}-cosmos"),
-            1 => builder.CreateResourceBuilder(cosmosResources[0]),
-            _ => null
-        };
+        CloudLoginServerAnnotation annotation =
+            CloudLoginHostingExtensions.GetCloudLoginServer(cloudLogin, nameof(ApplyCloudLoginDefaults));
 
-        List<AzureStorageResource> storageResources = [.. builder.Resources.OfType<AzureStorageResource>()];
-        IResourceBuilder<AzureStorageResource>? storage = storageResources.Count switch
+        // Declared, not wired. Where the user store and the file store actually live is the
+        // application's decision - WithDatabase / WithStorage, on this project, on the active
+        // publish environment, or on the builder - and it is resolved once, at build time. Naming
+        // nothing still works: the application's single account is adopted, or one is created.
+        cloudLogin.WithDataRequirements(new CoconutDataRequirements
         {
-            0 => builder.AddAzureStorage($"{cloudLogin.Resource.Name}-storage"),
-            1 => builder.CreateResourceBuilder(storageResources[0]),
-            _ => null
-        };
-
-        if (cosmos is not null)
-        {
-            CloudLoginServerAnnotation annotation =
-                CloudLoginHostingExtensions.GetCloudLoginServer(cloudLogin, nameof(ApplyCloudLoginDefaults));
-            CloudLoginHostingExtensions.WithCloudLoginCosmos(
-                cloudLogin, cosmos, annotation.DatabaseId, annotation.ContainerId);
-        }
-
-        if (storage is not null)
-            CloudLoginHostingExtensions.WithCloudLoginStorage(cloudLogin, storage);
+            Database = new CoconutDatabaseRequirements
+            {
+                ResourceNameStem = $"{cloudLogin.Resource.Name}-cloudlogin",
+                ConnectionStringKey = CloudLoginConfigurationKeys.Cosmos.ConnectionString,
+                AccountEndpointKey = CloudLoginConfigurationKeys.Cosmos.AccountEndpoint,
+                DatabaseNameKey = CloudLoginConfigurationKeys.Cosmos.DatabaseId,
+                CollectionNameKey = CloudLoginConfigurationKeys.Cosmos.ContainerId,
+                GatewayModeKey = CloudLoginConfigurationKeys.Cosmos.GatewayMode,
+                DatabaseName = () => annotation.DatabaseId,
+                CollectionName = () => annotation.ContainerId,
+                OnProvisioned = annotation.AddCosmosResources
+            },
+            Storage = new CoconutStorageRequirements
+            {
+                ResourceNameStem = $"{cloudLogin.Resource.Name}-cloudlogin",
+                ConnectionStringKey = CloudLoginConfigurationKeys.Storage.ConnectionString,
+                AccountNameKey = CloudLoginConfigurationKeys.Storage.AccountName
+            }
+        });
 
         cloudLogin.WithEnvironment(
             CloudLoginConfigurationKeys.Tokens.Issuer,

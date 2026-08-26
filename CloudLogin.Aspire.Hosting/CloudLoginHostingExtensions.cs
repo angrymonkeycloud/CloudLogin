@@ -2,6 +2,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
 using AngryMonkey.CloudLogin.Server;
+using CoconutSharp.Aspire.Hosting;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 
@@ -113,13 +114,15 @@ public static class CloudLoginHostingExtensions
     }
 
     /// <summary>
-    /// Wires CloudLogin's user store to a Cosmos DB resource: locally the emulator, in a deployment
-    /// whatever that resource resolves to.
+    /// Wires CloudLogin's user store to a Cosmos DB resource.
     /// </summary>
     /// <param name="builder">The CloudLogin server project.</param>
     /// <param name="cosmos">The Cosmos DB resource holding the user store.</param>
     /// <param name="databaseId">Database holding the user container.</param>
     /// <param name="containerId">Container holding user records.</param>
+    [Obsolete("Use WithDatabase(cosmos). Names the same source in the vocabulary every Angry Monkey " +
+        "component shares, and can be set on the application builder or a publish environment to reach " +
+        "every component at once. Database and container names belong to AddCloudLogin's own configuration.")]
     public static IResourceBuilder<ProjectResource> WithCloudLoginCosmos(
         this IResourceBuilder<ProjectResource> builder,
         IResourceBuilder<AzureCosmosDBResource> cosmos,
@@ -128,44 +131,12 @@ public static class CloudLoginHostingExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(cosmos);
-        EnsureCloudLoginServer(builder, nameof(WithCloudLoginCosmos));
 
         CloudLoginServerAnnotation annotation = GetCloudLoginServer(builder, nameof(WithCloudLoginCosmos));
         annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
         annotation.Apply(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
 
-        IResourceBuilder<AzureCosmosDBDatabaseResource> database = cosmos.AddCosmosDatabase(
-            $"{builder.Resource.Name}-cloudlogin-database", annotation.DatabaseId);
-        IResourceBuilder<AzureCosmosDBContainerResource> container = database.AddContainer(
-            $"{builder.Resource.Name}-cloudlogin-container", "/pk", annotation.ContainerId);
-        annotation.AddCosmosResources(database.Resource, container.Resource);
-
-        // Deliberately no WithReference: that would add Aspire's own ConnectionStrings__cosmos alias
-        // as well, and CloudLogin reads Cosmos:ConnectionString. On a deployed site the alias is a
-        // second copy of the same credential that nothing reads.
-        builder
-            .WithEnvironment(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId)
-            .WithEnvironment(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
-
-        // In a local run the connection string is built from the emulator container's allocated
-        // endpoints, so starting the server first hands it nothing to connect to - and CloudLogin
-        // opens its user container during startup, which turns that into a crash rather than a retry.
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-            builder.WaitFor(cosmos);
-
-        return builder.WithEnvironment(context =>
-        {
-            // ConnectionStringReference is the value object a native WithReference injects: it
-            // resolves through the resource's own connection-string logic - emulator, redirects,
-            // readiness - rather than assembling one from endpoints this package cannot see.
-            context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.ConnectionString] =
-                new ConnectionStringReference(cosmos.Resource, optional: true);
-
-            // The Linux-based Cosmos emulator speaks Gateway mode only, and nothing but a local run
-            // uses an emulator.
-            if (context.ExecutionContext.IsRunMode && cosmos.Resource.IsEmulator)
-                context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.GatewayMode] = "true";
-        });
+        return builder.WithDatabase(cosmos);
     }
 
     /// <summary>
@@ -179,6 +150,9 @@ public static class CloudLoginHostingExtensions
     /// blob child - which an environment can redirect to an externally supplied connection string,
     /// or replace outright with <see cref="WithCloudLoginStorageAccount"/> for credential access.
     /// </remarks>
+    [Obsolete("Use WithStorage(storage). Names the same source in the vocabulary every Angry Monkey " +
+        "component shares, and can be set on the application builder or a publish environment to reach " +
+        "every component at once.")]
     public static IResourceBuilder<ProjectResource> WithCloudLoginStorage(
         this IResourceBuilder<ProjectResource> builder,
         IResourceBuilder<AzureStorageResource> storage,
@@ -188,63 +162,10 @@ public static class CloudLoginHostingExtensions
         ArgumentNullException.ThrowIfNull(storage);
         EnsureCloudLoginServer(builder, nameof(WithCloudLoginStorage));
 
-        // See WithCloudLoginCosmos: locally this resolves from a running Azurite container.
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-            builder.WaitFor(storage);
-
-        IResourceBuilder<AzureBlobStorageResource> blobs = storage.AddBlobs($"{storage.Resource.Name}-cloudlogin");
-
-        builder.WithEnvironment(context =>
-        {
-            if (context.ExecutionContext.IsRunMode)
-            {
-                if (storage.Resource.IsEmulator && AzuriteConnectionString(storage.Resource) is { } emulator)
-                    context.EnvironmentVariables[CloudLoginConfigurationKeys.Storage.ConnectionString] = emulator;
-
-                return;
-            }
-
-            context.EnvironmentVariables[CloudLoginConfigurationKeys.Storage.ConnectionString] =
-                new ConnectionStringReference(blobs.Resource, optional: true);
-        });
-
         if (containerName is not null)
             builder.WithEnvironment(CloudLoginConfigurationKeys.Storage.ContainerName, containerName);
 
-        return builder;
-    }
-
-    // Azurite's well-known development credentials. Public constants, not secrets.
-    private const string AzuriteAccountName = "devstoreaccount1";
-    private const string AzuriteAccountKey =
-        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
-
-    /// <summary>
-    /// Assembles the emulator's connection string from its allocated endpoints, or
-    /// <see langword="null"/> while they have not been allocated yet.
-    /// </summary>
-    /// <remarks>
-    /// Environment callbacks also run for early dependency analysis, before endpoints exist; only the
-    /// start-time invocation produces a value. The endpoints are addressed by IP because the Azure
-    /// Storage SDK drops the account path from a <c>localhost</c> endpoint - path-style parsing
-    /// applies to IP hosts only - which is what makes Azurite reject the request.
-    /// </remarks>
-    private static string? AzuriteConnectionString(AzureStorageResource storage)
-    {
-        EndpointReference blob = new(storage, "blob");
-        EndpointReference queue = new(storage, "queue");
-        EndpointReference table = new(storage, "table");
-
-        if (!blob.IsAllocated || !queue.IsAllocated || !table.IsAllocated)
-            return null;
-
-        return $"DefaultEndpointsProtocol=http;AccountName={AzuriteAccountName};AccountKey={AzuriteAccountKey};" +
-            $"BlobEndpoint={Url(blob)}/{AzuriteAccountName};" +
-            $"QueueEndpoint={Url(queue)}/{AzuriteAccountName};" +
-            $"TableEndpoint={Url(table)}/{AzuriteAccountName};";
-
-        static string Url(EndpointReference endpoint) =>
-            endpoint.Url.Replace("://localhost", "://127.0.0.1", StringComparison.OrdinalIgnoreCase);
+        return builder.WithStorage(storage);
     }
 
     /// <summary>
@@ -256,6 +177,7 @@ public static class CloudLoginHostingExtensions
     /// an account name is only usable when the application actually has an identity with data-plane
     /// access to that account, which is a property of the deployment rather than of the wiring.
     /// </remarks>
+    [Obsolete("Use WithStorageAccount(accountName).")]
     public static IResourceBuilder<ProjectResource> WithCloudLoginStorageAccount(
         this IResourceBuilder<ProjectResource> builder,
         string accountName,
@@ -265,17 +187,16 @@ public static class CloudLoginHostingExtensions
         ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
         EnsureCloudLoginServer(builder, nameof(WithCloudLoginStorageAccount));
 
-        builder.WithEnvironment(CloudLoginConfigurationKeys.Storage.AccountName, accountName);
-
         if (containerName is not null)
             builder.WithEnvironment(CloudLoginConfigurationKeys.Storage.ContainerName, containerName);
 
-        return builder;
+        return builder.WithStorageAccount(accountName);
     }
 
     /// <summary>
     /// Reaches CloudLogin's user store by credential rather than by key.
     /// </summary>
+    [Obsolete("Use WithDatabaseEndpoint(accountEndpoint).")]
     public static IResourceBuilder<ProjectResource> WithCloudLoginCosmosEndpoint(
         this IResourceBuilder<ProjectResource> builder,
         string accountEndpoint)
@@ -284,7 +205,7 @@ public static class CloudLoginHostingExtensions
         ArgumentException.ThrowIfNullOrWhiteSpace(accountEndpoint);
         EnsureCloudLoginServer(builder, nameof(WithCloudLoginCosmosEndpoint));
 
-        return builder.WithEnvironment(CloudLoginConfigurationKeys.Cosmos.AccountEndpoint, accountEndpoint);
+        return builder.WithDatabaseEndpoint(accountEndpoint);
     }
 
 

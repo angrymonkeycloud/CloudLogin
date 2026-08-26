@@ -26,8 +26,21 @@ public abstract class CloudLoginBaseService : ICloudLoginService
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public event Action<CloudUser?>? UserChanged;
-    public event Action<string>? RequestIdChanged;
+    private static Action<CloudUser?>? _userChanged;
+    private static Action<string>? _requestIdChanged;
+    private static readonly object EventLock = new();
+
+    public event Action<CloudUser?>? UserChanged
+    {
+        add { lock (EventLock) _userChanged += value; }
+        remove { lock (EventLock) _userChanged -= value; }
+    }
+
+    public event Action<string>? RequestIdChanged
+    {
+        add { lock (EventLock) _requestIdChanged += value; }
+        remove { lock (EventLock) _requestIdChanged -= value; }
+    }
 
     protected readonly string LocalLoginPagePath = "/cloudlogin/login";
 
@@ -40,7 +53,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
             _requestId = value;
 
             if (!string.IsNullOrEmpty(value))
-                try { RequestIdChanged?.Invoke(value); } catch { }
+                try { _requestIdChanged?.Invoke(value); } catch { }
         }
     }
     public void SetRequestId(string? requestId) => RequestId = requestId;
@@ -86,7 +99,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
             }
 
             User = await resp.Content.ReadFromJsonAsync<CloudUser>(JsonOptions);
-            UserChanged?.Invoke(_user);
+            _userChanged?.Invoke(_user);
         }
         catch (Exception ex)
         {
@@ -133,7 +146,7 @@ public abstract class CloudLoginBaseService : ICloudLoginService
         User = null;
     }
 
-    protected void RaiseUserChanged(CloudUser? user) => UserChanged?.Invoke(user);
+    protected void RaiseUserChanged(CloudUser? user) => _userChanged?.Invoke(user);
 
 
 }

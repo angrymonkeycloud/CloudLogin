@@ -13,18 +13,13 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
 
     private const string LocalStorageUserKey = "angrymonkey.cloudlogin.user";
 
-    private bool _initialized;
-    private Task? _initTask;
+    private static Task? _initTask;
+    private static readonly object InitLock = new();
 
     private Task EnsureInitializedAsync()
     {
-        if (_initialized)
-            return Task.CompletedTask;
-
-        _initialized = true;
-        _initTask = InitializeAsync();
-
-        return _initTask;
+        lock (InitLock)
+            return _initTask ??= InitializeAsync();
     }
 
     public async Task InitializeAsync()
@@ -101,22 +96,22 @@ public class CloudLoginWebService(NavigationManager navigationManager, IJSRuntim
             Debug.WriteLine($"[Web AccountService] Error refreshing user: {ex.Message}");
         }
 
-        Guid? previousId = User?.ID;
-
         if (newUser is not null)
         {
             User = newUser; // Resets RequestId in base
 
-            if (newUser.ID != previousId)
-                RaiseUserChanged(User);
+            // Raised even when the id is unchanged. This call is what confirms the session
+            // against the server after a sign-in round trip, and the subscribers that care
+            // (the account UI, the role loader) are typically constructed after the cached
+            // user was restored from localStorage - so an id-changed check would find the id
+            // already equal and stay silent, leaving them showing a signed-out UI and an
+            // empty role set until the user clicked again or reloaded the page.
+            RaiseUserChanged(User);
         }
-        else
+        else if (User is not null)
         {
-            if (User is not null)
-            {
-                OnUserSignedOut();
-                RaiseUserChanged(null);
-            }
+            OnUserSignedOut();
+            RaiseUserChanged(null);
         }
 
         return User;

@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace AngryMonkey.CloudLogin.Server;
@@ -101,8 +103,38 @@ public class ProviderConfigurationService
         options.Scope.Clear();
         ConfigureMicrosoftOpenIdScopes(options);
         ConfigureMicrosoftOpenIdClaims(options);
+        ConfigureMicrosoftOpenIdIssuerValidation(options, provider.Audience);
         ConfigureMicrosoftOpenIdEvents(options, provider);
     }
+
+    // login.microsoftonline.com's shared /common, /organizations, and /consumers endpoints all
+    // serve the SAME OpenID discovery document, whose "issuer" field is the literal, unresolved
+    // "{tenantid}" template rather than a real value - the default validator compares that
+    // template against the signed-in user's concrete tenant issuer and rejects every sign-in.
+    // A single-tenant authority is not affected: its discovery document already names the one
+    // real tenant. Accepting sign-in from any tenant/personal account here is not a relaxation -
+    // it is exactly what this app registration (sign-in audience
+    // AzureADandPersonalMicrosoftAccount) already grants; only the URL shape is checked.
+    /// <summary>Matches a concrete per-tenant Microsoft identity platform v2.0 issuer URL.</summary>
+    public static readonly Regex MicrosoftIssuerPattern =
+        new(@"^https://(login\.microsoftonline\.com|login\.windows\.net)/[0-9a-fA-F-]{36}/v2\.0/?$", RegexOptions.Compiled);
+
+    private static void ConfigureMicrosoftOpenIdIssuerValidation(OpenIdConnectOptions options, MicrosoftProviderAudience audience)
+    {
+        if (audience is MicrosoftProviderAudience.SingleTenant)
+            return;
+
+        options.TokenValidationParameters.IssuerValidator = ValidateMicrosoftIssuer;
+    }
+
+    /// <summary>
+    /// The issuer validator installed for every multi-tenant/personal Microsoft audience. Exposed
+    /// so tests can assert its behavior directly against <see cref="MicrosoftIssuerPattern"/>.
+    /// </summary>
+    public static string ValidateMicrosoftIssuer(string? issuer, SecurityToken token, TokenValidationParameters parameters) =>
+        issuer is not null && MicrosoftIssuerPattern.IsMatch(issuer)
+            ? issuer
+            : throw new SecurityTokenInvalidIssuerException($"'{issuer}' is not a recognized Microsoft identity platform issuer.") { InvalidIssuer = issuer };
 
     private void ConfigureMicrosoftOpenIdScopes(OpenIdConnectOptions options)
     {

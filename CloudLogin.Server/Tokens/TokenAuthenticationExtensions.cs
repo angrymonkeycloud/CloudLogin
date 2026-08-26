@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -55,16 +56,28 @@ public static class CloudLoginTokenAuthenticationExtensions
         services.Configure(configure);
 
         services.AddHttpClient(CloudLoginTokenClientOptions.HttpClientName);
+
+        // Delegated tokens are cached here, so a page that makes twenty downstream calls
+        // performs one exchange rather than twenty.
+        services.AddMemoryCache();
+
         services.AddScoped<ICloudLoginUserContext, CloudLoginUserContext>();
         services.AddScoped<ICloudLoginTokenProvider, CloudLoginTokenProvider>();
-        services.AddTransient<CloudLoginTokenHandler>();
+
+        // Built explicitly rather than by constructor injection: the handler's audience
+        // is an optional constructor argument, which the container has no way to supply.
+        services.AddTransient(provider => new CloudLoginTokenHandler(
+            provider.GetRequiredService<ICloudLoginTokenProvider>(),
+            provider.GetRequiredService<IOptions<CloudLoginTokenClientOptions>>()));
 
         services.AddAuthentication(SchemeName)
             .AddPolicyScheme(SchemeName, SchemeName, policy =>
             {
                 policy.ForwardDefaultSelector = context =>
                     context.Request.Headers.Authorization.ToString()
-                        .StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                        .StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ||
+                    (IsWebSocketHandshake(context) &&
+                     !string.IsNullOrWhiteSpace(context.Request.Query["access_token"]))
                         ? JwtBearerDefaults.AuthenticationScheme
                         : CookieAuthenticationDefaults.AuthenticationScheme;
             })
@@ -103,6 +116,21 @@ public static class CloudLoginTokenAuthenticationExtensions
 
                 jwt.Events = new JwtBearerEvents
                 {
+                    // A browser cannot set headers on a WebSocket handshake, so SignalR
+                    // puts the token in the query string instead. Accepted only for an
+                    // actual WebSocket upgrade or a SignalR negotiate: a token in a URL
+                    // is a credential in every access log it passes through, and this
+                    // keeps that to the one case that has no alternative.
+                    OnMessageReceived = context =>
+                    {
+                        string? queryToken = context.Request.Query["access_token"];
+
+                        if (!string.IsNullOrWhiteSpace(queryToken) && IsWebSocketHandshake(context.HttpContext))
+                            context.Token = queryToken;
+
+                        return Task.CompletedTask;
+                    },
+
                     OnAuthenticationFailed = context =>
                     {
                         ILogger logger = context.HttpContext.RequestServices
@@ -134,6 +162,14 @@ public static class CloudLoginTokenAuthenticationExtensions
         return services;
     }
 
+    /// <summary>
+    /// Whether the request is a SignalR transport handshake &mdash; the WebSocket upgrade
+    /// itself, or the negotiate that precedes it.
+    /// </summary>
+    private static bool IsWebSocketHandshake(HttpContext context) =>
+        context.WebSockets.IsWebSocketRequest ||
+        context.Request.Path.Value?.EndsWith("/negotiate", StringComparison.OrdinalIgnoreCase) == true;
+
     /// <summary>Configures token authentication from the canonical CloudLogin configuration section.</summary>
     public static IServiceCollection AddCloudLoginTokenAuthentication(this IServiceCollection services, IConfiguration configuration, Action<CloudLoginTokenClientOptions>? configure = null)
     {
@@ -158,11 +194,36 @@ public static class CloudLoginTokenAuthenticationExtensions
     /// Registers a typed <see cref="HttpClient"/> whose requests automatically carry
     /// the signed-in user's access token.
     /// </summary>
+    /// <param name="audience">
+    /// The audience of the service at <paramref name="baseAddress"/>. Give it whenever
+    /// the target is a different service: an access token names exactly one audience,
+    /// and this application's own token is rejected everywhere else. Leave it out only
+    /// when the target validates this application's own audience, or when the service
+    /// is already declared in <c>CloudLogin:DownstreamServices</c> and can be matched
+    /// by base address.
+    /// </param>
     public static IHttpClientBuilder AddCloudLoginAuthenticatedClient<TClient>(
         this IServiceCollection services,
-        Uri baseAddress)
+        Uri baseAddress,
+        string? audience = null)
         where TClient : class =>
         services
             .AddHttpClient<TClient>(client => client.BaseAddress = baseAddress)
-            .AddHttpMessageHandler<CloudLoginTokenHandler>();
+            .AddCloudLoginToken(audience);
+
+    /// <summary>
+    /// Makes an already-registered <see cref="HttpClient"/> carry the signed-in user's
+    /// access token, minted for <paramref name="audience"/>.
+    /// </summary>
+    public static IHttpClientBuilder AddCloudLoginToken(
+        this IHttpClientBuilder builder,
+        string? audience = null)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        return builder.AddHttpMessageHandler(provider => new CloudLoginTokenHandler(
+            provider.GetRequiredService<ICloudLoginTokenProvider>(),
+            provider.GetRequiredService<IOptions<CloudLoginTokenClientOptions>>(),
+            audience));
+    }
 }

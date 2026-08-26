@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.0.0</Version>
+		<Version>2.0.0</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Aspire hosting integration for CloudLogin: adds the CloudLogin server to a distributed application and wires its Cosmos, Azure Storage and authority configuration.</Description>
@@ -20,10 +20,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Aspire.Hosting" Version="13.5.2" />
-		<PackageReference Include="Aspire.Hosting.Azure" Version="13.5.2" />
-		<PackageReference Include="Aspire.Hosting.Azure.CosmosDB" Version="13.5.2" />
-		<PackageReference Include="Aspire.Hosting.Azure.Storage" Version="13.5.2" />
+		<PackageReference Include="Aspire.Hosting" Version="13.5.3" />
+		<PackageReference Include="Aspire.Hosting.Azure" Version="13.5.3" />
+		<PackageReference Include="Aspire.Hosting.Azure.CosmosDB" Version="13.5.3" />
+		<PackageReference Include="Aspire.Hosting.Azure.Storage" Version="13.5.3" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.29.1" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
 		<PackageReference Include="Azure.Storage.Common" Version="12.28.0" />
@@ -48,4 +48,4 @@
 		<EmbeddedResource Include="Standalone\Program.cs" />
 	</ItemGroup>
 
-</Project>
+<ItemGroup><None Update="amc-logo.png"><Pack>True</Pack><PackagePath>\</PackagePath></None></ItemGroup></Project>

@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using AngryMonkey.CloudLogin.Server.Tokens;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.JsonWebTokens;
 using System.Collections.Specialized;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -22,7 +24,8 @@ public class AuthController(
     IHttpClientFactory httpClientFactory,
     ILogger<AuthController> logger,
     IDataProtectionProvider dataProtectionProvider,
-    IOptions<CloudLoginTokenClientOptions>? tokenOptions = null) : ControllerBase
+    IOptions<CloudLoginTokenClientOptions>? tokenOptions = null,
+    ICloudLoginTokenProvider? tokenProvider = null) : ControllerBase
 {
     /// <summary>
     /// Service-client settings for the token exchange. Null when this application has
@@ -219,6 +222,123 @@ public class AuthController(
         {
             _logger.LogError(ex, "Error during login callback");
             return Redirect("/?error=callback_failed");
+        }
+    }
+
+    /// <summary>
+    /// Hands this application's own front end a short-lived access token for a
+    /// downstream service.
+    /// <para>
+    /// A browser or native client cannot use the downstream service's session cookie:
+    /// that cookie belongs to another origin and was never issued to this user here.
+    /// This endpoint closes that gap without weakening anything &mdash; the session
+    /// cookie stays HttpOnly, the refresh token and the service-client secret never
+    /// leave the server, and what the client receives expires in minutes and is
+    /// accepted by exactly one service.
+    /// </para>
+    /// </summary>
+    [HttpGet("token")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Token(
+        [FromQuery] string? audience = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (tokenProvider is null || _tokenOptions is null)
+            return Problem(
+                "This application is not configured to issue downstream tokens.",
+                statusCode: StatusCodes.Status501NotImplemented);
+
+        // Authenticate against the cookie explicitly rather than through the default
+        // scheme. The default forwards a bearer token to the JWT handler, which would
+        // let a service that already holds a token for this application mint further
+        // tokens from it — turning one audience into every audience.
+        AuthenticateResult session = await HttpContext.AuthenticateAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme);
+
+        if (!session.Succeeded)
+            return Unauthorized();
+
+        // A token request is only ever made by this application's own front end. Another
+        // site cannot read the response across origins, but it can cause the request to
+        // be sent, so refuse it at the source instead of relying on the browser to
+        // withhold the result.
+        // Answered as an API, not with the cookie handler's access-denied redirect: a 302
+        // to a sign-in page would reach the caller as an HTML body where it expected a
+        // token, turning a clear refusal into a parse failure.
+        if (!IsFirstPartyRequest())
+        {
+            _logger.LogWarning("Rejected a cross-site downstream token request.");
+            return Problem("Token requests are only served to this application's own front end.",
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+
+        string requested = string.IsNullOrWhiteSpace(audience) ? _tokenOptions.Audience : audience;
+
+        string? accessToken = await tokenProvider.GetAccessTokenAsync(
+            requested,
+            forceRefresh: false,
+            cancellationToken);
+
+        // The authority decides which audiences this application may delegate to, so a
+        // null here is its answer, not a local policy decision.
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return Problem($"No token could be issued for audience '{requested}'.",
+                statusCode: StatusCodes.Status403Forbidden);
+
+        return Ok(new CloudLoginDownstreamTokenResponse
+        {
+            AccessToken = accessToken,
+            ExpiresIn = RemainingLifetimeSeconds(accessToken),
+            Audience = requested
+        });
+    }
+
+    /// <summary>
+    /// Whether the request came from this application itself rather than another site.
+    /// <para>
+    /// <c>same-site</c> is rejected along with <c>cross-site</c>: a sibling subdomain is
+    /// a different application, and this endpoint hands out credentials.
+    /// </para>
+    /// </summary>
+    private bool IsFirstPartyRequest()
+    {
+        // Browsers always send this; native clients send neither header, and "none" is a
+        // user-initiated navigation.
+        string? fetchSite = Request.Headers["Sec-Fetch-Site"].FirstOrDefault();
+
+        if (!string.IsNullOrEmpty(fetchSite) &&
+            !string.Equals(fetchSite, "same-origin", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(fetchSite, "none", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        string? origin = Request.Headers.Origin.FirstOrDefault();
+
+        if (string.IsNullOrEmpty(origin))
+            return true;
+
+        return Uri.TryCreate(origin, UriKind.Absolute, out Uri? originUri)
+            && string.Equals(originUri.Scheme, Request.Scheme, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(originUri.Authority, Request.Host.Value, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Seconds the token has left, read from its own <c>exp</c> claim.
+    /// <para>
+    /// Reading, not validating: the client needs a refresh hint, and the only party that
+    /// decides whether this token is acceptable is the service that receives it.
+    /// </para>
+    /// </summary>
+    private static int RemainingLifetimeSeconds(string accessToken)
+    {
+        try
+        {
+            double seconds = (new JsonWebToken(accessToken).ValidTo - DateTime.UtcNow).TotalSeconds;
+            return seconds > 0 ? (int)seconds : 0;
+        }
+        catch (ArgumentException)
+        {
+            // Unreadable means the client should not cache it at all.
+            return 0;
         }
     }
 

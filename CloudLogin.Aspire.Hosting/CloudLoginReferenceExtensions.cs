@@ -187,6 +187,64 @@ public static class CloudLoginReferenceExtensions
                 $"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:AllowedAudiences:{allowedIndex++}",
                 allowedAudience);
         }
+
+        PublishDownstreamServices(builder, cloudLogin);
+    }
+
+    /// <summary>
+    /// Tells this application which audience belongs to each service it references, so
+    /// its outbound calls carry a token that service will actually accept.
+    /// <para>
+    /// The authority is already told which audiences this client may request; without the
+    /// matching view on the client side, the application knows it is allowed to delegate
+    /// but not what to delegate to, and sends its own token to a service that validates a
+    /// different audience. That is rejected, the request arrives anonymous, and the
+    /// receiving service answers 403 &mdash; a denial that looks nothing like a
+    /// misconfigured audience.
+    /// </para>
+    /// <para>
+    /// Evaluated lazily: sibling services register with the authority in whatever order
+    /// the AppHost happens to declare them, and only at run or publish time is that list
+    /// complete.
+    /// </para>
+    /// </summary>
+    private static void PublishDownstreamServices<T>(
+        IResourceBuilder<T> builder,
+        IResourceBuilder<ProjectResource> cloudLogin)
+        where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
+    {
+        builder.WithEnvironment(context =>
+        {
+            // Only registered consumers have an audience of their own. A referenced
+            // database or storage account is not something a user token is minted for.
+            HashSet<string> consumerNames =
+            [
+                .. cloudLogin.Resource.Annotations
+                    .OfType<CloudLoginConsumerAnnotation>()
+                    .Select(consumer => consumer.Resource.Name)
+            ];
+
+            int index = 0;
+
+            foreach (ResourceRelationshipAnnotation relationship in
+                     builder.Resource.Annotations.OfType<ResourceRelationshipAnnotation>())
+            {
+                if (relationship.Resource is not IResourceWithEndpoints downstream ||
+                    ReferenceEquals(downstream, builder.Resource) ||
+                    string.Equals(downstream.Name, cloudLogin.Resource.Name, StringComparison.Ordinal) ||
+                    !consumerNames.Contains(downstream.Name))
+                    continue;
+
+                context.EnvironmentVariables[
+                    $"{CloudLoginConfigurationKeys.Client.DownstreamServices}:{index}:Audience"] = downstream.Name;
+
+                context.EnvironmentVariables[
+                    $"{CloudLoginConfigurationKeys.Client.DownstreamServices}:{index}:BaseUrl"] =
+                    GetPreferredEndpoint(builder.ApplicationBuilder.CreateResourceBuilder(downstream));
+
+                index++;
+            }
+        });
     }
 
     private static EndpointReference GetPreferredEndpoint<T>(IResourceBuilder<T> resource)

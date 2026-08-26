@@ -30,5 +30,7 @@ await new CloudPack(new CloudPackConfig() { NugetApiKey = apiKey })
         new CloudPackProject("CloudLogin.WebAssembly"),
         new CloudPackProject("CloudLogin.Web"),
         new CloudPackProject("CloudLogin.Maui"),
+        new CloudPackProject("CloudLogin.Aspire"),
+        new CloudPackProject("CloudLogin.Aspire.Hosting"),
     ]
 }.Pack();

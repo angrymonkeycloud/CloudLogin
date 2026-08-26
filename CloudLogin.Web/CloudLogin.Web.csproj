@@ -13,7 +13,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>1.6.4</Version>
+		<Version>2.0.0</Version>
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>

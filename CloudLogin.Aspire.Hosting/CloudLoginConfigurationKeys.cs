@@ -76,6 +76,19 @@ public static class CloudLoginConfigurationKeys
 
         /// <summary>The generated secret shared with the CloudLogin authority.</summary>
         public const string ClientSecret = "CloudLogin:ClientSecret";
+
+        /// <summary>
+        /// The other CloudLogin-protected services this application calls, as
+        /// audience/base-address pairs.
+        /// <para>
+        /// An access token is only accepted by the one service it names, so a call to a
+        /// sibling service needs a token minted for that sibling. Publishing the mapping
+        /// here lets the outbound token handler work that out from the request's address,
+        /// which means no call site has to name an audience and no deployment has to
+        /// restate a relationship the AppHost already declares.
+        /// </para>
+        /// </summary>
+        public const string DownstreamServices = "CloudLogin:DownstreamServices";
     }
 
     /// <summary>The primary color used by CloudLogin's UI.</summary>

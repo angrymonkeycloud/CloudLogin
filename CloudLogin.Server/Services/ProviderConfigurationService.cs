@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.IdentityModel.Tokens;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -78,7 +77,14 @@ public class ProviderConfigurationService
             builder.AddOpenIdConnect("Microsoft", options =>
             {
                 options.SignInScheme = "Cookies";
-                string audiencePath = provider.Audience switch { MicrosoftProviderAudience.Personal => "consumers", _ => provider.TenantId! };
+                string audiencePath = provider.Audience switch
+                {
+                    MicrosoftProviderAudience.Personal => "consumers",
+                    MicrosoftProviderAudience.MultipleTenant => "organizations",
+                    MicrosoftProviderAudience.All => "common",
+                    MicrosoftProviderAudience.SingleTenant when !string.IsNullOrWhiteSpace(provider.TenantId) => provider.TenantId,
+                    _ => throw new InvalidOperationException("Microsoft:TenantId is required for single-tenant sign-in.")
+                };
                 ConfigureMicrosoftOpenIdConnect(options, provider, audiencePath);
             });
         }
@@ -89,17 +95,19 @@ public class ProviderConfigurationService
         options.ClientId = provider.ClientId;
         options.Authority = $"https://login.microsoftonline.com/{audiencePath}/v2.0/";
         options.ResponseType = OpenIdConnectResponseType.Code;
+        options.CallbackPath = "/signin-microsoft";
         options.SaveTokens = true;
         options.GetClaimsFromUserInfoEndpoint = true;
         options.Scope.Clear();
-        options.Scope.Add("openid"); options.Scope.Add("profile"); options.Scope.Add("email"); options.Scope.Add("User.Read");
         ConfigureMicrosoftOpenIdScopes(options);
         ConfigureMicrosoftOpenIdClaims(options);
-        ConfigureMicrosoftOpenIdEvents(options, provider).GetAwaiter().GetResult();
+        ConfigureMicrosoftOpenIdEvents(options, provider);
     }
 
     private void ConfigureMicrosoftOpenIdScopes(OpenIdConnectOptions options)
     {
+        options.Scope.Add(OpenIdConnectScope.OpenId);
+        options.Scope.Add(OpenIdConnectScope.Profile);
         options.Scope.Add("User.Read");
         options.Scope.Add(OpenIdConnectScope.Email);
         options.Scope.Add(OpenIdConnectScope.Phone);
@@ -114,11 +122,16 @@ public class ProviderConfigurationService
         options.ClaimActions.MapJsonKey("locale", "locale");
     }
 
-    private async Task ConfigureMicrosoftOpenIdEvents(OpenIdConnectOptions options, LoginProviders.MicrosoftProviderConfiguration provider)
+    private void ConfigureMicrosoftOpenIdEvents(
+        OpenIdConnectOptions options,
+        LoginProviders.MicrosoftProviderConfiguration provider)
     {
-        X509Certificate2 certificate = await provider.GetCertificate();
-        options.TokenValidationParameters = new TokenValidationParameters { ValidIssuer = options.Authority, ValidAudiences = [options.ClientId], NameClaimType = ClaimTypes.Name };
-        options.Events.OnAuthorizationCodeReceived = async context => { await HandleMicrosoftAuthorizationCode(context, certificate, options); };
+        options.TokenValidationParameters.NameClaimType = ClaimTypes.Name;
+        options.Events.OnAuthorizationCodeReceived = async context =>
+        {
+            X509Certificate2 certificate = await provider.GetCertificate(context.HttpContext.RequestAborted);
+            await HandleMicrosoftAuthorizationCode(context, certificate, options);
+        };
         options.Events.OnRemoteFailure = HandleRemoteFailure;
     }
 

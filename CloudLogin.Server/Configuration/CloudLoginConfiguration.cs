@@ -6,6 +6,7 @@ namespace AngryMonkey.CloudLogin.Server;
 public class CloudLoginWebConfiguration
 {
     public List<ProviderConfiguration> Providers { get; set; } = [];
+    public string? Title { get; set; }
     public string? BaseAddress { get; set; }
     public TimeSpan LoginDuration { get; set; } = TimeSpan.FromDays(30);
     public List<CloudLoginLink> FooterLinks { get; set; } = [];
@@ -70,8 +71,26 @@ public class CloudLoginWebConfiguration
 
     /// <summary>Application-neutral signed webhook registrations.</summary>
     public List<CloudLoginWebhookRegistration> Webhooks { get; set; } = [];
-    /// <summary>
+    /// <summary>Adds or configures Microsoft sign-in.</summary>
+    public CloudLoginWebConfiguration AddMicrosoft(
+        Action<LoginProviders.MicrosoftProviderConfiguration>? configure = null)
+    {
+        LoginProviders.MicrosoftProviderConfiguration provider = new();
+        configure?.Invoke(provider);
+
+        int existingIndex = Providers.FindIndex(existing =>
+            string.Equals(existing.Code, provider.Code, StringComparison.OrdinalIgnoreCase));
+
+        if (existingIndex < 0)
+            Providers.Add(provider);
+        else
+            Providers[existingIndex] = provider;
+
+        return this;
+    }
+
     /// Enables the old code/QR flow that selects a user in browser code and then
+    /// <summary>
     /// asks the server to create a session for that user. Keep disabled unless a
     /// legacy application still depends on it; new applications should use a
     /// server-validated authentication flow instead.

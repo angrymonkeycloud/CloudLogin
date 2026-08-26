@@ -1,6 +1,5 @@
 ﻿using Azure.Identity;
 using Azure.Security.KeyVault.Certificates;
-using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography.X509Certificates;
 
@@ -50,44 +49,50 @@ public class LoginProviders
 
     public class MicrosoftProviderConfiguration : ProviderConfiguration
     {
-        public string ClientId { get; init; } = string.Empty;
-        public string? ClientSecret { get; init; }
-        public string? TenantId { get; init; }
-        public Uri? VaultEndpoint { get; init; }
+        public string ClientId { get; set; } = string.Empty;
+        public string? ClientSecret { get; set; }
+        public string? TenantId { get; set; }
+        public Uri? VaultEndpoint { get; set; }
+        public string? CertificateName { get; set; }
         public MicrosoftProviderAudience Audience { get; set; } = MicrosoftProviderAudience.All;
 
-        //public MicrosoftProviderConfiguration(string? label = null) : base("Microsoft", label)
-        //{
-        //	HandlesEmailAddress = true;
-        //}
+        private X509Certificate2? _certificate;
 
-        private X509Certificate2? _certification;
-        internal async Task<X509Certificate2> GetCertificate()
+        public MicrosoftProviderConfiguration(string label = "Microsoft")
         {
-            if (_certification != null)
-                return _certification;
-
-            if (VaultEndpoint == null)
-                throw new ArgumentNullException(nameof(VaultEndpoint));
-
-            CertificateClient client = new(VaultEndpoint, new DefaultAzureCredential());
-
-            // Coconust Sharp
-            //Azure.Response<X509Certificate2> response = await client.DownloadCertificateAsync(CoconutSharpDefaults.App_Certificate);
-
-            //_certification = response.Value;
-
-            //return _certification;
-
-            return null;
+            Init("Microsoft", true, label);
+            HandlesEmailAddress = true;
         }
 
-        private MicrosoftProviderConfiguration() { }
+        internal async Task<X509Certificate2> GetCertificate(CancellationToken cancellationToken = default)
+        {
+            if (_certificate is not null)
+                return _certificate;
+
+            if (VaultEndpoint is null)
+                throw new InvalidOperationException(
+                    "Microsoft sign-in requires Microsoft:VaultEndpoint when no client secret is configured.");
+
+            if (string.IsNullOrWhiteSpace(CertificateName))
+                throw new InvalidOperationException(
+                    "Microsoft sign-in requires Microsoft:CertificateName when no client secret is configured.");
+
+            CertificateClient client = new(VaultEndpoint, new DefaultAzureCredential());
+            Azure.Response<X509Certificate2> response = await client.DownloadCertificateAsync(
+                CertificateName,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            _certificate = response.Value;
+            return _certificate;
+        }
+
 
         public MicrosoftProviderConfiguration(IConfigurationSection configurationSection, bool handleUpdateOnly = false)
+            : this(configurationSection["Label"] ?? "Microsoft")
         {
-            ClientId = configurationSection["ClientId"];
+            ClientId = configurationSection["ClientId"] ?? string.Empty;
             ClientSecret = configurationSection["ClientSecret"];
+            CertificateName = configurationSection["CertificateName"];
             TenantId = configurationSection["TenantId"];
             
             if (Uri.TryCreate(configurationSection["VaultEndpoint"], UriKind.Absolute, out Uri? vaultEndpoint))
@@ -96,32 +101,9 @@ public class LoginProviders
             if (Enum.TryParse(configurationSection["Audience"], ignoreCase: true, out MicrosoftProviderAudience audience))
                 Audience = audience;
 
-            string? label = configurationSection["Label"];
-
-            Init("Microsoft", true, label);
             HandleUpdateOnly = configurationSection.GetValue("HandleUpdateOnly", handleUpdateOnly);
-            HandlesEmailAddress = true;
         }
 
-        public static async Task<MicrosoftProviderConfiguration> FromAzureVault(Uri vaultEndpoint, string tenantId, bool handleUpdateOnly = false, string label = "Microsoft")
-        {
-            SecretClient client = new(vaultEndpoint, new DefaultAzureCredential());
-
-            MicrosoftProviderConfiguration configuration = new()
-            {
-                // Coconust Sharp
-                ClientId = null, // (await client.GetSecretAsync(CoconutSharpDefaults.App_ClientId)).Value.Value,
-                VaultEndpoint = vaultEndpoint,
-                TenantId = tenantId,
-                Label = label,
-                HandleUpdateOnly = handleUpdateOnly,
-                HandlesEmailAddress = true
-            };
-
-            configuration.Init("Microsoft", true, label);
-
-            return configuration;
-        }
     }
 
     public class GoogleProviderConfiguration : ProviderConfiguration
@@ -152,7 +134,7 @@ public class LoginProviders
             ClientSecret = configurationSection["ClientSecret"];
             string label = configurationSection["Label"];
 
-            Init("Facbook", true, label);
+            Init("Facebook", true, label);
             HandleUpdateOnly = handleUpdateOnly;
             HandlesEmailAddress = true;
         }

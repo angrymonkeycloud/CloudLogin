@@ -1,39 +1,9 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
+using AngryMonkey.CloudLogin.Server;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
-
-/// <summary>
-/// A CloudLogin project resource that carries the authority-side metadata required to wire
-/// relying projects without manually copying issuer, audience, redirect, or client settings.
-/// </summary>
-public sealed class CloudLoginProjectBuilder : IResourceBuilder<ProjectResource>
-{
-    private readonly HashSet<string> _consumers = new(StringComparer.Ordinal);
-
-    internal CloudLoginProjectBuilder(IResourceBuilder<ProjectResource> inner)
-    {
-        Inner = inner;
-    }
-
-    internal IResourceBuilder<ProjectResource> Inner { get; }
-
-    /// <summary>Gets the underlying CloudLogin project resource.</summary>
-    public ProjectResource Resource => Inner.Resource;
-
-    /// <summary>Gets the distributed application builder that owns the resource.</summary>
-    public IDistributedApplicationBuilder ApplicationBuilder => Inner.ApplicationBuilder;
-
-    /// <inheritdoc />
-    public IResourceBuilder<ProjectResource> WithAnnotation<TAnnotation>(TAnnotation annotation, ResourceAnnotationMutationBehavior behavior)
-        where TAnnotation : IResourceAnnotation
-    {
-        return Inner.WithAnnotation(annotation, behavior);
-    }
-
-    internal bool AddConsumer(string name) => _consumers.Add(name);
-}
 
 /// <summary>
 /// Connects application resources to CloudLogin and configures both sides of the trust
@@ -51,16 +21,19 @@ public static class CloudLoginReferenceExtensions
     /// <returns>The relying resource builder.</returns>
     public static IResourceBuilder<T> WithReference<T>(
         this IResourceBuilder<T> builder,
-        CloudLoginProjectBuilder cloudLogin)
+        IResourceBuilder<ProjectResource> cloudLogin)
         where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(cloudLogin);
 
+        if (!cloudLogin.Resource.Annotations.OfType<CloudLoginServerAnnotation>().Any())
+            return global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin);
+
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
-            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin.Inner);
-            builder.WaitFor(cloudLogin.Inner);
+            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin);
+            builder.WaitFor(cloudLogin);
         }
         ConfigureConsumer(builder, cloudLogin, null, CloudLoginConfigurationKeys.LoginUrl);
         return builder;
@@ -80,7 +53,7 @@ public static class CloudLoginReferenceExtensions
     /// <returns>The relying resource builder.</returns>
     public static IResourceBuilder<T> WithCloudLogin<T>(
         this IResourceBuilder<T> builder,
-        CloudLoginProjectBuilder cloudLogin,
+        IResourceBuilder<ProjectResource> cloudLogin,
         string? endpointName = null,
         string configurationKey = CloudLoginConfigurationKeys.LoginUrl)
         where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
@@ -90,20 +63,20 @@ public static class CloudLoginReferenceExtensions
 
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
-            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin.Inner);
-            builder.WaitFor(cloudLogin.Inner);
+            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin);
+            builder.WaitFor(cloudLogin);
         }
         ConfigureConsumer(builder, cloudLogin, endpointName, configurationKey);
         return builder;
     }
 
-    internal static CloudLoginProjectBuilder ApplyCloudLoginDefaults(this CloudLoginProjectBuilder cloudLogin)
+    internal static IResourceBuilder<ProjectResource> ApplyCloudLoginDefaults(this IResourceBuilder<ProjectResource> cloudLogin)
     {
         IDistributedApplicationBuilder builder = cloudLogin.ApplicationBuilder;
 
         if (builder.ExecutionContext.IsRunMode)
         {
-            cloudLogin.Inner
+            cloudLogin
                 .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
                 .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
                 .WithEnvironment("CloudLogin:Security:RequireHttps", "false")
@@ -127,31 +100,38 @@ public static class CloudLoginReferenceExtensions
         };
 
         if (cosmos is not null)
-            CloudLoginHostingExtensions.WithCloudLoginCosmos(cloudLogin, cosmos);
+        {
+            CloudLoginServerAnnotation annotation =
+                CloudLoginHostingExtensions.GetCloudLoginServer(cloudLogin, nameof(ApplyCloudLoginDefaults));
+            CloudLoginHostingExtensions.WithCloudLoginCosmos(
+                cloudLogin, cosmos, annotation.DatabaseId, annotation.ContainerId);
+        }
 
         if (storage is not null)
             CloudLoginHostingExtensions.WithCloudLoginStorage(cloudLogin, storage);
 
-        cloudLogin.Inner.WithEnvironment(
+        cloudLogin.WithEnvironment(
             CloudLoginConfigurationKeys.Tokens.Issuer,
-            CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin.Inner, null));
+            CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin, null));
 
         return cloudLogin;
     }
 
     private static void ConfigureConsumer<T>(
         IResourceBuilder<T> builder,
-        CloudLoginProjectBuilder cloudLogin,
+        IResourceBuilder<ProjectResource> cloudLogin,
         string? endpointName,
         string configurationKey)
         where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
     {
         string audience = builder.Resource.Name;
+        CloudLoginServerAnnotation annotation =
+            CloudLoginHostingExtensions.GetCloudLoginServer(cloudLogin, nameof(ConfigureConsumer));
 
-        if (!cloudLogin.AddConsumer(audience))
+        if (!annotation.AddConsumer(audience))
             return;
 
-        EndpointReference authority = CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin.Inner, endpointName);
+        EndpointReference authority = CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin, endpointName);
         EndpointReference origin = GetPreferredEndpoint(builder);
         string parameterName = Sanitize($"{cloudLogin.Resource.Name}-{audience}-client-secret");
 
@@ -178,13 +158,13 @@ public static class CloudLoginReferenceExtensions
             .WithEnvironment(CloudLoginConfigurationKeys.Client.ClientId, audience)
             .WithEnvironment(CloudLoginConfigurationKeys.Client.ClientSecret, clientSecret);
 
-        int consumerIndex = cloudLogin.Inner.Resource.Annotations
+        int consumerIndex = cloudLogin.Resource.Annotations
             .OfType<CloudLoginConsumerAnnotation>()
             .Count();
 
-        cloudLogin.Inner.Resource.Annotations.Add(new CloudLoginConsumerAnnotation(builder.Resource));
+        cloudLogin.Resource.Annotations.Add(new CloudLoginConsumerAnnotation(builder.Resource));
 
-        cloudLogin.Inner
+        cloudLogin
             .WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.AllowedAudiences}:{consumerIndex}", audience)
             .WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:ClientId", audience)
             .WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:Audience", audience)
@@ -203,7 +183,7 @@ public static class CloudLoginReferenceExtensions
         int allowedIndex = 0;
         foreach (string allowedAudience in allowedAudiences.Order(StringComparer.Ordinal))
         {
-            cloudLogin.Inner.WithEnvironment(
+            cloudLogin.WithEnvironment(
                 $"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:AllowedAudiences:{allowedIndex++}",
                 allowedAudience);
         }

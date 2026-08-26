@@ -5,7 +5,6 @@ using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Server.Serialization;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using AngryMonkey.CloudBlazor.Web;
-using Azure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -126,6 +125,9 @@ public static class MvcServiceCollectionExtensions
             config.PageDefaults.AppendBundle("js/site.js");
 
             loginConfig.WebConfig(config);
+            if (!string.IsNullOrWhiteSpace(loginConfig.Title))
+                config.PageDefaults.SetTitle(loginConfig.Title);
+
 
             if (string.IsNullOrEmpty(config.PageDefaults.Title))
                 config.PageDefaults.SetTitle("Login");
@@ -185,19 +187,6 @@ public static class MvcServiceCollectionExtensions
         };
     }
 
-    public static async Task ConfigCoconutSharp(this IHostApplicationBuilder builder, string[] args, CloudLoginWebConfiguration config)
-    {
-        builder.Configuration.AddAzureKeyVault(new Uri(args[0]), new DefaultAzureCredential());
-
-        // Coconust Sharp
-        //if (string.IsNullOrEmpty(config.Cosmos.ConnectionString))
-        //    config.Cosmos.ConnectionString = builder.Configuration.GetValue<string>(CoconutSharpDefaults.Cosmos_ConnectionString);
-
-        string tenantArg = args.First(key => key.StartsWith("tenantid:", StringComparison.OrdinalIgnoreCase));
-
-        LoginProviders.MicrosoftProviderConfiguration cspMicrosoft = await LoginProviders.MicrosoftProviderConfiguration.FromAzureVault(new Uri(args[0]), tenantArg.Split(':')[1]);
-        config.Providers.Insert(0, cspMicrosoft);
-    }
 }
 
 public class CloudLoginWeb

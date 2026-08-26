@@ -559,7 +559,16 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Login/PasswordRegistration", form);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception("Password registration failed");
+        {
+            // The status code is carried too: a rejected registration answers with a reason in the
+            // body, but a rate-limited one (429) answers with nothing at all, and a bare "failed"
+            // leaves no way to tell the two apart.
+            string reason = (await message.Content.ReadAsStringAsync()).Trim();
+
+            throw new Exception(reason.Length > 0
+                ? $"Password registration failed ({(int)message.StatusCode}): {reason}"
+                : $"Password registration failed ({(int)message.StatusCode} {message.ReasonPhrase}).");
+        }
 
         return (await message.Content.ReadFromJsonAsync<CloudUser>(CloudLoginSerialization.Options))!;
     }

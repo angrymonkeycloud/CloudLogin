@@ -1,4 +1,3 @@
-using AngryMonkey.CloudBlazor.Web;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using Microsoft.Extensions.Configuration;
@@ -38,16 +37,6 @@ public static class CloudLoginConfigurationExtensions
             BuildProviders(
                 builder.Configuration,
                 configuration.Providers));
-        string? title = builder.Configuration["CloudLogin:Title"];
-        if (!string.IsNullOrWhiteSpace(title))
-        {
-            Action<CloudWebConfig> projectWebConfig = configuration.WebConfig;
-            configuration.WebConfig = web =>
-            {
-                projectWebConfig(web);
-                web.PageDefaults.SetTitle(title);
-            };
-        }
 
         return configuration;
     }
@@ -78,7 +67,7 @@ public static class CloudLoginConfigurationExtensions
         AddWhenConfigured("Code", "code", section => new LoginProviders.CodeProviderConfiguration(section));
         AddWhenConfigured("Microsoft", "Microsoft", section => new LoginProviders.MicrosoftProviderConfiguration(section));
         AddWhenConfigured("Google", "Google", section => new LoginProviders.GoogleProviderConfiguration(section));
-        AddWhenConfigured("Facebook", "Facbook", section => new LoginProviders.FacebookProviderConfiguration(section));
+        AddWhenConfigured("Facebook", "Facebook", section => new LoginProviders.FacebookProviderConfiguration(section));
         AddWhenConfigured("Twitter", "Twitter", section => new LoginProviders.TwitterProviderConfiguration(section));
         AddWhenConfigured("WhatsApp", "WhatsApp", section => new LoginProviders.WhatsAppProviderConfiguration(section));
         AddWhenConfigured("TestMode", "testmode", section => new LoginTestProviders.TestModeConfiguration(section));
@@ -134,6 +123,7 @@ public static class CloudLoginConfigurationExtensions
                 defaults[$"{sectionName}:ClientSecret"] = microsoft.ClientSecret;
                 defaults[$"{sectionName}:TenantId"] = microsoft.TenantId;
                 defaults[$"{sectionName}:VaultEndpoint"] = microsoft.VaultEndpoint?.AbsoluteUri;
+                defaults[$"{sectionName}:CertificateName"] = microsoft.CertificateName;
                 defaults[$"{sectionName}:Audience"] = microsoft.Audience.ToString();
                 break;
             case LoginProviders.GoogleProviderConfiguration google:

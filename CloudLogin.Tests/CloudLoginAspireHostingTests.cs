@@ -1,4 +1,5 @@
 using AngryMonkey.CloudLogin.Aspire.Hosting;
+using AngryMonkey.CloudLogin.Server;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -17,7 +18,7 @@ public sealed class CloudLoginAspireHostingTests
                 DisableDashboard = true
             });
 
-        CloudLoginProjectBuilder login = builder.AddCloudLogin();
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLogin();
         IResourceBuilder<ExecutableResource> consumer = builder
             .AddExecutable("api", "dotnet", ".")
             .WithHttpEndpoint()
@@ -63,8 +64,11 @@ public sealed class CloudLoginAspireHostingTests
                 DisableDashboard = true
             });
 
-        builder.AddCloudLogin()
-            .WithCloudLoginDatabase("Accounts", "Users");
+        builder.AddCloudLogin("login", configuration =>
+        {
+            configuration.Cosmos.DatabaseId = "Accounts";
+            configuration.Cosmos.ContainerId = "Users";
+        });
 
         AzureCosmosDBDatabaseResource database = Assert.Single(builder.Resources.OfType<AzureCosmosDBDatabaseResource>());
         AzureCosmosDBContainerResource container = Assert.Single(builder.Resources.OfType<AzureCosmosDBContainerResource>());
@@ -85,7 +89,7 @@ public sealed class CloudLoginAspireHostingTests
                 DisableDashboard = true
             });
 
-        CloudLoginProjectBuilder login = builder.AddCloudLogin();
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLogin();
         IResourceBuilder<ExecutableResource> consumer = builder
             .AddExecutable("api", "dotnet", ".")
             .WithHttpEndpoint()

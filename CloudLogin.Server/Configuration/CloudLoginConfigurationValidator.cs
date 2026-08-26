@@ -15,6 +15,8 @@ public static partial class CloudLoginConfigurationValidator
     {
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(configuration.Security);
+        PrepareMicrosoftProvider(configuration, isDevelopment);
+
 
         CloudLoginSecurityOptions security = configuration.Security;
 
@@ -94,6 +96,32 @@ public static partial class CloudLoginConfigurationValidator
 
         if (security.EnableLegacyClientVerificationCodes && !isDevelopment)
             throw new InvalidOperationException("Legacy client-managed verification codes cannot be enabled outside Development.");
+    }
+
+    private static void PrepareMicrosoftProvider(
+        CloudLoginWebConfiguration configuration,
+        bool isDevelopment)
+    {
+        LoginProviders.MicrosoftProviderConfiguration? microsoft = configuration.Providers
+            .OfType<LoginProviders.MicrosoftProviderConfiguration>()
+            .FirstOrDefault();
+
+        if (microsoft is null)
+            return;
+
+        bool hasClientId = !string.IsNullOrWhiteSpace(microsoft.ClientId);
+        bool hasSecret = !string.IsNullOrWhiteSpace(microsoft.ClientSecret);
+        bool hasCertificate = microsoft.VaultEndpoint is not null &&
+            !string.IsNullOrWhiteSpace(microsoft.CertificateName);
+
+        if (hasClientId && (hasSecret || hasCertificate))
+            return;
+
+        if (!isDevelopment)
+            throw new InvalidOperationException(
+                "Microsoft sign-in requires ClientId and either ClientSecret or both VaultEndpoint and CertificateName.");
+
+        configuration.Providers.Remove(microsoft);
     }
 
     private static void ValidateOrigin(string origin)

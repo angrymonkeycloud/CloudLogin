@@ -32,10 +32,11 @@ public static class CloudLoginApplicationExtensions
                 headers.Pragma = "no-cache";
             }
 
-            if (HttpMethods.IsPost(context.Request.Method) ||
-                HttpMethods.IsPut(context.Request.Method) ||
-                HttpMethods.IsPatch(context.Request.Method) ||
-                HttpMethods.IsDelete(context.Request.Method))
+            if (!IsRemoteAuthenticationCallback(path) &&
+                (HttpMethods.IsPost(context.Request.Method) ||
+                 HttpMethods.IsPut(context.Request.Method) ||
+                 HttpMethods.IsPatch(context.Request.Method) ||
+                 HttpMethods.IsDelete(context.Request.Method)))
             {
                 string? fetchSite = context.Request.Headers["Sec-Fetch-Site"].FirstOrDefault();
                 if (string.Equals(fetchSite, "cross-site", StringComparison.OrdinalIgnoreCase))
@@ -58,5 +59,29 @@ public static class CloudLoginApplicationExtensions
         });
 
         return app;
+    }
+
+    /// <summary>
+    /// Whether the path is a remote authentication callback such as <c>/signin-microsoft</c>.
+    /// </summary>
+    /// <remarks>
+    /// An identity provider posts the authorization code back from its own origin, so these are
+    /// cross-site POSTs by design - a certificate-backed Microsoft app registration has no client
+    /// secret, which puts sign-in on the OpenID Connect handler and its <c>form_post</c> response
+    /// mode. The cross-site checks below would reject that with a bare 403 before the
+    /// authentication middleware ever runs. The callbacks are not left unprotected: the remote
+    /// handler validates the OAuth state parameter against a correlation cookie it set itself.
+    /// </remarks>
+    private static bool IsRemoteAuthenticationCallback(PathString path)
+    {
+        if (!path.HasValue)
+            return false;
+
+        ReadOnlySpan<char> remaining = path.Value.AsSpan(1);
+        int separator = remaining.IndexOf('/');
+        ReadOnlySpan<char> segment = separator < 0 ? remaining : remaining[..separator];
+
+        return segment.StartsWith("signin-", StringComparison.OrdinalIgnoreCase)
+            || segment.StartsWith("signout-callback-", StringComparison.OrdinalIgnoreCase);
     }
 }

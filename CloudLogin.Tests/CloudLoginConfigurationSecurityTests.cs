@@ -113,6 +113,30 @@ public class CloudLoginConfigurationSecurityTests
     }
 
     [Fact]
+    public void Development_OmitsMicrosoftUntilCredentialsAreAvailable()
+    {
+        CloudLoginWebConfiguration configuration = new();
+        configuration.AddMicrosoft();
+
+        CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: true);
+
+        Assert.DoesNotContain(configuration.Providers,
+            provider => provider is LoginProviders.MicrosoftProviderConfiguration);
+    }
+
+    [Fact]
+    public void Production_RejectsMicrosoftWithoutCredentials()
+    {
+        CloudLoginWebConfiguration configuration = new();
+        configuration.AddMicrosoft();
+
+        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
+            CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: false));
+
+        Assert.Contains("ClientId", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ClientManagedVerificationProvider_IsDisabledByDefault()
     {
         IConfiguration configurationValues = new ConfigurationBuilder().Build();

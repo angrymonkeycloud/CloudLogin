@@ -1,6 +1,7 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
+using AngryMonkey.CloudLogin.Server;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 
@@ -28,18 +29,36 @@ public static class CloudLoginHostingExtensions
     /// Adds the application's CloudLogin server project, marked so the wiring helpers below can
     /// tell it apart from every other project in the model.
     /// </summary>
-    public static CloudLoginProjectBuilder AddCloudLogin<TProject>(
+    /// <param name="builder">The distributed application builder.</param>
+    /// <param name="name">The CloudLogin resource name.</param>
+    /// <param name="configure">Optional shared CloudLogin configuration.</param>
+    /// <returns>A native Aspire project-resource builder.</returns>
+    public static IResourceBuilder<ProjectResource> AddCloudLogin<TProject>(
         this IDistributedApplicationBuilder builder,
-        string name = "login")
+        string name = "login",
+        Action<CloudLoginWebConfiguration>? configure = null)
         where TProject : IProjectMetadata, new()
     {
         ArgumentNullException.ThrowIfNull(builder);
 
+        CloudLoginWebConfiguration configuration = new();
+        configure?.Invoke(configuration);
+        CloudLoginServerAnnotation annotation = new();
+
+        if (configuration.Cosmos.DatabaseId is { Length: > 0 } databaseId)
+            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
+
+        if (configuration.Cosmos.ContainerId is { Length: > 0 } containerId)
+            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
+
         IResourceBuilder<ProjectResource> project = builder.AddProject<TProject>(name)
             .WithExternalHttpEndpoints()
-            .WithAnnotation(new CloudLoginServerAnnotation());
+            .WithAnnotation(annotation);
 
-        return new CloudLoginProjectBuilder(project).ApplyCloudLoginDefaults();
+        project.ApplyCloudLoginDefaults();
+        if (configure is not null)
+            CloudLoginConfigurationProjection.Apply(project, configuration);
+        return project;
     }
 
     /// <summary>
@@ -47,21 +66,35 @@ public static class CloudLoginHostingExtensions
     /// </summary>
     /// <param name="builder">The distributed application builder.</param>
     /// <param name="name">The CloudLogin resource name.</param>
+    /// <param name="configure">Optional shared CloudLogin configuration.</param>
     /// <returns>A CloudLogin project resource that can be referenced and deployed like any other project.</returns>
-    public static CloudLoginProjectBuilder AddCloudLogin(
+    public static IResourceBuilder<ProjectResource> AddCloudLogin(
         this IDistributedApplicationBuilder builder,
-        string name = "login")
+        string name = "login",
+        Action<CloudLoginWebConfiguration>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        CloudLoginWebConfiguration configuration = new();
+        configure?.Invoke(configuration);
+        CloudLoginServerAnnotation annotation = new();
+
+        if (configuration.Cosmos.DatabaseId is { Length: > 0 } databaseId)
+            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
+
+        if (configuration.Cosmos.ContainerId is { Length: > 0 } containerId)
+            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
 
         IResourceBuilder<ProjectResource> project = builder
             .AddProject(name, CloudLoginStandaloneProject.Extract())
             .WithHttpEndpoint(name: "http")
             .WithExternalHttpEndpoints()
-            .WithAnnotation(new CloudLoginServerAnnotation());
+            .WithAnnotation(annotation);
 
-
-        return new CloudLoginProjectBuilder(project).ApplyCloudLoginDefaults();
+        project.ApplyCloudLoginDefaults();
+        if (configure is not null)
+            CloudLoginConfigurationProjection.Apply(project, configuration);
+        return project;
     }
 
     /// <summary>
@@ -254,28 +287,6 @@ public static class CloudLoginHostingExtensions
         return builder.WithEnvironment(CloudLoginConfigurationKeys.Cosmos.AccountEndpoint, accountEndpoint);
     }
 
-    /// <summary>
-    /// Points a project at the application's CloudLogin server: an ordinary Aspire reference, plus
-    /// the authority URL the CloudLogin components read.
-    /// </summary>
-    public static IResourceBuilder<T> WithCloudLogin<T>(
-        this IResourceBuilder<T> builder,
-        IResourceBuilder<ProjectResource> cloudLogin,
-        string? endpointName = null,
-        string configurationKey = CloudLoginConfigurationKeys.LoginUrl)
-        where T : IResourceWithEnvironment, IResourceWithWaitSupport
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(cloudLogin);
-
-        // The reference is a local-run concern: it brings Aspire's service-discovery variables, which
-        // a deployed site reaches nothing through - it has a real URL. Adding them in a deployment
-        // would put a handful of unresolvable endpoint references on the site for nothing.
-        if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
-            builder.WithReference(cloudLogin);
-
-        return builder.WithEnvironment(configurationKey, GetPreferredEndpoint(cloudLogin, endpointName));
-    }
 
     /// <summary>Points a project at an already-deployed CloudLogin server.</summary>
     public static IResourceBuilder<T> WithCloudLogin<T>(
@@ -377,9 +388,12 @@ public static class CloudLoginHostingExtensions
 public sealed class CloudLoginServerAnnotation : IResourceAnnotation
 {
     private readonly List<(AzureCosmosDBDatabaseResource Database, AzureCosmosDBContainerResource Container)> _cosmosResources = [];
+    private readonly HashSet<string> _consumers = new(StringComparer.Ordinal);
 
     internal string DatabaseId { get; private set; } = "Users";
     internal string ContainerId { get; private set; } = "Data";
+
+    internal bool AddConsumer(string name) => _consumers.Add(name);
 
     internal void Apply(string key, string value)
     {

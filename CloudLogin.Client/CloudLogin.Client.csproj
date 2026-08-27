@@ -11,10 +11,11 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.0.0</Version>
+		<Version>2.0.1</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Description />
+		<Description>Typed HTTP client for the CloudLogin API: programmatic sign-in, account, and session access for .NET apps that call an existing CloudLogin authority instead of hosting the UI themselves.</Description>
+		<PackageTags>cloudlogin;authentication;http-client;angrymonkey</PackageTags>
 		<Configurations>Debug;Release</Configurations>
 	</PropertyGroup>
 

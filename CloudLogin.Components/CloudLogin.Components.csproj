@@ -10,14 +10,15 @@
 		<RootNamespace>AngryMonkey.CloudLogin</RootNamespace>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.0.0</Version>
+		<Version>2.0.1</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Product>Cloud Login Components</Product>
 		<Configurations>Debug;Release</Configurations>
-		<Description />
+		<Description>Blazor UI components for CloudLogin: sign-in, account, profile, 2FA/QR, and payment-method screens used by the standalone authority website and any host embedding CloudLogin's UI directly.</Description>
+		<PackageTags>cloudlogin;authentication;blazor;components;angrymonkey</PackageTags>
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
 	</PropertyGroup>
 

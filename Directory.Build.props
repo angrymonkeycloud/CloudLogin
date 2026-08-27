@@ -27,4 +27,21 @@
     <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
   </PropertyGroup>
 
+  <!--
+    Shared NuGet package metadata for every project in this repository. Individual projects still
+    set their own PackageId (via AssemblyName), Description and PackageTags - those are what
+    actually distinguish one package from another - but the repository-wide facts (license,
+    source, project link) belong in exactly one place so they can never drift out of sync between
+    the eleven packages this repository publishes.
+
+    Harmless on projects that are never packed (Tests, demo/*, the internal Packing tool): these
+    properties are only ever read when a NuGet package is actually produced.
+  -->
+  <PropertyGroup>
+    <PackageProjectUrl>https://github.com/angrymonkeycloud/CloudLogin</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/angrymonkeycloud/CloudLogin.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
 </Project>

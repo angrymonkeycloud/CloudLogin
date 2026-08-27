@@ -13,10 +13,11 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.0.0</Version>
+		<Version>2.0.1</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Description />
+		<Description>Native .NET MAUI authentication for CloudLogin: system-browser sign-in, callback interception, and secure local session storage against an existing CloudLogin authority.</Description>
+		<PackageTags>cloudlogin;authentication;maui;angrymonkey</PackageTags>
 		<Configurations>Debug;Release</Configurations>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
@@ -34,10 +35,11 @@
 
 	<ItemGroup>
 		<None Remove="artifacts\**" />
-	  <None Include="amc-logo.png">
-	    <PackagePath>\</PackagePath>
-	    <Pack>True</Pack>
-	  </None>
+		<None Include="amc-logo.png">
+			<PackagePath>\</PackagePath>
+			<Pack>True</Pack>
+		</None>
+		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
 	</ItemGroup>
 
-<ItemGroup><None Update="amc-logo.png"><Pack>True</Pack><PackagePath>\</PackagePath></None><None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" /></ItemGroup></Project>
+<ItemGroup><None Update="amc-logo.png"><Pack>True</Pack><PackagePath>\</PackagePath></None></ItemGroup></Project>

@@ -10,14 +10,15 @@
 		<RootNamespace>AngryMonkey.CloudLogin.WebAssembly</RootNamespace>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.0.0</Version>
+		<Version>2.0.1</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Product>Cloud Login WebAssembly</Product>
 		<Configurations>Debug;Release</Configurations>
-		<Description />
+		<Description>The Blazor WebAssembly runtime CloudLogin's standalone UI package runs its interactive components under - referenced automatically by CloudLogin.Web, not added directly by consuming apps.</Description>
+		<PackageTags>cloudlogin;authentication;blazor;webassembly;angrymonkey</PackageTags>
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
 	</PropertyGroup>
 

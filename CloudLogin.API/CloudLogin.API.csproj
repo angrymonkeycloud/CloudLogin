@@ -7,13 +7,15 @@
 		<Product>Cloud Login API</Product>
 		<AssemblyName>AngryMonkey.CloudLogin.API</AssemblyName>
 		<RootNamespace>AngryMonkey.CloudLogin.API</RootNamespace>
-		<Version>2.0.0</Version>
+		<Version>2.0.1</Version>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Description>HTTP endpoints for CloudLogin: exposes CloudLogin.Server's authentication, account, and request services over the API surface CloudLogin.Client and other callers consume.</Description>
+		<PackageTags>cloudlogin;authentication;aspnetcore;api;angrymonkey</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -20,6 +20,7 @@ CloudLogin is secure by default: HTTPS-only cookies, exact redirect allowlists, 
 - [Consumer website](#consumer-website)
 - [Embedded website](#embedded-website)
 - [.NET MAUI](#net-maui)
+- [Aspire integration](#aspire-integration)
 - [Feature overview](#feature-overview)
 - [Authentication providers](#authentication-providers)
 - [Configuration reference](#configuration-reference)
@@ -46,10 +47,15 @@ for ports and how to sign in.
 | --- | --- | --- | --- |
 | `AngryMonkey.CloudLogin.Web` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Web?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Web) | Standalone CloudLogin website |
 | `AngryMonkey.CloudLogin.Server` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Server?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Server) | Consumer website or embedded server integration |
+| `AngryMonkey.CloudLogin.API` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.API?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.API) | HTTP endpoints exposing the server over `CloudLogin.Client` |
 | `AngryMonkey.CloudLogin.Maui` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Maui?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Maui) | Native .NET MAUI authentication |
+| `AngryMonkey.CloudLogin` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin) | Blazor routing/layout shared by `CloudLogin.Maui` and other Blazor-hybrid hosts |
+| `AngryMonkey.CloudLogin.Components` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Components?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Components) | The login/account/profile Blazor UI itself |
 | `AngryMonkey.CloudLogin.WebAssembly` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.WebAssembly?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.WebAssembly) | WebAssembly runtime used by the standalone UI package |
 | `AngryMonkey.CloudLogin.Client` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Client?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Client) | Typed CloudLogin HTTP client |
 | `AngryMonkey.CloudLogin.Contracts` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Contracts?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Contracts) | Shared models and URL contracts |
+| `AngryMonkey.CloudLogin.Aspire.Hosting` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Aspire.Hosting?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Aspire.Hosting) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Aspire.Hosting?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Aspire.Hosting) | AppHost-side: adds CloudLogin to a .NET Aspire distributed application |
+| `AngryMonkey.CloudLogin.Aspire` | [![NuGet](https://img.shields.io/nuget/v/AngryMonkey.CloudLogin.Aspire?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Aspire) | [![Downloads](https://img.shields.io/nuget/dt/AngryMonkey.CloudLogin.Aspire?style=flat-square&logo=nuget)](https://www.nuget.org/packages/AngryMonkey.CloudLogin.Aspire) | Server-side: binds the config an Aspire AppHost wires (see [Aspire integration](#aspire-integration)) |
 
 ## Architecture
 
@@ -284,6 +290,52 @@ builder.AddMauiCloudLogin(
 
 Add the same scheme with `AllowMobileApp("myapp")` on the authority. CloudLogin handles the platform callback, stores the local session in MAUI `SecureStorage`, and uses the system authentication browser. Logout clears both local secure storage and the authority browser session. An interrupted authority logout is retried before the next login.
 
+## Aspire integration
+
+`AngryMonkey.CloudLogin.Aspire.Hosting` adds CloudLogin to a .NET Aspire AppHost as an ordinary
+project resource, with every other resource in the model able to sign in against it through one
+call:
+
+```csharp
+using AngryMonkey.CloudLogin.Aspire.Hosting;
+
+var builder = DistributedApplication.CreateBuilder(args);
+
+// The application's own CloudLogin server project:
+var login = builder.AddCloudLogin<Projects.My_Login>("login");
+
+// ...or the packaged server, with no project of your own:
+var login = builder.AddCloudLogin("login");
+
+// ...or an already-deployed authority, reached by URL:
+var login = builder.AddCloudLogin("login", "https://login.example.com");
+
+// Connect any project: sets LoginUrl, waits for the authority in run mode, and (for the two
+// forms above) configures the redirect allow-list to match.
+var web = builder.AddProject<Projects.Web>("web").WithCloudLogin(login);
+```
+
+A server that also reads CloudLogin-owned records directly - CDM's external data provider, for
+example - additionally calls `WithServiceAccess(login)`: that channel bypasses user identity, so
+it is its own call rather than a flag on `WithReference`, granted only to the servers that need it.
+
+On the server side, `AngryMonkey.CloudLogin.Aspire` is what a CloudLogin server hosted under Aspire
+uses to configure itself from what the AppHost wired, instead of repeating Cosmos/Storage
+connection details in its own `appsettings.json`:
+
+```csharp
+using AngryMonkey.CloudLogin.Aspire;
+
+CloudLoginWebConfiguration configuration = new();
+configuration.BindAspireResources(builder);
+```
+
+The same configuration keys work with no AppHost anywhere in the picture - an `appsettings.json`,
+a user secret, an environment variable set by hand - so a CloudLogin server stays runnable outside
+Aspire too. **[CoconutSharp](https://github.com/CoconutSharp/CoconutSharpAspire)** builds on this
+package for environment-aware publishing (naming, identity, App Service targets per Dev/Staging/
+Production) without changing how CloudLogin itself is configured.
+
 ## Feature overview
 
 CloudLogin includes:
@@ -292,6 +344,7 @@ CloudLogin includes:
 - Embedded authority mode for integrating CloudLogin directly inside an existing ASP.NET Core host.
 - Consumer-site integration (`AngryMonkey.CloudLogin.Server`) with secure login, callback, profile redirect, and coordinated logout endpoints.
 - .NET MAUI support (`AngryMonkey.CloudLogin.Maui`) with mobile callback scheme support.
+- .NET Aspire support (`AngryMonkey.CloudLogin.Aspire.Hosting` + `AngryMonkey.CloudLogin.Aspire`) for AppHost composition and configuration binding - see [Aspire integration](#aspire-integration).
 - Blazor/WebAssembly UI components (`AngryMonkey.CloudLogin.Components` + `AngryMonkey.CloudLogin.WebAssembly`) for login and account flows.
 - Typed client/contracts packages for programmatic integration and shared models.
 - Account profile management (name, locale, country, profile image upload).

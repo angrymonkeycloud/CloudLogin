@@ -2,7 +2,6 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
 using AngryMonkey.CloudLogin.Server;
-using CoconutSharp.Aspire.Hosting;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 
@@ -33,8 +32,12 @@ public static class CloudLoginHostingExtensions
     /// <param name="builder">The distributed application builder.</param>
     /// <param name="name">The CloudLogin resource name.</param>
     /// <param name="configure">Optional shared CloudLogin configuration.</param>
-    /// <returns>A native Aspire project-resource builder.</returns>
-    public static IResourceBuilder<ProjectResource> AddCloudLogin<TProject>(
+    /// <returns>
+    /// A native Aspire project-resource builder. Hold it in a <c>var</c>: the returned type is what
+    /// carries this package's <c>WithReference</c> overloads for Cosmos and Azure Storage, and
+    /// typing the variable as <see cref="IResourceBuilder{T}"/> hides them again.
+    /// </returns>
+    public static ICloudLoginServerBuilder AddCloudLogin<TProject>(
         this IDistributedApplicationBuilder builder,
         string name = "login",
         Action<CloudLoginWebConfiguration>? configure = null)
@@ -59,7 +62,7 @@ public static class CloudLoginHostingExtensions
         project.ApplyCloudLoginDefaults();
         if (configure is not null)
             CloudLoginConfigurationProjection.Apply(project, configuration);
-        return project;
+        return new CloudLoginServerBuilder(project);
     }
 
     /// <summary>
@@ -68,8 +71,11 @@ public static class CloudLoginHostingExtensions
     /// <param name="builder">The distributed application builder.</param>
     /// <param name="name">The CloudLogin resource name.</param>
     /// <param name="configure">Optional shared CloudLogin configuration.</param>
-    /// <returns>A CloudLogin project resource that can be referenced and deployed like any other project.</returns>
-    public static IResourceBuilder<ProjectResource> AddCloudLogin(
+    /// <returns>
+    /// A CloudLogin project resource that can be referenced and deployed like any other project.
+    /// Hold it in a <c>var</c> - see <see cref="AddCloudLogin{TProject}"/>.
+    /// </returns>
+    public static ICloudLoginServerBuilder AddCloudLogin(
         this IDistributedApplicationBuilder builder,
         string name = "login",
         Action<CloudLoginWebConfiguration>? configure = null)
@@ -95,7 +101,7 @@ public static class CloudLoginHostingExtensions
         project.ApplyCloudLoginDefaults();
         if (configure is not null)
             CloudLoginConfigurationProjection.Apply(project, configuration);
-        return project;
+        return new CloudLoginServerBuilder(project);
     }
 
     /// <summary>
@@ -112,102 +118,6 @@ public static class CloudLoginHostingExtensions
 
         return builder.AddExternalService(name, url);
     }
-
-    /// <summary>
-    /// Wires CloudLogin's user store to a Cosmos DB resource.
-    /// </summary>
-    /// <param name="builder">The CloudLogin server project.</param>
-    /// <param name="cosmos">The Cosmos DB resource holding the user store.</param>
-    /// <param name="databaseId">Database holding the user container.</param>
-    /// <param name="containerId">Container holding user records.</param>
-    [Obsolete("Use WithDatabase(cosmos). Names the same source in the vocabulary every Angry Monkey " +
-        "component shares, and can be set on the application builder or a publish environment to reach " +
-        "every component at once. Database and container names belong to AddCloudLogin's own configuration.")]
-    public static IResourceBuilder<ProjectResource> WithCloudLoginCosmos(
-        this IResourceBuilder<ProjectResource> builder,
-        IResourceBuilder<AzureCosmosDBResource> cosmos,
-        string databaseId = "Users",
-        string containerId = "Data")
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(cosmos);
-
-        CloudLoginServerAnnotation annotation = GetCloudLoginServer(builder, nameof(WithCloudLoginCosmos));
-        annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
-        annotation.Apply(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
-
-        return builder.WithDatabase(cosmos);
-    }
-
-    /// <summary>
-    /// Wires CloudLogin's blob storage - profile pictures and per-user security documents - to an
-    /// Azure Storage account.
-    /// </summary>
-    /// <remarks>
-    /// Takes the account rather than one of its children so a local run gets the emulator's own
-    /// connection string, assembled from the endpoints Azurite is actually listening on. In a
-    /// deployment the account exposes no single connection string, so the value resolves through a
-    /// blob child - which an environment can redirect to an externally supplied connection string,
-    /// or replace outright with <see cref="WithCloudLoginStorageAccount"/> for credential access.
-    /// </remarks>
-    [Obsolete("Use WithStorage(storage). Names the same source in the vocabulary every Angry Monkey " +
-        "component shares, and can be set on the application builder or a publish environment to reach " +
-        "every component at once.")]
-    public static IResourceBuilder<ProjectResource> WithCloudLoginStorage(
-        this IResourceBuilder<ProjectResource> builder,
-        IResourceBuilder<AzureStorageResource> storage,
-        string? containerName = null)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentNullException.ThrowIfNull(storage);
-        EnsureCloudLoginServer(builder, nameof(WithCloudLoginStorage));
-
-        if (containerName is not null)
-            builder.WithEnvironment(CloudLoginConfigurationKeys.Storage.ContainerName, containerName);
-
-        return builder.WithStorage(storage);
-    }
-
-    /// <summary>
-    /// Reaches CloudLogin by credential rather than by key: the account name is configured, and the
-    /// server authenticates as whatever identity it is running under.
-    /// </summary>
-    /// <remarks>
-    /// Deliberately separate from <see cref="WithCloudLoginStorage(IResourceBuilder{ProjectResource}, IResourceBuilder{AzureStorageResource}, string?)"/>:
-    /// an account name is only usable when the application actually has an identity with data-plane
-    /// access to that account, which is a property of the deployment rather than of the wiring.
-    /// </remarks>
-    [Obsolete("Use WithStorageAccount(accountName).")]
-    public static IResourceBuilder<ProjectResource> WithCloudLoginStorageAccount(
-        this IResourceBuilder<ProjectResource> builder,
-        string accountName,
-        string? containerName = null)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
-        EnsureCloudLoginServer(builder, nameof(WithCloudLoginStorageAccount));
-
-        if (containerName is not null)
-            builder.WithEnvironment(CloudLoginConfigurationKeys.Storage.ContainerName, containerName);
-
-        return builder.WithStorageAccount(accountName);
-    }
-
-    /// <summary>
-    /// Reaches CloudLogin's user store by credential rather than by key.
-    /// </summary>
-    [Obsolete("Use WithDatabaseEndpoint(accountEndpoint).")]
-    public static IResourceBuilder<ProjectResource> WithCloudLoginCosmosEndpoint(
-        this IResourceBuilder<ProjectResource> builder,
-        string accountEndpoint)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        ArgumentException.ThrowIfNullOrWhiteSpace(accountEndpoint);
-        EnsureCloudLoginServer(builder, nameof(WithCloudLoginCosmosEndpoint));
-
-        return builder.WithDatabaseEndpoint(accountEndpoint);
-    }
-
 
     /// <summary>Points a project at an already-deployed CloudLogin server.</summary>
     public static IResourceBuilder<T> WithCloudLogin<T>(

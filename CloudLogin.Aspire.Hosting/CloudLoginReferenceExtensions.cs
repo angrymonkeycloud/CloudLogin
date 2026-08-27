@@ -2,7 +2,6 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
 using AngryMonkey.CloudLogin.Server;
-using CoconutSharp.Aspire.Hosting;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 
@@ -84,34 +83,11 @@ public static class CloudLoginReferenceExtensions
                 .WithEnvironment("TestMode:IsEnabled", "true");
         }
 
-        CloudLoginServerAnnotation annotation =
-            CloudLoginHostingExtensions.GetCloudLoginServer(cloudLogin, nameof(ApplyCloudLoginDefaults));
-
-        // Declared, not wired. Where the user store and the file store actually live is the
-        // application's decision - WithDatabase / WithStorage, on this project, on the active
-        // publish environment, or on the builder - and it is resolved once, at build time. Naming
-        // nothing still works: the application's single account is adopted, or one is created.
-        cloudLogin.WithDataRequirements(new CoconutDataRequirements
-        {
-            Database = new CoconutDatabaseRequirements
-            {
-                ResourceNameStem = $"{cloudLogin.Resource.Name}-cloudlogin",
-                ConnectionStringKey = CloudLoginConfigurationKeys.Cosmos.ConnectionString,
-                AccountEndpointKey = CloudLoginConfigurationKeys.Cosmos.AccountEndpoint,
-                DatabaseNameKey = CloudLoginConfigurationKeys.Cosmos.DatabaseId,
-                CollectionNameKey = CloudLoginConfigurationKeys.Cosmos.ContainerId,
-                GatewayModeKey = CloudLoginConfigurationKeys.Cosmos.GatewayMode,
-                DatabaseName = () => annotation.DatabaseId,
-                CollectionName = () => annotation.ContainerId,
-                OnProvisioned = annotation.AddCosmosResources
-            },
-            Storage = new CoconutStorageRequirements
-            {
-                ResourceNameStem = $"{cloudLogin.Resource.Name}-cloudlogin",
-                ConnectionStringKey = CloudLoginConfigurationKeys.Storage.ConnectionString,
-                AccountNameKey = CloudLoginConfigurationKeys.Storage.AccountName
-            }
-        });
+        // Where the user store and the file store live is the host's decision, made explicitly at
+        // the AppHost with WithReference(cosmos) / WithReference(storage). Nothing is adopted or
+        // created on its behalf: a CloudLogin server that is never pointed at an account is one
+        // whose data keys stay unset, which is exactly what its own configuration model expects -
+        // appsettings.json, a deployment tool, or a host that binds them itself.
 
         cloudLogin.WithEnvironment(
             CloudLoginConfigurationKeys.Tokens.Issuer,

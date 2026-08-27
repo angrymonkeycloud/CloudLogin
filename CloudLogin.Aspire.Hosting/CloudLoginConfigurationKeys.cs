@@ -91,6 +91,33 @@ public static class CloudLoginConfigurationKeys
         public const string DownstreamServices = "CloudLogin:DownstreamServices";
     }
 
+    /// <summary>
+    /// The server-to-server channel a trusted backend reads CloudLogin-owned records over - the
+    /// Business, Contact and Subscription rows CloudLogin owns and other components only display.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="Client"/> on purpose. Those keys describe a user signing in; this
+    /// is a backend credential presented on <c>CloudLogin/Service/*</c>, which no browser session
+    /// can reach and which bypasses user identity entirely - so it is granted per caller rather
+    /// than to everything that references the authority. The authority accepts a list, which is
+    /// what lets one caller's key be revoked without touching another's.
+    /// </remarks>
+    public static class Service
+    {
+        /// <summary>The CloudLogin site the service endpoints live on, read by the caller.</summary>
+        public const string BaseUrl = "CloudLogin:BaseUrl";
+
+        /// <summary>The secret the caller sends as <c>X-CloudLogin-ServiceKey</c>.</summary>
+        public const string CallerKey = "CloudLogin:ServiceKey";
+
+        /// <summary>
+        /// The keys the authority accepts, as a list - <c>CloudLogin:ServiceKeys:0</c> and so on,
+        /// which is the shape <c>CloudLoginWebConfiguration.ServiceKeys</c> binds from. A singular
+        /// key here binds to nothing and leaves the authority rejecting every service call.
+        /// </summary>
+        public const string AuthorityKeys = "CloudLogin:ServiceKeys";
+    }
+
     /// <summary>The primary color used by CloudLogin's UI.</summary>
     public const string PrimaryColor = "CloudLogin:PrimaryColor";
 

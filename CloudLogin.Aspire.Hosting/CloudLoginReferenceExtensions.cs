@@ -19,23 +19,35 @@ public static class CloudLoginReferenceExtensions
     /// <param name="builder">The relying application resource.</param>
     /// <param name="cloudLogin">The CloudLogin authority resource.</param>
     /// <returns>The relying resource builder.</returns>
-    public static IResourceBuilder<T> WithReference<T>(
-        this IResourceBuilder<T> builder,
+    /// <remarks>
+    /// Sign-in only. A server that also reads CloudLogin-owned records directly (CDM's external
+    /// data provider, for example) additionally calls <see cref="WithServiceAccess{TBuilder}"/> -
+    /// that channel bypasses user identity, so it is its own call rather than a flag here, granted
+    /// only to the servers that need it.
+    /// </remarks>
+    public static TBuilder WithReference<TBuilder>(
+        this TBuilder builder,
         IResourceBuilder<ProjectResource> cloudLogin)
-        where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
+        where TBuilder : IResourceBuilder<IResourceWithEnvironment>
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(cloudLogin);
 
+        IResourceBuilder<IResourceWithEnvironment> consumer =
+            builder.ApplicationBuilder.CreateResourceBuilder(builder.Resource);
+
         if (!cloudLogin.Resource.Annotations.OfType<CloudLoginServerAnnotation>().Any())
-            return global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin);
+        {
+            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(consumer, cloudLogin);
+            return builder;
+        }
 
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
-            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin);
-            builder.WaitFor(cloudLogin);
+            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(consumer, cloudLogin);
+            WaitForAuthority(consumer, cloudLogin);
         }
-        ConfigureConsumer(builder, cloudLogin, null, CloudLoginConfigurationKeys.LoginUrl);
+        ConfigureConsumer(consumer, cloudLogin, null, CloudLoginConfigurationKeys.LoginUrl);
         return builder;
     }
 
@@ -51,23 +63,121 @@ public static class CloudLoginReferenceExtensions
     /// The additional configuration key that receives the authority URI.
     /// </param>
     /// <returns>The relying resource builder.</returns>
-    public static IResourceBuilder<T> WithCloudLogin<T>(
-        this IResourceBuilder<T> builder,
+    public static TBuilder WithCloudLogin<TBuilder>(
+        this TBuilder builder,
         IResourceBuilder<ProjectResource> cloudLogin,
         string? endpointName = null,
         string configurationKey = CloudLoginConfigurationKeys.LoginUrl)
-        where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
+        where TBuilder : IResourceBuilder<IResourceWithEnvironment>
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(cloudLogin);
 
+        IResourceBuilder<IResourceWithEnvironment> consumer =
+            builder.ApplicationBuilder.CreateResourceBuilder(builder.Resource);
+
         if (builder.ApplicationBuilder.ExecutionContext.IsRunMode)
         {
-            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(builder, cloudLogin);
-            builder.WaitFor(cloudLogin);
+            global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(consumer, cloudLogin);
+            WaitForAuthority(consumer, cloudLogin);
         }
-        ConfigureConsumer(builder, cloudLogin, endpointName, configurationKey);
+        ConfigureConsumer(consumer, cloudLogin, endpointName, configurationKey);
         return builder;
+    }
+
+    /// <summary>
+    /// Opens the backend service channel between this resource and the application's own CloudLogin
+    /// server: a shared secret, generated and configured on both ends, that reads CloudLogin-owned
+    /// records (Business, Contact, Subscription, …) without a signed-in user.
+    /// </summary>
+    /// <param name="builder">The resource granted service access.</param>
+    /// <param name="cloudLogin">The application's own CloudLogin server (added with <c>AddCloudLogin</c>).</param>
+    /// <param name="endpointName">The authority endpoint name, or the preferred endpoint when omitted.</param>
+    /// <returns>The caller's resource builder.</returns>
+    /// <remarks>
+    /// <para>
+    /// Independent of <see cref="WithReference{TBuilder}(TBuilder, IResourceBuilder{ProjectResource})"/>
+    /// on purpose, rather than a flag on it: that call is a user signing in, and this is a backend
+    /// credential that bypasses user identity entirely, so it is granted only to the servers that
+    /// read CloudLogin's data directly - never implied by referencing the authority for sign-in.
+    /// Call both when one resource needs each relationship; neither requires the other to have been
+    /// called first.
+    /// </para>
+    /// <para>
+    /// A key per caller, not one per authority: the authority accepts a list, so a caller can be
+    /// revoked without invalidating the key every other caller already holds. Persisted, so a
+    /// restart does not invalidate the key the other side already has, and long enough that
+    /// CloudLogin's own validator accepts it (it rejects anything under 32 characters as guessable).
+    /// </para>
+    /// <para>
+    /// The address matters as much as the secret: a local run gives the authority a port Aspire
+    /// allocates fresh each time, so any base URL written into a settings file or a user secret is
+    /// stale the moment it is written.
+    /// </para>
+    /// </remarks>
+    public static TBuilder WithServiceAccess<TBuilder>(
+        this TBuilder builder,
+        IResourceBuilder<ProjectResource> cloudLogin,
+        string? endpointName = null)
+        where TBuilder : IResourceBuilder<IResourceWithEnvironment>
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(cloudLogin);
+
+        CloudLoginServerAnnotation annotation =
+            CloudLoginHostingExtensions.GetCloudLoginServer(cloudLogin, nameof(WithServiceAccess));
+
+        if (!annotation.AddServiceCaller(builder.Resource.Name))
+            return builder;
+
+        IResourceBuilder<IResourceWithEnvironment> consumer =
+            builder.ApplicationBuilder.CreateResourceBuilder(builder.Resource);
+
+        EndpointReference authority = CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin, endpointName);
+
+        IResourceBuilder<ParameterResource> serviceKey = builder.ApplicationBuilder.AddParameter(
+            Sanitize($"{cloudLogin.Resource.Name}-{builder.Resource.Name}-service-key"),
+            new GenerateParameterDefault
+            {
+                MinLength = 48,
+                Lower = true,
+                Upper = true,
+                Numeric = true,
+                Special = false,
+                MinLower = 8,
+                MinUpper = 8,
+                MinNumeric = 8
+            },
+            secret: true,
+            persist: true);
+
+        consumer
+            .WithEnvironment(CloudLoginConfigurationKeys.Service.BaseUrl, authority)
+            .WithEnvironment(CloudLoginConfigurationKeys.Service.CallerKey, serviceKey);
+
+        // Indexed, because the authority binds a list: CloudLogin:ServiceKeys:0, :1, … A singular
+        // key would bind to nothing and leave every service call rejected for want of one.
+        cloudLogin.WithEnvironment(
+            $"{CloudLoginConfigurationKeys.Service.AuthorityKeys}:{annotation.ServiceCallerCount - 1}",
+            serviceKey);
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Holds the consumer back until the authority is running, when the consumer supports waiting.
+    /// </summary>
+    /// <remarks>
+    /// Tested at runtime rather than by a generic constraint, so the public methods above can return
+    /// the caller's own builder type unchanged - which is what keeps them chainable with the
+    /// component packages' own <c>WithReference</c> overloads.
+    /// </remarks>
+    private static void WaitForAuthority(
+        IResourceBuilder<IResourceWithEnvironment> consumer,
+        IResourceBuilder<ProjectResource> cloudLogin)
+    {
+        if (consumer.Resource is IResourceWithWaitSupport waitable)
+            consumer.ApplicationBuilder.CreateResourceBuilder(waitable).WaitFor(cloudLogin);
     }
 
     internal static IResourceBuilder<ProjectResource> ApplyCloudLoginDefaults(this IResourceBuilder<ProjectResource> cloudLogin)
@@ -96,12 +206,11 @@ public static class CloudLoginReferenceExtensions
         return cloudLogin;
     }
 
-    private static void ConfigureConsumer<T>(
-        IResourceBuilder<T> builder,
+    private static void ConfigureConsumer(
+        IResourceBuilder<IResourceWithEnvironment> builder,
         IResourceBuilder<ProjectResource> cloudLogin,
         string? endpointName,
         string configurationKey)
-        where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
     {
         string audience = builder.Resource.Name;
         CloudLoginServerAnnotation annotation =
@@ -110,8 +219,19 @@ public static class CloudLoginReferenceExtensions
         if (!annotation.AddConsumer(audience))
             return;
 
+        // Checked here rather than by a generic constraint, so that the public methods can return
+        // the caller's own builder type unchanged and stay chainable. A consumer with no endpoint
+        // has no origin CloudLogin could return a signed-in user to, so there is nothing to wire.
+        if (builder.Resource is not IResourceWithEndpoints)
+        {
+            throw new DistributedApplicationException(
+                $"'{audience}' has no endpoints, so CloudLogin has no origin to return a signed-in user to. " +
+                "Give it one (WithHttpEndpoint / WithHttpsEndpoint) before referencing the authority.");
+        }
+
         EndpointReference authority = CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin, endpointName);
-        EndpointReference origin = GetPreferredEndpoint(builder);
+        EndpointReference origin = GetPreferredEndpoint(
+            builder.ApplicationBuilder.CreateResourceBuilder((IResourceWithEndpoints)builder.Resource));
         string parameterName = Sanitize($"{cloudLogin.Resource.Name}-{audience}-client-secret");
 
         IResourceBuilder<ParameterResource> clientSecret = builder.ApplicationBuilder.AddParameter(
@@ -187,10 +307,9 @@ public static class CloudLoginReferenceExtensions
     /// complete.
     /// </para>
     /// </summary>
-    private static void PublishDownstreamServices<T>(
-        IResourceBuilder<T> builder,
+    private static void PublishDownstreamServices(
+        IResourceBuilder<IResourceWithEnvironment> builder,
         IResourceBuilder<ProjectResource> cloudLogin)
-        where T : IResourceWithEnvironment, IResourceWithWaitSupport, IResourceWithEndpoints
     {
         builder.WithEnvironment(context =>
         {

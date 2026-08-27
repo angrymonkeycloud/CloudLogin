@@ -79,6 +79,126 @@ public sealed class CloudLoginAspireHostingTests
     }
 
     [Fact]
+    public async Task ReferencesChainInAnyOrder_WithoutFallingBackToAspiresGenericOverload()
+    {
+        // The AppHost style: every reference under the previous one. Each of this package's
+        // overloads returns the caller's own builder type rather than IResourceBuilder<T>, so the
+        // next call in the chain still finds them. Without that, WithReference(cosmos) binds to
+        // Aspire's generic overload instead - which compiles, sets only ConnectionStrings__cosmos,
+        // and leaves CloudLogin reading nothing.
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        ICloudLoginServerBuilder authority = builder.AddCloudLogin("authority");
+        ICloudLoginServerBuilder login = builder.AddCloudLogin("login");
+
+        login
+            .WithReference(authority)
+            .WithReference(builder.AddAzureCosmosDB("cosmos").RunAsEmulator())
+            .WithReference(builder.AddAzureStorage("storage").RunAsEmulator());
+
+        Dictionary<string, object> environment = await ReadEnvironmentAsync(login.Resource);
+
+        // The Cosmos overload is the one that can silently fall through, because Aspire does have a
+        // generic overload accepting it. This key exists only if CloudLogin's own ran.
+        Assert.Contains("Cosmos:ConnectionString", environment);
+        Assert.Contains("Cosmos:DatabaseId", environment);
+        Assert.Contains("ConnectionStrings__cosmos", environment);
+    }
+
+    [Fact]
+    public async Task ServiceAccess_ConfiguresBothEndsOfTheBackendChannel()
+    {
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        IResourceBuilder<ExecutableResource> portal = builder
+            .AddExecutable("portal", "dotnet", ".")
+            .WithHttpEndpoint()
+            .WithReference(login)
+            .WithServiceAccess(login);
+
+        Dictionary<string, object> portalEnvironment = await ReadEnvironmentAsync(portal.Resource);
+        Dictionary<string, object> loginEnvironment = await ReadEnvironmentAsync(login.Resource);
+
+        Assert.Contains("CloudLogin:BaseUrl", portalEnvironment);
+        Assert.Contains("CloudLogin:ServiceKey", portalEnvironment);
+
+        // Indexed, because CloudLoginWebConfiguration.ServiceKeys is a List<string>. A singular
+        // 'CloudLogin:ServiceKey' on the authority binds to nothing, leaving ServiceKeys empty and
+        // ServiceKeyAuthenticationHandler rejecting every call for want of a configured key.
+        Assert.Contains("CloudLogin:ServiceKeys:0", loginEnvironment);
+        Assert.DoesNotContain("CloudLogin:ServiceKey", loginEnvironment.Keys);
+    }
+
+    [Fact]
+    public async Task WithServiceAccess_NeedsNoPriorWithReference()
+    {
+        // The two are independent: a pure backend reader that never signs a user in still needs
+        // only the one call.
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        IResourceBuilder<ExecutableResource> worker = builder
+            .AddExecutable("worker", "dotnet", ".")
+            .WithServiceAccess(login);
+
+        Dictionary<string, object> workerEnvironment = await ReadEnvironmentAsync(worker.Resource);
+
+        Assert.Contains("CloudLogin:BaseUrl", workerEnvironment);
+        Assert.Contains("CloudLogin:ServiceKey", workerEnvironment);
+        Assert.DoesNotContain("CloudLogin:Authority", workerEnvironment.Keys);
+    }
+
+    [Fact]
+    public async Task WithServiceAccess_CalledTwice_GrantsOnlyOneKey()
+    {
+        // Idempotent, the way AddConsumer already is for WithReference: a second call from the same
+        // caller must not add a second parameter under the same generated name (Aspire rejects a
+        // duplicate resource name) or advance the authority's index a second time.
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        IResourceBuilder<ExecutableResource> worker = builder.AddExecutable("worker", "dotnet", ".");
+
+        worker.WithServiceAccess(login);
+        worker.WithServiceAccess(login);
+
+        Dictionary<string, object> loginEnvironment = await ReadEnvironmentAsync(login.Resource);
+
+        Assert.Contains("CloudLogin:ServiceKeys:0", loginEnvironment);
+        Assert.DoesNotContain("CloudLogin:ServiceKeys:1", loginEnvironment.Keys);
+    }
+
+    [Fact]
+    public async Task APlainReference_GetsNoServiceKey()
+    {
+        // The key bypasses user identity on CloudLogin/Service/*, so signing users in must not be
+        // enough to be handed one.
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        IResourceBuilder<ExecutableResource> app = builder
+            .AddExecutable("app", "dotnet", ".")
+            .WithHttpEndpoint()
+            .WithReference(login);
+
+        Dictionary<string, object> appEnvironment = await ReadEnvironmentAsync(app.Resource);
+        Dictionary<string, object> loginEnvironment = await ReadEnvironmentAsync(login.Resource);
+
+        // Still a full sign-in consumer.
+        Assert.Contains("CloudLogin:Authority", appEnvironment);
+
+        Assert.DoesNotContain("CloudLogin:ServiceKey", appEnvironment.Keys);
+        Assert.DoesNotContain("CloudLogin:BaseUrl", appEnvironment.Keys);
+        Assert.DoesNotContain(loginEnvironment.Keys, key => key.StartsWith("CloudLogin:ServiceKeys", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task WithReference_MapsCosmosOntoCloudLoginsOwnKeys_AndKeepsAspiresConnectionString()
     {
         // The two halves of the contract: an ordinary Aspire reference still happens (a host that

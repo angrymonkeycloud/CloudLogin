@@ -17,11 +17,18 @@ namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 /// The type exists so this package can offer <c>WithReference(cosmos)</c> and
 /// <c>WithReference(storage)</c> without colliding with any other component package that does the
 /// same. Two extension methods with the same signature are ambiguous to the C# compiler no matter
-/// which namespaces they live in, so an AppHost using CloudLogin alongside another such component
-/// could not call either. Hanging each package's overloads off its own builder type is what keeps
-/// them independent - and is why <c>AddCloudLogin</c>'s result should be held in a <c>var</c>:
-/// typing the variable as <see cref="IResourceBuilder{T}"/> of <see cref="ProjectResource"/> hides
-/// these overloads again.
+/// which namespaces they live in; constraining each package's overloads to its own builder type
+/// makes the other package's candidates fail their constraint and drop out, which is what lets one
+/// AppHost use both.
+/// </para>
+/// <para>
+/// Hold <c>AddCloudLogin</c>'s result in a <c>var</c>. Typing the variable as
+/// <see cref="IResourceBuilder{T}"/> of <see cref="ProjectResource"/> hides these overloads, and a
+/// call that would have written CloudLogin's own configuration keys silently binds to Aspire's
+/// generic <c>WithReference</c> instead - which compiles, sets only <c>ConnectionStrings__{name}</c>,
+/// and leaves CloudLogin reading nothing. Every overload here returns the caller's own builder type,
+/// so references chain in any order; only stock Aspire methods (<c>WaitFor</c>,
+/// <c>WithEnvironment</c>) erase it, so put them after the references rather than between them.
 /// </para>
 /// </remarks>
 public interface ICloudLoginServerBuilder : IResourceBuilder<ProjectResource>;

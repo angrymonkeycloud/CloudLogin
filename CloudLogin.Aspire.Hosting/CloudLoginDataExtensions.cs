@@ -33,9 +33,10 @@ public static class CloudLoginDataExtensions
     /// configured with, so two components can share one account without sharing data. Their names
     /// stay in step if CloudLogin's own configuration renames them afterwards.
     /// </remarks>
-    public static ICloudLoginServerBuilder WithReference(
-        this ICloudLoginServerBuilder builder,
+    public static TBuilder WithReference<TBuilder>(
+        this TBuilder builder,
         IResourceBuilder<AzureCosmosDBResource> cosmos)
+        where TBuilder : ICloudLoginServerBuilder
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(cosmos);
@@ -91,9 +92,10 @@ public static class CloudLoginDataExtensions
     /// exposes no connection string of its own, so unlike the Cosmos overload there is no stock
     /// Aspire reference to preserve here; this is purely additive.
     /// </remarks>
-    public static ICloudLoginServerBuilder WithReference(
-        this ICloudLoginServerBuilder builder,
+    public static TBuilder WithReference<TBuilder>(
+        this TBuilder builder,
         IResourceBuilder<AzureStorageResource> storage)
+        where TBuilder : ICloudLoginServerBuilder
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(storage);

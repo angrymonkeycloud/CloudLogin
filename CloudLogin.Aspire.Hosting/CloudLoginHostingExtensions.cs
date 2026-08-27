@@ -220,11 +220,25 @@ public sealed class CloudLoginServerAnnotation : IResourceAnnotation
 {
     private readonly List<(AzureCosmosDBDatabaseResource Database, AzureCosmosDBContainerResource Container)> _cosmosResources = [];
     private readonly HashSet<string> _consumers = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _serviceCallers = new(StringComparer.Ordinal);
 
     internal string DatabaseId { get; private set; } = "Users";
     internal string ContainerId { get; private set; } = "Data";
 
     internal bool AddConsumer(string name) => _consumers.Add(name);
+
+    /// <summary>
+    /// Grants <paramref name="name"/> the backend service channel, unless it already holds one.
+    /// </summary>
+    /// <returns><see langword="false"/> when this caller was already granted access - the call is
+    /// then a no-op, which is what keeps <c>WithServiceAccess</c> safe to call more than once.</returns>
+    internal bool AddServiceCaller(string name) => _serviceCallers.Add(name);
+
+    /// <summary>
+    /// The index this authority's <c>CloudLogin:ServiceKeys</c> list has grown to. Read immediately
+    /// after a caller is added, so its own key lands at <c>Count - 1</c>.
+    /// </summary>
+    internal int ServiceCallerCount => _serviceCallers.Count;
 
     internal void Apply(string key, string value)
     {

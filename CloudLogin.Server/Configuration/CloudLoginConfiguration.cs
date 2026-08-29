@@ -20,19 +20,9 @@ public class CloudLoginWebConfiguration
     public AzureStorageConfiguration? AzureStorage { get; set; } // Optional Azure Storage configuration
 
     /// <summary>
-    /// Optional subscription feature. When omitted, the subscription account page and API are disabled.
-    /// </summary>
-    public SubscriptionConfiguration? Subscription { get; set; }
-
-    /// <summary>
     /// Optional workspace feature. When omitted, the workspace account page and API are disabled.
     /// </summary>
     public WorkspaceConfiguration? Workspace { get; set; }
-
-    /// <summary>
-    /// Optional payment feature. When omitted, the payment account page and API are disabled.
-    /// </summary>
-    public PaymentConfiguration? Payment { get; set; }
 
     /// <summary>
     /// The primary/accent color used across the login and account UI, as a hex string

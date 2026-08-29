@@ -90,37 +90,6 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
         }
     }
 
-    [HttpGet("Subscriptions")]
-    public async Task<ActionResult<List<CloudSubscription>>> GetAllSubscriptions()
-    {
-        try
-        {
-            return Ok(await _server.GetAllSubscriptions());
-        }
-        catch
-        {
-            return Problem();
-        }
-    }
-
-    [HttpGet("Subscriptions/{subscriptionId:guid}")]
-    public async Task<ActionResult<CloudSubscription>> GetSubscription(Guid subscriptionId)
-    {
-        try
-        {
-            CloudSubscription? subscription = await _server.GetSubscriptionById(subscriptionId);
-
-            if (subscription == null)
-                return NotFound();
-
-            return Ok(subscription);
-        }
-        catch
-        {
-            return Problem();
-        }
-    }
-
     /// <summary>
     /// Partial update of a workspace's own fields (name, billing contact) - the fields a trusted
     /// backend caller (CDM's Synchronized field sync) is allowed to write back. Anything outside

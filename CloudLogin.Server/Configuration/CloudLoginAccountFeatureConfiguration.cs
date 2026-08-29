@@ -1,20 +1,6 @@
 namespace AngryMonkey.CloudLogin.Server;
 
 /// <summary>
-/// Enables subscription management in the CloudLogin account experience.
-/// </summary>
-public sealed class SubscriptionConfiguration
-{
-    /// <summary>
-    /// Whether account holders may remove subscription entries themselves. Removal still honours
-    /// each entry's <see cref="CloudSubscription.DeletionPolicy"/>; turning this off refuses
-    /// every self-service removal regardless of policy, leaving the owning application in charge.
-    /// Defaults to <see langword="true"/>.
-    /// </summary>
-    public bool AllowSelfServiceDeletion { get; set; } = true;
-}
-
-/// <summary>
 /// Enables workspace management in the CloudLogin account experience, and caps how many
 /// workspaces one user may accumulate.
 /// </summary>
@@ -63,12 +49,4 @@ public sealed class WorkspaceConfiguration
 
     private static int Normalize(int? configured, int fallback)
         => configured is null ? fallback : Math.Max(0, configured.Value);
-}
-
-/// <summary>
-/// Enables payment-method management in the CloudLogin account experience.
-/// Reserved for payment-specific options as the feature evolves.
-/// </summary>
-public sealed class PaymentConfiguration
-{
 }

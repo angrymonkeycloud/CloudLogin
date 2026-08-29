@@ -57,8 +57,8 @@ public class CloudLoginWebhookPublisherTests
             Configuration("User.Updated"));
 
         await publisher.PublishAsync(CloudLoginEvent.Create(
-            "Subscription.Updated",
-            "Subscription",
+            "Workspace.Updated",
+            "Workspace",
             Guid.NewGuid(),
             "Updated",
             new { }));
@@ -126,7 +126,5 @@ public class CloudLoginWebhookPublisherTests
             scope.ServiceProvider.GetRequiredService<ICloudLoginEventPublisher>());
         Assert.IsType<WorkspaceRegistry>(
             scope.ServiceProvider.GetRequiredService<ICloudLoginWorkspaceRegistry>());
-        Assert.IsType<SubscriptionRegistry>(
-            scope.ServiceProvider.GetRequiredService<ICloudLoginSubscriptionRegistry>());
     }
 }

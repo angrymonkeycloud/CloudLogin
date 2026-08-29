@@ -100,9 +100,7 @@ builder.AddCloudLoginWeb(options =>
 {
     options.Cosmos = new(builder.Configuration.GetSection("Cosmos"));
     options.AzureStorage = new(builder.Configuration.GetSection("Storage"));
-    options.Subscription = new SubscriptionConfiguration();
     options.Workspace = new WorkspaceConfiguration();
-    options.Payment = new PaymentConfiguration();
     options.Providers =
     [
         new LoginProviders.GoogleProviderConfiguration(
@@ -117,9 +115,9 @@ builder.AddCloudLoginWeb(options =>
 await CloudLoginWeb.InitApp(builder);
 ```
 
-Subscription, workspace, and payment account features are opt-in. Adding the
-corresponding configuration enables its account navigation item, page, and API;
-omitting it keeps that complete feature surface disabled.
+The workspace account feature is opt-in. Adding the
+configuration enables its account navigation item, page, and API;
+omitting it keeps that complete feature surface disabled. Commercial features (subscriptions, orders, payments) live in the owning applications, never in CloudLogin.
 
 ### Workspace allowances
 
@@ -173,62 +171,22 @@ are unaffected; only the label a user reads changes.
 
 A user switches workspace from the account rail: their personal account, or any
 workspace they belong to. Inside a workspace the same account page shows that
-workspace's information, billing information, members, subscriptions, and payment
-methods, each scoped to the workspace instead of the user. `GetWorkspaceDetail(id)`
+workspace's information, billing-contact information, and members, each scoped to the
+workspace instead of the user. `GetWorkspaceDetail(id)`
 returns all of it in one call and answers `null` for non-members, so an identifier alone
 never reveals someone else's workspace.
 
-Reading a workspace's detail requires membership; editing its profile, billing, and
-payment methods requires its owner or a member holding the `Admin` role. Deleting it
+Reading a workspace's detail requires membership; editing its profile requires its
+owner or a member holding the `Admin` role. Deleting it
 requires the owner.
 
-### Subscription deletion policy
-
-`CloudSubscription.DeletionPolicy` decides when a registry entry may be removed, and by
-extension when its workspace can be deleted:
-
-| Policy | Meaning |
-| --- | --- |
-| `WhenExpired` | **Default.** Removable once the subscription has stopped running — past its expiry, or `Cancelled`/`Expired`. Blocks workspace deletion while it is still running. |
-| `Always` | Removable at any time, running or not. |
-| `Never` | Never removable through the account surface. Blocks workspace deletion until the owning application clears it. |
-
-Deleting a workspace removes its memberships, invitations, billing profile, and
-remaining subscription records in one operation, and publishes `Workspace.Deleted`.
-It is refused with `WorkspaceDeletionBlockedException` while any subscription still
-blocks it; `GetDeletionReportAsync` returns the same blockers ahead of time, along with the
-member, payment-method, and subscription counts the account page shows in its confirmation.
-
-Removal deletes the registry entry only — it is not a cancellation, and the owning
-application stays responsible for ending whatever the subscription paid for. Set
-`SubscriptionConfiguration.AllowSelfServiceDeletion = false` to refuse every self-service
-removal regardless of policy.
-
-Custom `ICloudLoginAccountStore` implementations written before deletion existed keep
-compiling: the removal members carry default implementations that report the store doesn't
-support deletion. Implement them to let owners delete their workspaces.
-
-The redirect and mobile allowlists are optional. With no additional configuration,
-CloudLogin permits every relative, same-origin, and external redirect destination — there
-is no allowlist to restrict against. Once you register at least one website or mobile
-scheme, only the registered ones are trusted for that channel. Register callbacks for the
-specific websites and apps you expect:
-
-```csharp
-builder.AddCloudLoginWeb(options =>
-{
-    options
-        .AllowWebsite("https://app.example.com")
-        .AllowWebsite("https://portal.example.com")
-        .AllowMobileApp("myapp");
-
-    // Other configuration...
-});
-```
-
-HTTP website origins are accepted only for loopback development addresses. `Cosmos`,
-Azure Storage, external providers, UI customization, website callbacks, and mobile
-callbacks are feature-based configuration rather than startup requirements.
+Deleting a workspace removes its memberships and invitations in one operation and
+publishes `Workspace.Deleted`. `GetDeletionReportAsync` returns ahead of time the
+other-member count the account page shows in its confirmation; since no commercial
+records live in CloudLogin, nothing here blocks deletion. Custom
+`ICloudLoginAccountStore` implementations written before deletion existed keep
+compiling: the removal members carry default implementations that report the store
+does not support deletion. Implement them to let owners delete their workspaces.
 
 ## Consumer website
 
@@ -582,11 +540,11 @@ CloudLogin is part of the [Angry Monkey Cloud](https://angrymonkeycloud.com) eco
 
 ## External integrations and webhooks
 
-CloudLogin remains authoritative for identity, users, workspaces, memberships, permissions, subscriptions, and billing data. Applications such as CDM consume those entities through the authenticated service API and retain only their own application data plus stable CloudLogin identifiers.
+CloudLogin remains authoritative for identity, users, workspaces, memberships, and permissions. Applications such as CDM consume those entities through the authenticated service API and retain only their own application data plus stable CloudLogin identifiers.
 
-The service API exposes Workspace, User, Subscription, and Workspace-member reads for trusted server applications. Service keys belong on the server and must never be sent to WebAssembly or browser code.
+The service API exposes Workspace, User, and Workspace-member reads for trusted server applications. Service keys belong on the server and must never be sent to WebAssembly or browser code.
 
-The account page is real, path-based routing rather than a client-side tab switch: `/Account/Profile`, `/Account/Subscriptions`, and `/Account/Workspace/{workspaceId}` (optionally followed by `/Subscriptions` or `/PaymentMethods`) are each a distinct, refreshable, bookmarkable URL. A workspace isn't a tab in the personal account — it's a separate workspace with its own information, billing, members, and plans, reached through the account switcher in the rail; moving into or out of one is a full navigation, the same as switching accounts. Older integrations that built links with `?Section=` and `?EntityId=` (including `Section=Workspaces`) continue to work — CloudLogin translates them to the equivalent path on first load — but new integrations should link to the path directly. A host that mounts the account page somewhere other than `/Account` passes that path once via `AccountPageComponent.BasePath`.
+The account page is real, path-based routing rather than a client-side tab switch: `/Account/Profile`, `/Account/Security`, and `/Account/Workspace/{workspaceId}` are each a distinct, refreshable, bookmarkable URL. A workspace isn't a tab in the personal account — it's a separate workspace with its own information and members, reached through the account switcher in the rail; moving into or out of one is a full navigation, the same as switching accounts. Older integrations that built links with `?Section=` and `?EntityId=` (including `Section=Workspaces`) continue to work — CloudLogin translates them to the equivalent path on first load — but new integrations should link to the path directly. A host that mounts the account page somewhere other than `/Account` passes that path once via `AccountPageComponent.BasePath`.
 
 ### Generic webhook registrations
 
@@ -602,15 +560,14 @@ new CloudLoginWebhookRegistration
     [
         "User.Updated",
         "Workspace.Updated",
-        "Subscription.Updated",
-        "Subscription.Cancelled"
+        "Workspace.Deleted"
     ]
 }
 ```
 
 An empty event set subscribes to every published event. Production webhook URLs must use HTTPS. Development HTTP endpoints are accepted only for local development. Configuration validation rejects missing application names, invalid URLs, short secrets, and blank event names.
 
-CloudLogin mutation services publish a `CloudLoginEvent` through `ICloudLoginEventPublisher` after successful User, Workspace, membership, invitation, and Subscription persistence. Current events include `User.Created`, `User.Updated`, `User.Deleted`, `Workspace.Created`, `Workspace.Updated`, `Workspace.MembershipUpdated`, `Workspace.InvitationCreated`, `Workspace.Deleted`, `Subscription.Created`, `Subscription.Updated`, `Subscription.Cancelled`, and `Subscription.Deleted`. This remains application-neutral so CDM, Coverbox, Melon Cut, or any future application can consume the same stream. Events contain `EventId`, `EventType`, `EntityType`, `EntityId`, `Timestamp`, `Version`, `Operation`, and a JSON `Payload`.
+CloudLogin mutation services publish a `CloudLoginEvent` through `ICloudLoginEventPublisher` after successful User, Workspace, membership, and invitation persistence. Current events include `User.Created`, `User.Updated`, `User.Deleted`, `Workspace.Created`, `Workspace.Updated`, `Workspace.MembershipUpdated`, `Workspace.InvitationCreated`, and `Workspace.Deleted`. This remains application-neutral so CDM, Coverbox, Melon Cut, or any future application can consume the same stream. Events contain `EventId`, `EventType`, `EntityType`, `EntityId`, `Timestamp`, `Version`, `Operation`, and a JSON `Payload`.
 
 Delivery signs the exact JSON body with HMAC-SHA256 and sends:
 
@@ -620,9 +577,9 @@ Delivery signs the exact JSON body with HMAC-SHA256 and sends:
 
 Consumers must validate the signature against their registration secret, reject stale timestamps according to their security policy, and store successful event IDs for idempotency. `CloudLoginWebhookPublisher.Verify` provides constant-time signature comparison. Delivery retries transient failures four times with bounded backoff and reports a terminal error instead of using fire-and-forget delivery.
 
-CloudLogin never creates application records in response to its own events. A consumer decides whether a linked record exists, which configured fields it synchronizes, and how it records delivery or synchronization errors. In particular, CDM only updates already-linked records and does not create a Business, Contact, or Subscription merely because CloudLogin emits an event.
+CloudLogin never creates application records in response to its own events. A consumer decides whether a linked record exists, which configured fields it synchronizes, and how it records delivery or synchronization errors. In particular, CDM only updates already-linked records and does not create a Business or Contact merely because CloudLogin emits an event.
 
 ### CDM mapping
 
-The initial native CDM mappings are Business ↔ Workspace, Contact ↔ User, and Subscription ↔ Subscription. CDM can operate in a CloudLogin read-only view mode or a combined CloudLogin + CDM mode. CloudLogin-created lifecycle timestamps remain distinct from CDM's link time and actor. Manual Sync and record-specific Open in CloudLogin actions are provided by CDM's generic external-provider runtime.
+The initial native CDM mappings are Business ↔ Workspace and Contact ↔ User. CDM can operate in a CloudLogin read-only view mode or a combined CloudLogin + CDM mode. CloudLogin-created lifecycle timestamps remain distinct from CDM's link time and actor. Manual Sync and record-specific Open in CloudLogin actions are provided by CDM's generic external-provider runtime.
 

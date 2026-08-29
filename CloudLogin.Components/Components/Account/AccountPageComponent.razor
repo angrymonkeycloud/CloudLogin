@@ -20,9 +20,7 @@ else
                                                AdminUserId="@AdminUserId"
                                                InitialSection="@InitialSection"
                                                TargetEntityId="@TargetEntityId"
-                                               EnableSubscriptions="@EnableSubscriptions"
                                                EnableWorkspaces="@EnableWorkspaces"
-                                               EnablePayments="@EnablePayments"
                                                WorkspaceLabel="@WorkspaceLabel"
                                                WorkspaceLabelPlural="@WorkspaceLabelPlural"
                                                BasePath="@BasePath" />
@@ -33,9 +31,7 @@ else
     [Parameter] public Guid? AdminUserId { get; set; }
     [Parameter] public string? InitialSection { get; set; }
     [Parameter] public Guid? TargetEntityId { get; set; }
-    [Parameter] public bool EnableSubscriptions { get; set; }
     [Parameter] public bool EnableWorkspaces { get; set; }
-    [Parameter] public bool EnablePayments { get; set; }
 
     /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>
     [Parameter] public string WorkspaceLabel { get; set; } = "Workspace";

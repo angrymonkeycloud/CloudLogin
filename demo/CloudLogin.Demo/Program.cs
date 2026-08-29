@@ -55,7 +55,6 @@ builder.AddCloudLoginWeb(options =>
         return Task.CompletedTask;
     };
 
-    options.Subscription = new();
     // Both caps are optional; omit them for the defaults (3 owned, 10 memberships).
     // SingularLabel/PluralLabel show the concept as "Business"/"Businesses" here —
     // everything internal (routes, JSON, webhook events) still says "Workspace".
@@ -66,7 +65,6 @@ builder.AddCloudLoginWeb(options =>
         SingularLabel = "Business",
         PluralLabel = "Businesses"
     };
-    options.Payment = new();
 
     // Matches the fixed port used by demo/CloudLogin.Demo.Consumer.
     options.AllowWebsite("https://localhost:7200");

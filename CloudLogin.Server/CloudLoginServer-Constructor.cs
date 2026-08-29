@@ -4,7 +4,7 @@ using AngryMonkey.CloudLogin.Interfaces;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, ICloudLoginStore? cloudLoginStore = null, IHttpClientFactory? httpClientFactory = null, ICloudLoginWorkspaceRegistry? workspaceRegistry = null, ICloudLoginSubscriptionRegistry? subscriptionRegistry = null, ICloudLoginAccountStore? accountStore = null, ICloudLoginEventPublisher? eventPublisher = null)
+public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, ICloudLoginStore? cloudLoginStore = null, IHttpClientFactory? httpClientFactory = null, ICloudLoginWorkspaceRegistry? workspaceRegistry = null, ICloudLoginEventPublisher? eventPublisher = null)
 {
     readonly CloudGeographyClient _cloudGeography = cloudGeography;
     readonly ICloudLoginStore? _cosmosMethods = cloudLoginStore;
@@ -12,8 +12,6 @@ public partial class CloudLoginServer(CloudGeographyClient cloudGeography, Cloud
     readonly IHttpContextAccessor _accessor = httpContextAccessor;
     readonly IHttpClientFactory? _httpClientFactory = httpClientFactory;
     readonly ICloudLoginWorkspaceRegistry? _workspaceRegistry = workspaceRegistry;
-    readonly ICloudLoginSubscriptionRegistry? _subscriptionRegistry = subscriptionRegistry;
-    readonly ICloudLoginAccountStore? _accountStore = accountStore;
 
     readonly ICloudLoginEventPublisher? _eventPublisher = eventPublisher;
     private HttpRequest _request => _accessor.HttpContext!.Request;

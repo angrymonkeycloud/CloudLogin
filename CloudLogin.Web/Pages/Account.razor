@@ -11,15 +11,13 @@
                                                     AdminUserId="@AdminUserId"
                                                     InitialSection="@Section"
                                                     TargetEntityId="@EntityId"
-                                                    EnableSubscriptions="@(Configuration.Subscription is not null)"
                                                     EnableWorkspaces="@(Configuration.Workspace is not null)"
-                                                    EnablePayments="@(Configuration.Payment is not null)"
                                                     WorkspaceLabel="@(Configuration.Workspace?.SingularLabel ?? "Workspace")"
                                                     WorkspaceLabelPlural="@(Configuration.Workspace?.PluralLabel ?? "Workspaces")" />
 
 @code{
     /// <summary>
-    /// The tail of the URL after "/Account" (e.g. "Profile", "Workspace/{id}/Subscriptions"). Unused
+    /// The tail of the URL after "/Account" (e.g. "Profile", "Workspace/{id}"). Unused
     /// here on purpose: it exists only so this route matches every account sub-page and the
     /// server doesn't 404 before the interactive component boots. AccountComponent resolves
     /// the active tab itself, directly from the browser's current URL.

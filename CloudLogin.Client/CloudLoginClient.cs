@@ -629,7 +629,7 @@ public class CloudLoginClient : ICloudLogin
             throw new Exception($"SetGlobalAdmin failed: {message.StatusCode}");
     }
 
-    // ── Account registry (workspaces, subscriptions, billing) ──────────
+    // ── Account registry (workspaces only — commercial records live in the applications) ──────────
 
     public async Task<List<CloudWorkspace>> GetMyWorkspaces()
     {
@@ -641,18 +641,6 @@ public class CloudLoginClient : ICloudLogin
         List<CloudWorkspace>? workspaces = await message.Content.ReadFromJsonAsync<List<CloudWorkspace>>(CloudLoginSerialization.Options);
 
         return workspaces ?? [];
-    }
-
-    public async Task<List<CloudSubscription>> GetMySubscriptions(bool includeInactive = false)
-    {
-        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/Subscriptions?includeInactive={includeInactive}");
-
-        if (!message.IsSuccessStatusCode)
-            return [];
-
-        List<CloudSubscription>? subscriptions = await message.Content.ReadFromJsonAsync<List<CloudSubscription>>(CloudLoginSerialization.Options);
-
-        return subscriptions ?? [];
     }
 
     public async Task<CloudWorkspaceQuota> GetMyWorkspaceQuota()
@@ -676,21 +664,6 @@ public class CloudLoginClient : ICloudLogin
             return null;
 
         return await message.Content.ReadFromJsonAsync<CloudWorkspaceDetail>(CloudLoginSerialization.Options);
-    }
-
-    public async Task<CloudBillingProfile?> GetMyBillingProfile()
-    {
-        HttpResponseMessage message = await HttpServer.GetAsync($"{AccountRoute}/BillingProfile");
-
-        if (!message.IsSuccessStatusCode)
-            return null;
-
-        string body = await message.Content.ReadAsStringAsync();
-
-        if (string.IsNullOrWhiteSpace(body) || body == "null")
-            return null;
-
-        return System.Text.Json.JsonSerializer.Deserialize<CloudBillingProfile?>(body, CloudLoginSerialization.Options);
     }
 
     public async Task<CloudWorkspace> CreateWorkspace(string name)
@@ -732,36 +705,6 @@ public class CloudLoginClient : ICloudLogin
 
         if (!message.IsSuccessStatusCode)
             throw await AccountFailure(message, "We couldn't delete that workspace.");
-    }
-
-    public async Task DeleteSubscription(Guid subscriptionId)
-    {
-        HttpResponseMessage message = await HttpServer.DeleteAsync($"{AccountRoute}/Subscriptions/{subscriptionId}");
-
-        if (!message.IsSuccessStatusCode)
-            throw await AccountFailure(message, "We couldn't remove that subscription.");
-    }
-
-    public async Task<CloudBillingProfile> AddPaymentMethod(CloudPaymentMethodReference method, Guid? workspaceId = null)
-    {
-        HttpContent content = JsonContent.Create(new CloudLoginAddPaymentMethodRequest(method, workspaceId), options: CloudLoginSerialization.Options);
-        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/BillingProfile/PaymentMethods", content);
-
-        if (!message.IsSuccessStatusCode)
-            throw await AccountFailure(message, "We couldn't save that payment method.");
-
-        return (await message.Content.ReadFromJsonAsync<CloudBillingProfile>(CloudLoginSerialization.Options))!;
-    }
-
-    public async Task<CloudBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? workspaceId = null)
-    {
-        HttpContent content = JsonContent.Create(new CloudLoginRemovePaymentMethodRequest(provider, reference, workspaceId), options: CloudLoginSerialization.Options);
-        HttpResponseMessage message = await HttpServer.PostAsync($"{AccountRoute}/BillingProfile/PaymentMethods/Remove", content);
-
-        if (!message.IsSuccessStatusCode)
-            throw await AccountFailure(message, "We couldn't remove that payment method.");
-
-        return (await message.Content.ReadFromJsonAsync<CloudBillingProfile>(CloudLoginSerialization.Options))!;
     }
 
     /// <summary>
@@ -830,28 +773,6 @@ public class CloudLoginClient : ICloudLogin
         return await message.Content.ReadFromJsonAsync<List<CloudWorkspaceMember>>(CloudLoginSerialization.Options) ?? [];
     }
 
-
-    public async Task<CloudSubscription?> GetSubscriptionById(Guid subscriptionId)
-    {
-        // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
-        HttpResponseMessage message = await HttpServer.GetAsync($"CloudLogin/Service/Subscriptions/{subscriptionId}");
-
-        if (!message.IsSuccessStatusCode)
-            return null;
-
-        return await message.Content.ReadFromJsonAsync<CloudSubscription?>(CloudLoginSerialization.Options);
-    }
-
-    public async Task<List<CloudSubscription>> GetAllSubscriptions()
-    {
-        // Service-to-service lookup, gated by the ServiceKey scheme — not reachable from the browser client.
-        HttpResponseMessage message = await HttpServer.GetAsync("CloudLogin/Service/Subscriptions");
-
-        if (!message.IsSuccessStatusCode)
-            return [];
-
-        return await message.Content.ReadFromJsonAsync<List<CloudSubscription>>(CloudLoginSerialization.Options) ?? [];
-    }
 
     // ── Security ─────────────────────────────────────────────────────────────
     // The server derives the acting user from the session cookie, so none of these

@@ -8,13 +8,12 @@
     <div>
         <p class="authority-eyebrow">Standalone authority · seeded and runnable</p>
         <h1>See every CloudLogin account capability in one place.</h1>
-        <p>The normal authentication and account pages remain real CloudLogin UI. These showcase pages expose the workspace, subscription, and billing registries using realistic data seeded through their public contracts.</p>
-        <div class="authority-actions"><a class="primary" href="/">Try authentication</a><a href="/demo/subscriptions">View subscriptions</a></div>
+        <p>The normal authentication and account pages remain real CloudLogin UI. These showcase pages expose the workspace registry using realistic data seeded through its public contracts.</p>
+        <div class="authority-actions"><a class="primary" href="/">Try authentication</a><a href="/demo/workspaces">View workspaces</a></div>
     </div>
     <aside>
         <span>Seed snapshot</span>
         <strong>@Seed.Workspaces.Count workspaces</strong>
-        <strong>@_subscriptionCount subscriptions</strong>
         <strong>@Seed.Invitations.Count pending invitations</strong>
         <small>Recreated on application restart</small>
     </aside>
@@ -26,8 +25,6 @@
         <a href="/"><span>SHIPPED UI</span><h3>Authentication</h3><p>Password, email code, recovery, registration, and instant Test Mode.</p></a>
         <a href="/Account"><span>SHIPPED UI</span><h3>Account center</h3><p>Profile, contact methods, lifecycle operations, and global administration.</p></a>
         <a href="/demo/workspaces"><span>PUBLIC SERVICE</span><h3>Workspaces</h3><p>Businesses, owners, teams, roles, permissions, and invitations.</p></a>
-        <a href="/demo/subscriptions"><span>PUBLIC SERVICE</span><h3>Subscriptions</h3><p>User and workspace scopes, expiry, renewal, providers, and metadata.</p></a>
-        <a href="/demo/billing"><span>PUBLIC CONTRACT</span><h3>Billing references</h3><p>Provider customers and saved payment-method tokens without transaction logic.</p></a>
         <a href="/demo/inbox.html"><span>DEMO TOOL</span><h3>Verification inbox</h3><p>Codes captured from the real email-code callback without requiring SMTP.</p></a>
     </div>
 </section>
@@ -35,14 +32,9 @@
 <details class="authority-code"><summary>Registration code</summary><pre><code>@DemoCodeSamples.Registration</code></pre></details>
 
 @code {
-    private int _subscriptionCount;
 
     protected override async Task OnInitializedAsync()
     {
         await Seed.InitializeAsync();
-        IReadOnlyList<CloudSubscription> userSubscriptions = await Accounts.GetSubscriptionsAsync(Seed.OwnerUserId, null);
-        _subscriptionCount = userSubscriptions.Count;
-        foreach (CloudWorkspace workspace in Seed.Workspaces)
-            _subscriptionCount += (await Accounts.GetSubscriptionsAsync(null, workspace.Id)).Count;
     }
 }

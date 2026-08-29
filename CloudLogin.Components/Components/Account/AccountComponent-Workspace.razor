@@ -47,14 +47,6 @@
         </div>
 
         <div class="stat-row">
-            <button type="button" class="stat" @onclick='() => Navigate("Subscriptions")'>
-                <span class="stat-value">@RunningSubscriptions</span>
-                <span class="stat-label">Active subscription@(RunningSubscriptions == 1 ? "" : "s")</span>
-            </button>
-            <button type="button" class="stat" @onclick='() => Navigate("PaymentMethods")' disabled="@(!Workspace.CanManage)">
-                <span class="stat-value">@(Workspace.BillingProfile?.PaymentMethods.Count ?? 0)</span>
-                <span class="stat-label">Payment method@((Workspace.BillingProfile?.PaymentMethods.Count ?? 0) == 1 ? "" : "s")</span>
-            </button>
             <div class="stat _static">
                 <span class="stat-value">@Workspace.Members.Count</span>
                 <span class="stat-label">Member@(Workspace.Members.Count == 1 ? "" : "s")</span>
@@ -213,10 +205,6 @@
                             @(WorkspaceEntity.BillingAddress.IsEmpty ? "Not specified" : WorkspaceEntity.BillingAddress.ToString())
                         </dd>
                     </div>
-                    <div class="detail-row">
-                        <dt>Billing account</dt>
-                        <dd class="@Muted(Workspace.BillingProfile?.ProviderCustomerReference)">@Or(Workspace.BillingProfile?.ProviderCustomerReference, "No provider customer linked")</dd>
-                    </div>
                 </dl>
             }
         </div>
@@ -325,15 +313,7 @@
                         {
                             <li>@report.OtherMemberCount other member@(report.OtherMemberCount == 1 ? "" : "s") lose access.</li>
                         }
-                        @if (report.RemovableSubscriptionCount > 0)
-                        {
-                            <li>@report.RemovableSubscriptionCount subscription record@(report.RemovableSubscriptionCount == 1 ? "" : "s").</li>
-                        }
-                        @if (report.PaymentMethodCount > 0)
-                        {
-                            <li>@report.PaymentMethodCount saved payment reference@(report.PaymentMethodCount == 1 ? "" : "s").</li>
-                        }
-                        <li>Its billing information and every invitation still pending.</li>
+                        <li>Every invitation still pending.</li>
                     </ul>
                     <div class="field">
                         <label class="field-label" for="org-confirm">Type <strong>@WorkspaceEntity.Name</strong> to confirm</label>
@@ -378,7 +358,6 @@
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
     private CloudWorkspaceModel WorkspaceEntity => Workspace.Workspace;
-    private int RunningSubscriptions => Workspace.Subscriptions.Count(subscription => subscription.IsRunning);
 
     private bool _busy;
     private string _message = string.Empty;

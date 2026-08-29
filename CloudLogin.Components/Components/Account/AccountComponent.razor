@@ -135,9 +135,8 @@
                         </header>
                         @if (activeWorkspaceId is Guid workspaceId)
                         {
-                            @* Workspace context. Subscriptions and payment options read from the
-                               workspace the rail already loaded, so switching tabs inside a
-                               workspace costs no extra round trip. *@
+                            @* Workspace context. The workspace tab renders from the
+ *                             record the rail already loaded, so no extra round trip. *@
                             if (loadingWorkspace)
                             {
                                 <div class="workspace-loading" role="status" aria-label="Loading workspace">
@@ -150,25 +149,6 @@
                                     <p>This workspace is no longer available to you. It may have been deleted, or your membership may have ended.</p>
                                     <button type="button" class="workspace-missing-action" @onclick="LeaveWorkspace">Back to personal account</button>
                                 </div>
-                            }
-                            else if (activeTab == "Subscriptions")
-                            {
-                                <AccountComponent_Subscriptions @key="RouteKey"
-                                                                WorkspaceId="activeWorkspaceId"
-                                                                Subscriptions="activeWorkspace.Subscriptions"
-                                                                CanManage="activeWorkspace.CanManage"
-                                                                TargetSubscriptionId="@targetHighlightId"
-                                                                WorkspaceLabel="@WorkspaceLabel"
-                                                                OnChanged="ReloadWorkspace" />
-                            }
-                            else if (activeTab == "PaymentMethods")
-                            {
-                                <AccountComponent_PaymentMethods @key="RouteKey"
-                                                                 WorkspaceId="activeWorkspaceId"
-                                                                 Profile="activeWorkspace.BillingProfile"
-                                                                 CanManage="activeWorkspace.CanManage"
-                                                                 WorkspaceLabel="@WorkspaceLabel"
-                                                                 OnChanged="ReloadWorkspace" />
                             }
                             else
                             {
@@ -189,14 +169,6 @@
                         {
                             <AccountComponent_Security @key="RouteKey" CurrentUser="CurrentUser" />
                         }
-                        else if (activeTab == "Subscriptions")
-                        {
-                            <AccountComponent_Subscriptions @key="RouteKey" TargetSubscriptionId="@targetHighlightId" />
-                        }
-                        else if (activeTab == "PaymentMethods")
-                        {
-                            <AccountComponent_PaymentMethods @key="RouteKey" />
-                        }
                         else if (activeTab == "Admin" && CurrentUser.IsGlobalAdmin)
                         {
                             <AdminComponent @key="RouteKey" AdminUserId="@AdminUserId" />
@@ -205,9 +177,7 @@
                         {
                             <AccountComponent_Overview @key="RouteKey"
                                                         CurrentUser="CurrentUser"
-                                                        EnableSubscriptions="EnableSubscriptions"
                                                         EnableWorkspaces="EnableWorkspaces"
-                                                        EnablePayments="EnablePayments"
                                                         WorkspaceLabel="@WorkspaceLabel"
                                                         WorkspaceLabelPlural="@WorkspaceLabelPlural"
                                                         OnNavigateToTab="SwitchTab"
@@ -250,19 +220,17 @@ else
     [Parameter] public Guid? AdminUserId { get; set; }
 
     /// <summary>
-    /// Legacy deep-link section name (e.g. "Subscriptions", "Workspaces"). Honoured only on
+    /// Legacy deep-link section name (e.g. "Profile", "Workspaces"). Honoured only on
     /// first load, and only when the browser URL carries no path segments of its own — once
     /// present, translated into the canonical path-based URL below so every later navigation,
     /// refresh, and share link uses one consistent scheme.
     /// </summary>
     [Parameter] public string? InitialSection { get; set; }
 
-    /// <summary>Legacy deep-link target (a workspace id for "Workspaces", a subscription id otherwise). See <see cref="InitialSection"/>.</summary>
+    /// <summary>Legacy deep-link target (a workspace id for "Workspaces"). See <see cref="InitialSection"/>.</summary>
     [Parameter] public Guid? TargetEntityId { get; set; }
 
-    [Parameter] public bool EnableSubscriptions { get; set; }
     [Parameter] public bool EnableWorkspaces { get; set; }
-    [Parameter] public bool EnablePayments { get; set; }
 
     /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>
     [Parameter] public string WorkspaceLabel { get; set; } = "Workspace";
@@ -367,12 +335,6 @@ else
             {
                 yield return new() { Name = "Workspace", DisplayName = WorkspaceLabel };
 
-                if (EnableSubscriptions)
-                    yield return new() { Name = "Subscriptions", DisplayName = "Subscriptions" };
-
-                if (EnablePayments)
-                    yield return new() { Name = "PaymentMethods", DisplayName = "Payment options" };
-
                 yield break;
             }
 
@@ -380,11 +342,6 @@ else
             yield return new() { Name = "Profile", DisplayName = "Profile" };
             yield return new() { Name = "Security", DisplayName = "Security" };
 
-            if (EnableSubscriptions)
-                yield return new() { Name = "Subscriptions", DisplayName = "Subscriptions" };
-
-            if (EnablePayments)
-                yield return new() { Name = "PaymentMethods", DisplayName = "Payment options" };
         }
     }
 
@@ -462,8 +419,6 @@ else
     {
         var s when s.Equals("Profile", StringComparison.OrdinalIgnoreCase) => "Profile",
         var s when s.Equals("Security", StringComparison.OrdinalIgnoreCase) => "Security",
-        var s when s.Equals("Subscriptions", StringComparison.OrdinalIgnoreCase) => "Subscriptions",
-        var s when s.Equals("PaymentMethods", StringComparison.OrdinalIgnoreCase) => "PaymentMethods",
         var s when s.Equals("Admin", StringComparison.OrdinalIgnoreCase) => "Admin",
         _ => "Overview"
     };
@@ -505,7 +460,7 @@ else
         if (InitialSection.Equals("Workspaces", StringComparison.OrdinalIgnoreCase))
             return TargetEntityId is Guid legacyWorkspaceId ? BuildWorkspaceUrl(legacyWorkspaceId, "Workspace") : null;
 
-        string[] known = ["Profile", "Security", "Subscriptions", "PaymentMethods", "Admin"];
+        string[] known = ["Profile", "Security", "Admin"];
         string? match = known.FirstOrDefault(name => name.Equals(InitialSection, StringComparison.OrdinalIgnoreCase));
 
         return match is null ? null : BuildTabUrl(match, TargetEntityId);
@@ -560,9 +515,7 @@ else
         "Overview" => @<GridIcon />,
         "Profile" => @<PersonIcon />,
         "Security" => @<ShieldCheckIcon />,
-        "Subscriptions" => @<CreditCardIcon />,
         "Workspace" => @<BuildingIcon />,
-        "PaymentMethods" => @<WalletIcon />,
         "Admin" => @<ShieldCheckIcon />,
         _ => @<GridIcon />
     };

@@ -1,27 +1,21 @@
-# CloudLogin workspaces and lightweight subscriptions
+# CloudLogin workspaces
 
-CloudLogin owns account identity infrastructure for workspaces, members, owners, roles, permissions, invitations, billing references, and lightweight subscription registry entries. These contracts remain usable without CloudCommerce.
+CloudLogin owns account identity infrastructure: users, authentication, profiles, security, and workspaces (members, owners, roles, permissions, invitations). Nothing commercial lives here.
 
 ## Workspace registry
 
-`ICloudLoginWorkspaceRegistry` creates workspaces, records owner membership, adds members, and creates invitations. `CloudWorkspaceMember` stores membership state plus application-defined role and permission codes. CloudLogin does not use commerce orders to infer identity ownership.
+`ICloudLoginWorkspaceRegistry` creates and manages workspaces, memberships, invitations, quotas, and deletion. `CloudWorkspace` carries the workspace profile (name, legal name, website, tax id, billing-contact information) — profile data an application may display or sync, not commercial state.
 
-Register the default in-memory implementation for local use and isolated tests:
+## Commercial boundary
 
-```csharp
-services.AddCloudLoginAccountRegistry();
-```
+Subscriptions, orders, and payments do not live in CloudLogin:
 
-CDM hosts call `AddCdmCloudCommerceAdapters()` after this registration to replace only `ICloudLoginAccountStore` with the private CDM-backed adapter.
+- Each application/division owns its subscriptions in full (plan, tokens, renewal, status, limits).
+- Angry Monkey (the group system) owns centralized orders and payment history across all divisions.
+- Angry Monkey Pay handles payment checkout; CloudPayments owns provider communication and transaction execution.
 
-## Subscription registry boundary
+CloudLogin contributes only identity: applications record `CloudUserId`/`CloudWorkspaceId` on their own commercial records and authenticate people through CloudLogin.
 
-`ICloudLoginSubscriptionRegistry` answers whether a user or workspace has an active application subscription and returns active registry entries. `CloudSubscription` records the application, reference or SKU, expiry, auto-renew flag, provider references, and structured application metadata.
+## Workspace deletion
 
-The application owns plan semantics, entitlements, usage, credits, renewal decisions, and top-up behavior. CloudLogin does not execute recurring payments. CloudPayments owns provider communication and transaction execution.
-
-## Billing references
-
-`CloudBillingProfile` stores provider customer and payment-method references. It never captures, refunds, or charges a payment method. Applications pass those references to CloudPayments when an actual transaction is required.
-
-See the [commerce ecosystem architecture](commerce-ecosystem/index.md), [CloudPayments](../CloudPayments/docs/index.md), and [CloudCommerce](../CloudCommerce/docs/index.md).
+Deleting a workspace removes its memberships and invitations in one operation and publishes `Workspace.Deleted`. Since no commercial records live in CloudLogin, nothing here blocks deletion; `CloudWorkspaceDeletionReport` tells the account page how many other members lose access.

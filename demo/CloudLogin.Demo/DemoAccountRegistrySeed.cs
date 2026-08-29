@@ -10,7 +10,7 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, G
     private bool _initialized;
 
     /// <summary>
-    /// The demo admin's user id, so the seeded workspaces, subscriptions, and billing
+    /// The demo admin's user id, so the seeded workspaces
     /// belong to the account you sign in as — the account page shows them straight away
     /// instead of an empty workspace.
     /// </summary>
@@ -31,7 +31,6 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, G
 
             using IServiceScope scope = scopeFactory.CreateScope();
             ICloudLoginWorkspaceRegistry workspaces = scope.ServiceProvider.GetRequiredService<ICloudLoginWorkspaceRegistry>();
-            ICloudLoginSubscriptionRegistry subscriptions = scope.ServiceProvider.GetRequiredService<ICloudLoginSubscriptionRegistry>();
             ICloudLoginAccountStore accounts = scope.ServiceProvider.GetRequiredService<ICloudLoginAccountStore>();
 
             CloudWorkspace cedarLabs = await workspaces.CreateAsync("Cedar Labs", OwnerUserId);
@@ -62,7 +61,7 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, G
 
             Workspaces = [cedarLabs, northstarClinic];
 
-            await AddMemberAsync(accounts, workspaces, cedarLabs.Id, ["BillingAdmin", "Developer"], ["billing.manage", "subscriptions.read"]);
+            await AddMemberAsync(accounts, workspaces, cedarLabs.Id, ["BillingAdmin", "Developer"], ["billing.manage", "members.read"]);
             await AddMemberAsync(accounts, workspaces, cedarLabs.Id, ["Support"], ["members.read", "invitations.create"]);
             await AddMemberAsync(accounts, workspaces, northstarClinic.Id, ["Scheduler"], ["appointments.manage", "members.read"]);
 
@@ -70,102 +69,9 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, G
             CloudWorkspaceInvitation clinicInvitation = await workspaces.InviteAsync(northstarClinic.Id, "doctor@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(3), ["Practitioner"]);
             Invitations = [cedarInvitation, clinicInvitation];
 
-            await subscriptions.SaveAsync(new()
-            {
-                UserId = OwnerUserId,
-                Application = "cloud-studio",
-                Reference = "creator-pro",
-                Status = CloudSubscriptionStatuses.Active,
-                ExpiresOn = DateTimeOffset.UtcNow.AddDays(30),
-                AutoRenew = true,
-                Provider = "Stripe",
-                ProviderReference = "sub_demo_creator",
-                Metadata =
-                {
-                    ["credits"] = JsonSerializer.SerializeToElement(10_000),
-                    ["premiumModels"] = JsonSerializer.SerializeToElement(true)
-                }
-            });
             // Expired and under the default policy, so the account page offers to remove it.
-            await subscriptions.SaveAsync(new()
-            {
-                UserId = OwnerUserId,
-                Application = "cloud-studio",
-                Reference = "starter-2025",
-                Status = CloudSubscriptionStatuses.Expired,
-                ExpiresOn = DateTimeOffset.UtcNow.AddDays(-40),
-                Provider = "Stripe",
-                ProviderReference = "sub_demo_expired"
-            });
-
             // Long expired but marked Never, to show an entry the account holder can't clear and
             // that keeps its workspace from being deleted.
-            await subscriptions.SaveAsync(new()
-            {
-                WorkspaceId = northstarClinic.Id,
-                Application = "clinic-ledger",
-                Reference = "audit-2023",
-                Status = CloudSubscriptionStatuses.Expired,
-                ExpiresOn = DateTimeOffset.UtcNow.AddYears(-1),
-                Provider = "SkipCash",
-                ProviderReference = "sub_demo_audit",
-                DeletionPolicy = CloudSubscriptionDeletionPolicies.Never
-            });
-            await subscriptions.SaveAsync(new()
-            {
-                WorkspaceId = cedarLabs.Id,
-                Application = "cloud-business",
-                Reference = "team-growth",
-                Status = CloudSubscriptionStatuses.Active,
-                ExpiresOn = DateTimeOffset.UtcNow.AddDays(45),
-                AutoRenew = true,
-                Provider = "MyFatoorah",
-                ProviderReference = "sub_demo_cedar",
-                Metadata =
-                {
-                    ["seats"] = JsonSerializer.SerializeToElement(12),
-                    ["regions"] = JsonSerializer.SerializeToElement(new[] { "AE", "QA", "LB" })
-                }
-            });
-            await subscriptions.SaveAsync(new()
-            {
-                WorkspaceId = northstarClinic.Id,
-                Application = "clinic-appointments",
-                Reference = "practice-plus",
-                Status = CloudSubscriptionStatuses.Active,
-                AutoRenew = true,
-                Provider = "SkipCash",
-                ProviderReference = "sub_demo_clinic",
-                Metadata =
-                {
-                    ["practitioners"] = JsonSerializer.SerializeToElement(8),
-                    ["locations"] = JsonSerializer.SerializeToElement(2)
-                }
-            });
-
-            await accounts.SaveBillingProfileAsync(new()
-            {
-                UserId = OwnerUserId,
-                ProviderCustomerReference = "cus_demo_owner",
-                PaymentMethods = [new("Stripe", "pm_demo_visa", "Visa ending 4242", true)]
-            });
-            await accounts.SaveBillingProfileAsync(new()
-            {
-                WorkspaceId = cedarLabs.Id,
-                ProviderCustomerReference = "cus_demo_cedar",
-                PaymentMethods =
-                [
-                    new("MyFatoorah", "pm_demo_knet", "KNET sandbox", true),
-                    new("Stripe", "pm_demo_mastercard", "Mastercard ending 4444")
-                ]
-            });
-            await accounts.SaveBillingProfileAsync(new()
-            {
-                WorkspaceId = northstarClinic.Id,
-                ProviderCustomerReference = "cus_demo_northstar",
-                PaymentMethods = [new("SkipCash", "token_demo_qatar", "SkipCash sandbox", true)]
-            });
-
             _initialized = true;
         }
         finally

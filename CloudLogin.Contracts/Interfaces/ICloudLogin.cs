@@ -85,18 +85,10 @@ public interface ICloudLogin
     /// <param name="finalReferer">The external website URL that referred to CloudLogin</param>
     /// <returns>The complete custom login URL</returns>
     string GetCustomLoginUrl(string? referer = null, bool isMobileApp = false, bool keepMeSignedIn = false, string? userHint = null);
-
-    // Account-registry surface for the signed-in user (workspaces, subscriptions, billing references).
+    // Account-registry surface for the signed-in user: workspaces only. Commercial records
+    // (subscriptions, orders, payments) live in the owning applications, never here.
     // Returns empty results when the account registry isn't configured on the host.
     Task<List<CloudWorkspace>> GetMyWorkspaces();
-
-    /// <summary>
-    /// The signed-in user's subscriptions. By default only the running ones; pass
-    /// <paramref name="includeInactive"/> to include expired, cancelled, and suspended entries.
-    /// </summary>
-    Task<List<CloudSubscription>> GetMySubscriptions(bool includeInactive = false);
-
-    Task<CloudBillingProfile?> GetMyBillingProfile();
 
     /// <summary>How many workspaces the signed-in user owns and belongs to, against the host's configured caps.</summary>
     Task<CloudWorkspaceQuota> GetMyWorkspaceQuota();
@@ -107,33 +99,17 @@ public interface ICloudLogin
     /// <summary>Invites a recipient (email or phone) to a workspace the signed-in user owns/administers.</summary>
     Task<CloudWorkspaceInvitation> InviteToWorkspace(Guid workspaceId, string recipient, IReadOnlyList<string>? roles = null);
 
-    /// <summary>Updates a workspace's profile and billing information. Caller must be the owner/admin.</summary>
+    /// <summary>Updates a workspace's profile and billing-contact information. Caller must be the owner/admin.</summary>
     Task<CloudWorkspace> UpdateWorkspace(CloudWorkspace workspace);
 
     /// <summary>
-    /// The signed-in user's view of one workspace — profile, members, subscriptions, and
-    /// billing — in a single call. Null when the user isn't a member of it.
+    /// The signed-in user's view of one workspace — profile, members, and the caller's standing —
+    /// in a single call. Null when the user isn't a member of it.
     /// </summary>
     Task<CloudWorkspaceDetail?> GetWorkspaceDetail(Guid workspaceId);
 
-    /// <summary>
-    /// Deletes a workspace the signed-in user owns, along with its memberships, invitations,
-    /// billing profile, and removable subscriptions. Throws
-    /// <see cref="CloudWorkspaceDeletionBlockedException"/> while a subscription still blocks it.
-    /// </summary>
+    /// <summary>Deletes a workspace the signed-in user owns, along with its memberships and invitations.</summary>
     Task DeleteWorkspace(Guid workspaceId);
-
-    /// <summary>
-    /// Removes a subscription entry the signed-in user (or a workspace they administer) owns,
-    /// honouring its <see cref="CloudSubscription.DeletionPolicy"/>.
-    /// </summary>
-    Task DeleteSubscription(Guid subscriptionId);
-
-    /// <summary>Adds or updates a saved payment-method reference for the signed-in user (or a workspace they administer).</summary>
-    Task<CloudBillingProfile> AddPaymentMethod(CloudPaymentMethodReference method, Guid? workspaceId = null);
-
-    /// <summary>Removes a saved payment-method reference from the signed-in user's account (or a workspace they administer).</summary>
-    Task<CloudBillingProfile> RemovePaymentMethod(string provider, string reference, Guid? workspaceId = null);
 
     /// <summary>Looks up a workspace by id, regardless of caller membership. Used by the service-to-service lookup endpoint.</summary>
     Task<CloudWorkspace?> GetWorkspaceById(Guid workspaceId);
@@ -143,12 +119,6 @@ public interface ICloudLogin
 
     /// <summary>Returns workspace membership and string permissions for trusted service integrations.</summary>
     Task<List<CloudWorkspaceMember>> GetWorkspaceMembers(Guid workspaceId);
-
-    /// <summary>Looks up a subscription by id, regardless of owner. Used by the service-to-service lookup endpoint.</summary>
-    Task<CloudSubscription?> GetSubscriptionById(Guid subscriptionId);
-
-    /// <summary>Returns every subscription in the registry, regardless of owner or status. Used by the service-to-service lookup endpoint.</summary>
-    Task<List<CloudSubscription>> GetAllSubscriptions();
 
     // ── Security (self-service, always scoped to the signed-in user) ──────────
     // No method here takes a user id: the server resolves the acting user from the

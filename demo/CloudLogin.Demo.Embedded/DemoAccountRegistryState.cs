@@ -4,7 +4,7 @@ using AngryMonkey.CloudLogin.Interfaces;
 
 namespace CloudLogin.Demo.Embedded;
 
-public sealed class DemoAccountRegistryState(ICloudLoginWorkspaceRegistry workspaces, ICloudLoginSubscriptionRegistry subscriptions, ICloudLoginAccountStore accounts)
+public sealed class DemoAccountRegistryState(ICloudLoginWorkspaceRegistry workspaces, ICloudLoginAccountStore accounts)
 {
     private readonly SemaphoreSlim _initializationLock = new(1, 1);
     private readonly List<CloudWorkspace> _workspaces = [];
@@ -34,56 +34,11 @@ public sealed class DemoAccountRegistryState(ICloudLoginWorkspaceRegistry worksp
             _workspaces.Add(workspace);
             SelectedWorkspaceId = workspace.Id;
 
-            await AddMemberAsync(Guid.NewGuid(), ["BillingAdmin", "Developer"], ["billing.manage", "subscriptions.read"]);
+            await AddMemberAsync(Guid.NewGuid(), ["BillingAdmin", "Developer"], ["billing.manage", "members.read"]);
             await AddMemberAsync(Guid.NewGuid(), ["Support"], ["members.read"]);
 
             CloudWorkspaceInvitation invitation = await workspaces.InviteAsync(workspace.Id, "partner@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(7), ["Developer"]);
             _invitations.Add(invitation);
-
-            await subscriptions.SaveAsync(new CloudSubscription
-            {
-                UserId = OwnerUserId,
-                Application = "cloud-studio",
-                Reference = "creator-pro",
-                Status = CloudSubscriptionStatuses.Active,
-                ExpiresOn = DateTimeOffset.UtcNow.AddDays(30),
-                AutoRenew = true,
-                Provider = "Stripe",
-                ProviderReference = "sub_demo_user",
-                Metadata =
-                {
-                    ["credits"] = JsonSerializer.SerializeToElement(10_000),
-                    ["premiumModels"] = JsonSerializer.SerializeToElement(true)
-                }
-            });
-
-            await subscriptions.SaveAsync(new CloudSubscription
-            {
-                WorkspaceId = workspace.Id,
-                Application = "cloud-business",
-                Reference = "team-growth",
-                Status = CloudSubscriptionStatuses.Active,
-                ExpiresOn = DateTimeOffset.UtcNow.AddDays(45),
-                AutoRenew = true,
-                Provider = "MyFatoorah",
-                ProviderReference = "sub_demo_workspace",
-                Metadata =
-                {
-                    ["seats"] = JsonSerializer.SerializeToElement(12),
-                    ["regions"] = JsonSerializer.SerializeToElement(new[] { "AE", "QA", "LB" })
-                }
-            });
-
-            await accounts.SaveBillingProfileAsync(new CloudBillingProfile
-            {
-                WorkspaceId = workspace.Id,
-                ProviderCustomerReference = "cus_demo_cedar",
-                PaymentMethods =
-                [
-                    new("Stripe", "pm_demo_visa", "Visa ending 4242", IsDefault: true),
-                    new("MyFatoorah", "pm_demo_knet", "KNET sandbox reference")
-                ]
-            });
 
             await RefreshMembersAsync();
             _initialized = true;
@@ -135,19 +90,6 @@ public sealed class DemoAccountRegistryState(ICloudLoginWorkspaceRegistry worksp
         _invitations.Add(invitation);
         return invitation;
     }
-
-    public Task<CloudSubscription> SaveSubscriptionAsync(CloudSubscription subscription) => subscriptions.SaveAsync(subscription);
-
-    public Task<bool> HasActiveSubscriptionAsync(string application, string reference, bool workspaceScope)
-        => subscriptions.HasActiveAsync(application, reference, workspaceScope ? null : OwnerUserId, workspaceScope ? SelectedWorkspaceId : null);
-
-    public Task<IReadOnlyList<CloudSubscription>> GetSubscriptionsAsync(bool workspaceScope)
-        => accounts.GetSubscriptionsAsync(workspaceScope ? null : OwnerUserId, workspaceScope ? SelectedWorkspaceId : null);
-
-    public Task SaveBillingProfileAsync(CloudBillingProfile profile) => accounts.SaveBillingProfileAsync(profile);
-
-    public Task<CloudBillingProfile?> GetBillingProfileAsync(bool workspaceScope)
-        => accounts.GetBillingProfileAsync(workspaceScope ? null : OwnerUserId, workspaceScope ? SelectedWorkspaceId : null);
 
     private async Task RefreshMembersAsync()
     {

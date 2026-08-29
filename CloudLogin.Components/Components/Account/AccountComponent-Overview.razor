@@ -75,37 +75,13 @@
             <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
         </button>
 
-        @if (EnableSubscriptions)
-        {
-            <button type="button" class="feature-card" @onclick='() => Navigate("Subscriptions")'>
-                <span class="feature-icon" aria-hidden="true"><CreditCardIcon /></span>
-                <span class="feature-copy">
-                    <span class="feature-title">Subscriptions</span>
-                    <span class="feature-stat">Applications and plans linked to your account — @(_loadingSubscriptions ? "loading…" : SubscriptionsSummary()).</span>
-                </span>
-                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
-            </button>
-        }
-
         @if (EnableWorkspaces)
         {
             <button type="button" class="feature-card" @onclick='() => Navigate("Workspaces")'>
                 <span class="feature-icon" aria-hidden="true"><BuildingIcon /></span>
                 <span class="feature-copy">
                     <span class="feature-title">@WorkspaceLabelPlural</span>
-                    <span class="feature-stat">Teams you belong to and their billing details — @(_loadingWorkspaces ? "loading…" : WorkspacesSummary()).</span>
-                </span>
-                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
-            </button>
-        }
-
-        @if (EnablePayments)
-        {
-            <button type="button" class="feature-card" @onclick='() => Navigate("PaymentMethods")'>
-                <span class="feature-icon" aria-hidden="true"><WalletIcon /></span>
-                <span class="feature-copy">
-                    <span class="feature-title">Payment options</span>
-                    <span class="feature-stat">Saved provider references, never card data — @(_loadingPaymentMethods ? "loading…" : PaymentMethodsSummary()).</span>
+                    <span class="feature-stat">Teams you belong to and their members — @(_loadingWorkspaces ? "loading…" : WorkspacesSummary()).</span>
                 </span>
                 <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
             </button>
@@ -159,9 +135,7 @@
 
 @code {
     [Parameter] public required CloudUserModel CurrentUser { get; set; }
-    [Parameter] public bool EnableSubscriptions { get; set; }
     [Parameter] public bool EnableWorkspaces { get; set; }
-    [Parameter] public bool EnablePayments { get; set; }
 
     /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>
     [Parameter] public string WorkspaceLabel { get; set; } = "Workspace";
@@ -172,12 +146,8 @@
     [Parameter] public EventCallback<string> OnNavigateToTab { get; set; }
     [Parameter] public EventCallback OnDeleteAccount { get; set; }
 
-    private bool _loadingSubscriptions;
     private bool _loadingWorkspaces;
-    private bool _loadingPaymentMethods;
-    private int _subscriptionCount;
     private int _workspaceCount;
-    private int _paymentMethodCount;
 
     private bool _confirmingDelete;
     private bool _deleting;
@@ -186,24 +156,11 @@
     {
         List<Task> tasks = [];
 
-        if (EnableSubscriptions)
-            tasks.Add(LoadSubscriptionsAsync());
-
         if (EnableWorkspaces)
             tasks.Add(LoadWorkspacesAsync());
 
-        if (EnablePayments)
-            tasks.Add(LoadPaymentMethodsAsync());
-
         if (tasks.Count > 0)
             await Task.WhenAll(tasks);
-    }
-
-    private async Task LoadSubscriptionsAsync()
-    {
-        _loadingSubscriptions = true;
-        _subscriptionCount = (await cloudLogin.GetMySubscriptions()).Count;
-        _loadingSubscriptions = false;
     }
 
     private async Task LoadWorkspacesAsync()
@@ -213,22 +170,8 @@
         _loadingWorkspaces = false;
     }
 
-    private async Task LoadPaymentMethodsAsync()
-    {
-        _loadingPaymentMethods = true;
-        CloudBillingProfile? profile = await cloudLogin.GetMyBillingProfile();
-        _paymentMethodCount = profile?.PaymentMethods.Count() ?? 0;
-        _loadingPaymentMethods = false;
-    }
-
-    private string SubscriptionsSummary()
-        => _subscriptionCount == 0 ? "none yet" : $"{_subscriptionCount} active";
-
     private string WorkspacesSummary()
         => _workspaceCount == 0 ? "you're not a member of any yet" : $"{_workspaceCount} joined";
-
-    private string PaymentMethodsSummary()
-        => _paymentMethodCount == 0 ? "none saved yet" : $"{_paymentMethodCount} saved";
 
     private string ContactSummary()
     {

@@ -5,7 +5,7 @@
 <PageTitle>CloudLogin workspaces and teams</PageTitle>
 
 <DemoPageHeader Eyebrow="ICloudLoginWorkspaceRegistry" Title="Workspaces, teams, roles, permissions, and invitations." Description="Every interaction uses the real CloudLogin account-registry contracts. The generated identities are demo data; the workspace and membership behavior is package behavior.">
-    <a class="demo-button demo-button--secondary" href="/subscriptions">Continue to subscriptions</a>
+    <a class="demo-button demo-button--secondary" href="/inbox">Continue to the demo inbox</a>
 </DemoPageHeader>
 
 <DemoExample Title="Business identity and membership" Kind="Live public service workflow" Description="Create a workspace, switch business context, add a member with application-defined roles and permissions, or issue an expiring invitation." Code="@DemoCodeSamples.Workspaces" FileName="Workspaces.razor">
@@ -25,7 +25,7 @@
             @if (DemoState.SelectedWorkspace is CloudWorkspace workspace)
             {
                 <header class="demo-org-header"><span>@Initials(workspace.Name)</span><div><small>Selected business</small><h2>@workspace.Name</h2><code>@workspace.Id</code></div><dl><div><dt>Owner</dt><dd>@ShortId(workspace.OwnerUserId)</dd></div><div><dt>Created</dt><dd>@workspace.CreatedOn.ToLocalTime().ToString("dd MMM yyyy")</dd></div></dl></header>
-                <div class="demo-section-tabs"><a class="active" href="#members">Members</a><a href="#invitations">Invitations</a><a href="/subscriptions">Subscriptions</a><a href="/billing">Billing</a></div>
+                <div class="demo-section-tabs"><a class="active" href="#members">Members</a><a href="#invitations">Invitations</a></div>
 
                 <div id="members" class="demo-registry-panel">
                     <header><div><span>Team directory</span><h3>@DemoState.Members.Count members</h3></div><small>Roles and permissions stay application-defined</small></header>

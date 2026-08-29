@@ -59,75 +59,6 @@ public class AccountRegistryTests
     }
 
     [Fact]
-    public async Task GetActiveAsync_excludes_expired_and_cancelled_subscriptions()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        ICloudLoginSubscriptionRegistry registry = new SubscriptionRegistry(store);
-        Guid userId = Guid.NewGuid();
-        await registry.SaveAsync(new() { UserId = userId, Application = "studio", Reference = "active" });
-        await registry.SaveAsync(new() { UserId = userId, Application = "studio", Reference = "expired", ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(-1) });
-        await registry.SaveAsync(new() { UserId = userId, Application = "studio", Reference = "cancelled", Status = CloudSubscriptionStatuses.Cancelled });
-
-        IReadOnlyList<CloudSubscription> subscriptions = await registry.GetActiveAsync(userId);
-
-        CloudSubscription subscription = Assert.Single(subscriptions);
-        Assert.Equal("active", subscription.Reference);
-    }
-
-    [Fact]
-    public async Task HasActiveAsync_application_metadata_remains_application_owned()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        ICloudLoginSubscriptionRegistry registry = new SubscriptionRegistry(store);
-        Guid userId = Guid.NewGuid();
-        Dictionary<string, JsonElement> metadata = new()
-        {
-            ["credits"] = JsonSerializer.SerializeToElement(10_000),
-            ["premiumModels"] = JsonSerializer.SerializeToElement(true)
-        };
-        await registry.SaveAsync(new() { UserId = userId, Application = "ai", Reference = "pro", Metadata = metadata });
-
-        Assert.True(await registry.HasActiveAsync("AI", "PRO", userId));
-        CloudSubscription saved = Assert.Single(await store.GetSubscriptionsAsync(userId, null));
-        Assert.Equal(10_000, saved.Metadata["credits"].GetInt32());
-        Assert.True(saved.Metadata["premiumModels"].GetBoolean());
-    }
-
-    [Fact]
-    public async Task SaveAsync_without_account_owner_is_rejected()
-    {
-        ICloudLoginSubscriptionRegistry registry = new SubscriptionRegistry(new InMemoryCloudLoginAccountStore());
-        CloudSubscription subscription = new() { Application = "studio", Reference = "pro" };
-
-        await Assert.ThrowsAsync<ArgumentException>(() => registry.SaveAsync(subscription));
-    }
-
-    [Fact]
-    public async Task Billing_profile_round_trips_provider_references()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        Guid workspaceId = Guid.NewGuid();
-        CloudBillingProfile profile = new()
-        {
-            WorkspaceId = workspaceId,
-            ProviderCustomerReference = "cus_demo_123",
-            PaymentMethods =
-            [
-                new("stripe", "pm_demo_visa", "Visa ending 4242", true),
-                new("myfatoorah", "token_demo_mada", "Mada ending 0008")
-            ]
-        };
-
-        await store.SaveBillingProfileAsync(profile);
-        CloudBillingProfile? saved = await store.GetBillingProfileAsync(null, workspaceId);
-
-        Assert.NotNull(saved);
-        Assert.Equal("cus_demo_123", saved.ProviderCustomerReference);
-        Assert.Equal(2, saved.PaymentMethods.Count);
-        Assert.Single(saved.PaymentMethods, method => method.IsDefault);
-    }
-
-    [Fact]
     public async Task Registry_mutations_publish_versioned_identifier_events()
     {
         RecordingEventPublisher publisher = new();
@@ -147,41 +78,12 @@ public class AccountRegistryTests
         workspace.Name = "Acme Updated";
         await workspaces.UpdateAsync(workspace, ownerId);
 
-        SubscriptionRegistry subscriptions = new(store, publisher);
-        Guid subscriptionId = Guid.NewGuid();
-        await subscriptions.SaveAsync(new CloudSubscription
-        {
-            Id = subscriptionId,
-            WorkspaceId = workspace.Id,
-            Application = "portal",
-            Reference = "pro"
-        });
-        await subscriptions.SaveAsync(new CloudSubscription
-        {
-            Id = subscriptionId,
-            WorkspaceId = workspace.Id,
-            Application = "portal",
-            Reference = "pro",
-            AutoRenew = true
-        });
-        await subscriptions.SaveAsync(new CloudSubscription
-        {
-            Id = subscriptionId,
-            WorkspaceId = workspace.Id,
-            Application = "portal",
-            Reference = "pro",
-            Status = CloudSubscriptionStatuses.Cancelled
-        });
-
         Assert.Equal(
             [
                 "Workspace.Created",
                 "Workspace.MembershipUpdated",
                 "Workspace.InvitationCreated",
-                "Workspace.Updated",
-                "Subscription.Created",
-                "Subscription.Updated",
-                "Subscription.Cancelled"
+                "Workspace.Updated"
             ],
             publisher.Events.Select(item => item.EventType));
         Assert.All(publisher.Events, item =>
@@ -193,9 +95,6 @@ public class AccountRegistryTests
         Assert.Equal(
             workspace.Id.ToString(),
             publisher.Events[0].EntityId);
-        Assert.Equal(
-            subscriptionId.ToString(),
-            publisher.Events[^1].EntityId);
     }
 
     // ── Workspace allowances ──────────────────────────────────────────────
@@ -312,153 +211,30 @@ public class AccountRegistryTests
 
     // ── Deletion policy ──────────────────────────────────────────────────────
 
-    [Fact]
-    public async Task Subscriptions_default_to_being_removable_only_once_they_stop_running()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        ICloudLoginSubscriptionRegistry registry = new SubscriptionRegistry(store);
-        Guid userId = Guid.NewGuid();
-
-        CloudSubscription running = await registry.SaveAsync(new() { UserId = userId, Application = "studio", Reference = "running" });
-        CloudSubscription expired = await registry.SaveAsync(new() { UserId = userId, Application = "studio", Reference = "expired", ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(-1) });
-
-        Assert.Equal(CloudSubscriptionDeletionPolicies.WhenExpired, running.DeletionPolicy);
-        await Assert.ThrowsAsync<CloudSubscriptionDeletionBlockedException>(() => registry.DeleteAsync(running.Id));
-
-        await registry.DeleteAsync(expired.Id);
-        Assert.Null(await store.GetSubscriptionAsync(expired.Id));
-    }
-
-    [Fact]
-    public async Task Deletion_policies_allow_and_forbid_removal_regardless_of_expiry()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        ICloudLoginSubscriptionRegistry registry = new SubscriptionRegistry(store);
-        Guid userId = Guid.NewGuid();
-
-        CloudSubscription always = await registry.SaveAsync(new() { UserId = userId, Application = "studio", Reference = "always", DeletionPolicy = CloudSubscriptionDeletionPolicies.Always });
-        CloudSubscription never = await registry.SaveAsync(new()
-        {
-            UserId = userId,
-            Application = "studio",
-            Reference = "never",
-            Status = CloudSubscriptionStatuses.Expired,
-            ExpiresOn = DateTimeOffset.UtcNow.AddYears(-1),
-            DeletionPolicy = CloudSubscriptionDeletionPolicies.Never
-        });
-
-        await registry.DeleteAsync(always.Id);
-        Assert.Null(await store.GetSubscriptionAsync(always.Id));
-
-        await Assert.ThrowsAsync<CloudSubscriptionDeletionBlockedException>(() => registry.DeleteAsync(never.Id));
-    }
-
-    [Fact]
-    public async Task Cancelled_subscriptions_are_removable_under_the_default_policy()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        ICloudLoginSubscriptionRegistry registry = new SubscriptionRegistry(store);
-
-        CloudSubscription cancelled = await registry.SaveAsync(new()
-        {
-            UserId = Guid.NewGuid(),
-            Application = "studio",
-            Reference = "cancelled",
-            Status = CloudSubscriptionStatuses.Cancelled,
-            ExpiresOn = DateTimeOffset.UtcNow.AddYears(1)
-        });
-
-        await registry.DeleteAsync(cancelled.Id);
-        Assert.Null(await store.GetSubscriptionAsync(cancelled.Id));
-    }
-
     // ── Workspace deletion ────────────────────────────────────────────────
 
     [Fact]
-    public async Task An_workspace_with_a_running_subscription_cannot_be_deleted()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        WorkspaceRegistry workspaces = new(store);
-        ICloudLoginSubscriptionRegistry subscriptions = new SubscriptionRegistry(store);
-        Guid ownerId = Guid.NewGuid();
-
-        CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", ownerId);
-        await subscriptions.SaveAsync(new() { WorkspaceId = workspace.Id, Application = "portal", Reference = "team", ExpiresOn = DateTimeOffset.UtcNow.AddDays(30) });
-
-        CloudWorkspaceDeletionReport report = await workspaces.GetDeletionReportAsync(workspace.Id, ownerId);
-
-        Assert.False(report.CanDelete);
-        Assert.Equal(CloudWorkspaceDeletionBlockers.ActiveSubscriptions, report.Blockers);
-        Assert.Equal(1, report.ActiveSubscriptionCount);
-        Assert.NotEmpty(report.Reasons);
-
-        await Assert.ThrowsAsync<CloudWorkspaceDeletionBlockedException>(() => workspaces.DeleteAsync(workspace.Id, ownerId));
-        Assert.NotNull(await store.GetWorkspaceAsync(workspace.Id));
-    }
-
-    [Fact]
-    public async Task A_protected_subscription_blocks_deletion_even_after_it_expires()
-    {
-        InMemoryCloudLoginAccountStore store = new();
-        WorkspaceRegistry workspaces = new(store);
-        ICloudLoginSubscriptionRegistry subscriptions = new SubscriptionRegistry(store);
-        Guid ownerId = Guid.NewGuid();
-
-        CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", ownerId);
-        await subscriptions.SaveAsync(new()
-        {
-            WorkspaceId = workspace.Id,
-            Application = "ledger",
-            Reference = "archive",
-            Status = CloudSubscriptionStatuses.Expired,
-            ExpiresOn = DateTimeOffset.UtcNow.AddYears(-1),
-            DeletionPolicy = CloudSubscriptionDeletionPolicies.Never
-        });
-
-        CloudWorkspaceDeletionReport report = await workspaces.GetDeletionReportAsync(workspace.Id, ownerId);
-
-        Assert.False(report.CanDelete);
-        Assert.Equal(CloudWorkspaceDeletionBlockers.ProtectedSubscriptions, report.Blockers);
-        Assert.Equal(0, report.ActiveSubscriptionCount);
-        Assert.Equal(1, report.ProtectedSubscriptionCount);
-    }
-
-    [Fact]
-    public async Task Deleting_an_workspace_clears_its_members_invitations_billing_and_subscriptions()
+    public async Task Deleting_an_workspace_clears_its_members_and_invitations()
     {
         RecordingEventPublisher publisher = new();
         InMemoryCloudLoginAccountStore store = new();
         WorkspaceRegistry workspaces = new(store, publisher);
-        ICloudLoginSubscriptionRegistry subscriptions = new SubscriptionRegistry(store);
         Guid ownerId = Guid.NewGuid();
         Guid memberId = Guid.NewGuid();
 
         CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", ownerId);
         await workspaces.AddMemberAsync(workspace.Id, memberId, ["Developer"]);
         await workspaces.InviteAsync(workspace.Id, "partner@example.invalid", ownerId, DateTimeOffset.UtcNow.AddDays(7));
-        CloudSubscription expired = await subscriptions.SaveAsync(new()
-        {
-            WorkspaceId = workspace.Id,
-            Application = "portal",
-            Reference = "team",
-            Status = CloudSubscriptionStatuses.Expired,
-            ExpiresOn = DateTimeOffset.UtcNow.AddDays(-1)
-        });
-        await store.SaveBillingProfileAsync(new() { WorkspaceId = workspace.Id, PaymentMethods = [new("stripe", "pm_demo", "Visa ending 4242", true)] });
 
         CloudWorkspaceDeletionReport report = await workspaces.GetDeletionReportAsync(workspace.Id, ownerId);
         Assert.True(report.CanDelete);
         Assert.Equal(1, report.OtherMemberCount);
-        Assert.Equal(1, report.PaymentMethodCount);
-        Assert.Equal(1, report.RemovableSubscriptionCount);
 
         await workspaces.DeleteAsync(workspace.Id, ownerId);
 
         Assert.Null(await store.GetWorkspaceAsync(workspace.Id));
         Assert.Empty(await store.GetMembersAsync(workspace.Id));
         Assert.Empty(await store.GetInvitationsAsync(workspace.Id));
-        Assert.Null(await store.GetSubscriptionAsync(expired.Id));
-        Assert.Null(await store.GetBillingProfileAsync(null, workspace.Id));
         Assert.Empty(await store.GetWorkspacesForUserAsync(ownerId));
         Assert.Contains("Workspace.Deleted", publisher.Events.Select(item => item.EventType));
     }

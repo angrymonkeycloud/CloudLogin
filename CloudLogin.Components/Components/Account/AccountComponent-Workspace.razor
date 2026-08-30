@@ -112,7 +112,7 @@
                 </div>
                 <div class="detail-row">
                     <dt>@WorkspaceLabel ID</dt>
-                    <dd><code class="identifier">@WorkspaceEntity.Id</code></dd>
+                    <dd><code class="identifier">@WorkspaceEntity.ID</code></dd>
                 </div>
             </dl>
         }
@@ -473,7 +473,7 @@
 
         await Submit($"Invitation sent to {recipient}.", async () =>
         {
-            await cloudLogin.InviteToWorkspace(WorkspaceEntity.Id, recipient);
+            await cloudLogin.InviteToWorkspace(WorkspaceEntity.ID, recipient);
             _inviting = false;
         });
     }
@@ -489,7 +489,7 @@
             _message = string.Empty;
             StateHasChanged();
 
-            await cloudLogin.DeleteWorkspace(WorkspaceEntity.Id);
+            await cloudLogin.DeleteWorkspace(WorkspaceEntity.ID);
             await OnDeleted.InvokeAsync();
         }
         catch (Exception exception)
@@ -548,7 +548,7 @@
     /// </summary>
     private CloudWorkspace OriginalContract() => new()
     {
-        Id = WorkspaceEntity.Id,
+        ID = WorkspaceEntity.ID,
         Name = WorkspaceEntity.Name,
         OwnerUserId = WorkspaceEntity.OwnerUserId,
         CreatedOn = WorkspaceEntity.CreatedOn

@@ -17,7 +17,7 @@ public sealed class DemoAccountRegistryState(ICloudLoginWorkspaceRegistry worksp
     public IReadOnlyList<CloudWorkspaceMember> Members => _members;
     public IReadOnlyList<CloudWorkspaceInvitation> Invitations => _invitations;
     public Guid? SelectedWorkspaceId { get; private set; }
-    public CloudWorkspace? SelectedWorkspace => _workspaces.FirstOrDefault(workspace => workspace.Id == SelectedWorkspaceId);
+    public CloudWorkspace? SelectedWorkspace => _workspaces.FirstOrDefault(workspace => workspace.ID == SelectedWorkspaceId);
 
     public async Task InitializeAsync()
     {
@@ -32,12 +32,12 @@ public sealed class DemoAccountRegistryState(ICloudLoginWorkspaceRegistry worksp
 
             CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", OwnerUserId);
             _workspaces.Add(workspace);
-            SelectedWorkspaceId = workspace.Id;
+            SelectedWorkspaceId = workspace.ID;
 
             await AddMemberAsync(Guid.NewGuid(), ["BillingAdmin", "Developer"], ["billing.manage", "members.read"]);
             await AddMemberAsync(Guid.NewGuid(), ["Support"], ["members.read"]);
 
-            CloudWorkspaceInvitation invitation = await workspaces.InviteAsync(workspace.Id, "partner@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(7), ["Developer"]);
+            CloudWorkspaceInvitation invitation = await workspaces.InviteAsync(workspace.ID, "partner@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(7), ["Developer"]);
             _invitations.Add(invitation);
 
             await RefreshMembersAsync();
@@ -53,7 +53,7 @@ public sealed class DemoAccountRegistryState(ICloudLoginWorkspaceRegistry worksp
     {
         CloudWorkspace workspace = await workspaces.CreateAsync(name, OwnerUserId);
         _workspaces.Add(workspace);
-        await SelectWorkspaceAsync(workspace.Id);
+        await SelectWorkspaceAsync(workspace.ID);
         return workspace;
     }
 

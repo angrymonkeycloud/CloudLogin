@@ -26,7 +26,7 @@ public class ServiceControllerTests
         CloudWorkspace workspace = await registry.CreateAsync("Original Name", Guid.NewGuid());
         ServiceController controller = CreateController(workspaceRegistry: registry);
 
-        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.Id, Values(new
+        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.ID, Values(new
         {
             Name = "New Name",
             BillingContactName = "Dana Haddad",
@@ -47,13 +47,13 @@ public class ServiceControllerTests
         CloudWorkspace workspace = await registry.CreateAsync("Original Name", Guid.NewGuid());
         ServiceController controller = CreateController(workspaceRegistry: registry);
 
-        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.Id, Values(new
+        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.ID, Values(new
         {
             OwnerUserId = Guid.NewGuid()
         }));
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Original Name", (await registry.GetAsync(workspace.Id))!.Name);
+        Assert.Equal("Original Name", (await registry.GetAsync(workspace.ID))!.Name);
     }
 
     [Fact]

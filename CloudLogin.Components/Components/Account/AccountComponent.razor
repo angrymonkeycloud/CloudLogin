@@ -311,7 +311,7 @@ else
     private string ActiveWorkspaceName => activeWorkspaceId is null
         ? "Personal account"
         : activeWorkspace?.Workspace.Name
-            ?? myWorkspaces.FirstOrDefault(workspace => workspace.Id == activeWorkspaceId)?.Name
+            ?? myWorkspaces.FirstOrDefault(workspace => workspace.ID == activeWorkspaceId)?.Name
             ?? WorkspaceLabel;
 
     /// <summary>

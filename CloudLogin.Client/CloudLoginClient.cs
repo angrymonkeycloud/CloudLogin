@@ -691,7 +691,7 @@ public class CloudLoginClient : ICloudLogin
     public async Task<CloudWorkspace> UpdateWorkspace(CloudWorkspace workspace)
     {
         HttpContent content = JsonContent.Create(workspace, options: CloudLoginSerialization.Options);
-        HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Workspaces/{workspace.Id}", content);
+        HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Workspaces/{workspace.ID}", content);
 
         if (!message.IsSuccessStatusCode)
             throw await AccountFailure(message, "We couldn't save those changes.");

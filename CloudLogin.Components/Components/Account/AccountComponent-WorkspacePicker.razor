@@ -78,13 +78,13 @@
 
                         @foreach (CloudWorkspaceModel workspace in Workspaces)
                         {
-                            <button type="button" class="workspace-menu-item @(CurrentWorkspaceId == workspace.Id ? "_active" : "")" role="menuitemradio" aria-checked="@(CurrentWorkspaceId == workspace.Id ? "true" : "false")" @onclick="() => Select(workspace.Id)">
+                            <button type="button" class="workspace-menu-item @(CurrentWorkspaceId == workspace.ID ? "_active" : "")" role="menuitemradio" aria-checked="@(CurrentWorkspaceId == workspace.ID ? "true" : "false")" @onclick="() => Select(workspace.ID)">
                                 <span class="workspace-menu-item-mark" aria-hidden="true">@AccountDisplayHelpers.Initials(workspace.Name)</span>
                                 <span class="workspace-menu-item-copy">
                                     <span class="workspace-menu-item-name">@workspace.Name</span>
                                     <span class="workspace-menu-item-meta">@(workspace.OwnerUserId == CurrentUserId ? "Owner" : "Member")</span>
                                 </span>
-                                @if (CurrentWorkspaceId == workspace.Id)
+                                @if (CurrentWorkspaceId == workspace.ID)
                                 {
                                     <span class="workspace-menu-item-check" aria-hidden="true"><Checkmark /></span>
                                 }
@@ -135,7 +135,7 @@
     private string WorkspaceLabelPluralLower => WorkspaceLabelPlural.ToLowerInvariant();
 
     private string CurrentWorkspaceName
-        => Workspaces.FirstOrDefault(workspace => workspace.Id == CurrentWorkspaceId)?.Name ?? WorkspaceLabel;
+        => Workspaces.FirstOrDefault(workspace => workspace.ID == CurrentWorkspaceId)?.Name ?? WorkspaceLabel;
 
     private string Base => "/" + BasePath.Trim('/');
 
@@ -218,7 +218,7 @@
 
             // Landing directly inside the new workspace mirrors just having created it —
             // the natural next step, not an extra click back through the switcher.
-            navigationManager.NavigateTo($"{Base}/Workspace/{created.Id}", forceLoad: true);
+            navigationManager.NavigateTo($"{Base}/Workspace/{created.ID}", forceLoad: true);
         }
         catch (Exception exception)
         {

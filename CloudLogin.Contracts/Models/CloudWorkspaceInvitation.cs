@@ -2,7 +2,7 @@ namespace AngryMonkey.CloudLogin;
 
 public sealed class CloudWorkspaceInvitation
 {
-    public Guid Id { get; init; } = Guid.NewGuid();
+    public Guid ID { get; init; } = Guid.NewGuid();
     public required Guid WorkspaceId { get; init; }
     public required string Recipient { get; init; }
     public IReadOnlyList<string> Roles { get; init; } = [];

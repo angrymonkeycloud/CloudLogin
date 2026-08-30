@@ -4,7 +4,7 @@ namespace AngryMonkey.CloudLogin;
 
 public sealed class CloudWorkspace
 {
-    public Guid Id { get; init; } = Guid.NewGuid();
+    public Guid ID { get; init; } = Guid.NewGuid();
     public required string Name { get; set; }
     public Guid OwnerUserId { get; init; }
     public DateTimeOffset CreatedOn { get; init; } = DateTimeOffset.UtcNow;

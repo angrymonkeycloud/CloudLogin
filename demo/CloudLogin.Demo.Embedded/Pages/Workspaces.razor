@@ -14,8 +14,8 @@
             <header><span>Workspaces</span><b>@DemoState.Workspaces.Count</b></header>
             @foreach (CloudWorkspace workspaceSummary in DemoState.Workspaces)
             {
-                <button type="button" class="@(workspaceSummary.Id == DemoState.SelectedWorkspaceId ? "active" : null)" @onclick="() => SelectAsync(workspaceSummary.Id)">
-                    <span>@Initials(workspaceSummary.Name)</span><div><strong>@workspaceSummary.Name</strong><small>@ShortId(workspaceSummary.Id)</small></div>
+                <button type="button" class="@(workspaceSummary.ID == DemoState.SelectedWorkspaceId ? "active" : null)" @onclick="() => SelectAsync(workspaceSummary.ID)">
+                    <span>@Initials(workspaceSummary.Name)</span><div><strong>@workspaceSummary.Name</strong><small>@ShortId(workspaceSummary.ID)</small></div>
                 </button>
             }
             <div class="demo-form-block"><label><span>New workspace</span><input @bind="_workspaceName" placeholder="Workspace name" /></label><button class="demo-button demo-button--primary" disabled="@string.IsNullOrWhiteSpace(_workspaceName)" @onclick="CreateAsync">Create</button></div>
@@ -24,7 +24,7 @@
         <section>
             @if (DemoState.SelectedWorkspace is CloudWorkspace workspace)
             {
-                <header class="demo-org-header"><span>@Initials(workspace.Name)</span><div><small>Selected business</small><h2>@workspace.Name</h2><code>@workspace.Id</code></div><dl><div><dt>Owner</dt><dd>@ShortId(workspace.OwnerUserId)</dd></div><div><dt>Created</dt><dd>@workspace.CreatedOn.ToLocalTime().ToString("dd MMM yyyy")</dd></div></dl></header>
+                <header class="demo-org-header"><span>@Initials(workspace.Name)</span><div><small>Selected business</small><h2>@workspace.Name</h2><code>@workspace.ID</code></div><dl><div><dt>Owner</dt><dd>@ShortId(workspace.OwnerUserId)</dd></div><div><dt>Created</dt><dd>@workspace.CreatedOn.ToLocalTime().ToString("dd MMM yyyy")</dd></div></dl></header>
                 <div class="demo-section-tabs"><a class="active" href="#members">Members</a><a href="#invitations">Invitations</a></div>
 
                 <div id="members" class="demo-registry-panel">
@@ -41,7 +41,7 @@
                 <div id="invitations" class="demo-registry-panel">
                     <header><div><span>Pending access</span><h3>Invitations</h3></div><small>Recipient, inviter, roles, creation, and expiry</small></header>
                     <div class="demo-invitation-list">
-                        @foreach (CloudWorkspaceInvitation invitation in DemoState.Invitations.Where(item => item.WorkspaceId == workspace.Id))
+                    @foreach (CloudWorkspaceInvitation invitation in DemoState.Invitations.Where(item => item.WorkspaceId == workspace.ID))
                         {
                         <article><div><strong>@invitation.Recipient</strong><small>By @ShortId(invitation.InvitedByUserId)</small></div><div class="demo-tags">@foreach (string role in invitation.Roles) {
                             <b>@role</b>
@@ -92,7 +92,7 @@
     {
         CloudWorkspaceInvitation invitation = await DemoState.InviteAsync(_inviteEmail, Split(_inviteRoles));
         _inviteEmail = string.Empty;
-        _message = $"Created invitation {ShortId(invitation.Id)} with a seven-day expiry.";
+        _message = $"Created invitation {ShortId(invitation.ID)} with a seven-day expiry.";
     }
 
     private static string[] Split(string value) => value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

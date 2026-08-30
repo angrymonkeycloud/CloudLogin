@@ -4,7 +4,7 @@ namespace AngryMonkey.CloudLogin.Models;
 
 public class CloudWorkspaceModel
 {
-    public Guid Id { get; set; }
+    public Guid ID { get; set; }
     public string Name { get; set; } = string.Empty;
     public Guid OwnerUserId { get; set; }
     public DateTimeOffset CreatedOn { get; set; }
@@ -23,7 +23,7 @@ public static class CloudWorkspaceModelExtensions
 {
     public static CloudWorkspaceModel ToModel(this CloudWorkspace source) => new()
     {
-        Id = source.Id,
+        ID = source.ID,
         Name = source.Name,
         OwnerUserId = source.OwnerUserId,
         CreatedOn = source.CreatedOn,
@@ -40,7 +40,7 @@ public static class CloudWorkspaceModelExtensions
 
     public static CloudWorkspace ToContract(this CloudWorkspaceModel model, CloudWorkspace original) => new()
     {
-        Id = original.Id,
+        ID = original.ID,
         Name = model.Name,
         OwnerUserId = original.OwnerUserId,
         CreatedOn = original.CreatedOn,

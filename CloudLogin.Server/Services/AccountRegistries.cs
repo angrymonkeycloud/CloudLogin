@@ -10,7 +10,7 @@ public sealed class InMemoryCloudLoginAccountStore : ICloudLoginAccountStore
     private readonly ConcurrentDictionary<Guid, CloudWorkspaceInvitation> _invitations = new();
 
     public Task<CloudWorkspace?> GetWorkspaceAsync(Guid workspaceId, CancellationToken cancellationToken = default) => Task.FromResult(_workspaces.TryGetValue(workspaceId, out CloudWorkspace? workspace) ? workspace : null);
-    public Task SaveWorkspaceAsync(CloudWorkspace workspace, CancellationToken cancellationToken = default) { _workspaces[workspace.Id] = workspace; return Task.CompletedTask; }
+    public Task SaveWorkspaceAsync(CloudWorkspace workspace, CancellationToken cancellationToken = default) { _workspaces[workspace.ID] = workspace; return Task.CompletedTask; }
     public Task<IReadOnlyList<CloudWorkspace>> GetWorkspacesForUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         IEnumerable<Guid> workspaceIds = _members.Values.Where(member => member.UserId == userId).Select(member => member.WorkspaceId).Distinct();
@@ -19,7 +19,7 @@ public sealed class InMemoryCloudLoginAccountStore : ICloudLoginAccountStore
     public Task<IReadOnlyList<CloudWorkspace>> GetAllWorkspacesAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<CloudWorkspace>>([.. _workspaces.Values]);
     public Task<IReadOnlyList<CloudWorkspaceMember>> GetMembersAsync(Guid workspaceId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<CloudWorkspaceMember>>([.. _members.Values.Where(member => member.WorkspaceId == workspaceId)]);
     public Task SaveMemberAsync(CloudWorkspaceMember member, CancellationToken cancellationToken = default) { _members[(member.WorkspaceId, member.UserId)] = member; return Task.CompletedTask; }
-    public Task SaveInvitationAsync(CloudWorkspaceInvitation invitation, CancellationToken cancellationToken = default) { _invitations[invitation.Id] = invitation; return Task.CompletedTask; }
+    public Task SaveInvitationAsync(CloudWorkspaceInvitation invitation, CancellationToken cancellationToken = default) { _invitations[invitation.ID] = invitation; return Task.CompletedTask; }
     public Task<IReadOnlyList<CloudWorkspaceInvitation>> GetInvitationsAsync(Guid workspaceId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<CloudWorkspaceInvitation>>([.. _invitations.Values.Where(invitation => invitation.WorkspaceId == workspaceId)]);
 
     public Task DeleteWorkspaceAsync(Guid workspaceId, CancellationToken cancellationToken = default) { _workspaces.TryRemove(workspaceId, out _); return Task.CompletedTask; }
@@ -49,16 +49,16 @@ public sealed class WorkspaceRegistry(
             throw new CloudWorkspaceLimitReachedException(CloudWorkspaceLimitKinds.Membership, quota.MaxTotal, SingularLabel, PluralLabel);
 
         CloudWorkspace workspace = new() { Name = name.Trim(), OwnerUserId = ownerUserId };
-        CloudWorkspaceMember owner = new() { WorkspaceId = workspace.Id, UserId = ownerUserId, IsOwner = true, Roles = ["Owner"] };
+        CloudWorkspaceMember owner = new() { WorkspaceId = workspace.ID, UserId = ownerUserId, IsOwner = true, Roles = ["Owner"] };
         await store.SaveWorkspaceAsync(workspace, cancellationToken);
         await store.SaveMemberAsync(owner, cancellationToken);
         if (eventPublisher != null)
             await eventPublisher.PublishAsync(CloudLoginEvent.Create(
                 "Workspace.Created",
                 "Workspace",
-                workspace.Id,
+                workspace.ID,
                 "Created",
-                new { workspace.Id, workspace.OwnerUserId }),
+                new { workspace.ID, workspace.OwnerUserId }),
                 cancellationToken);
         return workspace;
     }
@@ -125,7 +125,7 @@ public sealed class WorkspaceRegistry(
                 "Workspace",
                 workspaceId,
                 "InvitationCreated",
-                new { invitation.Id, invitation.WorkspaceId }),
+                new { invitation.ID, invitation.WorkspaceId }),
                 cancellationToken);
         return invitation;
     }
@@ -133,8 +133,8 @@ public sealed class WorkspaceRegistry(
     public async Task<CloudWorkspace> UpdateAsync(CloudWorkspace workspace, Guid callerUserId, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(workspace);
-        CloudWorkspace existing = await store.GetWorkspaceAsync(workspace.Id, cancellationToken)
-            ?? throw new KeyNotFoundException($"Workspace '{workspace.Id}' was not found.");
+        CloudWorkspace existing = await store.GetWorkspaceAsync(workspace.ID, cancellationToken)
+            ?? throw new KeyNotFoundException($"Workspace '{workspace.ID}' was not found.");
 
         if (!await CanManageAsync(existing, callerUserId, cancellationToken))
             throw new UnauthorizedAccessException("Only the workspace's owner or an admin member may update its profile.");
@@ -163,9 +163,9 @@ public sealed class WorkspaceRegistry(
             await eventPublisher.PublishAsync(CloudLoginEvent.Create(
                 "Workspace.Updated",
                 "Workspace",
-                existing.Id,
+                existing.ID,
                 "Updated",
-                new { existing.Id, existing.OwnerUserId }),
+                new { existing.ID, existing.OwnerUserId }),
                 cancellationToken);
         return existing;
     }
@@ -199,7 +199,7 @@ public sealed class WorkspaceRegistry(
         // midway leaves a workspace the owner can retry, rather than orphaned members no one
         // can reach.
         foreach (CloudWorkspaceInvitation invitation in await store.GetInvitationsAsync(workspaceId, cancellationToken))
-            await store.DeleteInvitationAsync(invitation.Id, cancellationToken);
+            await store.DeleteInvitationAsync(invitation.ID, cancellationToken);
 
         foreach (CloudWorkspaceMember member in await store.GetMembersAsync(workspaceId, cancellationToken))
             await store.DeleteMemberAsync(workspaceId, member.UserId, cancellationToken);
@@ -221,7 +221,7 @@ public sealed class WorkspaceRegistry(
         if (workspace.OwnerUserId == callerUserId)
             return true;
 
-        IReadOnlyList<CloudWorkspaceMember> members = await store.GetMembersAsync(workspace.Id, cancellationToken);
+        IReadOnlyList<CloudWorkspaceMember> members = await store.GetMembersAsync(workspace.ID, cancellationToken);
         CloudWorkspaceMember? caller = members.FirstOrDefault(member => member.UserId == callerUserId);
 
         return caller is { IsOwner: true } || (caller?.Roles.Contains("Owner", StringComparer.OrdinalIgnoreCase) ?? false);
@@ -232,7 +232,7 @@ public sealed class WorkspaceRegistry(
         if (await IsOwnerAsync(workspace, callerUserId, cancellationToken))
             return true;
 
-        IReadOnlyList<CloudWorkspaceMember> members = await store.GetMembersAsync(workspace.Id, cancellationToken);
+        IReadOnlyList<CloudWorkspaceMember> members = await store.GetMembersAsync(workspace.ID, cancellationToken);
         CloudWorkspaceMember? caller = members.FirstOrDefault(member => member.UserId == callerUserId);
 
         return caller?.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase) ?? false;

@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.0.1</Version>
+		<Version>2.0.2</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Blazor routing and layout shared by CloudLogin's native hosts (the .NET MAUI app and other Blazor-hybrid consumers): the login pages, layout, and services a host renders CloudLogin through.</Description>

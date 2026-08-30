@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.0.1</Version>
+		<Version>2.0.2</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Typed HTTP client for the CloudLogin API: programmatic sign-in, account, and session access for .NET apps that call an existing CloudLogin authority instead of hosting the UI themselves.</Description>

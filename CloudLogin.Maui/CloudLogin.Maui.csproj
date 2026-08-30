@@ -13,7 +13,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.0.1</Version>
+		<Version>2.0.2</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Native .NET MAUI authentication for CloudLogin: system-browser sign-in, callback interception, and secure local session storage against an existing CloudLogin authority.</Description>

@@ -14,7 +14,7 @@ namespace AngryMonkey.CloudLogin.Server;
 /// </summary>
 public partial class CloudLoginServer
 {
-    private CloudLoginSecurityStore? _securityStore;
+    private ICloudLoginSecurityStore? _securityStore;
     private CloudLoginWebAuthnService? _webAuthnService;
 
     /// <summary>
@@ -31,9 +31,10 @@ public partial class CloudLoginServer
     /// Built lazily rather than injected, to keep the public constructor signature unchanged
     /// for hosts that don't use them.
     /// </summary>
-    private CloudLoginSecurityStore SecurityStore => _securityStore ??= _configuration.AzureStorage is null
+    private ICloudLoginSecurityStore SecurityStore => _securityStore ??= _injectedSecurityStore
+        ?? (_configuration.AzureStorage is null
         ? throw new InvalidOperationException("Azure Storage must be configured to use CloudLogin security features.")
-        : new CloudLoginSecurityStore(_configuration.AzureStorage, _configuration.Security);
+        : new CloudLoginSecurityStore(_configuration.AzureStorage, _configuration.Security));
 
     private CloudLoginWebAuthnService WebAuthn => _webAuthnService ??=
         new CloudLoginWebAuthnService(SecurityStore, _configuration.Security);
@@ -51,7 +52,7 @@ public partial class CloudLoginServer
     {
         CloudUser user = await RequireCurrentUser();
 
-        CloudLoginUserSecurityDocument credentials = _configuration.AzureStorage is null
+        CloudLoginUserSecurityDocument credentials = _configuration.AzureStorage is null && _injectedSecurityStore is null
             ? new CloudLoginUserSecurityDocument { UserId = user.ID }
             : await SecurityStore.GetCredentials(user.ID);
 
@@ -100,10 +101,84 @@ public partial class CloudLoginServer
     {
         CloudUser user = await RequireCurrentUser();
 
-        if (_configuration.AzureStorage is null)
+        if (_configuration.AzureStorage is null && _injectedSecurityStore is null)
             return [];
 
         return await SecurityStore.GetLoginHistory(user.ID);
+    }
+
+    // ── Signed-in devices ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The devices the signed-in user's account is signed in on, active ones first. Empty when
+    /// the deployment has no session store to read (the legacy database version, or a host
+    /// running on its own store).
+    /// </summary>
+    public async Task<List<CloudLoginSignedInDevice>> GetMyDevices()
+    {
+        CloudUser user = await RequireCurrentUser();
+
+        Core.Application.SessionService? sessions = _sessionService;
+        if (sessions is null)
+            return [];
+
+        // The caller's own session, read from their authenticated ticket rather than the request,
+        // so the "This device" marker cannot be spoofed by a query parameter.
+        string? currentSessionId = _accessor.HttpContext?.User?.FindFirst(CloudLoginClaims.SessionId)?.Value;
+
+        List<Core.Application.SignedInDevice> devices = await sessions.GetDevicesAsync(user.ID, currentSessionId);
+
+        return [.. devices.Select(device => new CloudLoginSignedInDevice
+        {
+            DeviceId = device.DeviceId,
+            Name = device.Name,
+            Type = device.Type.ToString(),
+            Browser = device.Browser,
+            OperatingSystem = device.OperatingSystem,
+            SignedInFromIp = device.SignedInFromIp,
+            LastSeenIp = device.LastSeenIp,
+            SignedInOn = device.SignedInOn,
+            LastSeenOn = device.LastSeenOn,
+            ExpiresOn = device.ExpiresOn,
+            IsActive = device.IsActive,
+            // Only meaningful once inactive; "None" on an active device would read as a fact.
+            RevocationReason = device.IsActive ? null : device.RevocationReason.ToString(),
+            RevokedOn = device.RevokedOn,
+            IsCurrent = device.IsCurrent
+        })];
+    }
+
+    /// <summary>
+    /// Signs one of the user's own devices out. Ownership is enforced in the session service, so
+    /// a guessed id belonging to another account changes nothing and reports not-found.
+    /// </summary>
+    public async Task<bool> SignOutMyDevice(string deviceId)
+    {
+        CloudUser user = await RequireCurrentUser();
+
+        Core.Application.SessionService? sessions = _sessionService;
+        if (sessions is null)
+            return false;
+
+        return await sessions.RevokeDeviceAsync(user.ID, deviceId);
+    }
+
+    /// <summary>
+    /// Signs every device except the current one out. The session to keep comes from the
+    /// caller's own authenticated ticket, so "all other devices" can never be pointed at a
+    /// device the caller does not own, and the caller cannot accidentally sign itself out.
+    /// </summary>
+    public async Task<int> SignOutMyOtherDevices()
+    {
+        CloudUser user = await RequireCurrentUser();
+
+        Core.Application.SessionService? sessions = _sessionService;
+        if (sessions is null)
+            return 0;
+
+        string? currentSessionId = _accessor.HttpContext?.User?.FindFirst(CloudLoginClaims.SessionId)?.Value;
+
+        return await sessions.RevokeOtherDevicesAsync(user.ID, currentSessionId);
     }
 
     /// <summary>
@@ -112,7 +187,7 @@ public partial class CloudLoginServer
     /// </summary>
     public async Task RecordSignInForUser(Guid userId, CloudLoginHistoryEntry entry)
     {
-        if (_configuration.AzureStorage is null)
+        if (_configuration.AzureStorage is null && _injectedSecurityStore is null)
             return;
 
         try
@@ -172,6 +247,7 @@ public partial class CloudLoginServer
         }
 
         await UpdateUser(user);
+        await _cosmosMethods!.RotateSecurityStamp(user.ID);
     }
 
     // ── Linked providers ─────────────────────────────────────────────────────
@@ -198,8 +274,8 @@ public partial class CloudLoginServer
         if (targetInput is null || provider is null)
             throw new InvalidOperationException("That provider isn't linked to your account.");
 
+        await _cosmosMethods!.RemoveLoginProvider(user.ID, provider.Code, targetInput.Input, provider.Identifier);
         targetInput.Providers.Remove(provider);
-
         await UpdateUser(user);
     }
 

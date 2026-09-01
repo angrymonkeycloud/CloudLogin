@@ -10,6 +10,14 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 /// Server-to-server lookups for trusted backend callers (e.g. AngryMonkey.Portal), gated by
 /// the "ServiceKey" scheme only — never reachable via a browser cookie session.
 /// </summary>
+/// <remarks>
+/// Deliberately not version-gated. This is the authority's own trusted backend channel, like its
+/// UI and flow endpoints, rather than one of the versioned public façades — and
+/// <c>api/v3/service</c> covers only <c>users/{id}</c>, so gating this to V2 removed workspace and
+/// membership reads that have no replacement. With the API version defaulting to V3 the gate made
+/// every <c>CloudLogin/Service/*</c> route answer 404 to a correctly authenticated caller, which
+/// reads to the calling component as its data simply not being there.
+/// </remarks>
 [Route("CloudLogin/Service")]
 [ApiController]
 [Authorize(AuthenticationSchemes = ServiceKeyAuthenticationDefaults.AuthenticationScheme)]
@@ -78,6 +86,44 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
         try
         {
             CloudUser? user = await _server.GetUserById(userId);
+
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+
+    /// <summary>
+    /// The two lookups a trusted backend needs to resolve a candidate for its own access-grant UI
+    /// (someone typed a name or an email; which account is that?) without holding an end-user
+    /// session. The interactive equivalents exist too, but one requires the caller to already be a
+    /// CloudLogin global admin and the other is deliberately public/anonymous-safe — neither fits a
+    /// backend that has its own, separate notion of "admin" and wants the full profile back.
+    /// </summary>
+    [HttpGet("Users/ByDisplayName")]
+    public async Task<ActionResult<List<CloudUser>>> GetUsersByDisplayName(string displayName)
+    {
+        try
+        {
+            return Ok(await _server.GetUsersByDisplayName(displayName));
+        }
+        catch
+        {
+            return Problem();
+        }
+    }
+
+    [HttpGet("Users/ByEmail")]
+    public async Task<ActionResult<CloudUser>> GetUserByEmail(string email)
+    {
+        try
+        {
+            CloudUser? user = await _server.GetUserByEmailAddress(email);
 
             if (user == null)
                 return NotFound();

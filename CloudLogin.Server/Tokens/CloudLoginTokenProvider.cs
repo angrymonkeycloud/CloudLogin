@@ -65,7 +65,12 @@ public sealed class CloudLoginTokenProvider(
 {
     internal const string AccessTokenName = "cloudlogin.access_token";
     internal const string RefreshTokenName = "cloudlogin.refresh_token";
-    internal const string ExpiresAtName = "cloudlogin.expires_at";
+
+    // The stored key keeps its original spelling deliberately: it is written into authentication
+    // cookies that are already in browsers. Renaming the value would make every live session's
+    // expiry unreadable on the next request - harmless (it just forces one refresh) but pointless
+    // churn. The identifier follows the On convention; the persisted key is a wire detail.
+    internal const string ExpiresOnName = "cloudlogin.expires_at";
 
     private readonly CloudLoginTokenClientOptions _options = options.Value;
 
@@ -115,11 +120,11 @@ public sealed class CloudLoginTokenProvider(
 
         string? accessToken = result.Properties.GetTokenValue(AccessTokenName);
         string? refreshToken = result.Properties.GetTokenValue(RefreshTokenName);
-        string? expiresAtRaw = result.Properties.GetTokenValue(ExpiresAtName);
+        string? expiresOnRaw = result.Properties.GetTokenValue(ExpiresOnName);
 
         bool expiringSoon =
-            !DateTimeOffset.TryParse(expiresAtRaw, out DateTimeOffset expiresAt) ||
-            DateTimeOffset.UtcNow.Add(RefreshWindow) >= expiresAt;
+            !DateTimeOffset.TryParse(expiresOnRaw, out DateTimeOffset expiresOn) ||
+            DateTimeOffset.UtcNow.Add(RefreshWindow) >= expiresOn;
 
         if (!expiringSoon && !string.IsNullOrWhiteSpace(accessToken))
             return accessToken;
@@ -145,7 +150,7 @@ public sealed class CloudLoginTokenProvider(
             new AuthenticationToken { Name = RefreshTokenName, Value = refreshed.RefreshToken ?? refreshToken },
             new AuthenticationToken
             {
-                Name = ExpiresAtName,
+                Name = ExpiresOnName,
                 Value = DateTimeOffset.UtcNow.AddSeconds(refreshed.ExpiresIn).ToString("o")
             }
         ]);

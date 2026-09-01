@@ -14,10 +14,12 @@ public class ConfigurableCosmosSerializer : CosmosSerializer
     public ConfigurableCosmosSerializer(JsonSerializerOptions? jsonSerializerOptions)
     {
         _jsonSerializerOptions = jsonSerializerOptions ?? CreateDefaultOptions();
-        
+
         // Ensure our converter is included
         if (!_jsonSerializerOptions.Converters.Any(c => c is BaseRecordJsonConverter))
             _jsonSerializerOptions.Converters.Add(new BaseRecordJsonConverter());
+
+        AddUtcConverters(_jsonSerializerOptions);
     }
 
     private static JsonSerializerOptions CreateDefaultOptions()
@@ -28,10 +30,24 @@ public class ConfigurableCosmosSerializer : CosmosSerializer
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             WriteIndented = false
         };
-        
+
         options.Converters.Add(new BaseRecordJsonConverter());
+        AddUtcConverters(options);
 
         return options;
+    }
+
+    /// <summary>
+    /// Every persisted instant is written in UTC; only the display layer converts to the viewer's
+    /// timezone. Applied at the serializer so no property can bypass it.
+    /// </summary>
+    private static void AddUtcConverters(JsonSerializerOptions options)
+    {
+        if (!options.Converters.Any(converter => converter is UtcDateTimeOffsetConverter))
+            options.Converters.Add(new UtcDateTimeOffsetConverter());
+
+        if (!options.Converters.Any(converter => converter is NullableUtcDateTimeOffsetConverter))
+            options.Converters.Add(new NullableUtcDateTimeOffsetConverter());
     }
 
     public override T FromStream<T>(Stream stream)

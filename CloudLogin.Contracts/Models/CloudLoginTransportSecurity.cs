@@ -13,6 +13,13 @@ public static class CloudLoginTransportSecurity
 {
     /// <summary>
     /// Removes secret material from a user destined for an authenticated caller.
+    /// <para>
+    /// Two things go, and both for the same reason — they are credentials, not profile data.
+    /// <c>PasswordHash</c> is the obvious one. <c>Identifier</c> is the provider's stable subject
+    /// for this person: the value the identity index is keyed on, and a cross-service correlator
+    /// for the same human at Google or Microsoft. Neither is needed to render an account, and no
+    /// API version restores either for compatibility.
+    /// </para>
     /// </summary>
     public static CloudUser? ForTransport(CloudUser? user)
     {
@@ -23,7 +30,11 @@ public static class CloudLoginTransportSecurity
         {
             Inputs = [.. user.Inputs.Select(input => input with
             {
-                Providers = [.. input.Providers.Select(provider => provider with { PasswordHash = null })]
+                Providers = [.. input.Providers.Select(provider => provider with
+                {
+                    PasswordHash = null,
+                    Identifier = null
+                })]
             })]
         };
     }

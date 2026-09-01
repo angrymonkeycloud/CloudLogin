@@ -34,17 +34,17 @@ public partial class CloudLoginServer
         if (CloudLoginShared.IsSameOrigin(target, LoginUrl))
             return true;
 
-        // No websites/apps have been registered for this channel, so there is
-        // nothing to restrict against — allow every destination by default.
-        // Once the application lists at least one allowed origin/scheme, only
-        // that list is trusted.
+        // Fail closed. An empty allowlist used to mean "nothing to restrict against, so allow
+        // everything", which made a forgotten configuration entry an open redirect on the one
+        // endpoint that hands out a freshly authenticated session — the highest-value target in
+        // the product. An unlisted destination is now refused, so the failure mode of forgetting
+        // to register an origin is a redirect that visibly does not work, not a silent one that
+        // works for an attacker too. CloudLogin's own origin is already allowed above.
         if (uri.Scheme is "http" or "https")
-            return _configuration.AllowedRedirectOrigins.Count == 0 ||
-                _configuration.AllowedRedirectOrigins.Any(origin =>
-                    CloudLoginShared.IsSameOrigin(target, origin));
+            return _configuration.AllowedRedirectOrigins.Any(origin =>
+                CloudLoginShared.IsSameOrigin(target, origin));
 
-        return _configuration.AllowedMobileSchemes.Count == 0 ||
-            _configuration.AllowedMobileSchemes.Any(scheme =>
-                uri.Scheme.Equals(scheme, StringComparison.OrdinalIgnoreCase));
+        return _configuration.AllowedMobileSchemes.Any(scheme =>
+            uri.Scheme.Equals(scheme, StringComparison.OrdinalIgnoreCase));
     }
 }

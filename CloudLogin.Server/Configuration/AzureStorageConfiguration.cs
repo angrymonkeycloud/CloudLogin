@@ -1,6 +1,7 @@
 namespace AngryMonkey.CloudLogin.Server;
 
 using Azure.Core;
+using Azure.Data.Tables;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
@@ -78,7 +79,28 @@ public class AzureStorageConfiguration
     /// </summary>
     public TokenCredential? Credential { get; set; }
 
-    public string ContainerName { get; set; } = "users";
+    /// <summary>
+    /// The blob container holding CloudLogin's own files: profile pictures, the per-user security
+    /// documents, and migration checkpoints and reports.
+    /// <para>
+    /// Prefixed so ownership is obvious in a storage account shared with the rest of a product.
+    /// Blob container names permit hyphens (unlike table names), so the readable
+    /// <c>login-</c> form is used here.
+    /// </para>
+    /// <para>
+    /// A deployment that was relying on the previous default of <c>users</c> keeps its existing
+    /// blobs by setting <c>Storage:ContainerName</c> to <c>users</c> explicitly; nothing is moved
+    /// automatically, because CloudLogin will not silently relocate a container it did not create.
+    /// </para>
+    /// </summary>
+    public string ContainerName { get; set; } = DefaultContainerName;
+
+    /// <summary>
+    /// The default container name, exposed so hosts that rebuild this configuration (the Aspire
+    /// integration reconstructs it from projected environment variables) fall back to the same
+    /// name rather than repeating a literal that can drift away from this one.
+    /// </summary>
+    public const string DefaultContainerName = "login-users";
 
     private string? _publicBaseUrl;
     public string? PublicBaseUrl { get => _publicBaseUrl ?? TryBuildPublicBaseUrl(); set => _publicBaseUrl = value; }
@@ -107,6 +129,37 @@ public class AzureStorageConfiguration
         throw new InvalidOperationException(
             "Azure Storage is not configured for CloudLogin. Set Storage:BlobEndpoint together with a " +
             "credential, or Storage:ConnectionString.");
+    }
+
+    /// <summary>
+    /// The explicit table service endpoint used with <see cref="Credential"/>. When omitted, it
+    /// is derived from <see cref="AccountName"/>, mirroring <see cref="BlobEndpoint"/>.
+    /// </summary>
+    private Uri? _tableEndpoint;
+    public Uri? TableEndpoint
+    {
+        get => _tableEndpoint ?? (string.IsNullOrWhiteSpace(AccountName)
+            ? null
+            : new Uri($"https://{AccountName}.table.core.windows.net"));
+        init => _tableEndpoint = value;
+    }
+
+    /// <summary>
+    /// Builds the Table Storage client for the identity index and the user-workspace index.
+    /// Same authentication rules as <see cref="CreateContainerClient"/>: a credential with an
+    /// endpoint wins, a connection string still works everywhere including Azurite.
+    /// </summary>
+    public TableServiceClient CreateTableServiceClient()
+    {
+        if (Credential is not null && TableEndpoint is { } endpoint)
+            return new TableServiceClient(endpoint, Credential);
+
+        if (!string.IsNullOrWhiteSpace(ConnectionString))
+            return new TableServiceClient(ConnectionString);
+
+        throw new InvalidOperationException(
+            "Azure Storage is not configured for CloudLogin. Set Storage:AccountName (or TableEndpoint) together " +
+            "with a credential, or Storage:ConnectionString.");
     }
 
     /// <summary>

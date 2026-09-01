@@ -1,4 +1,6 @@
-# CloudLogin database schema
+# CloudLogin database schema (legacy model)
+
+> This page documents the **legacy** single-container model — what a deployment uses until it configures `CloudLoginWebConfiguration.Core`. The modern seven-container core, its Table Storage identity index, and before/after samples for every document type are documented in [`docs/architecture-core.md`](architecture-core.md); the move between the two is [`docs/migration-core.md`](migration-core.md).
 
 This page is the authoritative reference for what CloudLogin itself reads and writes in the database and in blob storage — every container, document type, field, and a realistic JSON sample. Use it to validate a deployment's data, plan a migration, or check compatibility before upgrading. See [`docs/CosmosConfiguration.md`](CosmosConfiguration.md) for how to configure the connection, and the [README's configuration reference](../README.md#configuration-reference) for the minimal startup configuration.
 
@@ -182,7 +184,7 @@ Type `RefreshToken`. Only a hash of the token is stored, never the raw value. To
 
 ## Azure Blob Storage
 
-Two per-user JSON documents, stored as blobs rather than Cosmos records so an active account's growing history or credential set never bloats the user document read on every request. Container name configurable via `Storage:ContainerName` (default `users`). Blob paths:
+Two per-user JSON documents, stored as blobs rather than Cosmos records so an active account's growing history or credential set never bloats the user document read on every request. Container name configurable via `Storage:ContainerName` (default `login-users`; a deployment created before the `login` prefix keeps its blobs by setting this to `users` explicitly). Blob paths:
 
 - `security/{userId}/login-history.json`
 - `security/{userId}/credentials.json`

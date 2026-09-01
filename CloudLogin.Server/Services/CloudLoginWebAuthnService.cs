@@ -13,9 +13,9 @@ namespace AngryMonkey.CloudLogin.Server;
 /// persists the resulting credential, and enforces the sign-counter rule.
 /// </para>
 /// </summary>
-public sealed class CloudLoginWebAuthnService(CloudLoginSecurityStore store, CloudLoginSecurityOptions security)
+public sealed class CloudLoginWebAuthnService(ICloudLoginSecurityStore store, CloudLoginSecurityOptions security)
 {
-    private readonly CloudLoginSecurityStore _store = store;
+    private readonly ICloudLoginSecurityStore _store = store;
     private readonly CloudLoginSecurityOptions _security = security;
 
     /// <summary>

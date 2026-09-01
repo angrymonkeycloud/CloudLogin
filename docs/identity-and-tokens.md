@@ -138,6 +138,14 @@ database disclosure alone does not allow forging tokens.
 Rotation is automatic. `SigningKeyPublishGrace` must always exceed
 `AccessTokenLifetime`; the options validator enforces this at startup.
 
+Production deployments can move signing entirely into Azure Key Vault or Managed HSM by
+setting `CloudLoginTokens:SigningKeys:KeyVaultKeyId`: the key is created non-exportable,
+every signature is computed inside the vault, and rotation becomes the vault's own
+key-version rotation. That is the recommendation, not a requirement — the Cosmos fallback
+is Data Protection-wrapped and TTL-retired, so a deployment that configures nothing still
+runs. Set `SigningKeys:RequireExplicitStoreChoice` to make the choice mandatory where policy
+demands it. See [architecture-core.md](architecture-core.md).
+
 ## What is deliberately not supported
 
 - Any endpoint that accepts a user id and returns a token for that user.

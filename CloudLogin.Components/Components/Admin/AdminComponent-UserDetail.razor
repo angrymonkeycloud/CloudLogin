@@ -249,7 +249,8 @@
 
     private void ShowMessage(string msg, bool isError) { _message = msg; _isError = isError; }
 
+    // Stored in UTC, shown in the viewer's own timezone.
     private static string FormatDate(DateTimeOffset dt) =>
-        dt == DateTimeOffset.MinValue ? "—" : dt.ToString("MMM d, yyyy · HH:mm");
+        dt == DateTimeOffset.MinValue ? "—" : dt.ToLocalTime().ToString("MMM d, yyyy · HH:mm");
 }
 

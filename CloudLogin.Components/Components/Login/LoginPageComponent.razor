@@ -10,7 +10,8 @@ else
 {
     <section>
         <article>
-            <LoginComponent Logo="@Logo" Referer="@Referer" Embedded="Embedded" RequestId="@RequestId" />
+            <LoginComponent Logo="@Logo" Referer="@Referer" Embedded="Embedded" RequestId="@RequestId"
+                            VisibleMethods="@VisibleMethods" Profile="@Profile" Client="@Client" />
         </article>
     </section>
 }
@@ -21,6 +22,9 @@ else
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? Referer { get; set; }
     [Parameter] public Guid? RequestId { get; set; }
+    [Parameter] public IReadOnlyList<string> VisibleMethods { get; set; } = [];
+    [Parameter] public string? Profile { get; set; }
+    [Parameter] public string? Client { get; set; }
 
     // Legacy support for backward compatibility
     [Parameter] public string? RedirectUri { get; set; }

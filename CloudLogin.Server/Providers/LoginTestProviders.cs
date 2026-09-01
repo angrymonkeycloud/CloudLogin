@@ -23,11 +23,20 @@ public class LoginTestProviders
         public bool IsEnabled { get; init; }
 
         public TestModeConfiguration(IConfigurationSection configurationSection)
+            : this(configurationSection.GetValue("IsEnabled", false), configurationSection["Label"])
         {
-            IsEnabled = configurationSection.GetValue("IsEnabled", false);
+        }
 
-            string? label = configurationSection["Label"] ?? "Test Mode";
-            Init("testmode", false, label);
+        /// <summary>
+        /// Configures test mode directly, for a host that decides it in code rather than from a
+        /// configuration section — an AppHost enabling it for one environment only, where a shared
+        /// settings file would enable it everywhere.
+        /// </summary>
+        public TestModeConfiguration(bool isEnabled = false, string? label = null)
+        {
+            IsEnabled = isEnabled;
+
+            Init("testmode", false, label ?? "Test Mode");
             HandleUpdateOnly = false;
             HandlesEmailAddress = true;
             InputRequired = false;

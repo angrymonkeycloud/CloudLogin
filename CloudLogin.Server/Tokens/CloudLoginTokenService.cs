@@ -125,10 +125,34 @@ public sealed class CloudLoginTokenService(
         if (user is null || user.IsLocked || user.ID == Guid.Empty)
             return null;
 
-        stored.ConsumedOn = now;
-        await _store.SaveRefreshTokenAsync(stored, cancellationToken);
-
         string audience = stored.Audience ?? _options.AllowedAudiences.First();
+        string rotated;
+
+        if (_store is IAtomicCloudLoginTokenStore atomicStore)
+        {
+            (rotated, CloudLoginRefreshToken replacement) = CreateRefreshTokenRecord(
+                user.ID, stored.FamilyId, stored.SessionId, audience, stored.Scope, clientIp, userAgent);
+
+            CloudLoginRefreshRotationResult result = await atomicStore.RotateRefreshTokenAsync(
+                stored, replacement, cancellationToken);
+
+            if (result != CloudLoginRefreshRotationResult.Succeeded)
+            {
+                if (result == CloudLoginRefreshRotationResult.ReuseDetected)
+                    _logger.LogWarning(
+                        "Refresh token reuse or concurrent exchange detected for user {UserId}, family {FamilyId}.",
+                        stored.UserId, stored.FamilyId);
+                return null;
+            }
+        }
+        else
+        {
+            stored.ConsumedOn = now;
+            await _store.SaveRefreshTokenAsync(stored, cancellationToken);
+            rotated = await CreateRefreshTokenAsync(
+                user.ID, stored.FamilyId, stored.SessionId, audience, stored.Scope,
+                clientIp, userAgent, cancellationToken);
+        }
 
         string accessToken = await CreateAccessTokenAsync(
             user,
@@ -136,16 +160,6 @@ public sealed class CloudLoginTokenService(
             stored.Scope,
             stored.SessionId,
             actor: null,
-            cancellationToken);
-
-        string rotated = await CreateRefreshTokenAsync(
-            user.ID,
-            stored.FamilyId,
-            stored.SessionId,
-            audience,
-            stored.Scope,
-            clientIp,
-            userAgent,
             cancellationToken);
 
         return BuildResponse(accessToken, rotated, stored.Scope, user);
@@ -335,9 +349,23 @@ public sealed class CloudLoginTokenService(
     {
         // 32 bytes of CSPRNG output. The token carries no structure by design:
         // it is a lookup handle, so there is nothing in it to forge or tamper with.
+        (string raw, CloudLoginRefreshToken record) = CreateRefreshTokenRecord(
+            userId, familyId, sessionId, audience, scope, clientIp, userAgent);
+        await _store.SaveRefreshTokenAsync(record, cancellationToken);
+        return raw;
+    }
+
+    private (string Raw, CloudLoginRefreshToken Record) CreateRefreshTokenRecord(
+        Guid userId,
+        string familyId,
+        string sessionId,
+        string audience,
+        string? scope,
+        string? clientIp,
+        string? userAgent)
+    {
         string raw = NewOpaqueToken(32);
         DateTimeOffset now = DateTimeOffset.UtcNow;
-
         CloudLoginRefreshToken record = new()
         {
             TokenHash = HashToken(raw),
@@ -354,10 +382,7 @@ public sealed class CloudLoginTokenService(
         };
 
         record.SetId(Guid.NewGuid());
-
-        await _store.SaveRefreshTokenAsync(record, cancellationToken);
-
-        return raw;
+        return (raw, record);
     }
 
     private CloudLoginTokenResponse BuildResponse(
@@ -369,7 +394,7 @@ public sealed class CloudLoginTokenService(
         {
             AccessToken = accessToken,
             ExpiresIn = (int)_options.AccessTokenLifetime.TotalSeconds,
-            ExpiresAtUtc = DateTimeOffset.UtcNow.Add(_options.AccessTokenLifetime),
+            ExpiresOn = DateTimeOffset.UtcNow.Add(_options.AccessTokenLifetime),
             RefreshToken = refreshToken,
             Scope = scope,
             User = CloudLoginTransportSecurity.ForTransport(user)

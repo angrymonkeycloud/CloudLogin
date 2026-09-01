@@ -4,12 +4,14 @@
 @using AngryMonkey.CloudLogin.Server
 @using AngryMonkey.CloudBlazor.Web
 @using Microsoft.Extensions.Primitives;
+@using Microsoft.Extensions.DependencyInjection
 @using System.Web
 @using System.Text.Json
 
 @inject ICloudLogin cloudLogin
 @inject NavigationManager nav
 @inject CloudLoginWebConfiguration configuration
+@inject IServiceProvider services
 
 <CloudHeadContent />
 
@@ -52,7 +54,8 @@
 }
 else
 {
-    <LoginPageComponent Logo="@configuration.Logo" Referer="@Referer" />
+    <LoginPageComponent Logo="@configuration.Logo" Referer="@Referer"
+                        Profile="@Profile" Client="@Client" VisibleMethods="@VisibleMethods" />
 }
 
 @code {
@@ -62,12 +65,29 @@ else
     [Parameter, SupplyParameterFromQuery(Name = "isMobileApp")]
     public bool IsMobileApp { get; set; } = false;
 
+    [Parameter, SupplyParameterFromQuery(Name = "profile")]
+    public string? Profile { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = "client")]
+    public string? Client { get; set; }
+
+    private IReadOnlyList<string> VisibleMethods { get; set; } = [];
+
     public CloudUser? CurrentUser { get; set; } = new();
     public bool IsAuthorized { get; set; } = false;
     public bool IsWorking { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
     {
+        AngryMonkey.CloudLogin.Server.Core.Application.SignInProfileService? profileService =
+            services.GetService<AngryMonkey.CloudLogin.Server.Core.Application.SignInProfileService>();
+        if (profileService is not null)
+        {
+            var selection = profileService.Resolve(Profile, Client);
+            Profile = selection.Profile.Name;
+            VisibleMethods = selection.Profile.VisibleMethods;
+        }
+
         if (string.IsNullOrEmpty(Referer))
             Referer = "/";
 

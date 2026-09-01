@@ -401,6 +401,21 @@ Minimal configuration template (fill only sections for enabled features/provider
 
 CloudLogin's own Cosmos DB and Azure Blob Storage documents — every container, field, and a realistic JSON sample — are documented in [`docs/database-schema.md`](docs/database-schema.md).
 
+## Modern storage core and versions
+
+CloudLogin creates its own database and containers on startup and needs no storage configuration to do it — with or without Aspire/CoconutSharp. Two independent version axes, both defaulting to V3, so a deployment that configures nothing gets the modern API over the modern schema:
+
+- **Database version** (`options.DatabaseVersion`, default `V3`) — V3 is the seven-container model (Users, Credentials, Workspaces, WorkspaceAccess, Sessions, LoginRequests, AuditEvents) in a `Login` database, plus a Table Storage identity index resolving emails, phones, and `(issuer, subject)` provider identities with create-only inserts. V2 is the existing single mixed container with its legacy schema settings. Legacy settings under V3 — or `Core` settings under V2 — fail startup rather than being silently ignored. See [`docs/architecture-core.md`](docs/architecture-core.md).
+- **API version** (`options.ApiVersion`, default `V3`) — V3 is the DTO-based API under `/api/v3` (and unversioned `/api/…`), V2 the previous integration surface, V1 the future legacy contract, which fails startup until its adapter is supplied. It gates the *integration* API only: the authority's own login/account UI and the authentication flow endpoints are version-neutral and always answer. See [`docs/api-versioning.md`](docs/api-versioning.md).
+- **One shared core for every version.** Whichever façade is selected, every API version reads and writes the same storage — there is never a second user database or a synchronization bridge.
+- **Native TTL everywhere something expires** — sessions, login and device requests, invitations, recovery artifacts, audit retention — with absolute expiry validated in application code and no background cleanup jobs.
+- **Refresh-token families** rotate in one Cosmos transactional batch with reuse detection that revokes the whole family; only token hashes are stored.
+- **Sign-in profiles** (`?profile=tv`) restrict entry and authorization methods per client, bound tamper-proof into the flow. See [`docs/signin-profiles.md`](docs/signin-profiles.md).
+- **QR/TV sign-in** implements RFC 8628 device authorization with hashed codes, single-winner approval and consumption, and poll throttling. See [`docs/device-authorization.md`](docs/device-authorization.md).
+- **Workspaces with multiple owners**, policy-based owner/admin/member permissions, ETag-guarded membership changes, and hard last-owner protection.
+- **Production signing keys in Azure Key Vault / Managed HSM** (non-exportable, vault-side signing), with the encrypted Cosmos fallback available only by explicit opt-in on core deployments.
+- **A checkpointed, idempotent migration** with dry run, duplicate-identity review reporting, and a read-only legacy container for rollback. See [`docs/migration-core.md`](docs/migration-core.md).
+
 ## Endpoints developers commonly use
 
 Consumer-site endpoints from `AuthController`:
@@ -582,4 +597,3 @@ CloudLogin never creates application records in response to its own events. A co
 ### CDM mapping
 
 The initial native CDM mappings are Business ↔ Workspace and Contact ↔ User. CDM can operate in a CloudLogin read-only view mode or a combined CloudLogin + CDM mode. CloudLogin-created lifecycle timestamps remain distinct from CDM's link time and actor. Manual Sync and record-specific Open in CloudLogin actions are provided by CDM's generic external-provider runtime.
-

@@ -1,4 +1,4 @@
-﻿using AngryMonkey.CloudLogin.Interfaces;
+using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -196,11 +196,17 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetAllUsers")]
+    [Authorize]
     public async Task<ActionResult<List<CloudUser>>> GetAllUsers()
     {
         try
         {
-          
+            // Deliberate tightening: this listing was reachable anonymously. Unauthenticated
+            // data exposure is not preserved for compatibility; the admin UI that calls it
+            // always runs with an authenticated global-admin session.
+            if (!await IsGlobalAdminAsync())
+                return Forbid();
+
             List<CloudUser> user = [.. (await _server.GetAllUsers()).Select(NormalizeUser)];
 
             return Ok(user);
@@ -229,13 +235,15 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     }
 
     [HttpGet("GetUserById")]
-    //[Authorize]
+    [Authorize]
     public async Task<ActionResult<CloudUser?>> GetUserById(Guid id)
     {
         try
         {
-            //if (!await CanAccessUserAsync(id))
-            //    return Forbid();
+            // Deliberate tightening: a bare id no longer resolves another person's profile.
+            // Callers see their own record; global admins see any.
+            if (!await CanAccessUserAsync(id))
+                return Forbid();
 
             CloudUser? user = await _server.GetUserById(id);
             if (user is null)

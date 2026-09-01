@@ -16,7 +16,18 @@ namespace AngryMonkey.CloudLogin.Server;
 /// along with the <see cref="CloudUser"/> that gets serialized to the browser.
 /// </para>
 /// </summary>
+public interface ICloudLoginSecurityStore
+{
+    Task<List<CloudLoginHistoryEntry>> GetLoginHistory(Guid userId);
+    Task RecordSignIn(Guid userId, CloudLoginHistoryEntry entry);
+    Task DeleteLoginHistory(Guid userId);
+    Task<CloudLoginUserSecurityDocument> GetCredentials(Guid userId);
+    Task UpdateCredentials(Guid userId, Action<CloudLoginUserSecurityDocument> mutate);
+    Task DeleteCredentials(Guid userId);
+}
+
 public sealed class CloudLoginSecurityStore(AzureStorageConfiguration storage, CloudLoginSecurityOptions security)
+    : ICloudLoginSecurityStore
 {
     private readonly AzureStorageConfiguration _storage = storage;
     private readonly CloudLoginSecurityOptions _security = security;

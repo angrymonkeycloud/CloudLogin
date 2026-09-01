@@ -798,6 +798,34 @@ public class CloudLoginClient : ICloudLogin
         return await message.Content.ReadFromJsonAsync<List<CloudLoginHistoryEntry>>(CloudLoginSerialization.Options) ?? [];
     }
 
+    public async Task<List<CloudLoginSignedInDevice>> GetMyDevices()
+    {
+        HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/Devices");
+
+        if (!message.IsSuccessStatusCode)
+            return [];
+
+        return await message.Content.ReadFromJsonAsync<List<CloudLoginSignedInDevice>>(CloudLoginSerialization.Options) ?? [];
+    }
+
+    public async Task<bool> SignOutMyDevice(string deviceId)
+    {
+        HttpResponseMessage message = await HttpServer.DeleteAsync(
+            $"{SecurityRoute}/Devices/{Uri.EscapeDataString(deviceId)}");
+
+        return message.IsSuccessStatusCode;
+    }
+
+    public async Task<int> SignOutMyOtherDevices()
+    {
+        HttpResponseMessage message = await HttpServer.DeleteAsync($"{SecurityRoute}/Devices");
+
+        if (!message.IsSuccessStatusCode)
+            throw new Exception(await ReadProblem(message));
+
+        return await message.Content.ReadFromJsonAsync<int>(CloudLoginSerialization.Options);
+    }
+
     public async Task ChangeMyPassword(CloudLoginChangePasswordRequest request)
     {
         HttpContent content = JsonContent.Create(request, options: CloudLoginSerialization.Options);

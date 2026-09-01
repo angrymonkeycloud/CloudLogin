@@ -2,6 +2,7 @@ using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using System.Text.Json;
 
 namespace AngryMonkey.CloudLogin.Aspire;
 
@@ -30,6 +31,27 @@ public static class CloudLoginConfigurationExtensions
         configure?.Invoke(configuration);
 
         builder.Configuration.GetSection("CloudLogin").Bind(configuration);
+
+        // App Service and container settings are scalar values. Keep rotation fallbacks in one
+        // secret setting by accepting a JSON array instead of requiring __0, __1, ... variables.
+        // A normal appsettings.json array still binds through the line above.
+        IConfigurationSection fallbackSection =
+            builder.Configuration.GetSection("CloudLogin:IdentityHmacFallbackSecrets");
+
+        if (fallbackSection.Value is string fallbackJson)
+        {
+            try
+            {
+                configuration.IdentityHmacFallbackSecrets =
+                    JsonSerializer.Deserialize<List<string>>(fallbackJson) ?? [];
+            }
+            catch (JsonException exception)
+            {
+                throw new InvalidOperationException(
+                    "CloudLogin:IdentityHmacFallbackSecrets must be one JSON array of base64 or hex secrets.",
+                    exception);
+            }
+        }
 
         configuration.BindAspireResources(builder);
         MergeProviders(

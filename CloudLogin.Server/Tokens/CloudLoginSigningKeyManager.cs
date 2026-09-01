@@ -29,6 +29,9 @@ public sealed class CloudLoginSigningKeyManager
     private IReadOnlyList<CloudLoginSigningKey> _cached = [];
     private DateTimeOffset _cacheExpiresOn = DateTimeOffset.MinValue;
 
+    /// <summary>Non-null when the deployment signs through Key Vault instead of the Cosmos store.</summary>
+    private readonly KeyVaultSigningKeyProvider? _keyVault;
+
     public CloudLoginSigningKeyManager(
         ICloudLoginTokenStore store,
         IDataProtectionProvider dataProtectionProvider,
@@ -39,6 +42,14 @@ public sealed class CloudLoginSigningKeyManager
         _protector = dataProtectionProvider.CreateProtector(ProtectorPurpose);
         _options = options.Value;
         _logger = logger;
+
+        if (_options.SigningKeys.KeyVaultKeyId is not null)
+        {
+            _keyVault = new KeyVaultSigningKeyProvider(_options.SigningKeys);
+            _logger.LogInformation(
+                "CloudLogin signs tokens with Key Vault key {KeyVaultKeyId}; the Cosmos signing-key store is inactive.",
+                _options.SigningKeys.KeyVaultKeyId);
+        }
     }
 
     /// <summary>
@@ -48,6 +59,9 @@ public sealed class CloudLoginSigningKeyManager
     public async Task<(SigningCredentials Credentials, string KeyId)> GetSigningCredentialsAsync(
         CancellationToken cancellationToken = default)
     {
+        if (_keyVault is not null)
+            return await _keyVault.GetSigningCredentialsAsync(cancellationToken);
+
         DateTimeOffset now = DateTimeOffset.UtcNow;
         IReadOnlyList<CloudLoginSigningKey> keys = await GetKeysAsync(cancellationToken);
         CloudLoginSigningKey? active = keys
@@ -70,6 +84,9 @@ public sealed class CloudLoginSigningKeyManager
     public async Task<IReadOnlyList<SecurityKey>> GetValidationKeysAsync(
         CancellationToken cancellationToken = default)
     {
+        if (_keyVault is not null)
+            return await _keyVault.GetValidationKeysAsync(cancellationToken);
+
         DateTimeOffset now = DateTimeOffset.UtcNow;
         IReadOnlyList<CloudLoginSigningKey> keys = await GetKeysAsync(cancellationToken);
 
@@ -88,6 +105,9 @@ public sealed class CloudLoginSigningKeyManager
     /// </summary>
     public async Task<object> GetJsonWebKeySetAsync(CancellationToken cancellationToken = default)
     {
+        if (_keyVault is not null)
+            return await _keyVault.GetJsonWebKeySetAsync(cancellationToken);
+
         DateTimeOffset now = DateTimeOffset.UtcNow;
         IReadOnlyList<CloudLoginSigningKey> keys = await GetKeysAsync(cancellationToken);
 
@@ -117,6 +137,10 @@ public sealed class CloudLoginSigningKeyManager
     /// </summary>
     public async Task<CloudLoginSigningKey> RotateAsync(CancellationToken cancellationToken = default)
     {
+        if (_keyVault is not null)
+            throw new NotSupportedException(
+                "Signing keys live in Key Vault; rotate them with the vault's rotation policy or a new key version, not through CloudLogin.");
+
         await _gate.WaitAsync(cancellationToken);
 
         try

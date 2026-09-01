@@ -1,4 +1,4 @@
-﻿using AngryMonkey.CloudLogin.Interfaces;
+using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;

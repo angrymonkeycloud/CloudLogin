@@ -10,11 +10,15 @@ using System.Text.Json;
 namespace AngryMonkey.CloudLogin.Tests;
 
 /// <summary>
-/// The service-to-service write endpoints exist so a trusted backend caller (CDM's Synchronized
-/// field sync) can push an edit made in its own UI back to CloudLogin without ever holding an
-/// end-user session - which is exactly what makes the whitelist here the important thing to test:
-/// nothing in these endpoints should let a caller write a field its own UI would never let a user
-/// touch directly (identifiers, lock state, ownership).
+/// The whole controller exists so a trusted backend caller (CDM) can read and write CloudLogin
+/// data without ever holding an end-user session - authenticated by the ServiceKey scheme, not by
+/// being a CloudLogin global admin. That distinction is what these tests check for the write
+/// endpoints (the whitelist: nothing here should let a caller write a field its own UI would never
+/// let a user touch directly - identifiers, lock state, ownership) and for the lookups added
+/// alongside them (GetUsersByDisplayName, GetUserByEmail): each answers with no session at all,
+/// which is the point - the interactive equivalents either require the caller to already be a
+/// global admin or are the deliberately-anonymous discovery endpoint, and neither fits a backend
+/// with its own separate notion of "admin".
 /// </summary>
 public class ServiceControllerTests
 {
@@ -133,6 +137,60 @@ public class ServiceControllerTests
         ServiceController controller = CreateController(cloudLoginStore: new InMemoryCloudLoginStore());
 
         ActionResult<CloudUser> result = await controller.UpdateUser(Guid.NewGuid(), Values(new { FirstName = "Anyone" }));
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    /// <summary>
+    /// This is the lookup a trusted backend uses to resolve "who is this" for its own
+    /// access-grant UI - the whole point of it existing here rather than pointing the caller at
+    /// the interactive route, which requires the caller to already be a CloudLogin global admin.
+    /// A backend with its own, separate notion of admin would 403 there even though it holds a
+    /// perfectly valid service credential.
+    /// </summary>
+    [Fact]
+    public async Task GetUsersByDisplayName_finds_a_match_with_no_end_user_session_at_all()
+    {
+        InMemoryCloudLoginStore users = new();
+        CloudUser user = LoginTestFixture.CreateUser();
+        users.Users[user.ID] = user;
+        ServiceController controller = CreateController(cloudLoginStore: users);
+
+        ActionResult<List<CloudUser>> result = await controller.GetUsersByDisplayName(user.DisplayName!);
+
+        List<CloudUser> found = Assert.IsType<List<CloudUser>>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(user.ID, Assert.Single(found).ID);
+    }
+
+    [Fact]
+    public async Task GetUsersByDisplayName_returnsEmpty_forNoMatch()
+    {
+        ServiceController controller = CreateController(cloudLoginStore: new InMemoryCloudLoginStore());
+
+        ActionResult<List<CloudUser>> result = await controller.GetUsersByDisplayName("Nobody Here");
+
+        Assert.Empty(Assert.IsType<List<CloudUser>>(Assert.IsType<OkObjectResult>(result.Result).Value));
+    }
+
+    [Fact]
+    public async Task GetUserByEmail_returns_the_matching_user()
+    {
+        InMemoryCloudLoginStore users = new();
+        CloudUser user = LoginTestFixture.CreateUser(email: "dana@example.com");
+        users.Users[user.ID] = user;
+        ServiceController controller = CreateController(cloudLoginStore: users);
+
+        ActionResult<CloudUser> result = await controller.GetUserByEmail("dana@example.com");
+
+        Assert.Equal(user.ID, Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value).ID);
+    }
+
+    [Fact]
+    public async Task GetUserByEmail_returns_NotFound_for_an_unknown_address()
+    {
+        ServiceController controller = CreateController(cloudLoginStore: new InMemoryCloudLoginStore());
+
+        ActionResult<CloudUser> result = await controller.GetUserByEmail("nobody@example.com");
 
         Assert.IsType<NotFoundResult>(result.Result);
     }

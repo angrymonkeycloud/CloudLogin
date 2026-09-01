@@ -130,6 +130,24 @@ public interface ICloudLogin
     /// <summary>The signed-in user's sign-in history, newest first.</summary>
     Task<List<CloudLoginHistoryEntry>> GetMyLoginHistory();
 
+    /// <summary>
+    /// The devices the signed-in user's account is signed in on, active ones first. Empty on a
+    /// deployment with no session store to read.
+    /// </summary>
+    Task<List<CloudLoginSignedInDevice>> GetMyDevices();
+
+    /// <summary>
+    /// Signs one of the signed-in user's own devices out. Returns false when the id is not
+    /// theirs — the same answer as an id that never existed.
+    /// </summary>
+    Task<bool> SignOutMyDevice(string deviceId);
+
+    /// <summary>
+    /// Signs every device except the current one out, and answers how many were signed out.
+    /// The device to keep is decided from the caller's own session, never from a parameter.
+    /// </summary>
+    Task<int> SignOutMyOtherDevices();
+
     /// <summary>Sets or changes the signed-in user's password.</summary>
     Task ChangeMyPassword(CloudLoginChangePasswordRequest request);
 

@@ -19,6 +19,9 @@ public partial class LoginComponent : IDisposable
     [Parameter] public bool Embedded { get; set; } = false;
     [Parameter] public string? Referer { get; set; }
     [Parameter] public Guid? RequestId { get; set; }
+    [Parameter] public IReadOnlyList<string> VisibleMethods { get; set; } = [];
+    [Parameter] public string? Profile { get; set; }
+    [Parameter] public string? Client { get; set; }
 
     private bool IsQrCodeRequest => RequestId.HasValue && RequestId.Value != Guid.Empty;
     
@@ -138,9 +141,15 @@ public partial class LoginComponent : IDisposable
 
         Auth.OnStateChanged += StateHasChanged;
         Providers = [.. (await cloudLogin.GetProviders()).Select(provider => provider.ToModel())];
+        if (VisibleMethods.Count > 0)
+            Providers = [.. Providers.Where(provider =>
+                VisibleMethods.Contains(provider.Code, StringComparer.OrdinalIgnoreCase))];
         OnInput = StateHasChanged;
 
         await Auth.SwitchStep(ProcessStep.InputValue);
+        if (VisibleMethods.Count == 1 &&
+            VisibleMethods.Contains("Qr", StringComparer.OrdinalIgnoreCase))
+            await ShowQrCodeLoginAsync();
         await base.OnInitializedAsync();
     }
 
@@ -196,6 +205,25 @@ public partial class LoginComponent : IDisposable
                 };
 
                 await Auth.SwitchStep(ProcessStep.RegistrationDetails);
+            }
+            else if (ExternalProviders.Count > 0)
+            {
+                // Every configured provider is external, so there is nothing to collect here: the
+                // provider supplies the profile and the account is created when it hands the person
+                // back. The Providers step already knows how to say "Sign up with" rather than
+                // "Sign in with" for an input that was not found.
+                //
+                // Without this branch an external-only deployment dead-ends: an unknown address is
+                // reported as not found with no way forward, which on a brand-new deployment means
+                // nobody can ever become its first user.
+                Auth.Input = new SelectedInput(InputValue.ToLower())
+                {
+                    IsFound = false
+                };
+
+                Auth.Input.Providers.AddRange(ExternalProviders);
+
+                await Auth.SwitchStep(ProcessStep.Providers);
             }
             else
             {
@@ -723,7 +751,9 @@ public partial class LoginComponent : IDisposable
     #region Authentication Actions
     private void ProviderSignInChallenge(string provider)
     {
-        CloudLoginRedirectParameters redirectParams = CloudLoginRedirectParameters.CreateCustomLogin("cloudlogin", $"login/{provider}", KeepMeSignedIn, RefererValue, true, string.Empty, null, InputValue);
+        CloudLoginRedirectParameters redirectParams = CloudLoginRedirectParameters.CreateCustomLogin(
+            "cloudlogin", $"login/{provider}", KeepMeSignedIn, RefererValue, true,
+            string.Empty, null, InputValue, Profile, Client);
 
         navigationManager.NavigateTo(CloudLoginShared.RedirectString(redirectParams), true);
     }

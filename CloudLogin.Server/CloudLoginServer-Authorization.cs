@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
@@ -14,6 +16,51 @@ namespace AngryMonkey.CloudLogin.Server;
 
 public partial class CloudLoginServer
 {
+    /// <summary>
+    /// Whether the sign-in profile in play on this request permits <paramref name="method"/> to
+    /// complete a sign-in.
+    /// <para>
+    /// Every entry path has to ask, not just the provider redirect: a profile that lists only
+    /// <c>Qr</c> would be worth nothing if the password form still signed people in, since the
+    /// point of a restricted profile is that the other methods are unavailable on that device.
+    /// Provider sign-in checks the profile it sealed into the authentication ticket at challenge
+    /// time; the direct methods have no ticket to carry one, so they resolve the request's
+    /// profile the same way the challenge did — and resolution already falls back to the default
+    /// profile for an unknown or unauthorized name, so a forged parameter can only narrow.
+    /// </para>
+    /// </summary>
+    private bool SignInProfileAllows(string method)
+    {
+        Core.Application.SignInProfileService? profileService =
+            _accessor.HttpContext?.RequestServices.GetService<Core.Application.SignInProfileService>();
+
+        if (profileService is null)
+            return true;
+
+        string? requestedProfile = ProfileParameter("profile");
+        string? client = ProfileParameter("client");
+
+        Core.Application.SignInProfileSelection selection = profileService.Resolve(requestedProfile, client);
+
+        return Core.Application.SignInProfileService.AllowsMethod(selection.Profile, method);
+    }
+
+    /// <summary>
+    /// Reads a profile parameter from wherever this request carries it. Password sign-in posts a
+    /// form, the login page navigates with a query string, and both must reach the same profile.
+    /// </summary>
+    private string? ProfileParameter(string name)
+    {
+        string? fromQuery = _accessor.HttpContext?.Request.Query[name].FirstOrDefault();
+
+        if (!string.IsNullOrWhiteSpace(fromQuery))
+            return fromQuery;
+
+        HttpRequest? request = _accessor.HttpContext?.Request;
+
+        return request?.HasFormContentType == true ? request.Form[name].FirstOrDefault() : null;
+    }
+
     public async Task<string> CompleteLoginRedirect(string? referer = null, bool isMobileApp = false)
     {
         if (!IsAllowedRedirect(referer))
@@ -88,6 +135,22 @@ public partial class CloudLoginServer
             RedirectUri = oauthRedirectUri // This is for OAuth providers
         };
 
+        Core.Application.SignInProfileService? profileService =
+            _accessor.HttpContext?.RequestServices.GetService<Core.Application.SignInProfileService>();
+        string? profileClient = _request.Query["client"].FirstOrDefault();
+        if (profileService is not null)
+        {
+            Core.Application.SignInProfileSelection selection =
+                profileService.Resolve(_request.Query["profile"].FirstOrDefault(), profileClient);
+            if (!Core.Application.SignInProfileService.AllowsMethod(selection.Profile, identity))
+                return new NotFoundResult();
+
+            globalProperties.Items["cloudlogin:profile"] =
+                profileService.Bind(selection, profileClient);
+            if (profileClient is not null)
+                globalProperties.Items["cloudlogin:profile_client"] = profileClient;
+        }
+
         // Store the external website's URL in authentication properties for later use
         if (!string.IsNullOrEmpty(referer))
             globalProperties.Items["referer"] = referer;
@@ -144,6 +207,10 @@ public partial class CloudLoginServer
         if (!IsAllowedRedirect(referer))
             return new BadRequestObjectResult("The requested return URL is not allowed.");
 
+        // The verification-code flow completes here, so the profile has to be honoured here too.
+        if (!SignInProfileAllows("Code"))
+            return new NotFoundResult();
+
         CloudUser? user = await GetUserById(userId);
         if (user is null || user.IsTest || user.IsLocked)
             return new UnauthorizedResult();
@@ -168,26 +235,8 @@ public partial class CloudLoginServer
             RedirectUri = referer
         };
 
-        string firstName = user.FirstName ?? "Guest";
-        string lastName = user.LastName ?? "User";
-        string displayName = user.DisplayName ?? $"{firstName} {lastName}";
-        string input = user.Inputs.FirstOrDefault()?.Input ?? "";
-
-        ClaimsIdentity claimsIdentity = new([
-                new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
-                new Claim(ClaimTypes.GivenName, firstName),
-                new Claim(ClaimTypes.Surname, lastName),
-                new Claim(ClaimTypes.Name, displayName),
-                new Claim(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
-            ], "CloudLogin");
-
-        if (user.Inputs.FirstOrDefault()?.Format == CloudLoginInputFormat.PhoneNumber)
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.MobilePhone, input));
-
-        if (user.Inputs.FirstOrDefault()?.Format == CloudLoginInputFormat.EmailAddress)
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, input));
-
-        ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
+        ClaimsPrincipal claimsPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
+            user, "CloudLogin", _cosmosMethods);
 
         await _accessor.HttpContext!.SignInAsync(claimsPrincipal, properties);
 
@@ -207,6 +256,29 @@ public partial class CloudLoginServer
         return new RedirectResult(referer);
     }
 
+    /// <summary>
+    /// The provider entry recorded on a new account's input: which external provider vouched for
+    /// it, and that provider's own subject identifier. Both come from the ticket the provider's
+    /// handler built — the identity's authentication type is the provider name (see
+    /// <c>ProviderConfigurationService</c>), and the name identifier is its subject.
+    /// </summary>
+    private static List<CloudLoginProvider> ExternalProviderEntry(ClaimsIdentity identity)
+    {
+        string? code = identity.AuthenticationType;
+
+        if (string.IsNullOrWhiteSpace(code))
+            return [];
+
+        return
+        [
+            new CloudLoginProvider
+            {
+                Code = code,
+                Identifier = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            }
+        ];
+    }
+
     public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, bool isMobileApp = false)
     {
         if (_cosmosMethods == null)
@@ -215,7 +287,11 @@ public partial class CloudLoginServer
         ClaimsIdentity userIdentity = _request.HttpContext.User.Identities.First();
         string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;
 
-        CloudUser user = (_configuration.Cosmos != null ? await _cosmosMethods.GetUserByInput(emailaddress) : new()) ?? new();
+        CloudUser? existingUser = _configuration.Cosmos != null && !string.IsNullOrWhiteSpace(emailaddress)
+            ? await _cosmosMethods.GetUserByInput(emailaddress)
+            : null;
+
+        CloudUser user = existingUser ?? new();
 
         string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
 
@@ -277,24 +353,47 @@ public partial class CloudLoginServer
         string? lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value;
         string? displayName = user.DisplayName ??= $"{firstName} {lastName}";
 
-        if (_configuration.Cosmos == null)
+        if (existingUser is null)
         {
+            // First sign-in with this provider identity: the account has to be made here, because
+            // an external provider is the only step this flow has - there is no registration form
+            // behind it to collect anything else.
+            //
+            // Persisting it is the part that matters. An unsaved user keeps ID = Guid.Empty, which
+            // silently skips the CreateLoginRequest below, so the relying party is handed a request
+            // id that resolves to nothing and reports the person as not found. That is invisible on
+            // any database that already holds the account, and breaks every sign-in on one that
+            // does not - a freshly provisioned environment, most of all.
+            if (_configuration.Cosmos != null && string.IsNullOrWhiteSpace(emailaddress))
+            {
+                // Nothing to key an account on. Saying so is better than signing in a user that was
+                // never stored, which fails later and somewhere else.
+                return new BadRequestObjectResult(
+                    "The sign-in provider did not return an email address, so no account could be created.");
+            }
+
             user = new()
             {
                 DisplayName = displayName,
                 FirstName = firstName,
                 LastName = lastName,
                 ID = Guid.NewGuid(),
+                CreatedOn = DateTimeOffset.UtcNow,
+                LastSignedIn = DateTimeOffset.UtcNow,
                 Inputs =
                 [
                     new()
                     {
                         Format = CloudLoginInputFormat.EmailAddress,
-                        Input = emailaddress,
-                        IsPrimary = true
+                        Input = emailaddress?.Trim().ToLowerInvariant() ?? string.Empty,
+                        IsPrimary = true,
+                        Providers = ExternalProviderEntry(userIdentity)
                     }
                 ]
             };
+
+            if (_configuration.Cosmos != null)
+                await CreateUser(user);
         }
 
         if (user == null)
@@ -311,12 +410,8 @@ public partial class CloudLoginServer
         if (_configuration.Cosmos != null && user.ID != Guid.Empty)
             requestId = await CreateLoginRequest(user.ID);
 
-        ClaimsIdentity claimsIdentity = new([
-            new Claim(ClaimTypes.Hash, "CloudLogin"),
-            new Claim(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
-        ], "CloudLogin");
-
-        ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
+        ClaimsPrincipal claimsPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
+            user, "CloudLogin", _cosmosMethods);
 
         await _request.HttpContext.SignInAsync(claimsPrincipal, properties);
 

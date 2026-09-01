@@ -10,6 +10,20 @@ namespace AngryMonkey.CloudLogin.Tests;
 public sealed class CloudLoginConfigurationPrecedenceTests
 {
     [Fact]
+    public void FallbackHmacSecrets_BindFromOneJsonArraySetting()
+    {
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["CloudLogin:IdentityHmacFallbackSecrets"] = "[\"old-one\",\"old-two\"]"
+        });
+
+        CloudLoginWebConfiguration configuration = builder.ReadCloudLoginConfiguration();
+
+        Assert.Equal(["old-one", "old-two"], configuration.IdentityHmacFallbackSecrets);
+    }
+
+    [Fact]
     public void AppHostValues_OverrideProjectDefaultsWithoutDiscardingUnspecifiedDefaults()
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder();

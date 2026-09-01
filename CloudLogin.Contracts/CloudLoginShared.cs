@@ -80,6 +80,8 @@ public static class CloudLoginShared
         AddParameter(queryParams, "userInfo", parameters.UserInfo);
         AddParameter(queryParams, "input", parameters.InputValue);
         AddParameter(queryParams, "referer", parameters.Referer); // External website URL
+        AddParameter(queryParams, "profile", parameters.Profile);
+        AddParameter(queryParams, "client", parameters.Client);
 
         return queryParams.Count > 0 ? $"{path}?{string.Join("&", queryParams)}" : path;
     }

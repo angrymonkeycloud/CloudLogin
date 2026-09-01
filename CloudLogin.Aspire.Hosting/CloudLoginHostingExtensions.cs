@@ -2,6 +2,8 @@ using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
 using AngryMonkey.CloudLogin.Server;
+using AngryMonkey.CloudLogin.Server.Core;
+using AngryMonkey.CloudLogin.Server.Versioning;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 
@@ -47,7 +49,13 @@ public static class CloudLoginHostingExtensions
 
         CloudLoginWebConfiguration configuration = new();
         configure?.Invoke(configuration);
+
+        // Resolve version-implied defaults the same way the server will, so the resources declared
+        // below match the schema it opens.
+        configuration.NormalizeVersions();
+
         CloudLoginServerAnnotation annotation = new();
+        annotation.ApplyVersions(configuration);
 
         if (configuration.Cosmos.DatabaseId is { Length: > 0 } databaseId)
             annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
@@ -60,6 +68,15 @@ public static class CloudLoginHostingExtensions
             .WithAnnotation(annotation);
 
         project.ApplyCloudLoginDefaults();
+
+        // The V3 identity secret, generated once and kept. Wired unconditionally so a CloudLogin
+        // under an AppHost simply works: the server requires the secret and will not invent one,
+        // and an AppHost is the only place with somewhere durable to keep the same value across
+        // restarts. WithIdentityHmacSecret afterwards replaces it.
+        project.WithEnvironment(
+            CloudLoginConfigurationKeys.IdentityHmacSecretVariable,
+            IdentityHmacSecretParameter.AddFor(builder, name));
+
         if (configure is not null)
             CloudLoginConfigurationProjection.Apply(project, configuration);
         return new CloudLoginServerBuilder(project);
@@ -84,7 +101,13 @@ public static class CloudLoginHostingExtensions
 
         CloudLoginWebConfiguration configuration = new();
         configure?.Invoke(configuration);
+
+        // Resolve version-implied defaults the same way the server will, so the resources declared
+        // below match the schema it opens.
+        configuration.NormalizeVersions();
+
         CloudLoginServerAnnotation annotation = new();
+        annotation.ApplyVersions(configuration);
 
         if (configuration.Cosmos.DatabaseId is { Length: > 0 } databaseId)
             annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
@@ -99,6 +122,15 @@ public static class CloudLoginHostingExtensions
             .WithAnnotation(annotation);
 
         project.ApplyCloudLoginDefaults();
+
+        // The V3 identity secret, generated once and kept. Wired unconditionally so a CloudLogin
+        // under an AppHost simply works: the server requires the secret and will not invent one,
+        // and an AppHost is the only place with somewhere durable to keep the same value across
+        // restarts. WithIdentityHmacSecret afterwards replaces it.
+        project.WithEnvironment(
+            CloudLoginConfigurationKeys.IdentityHmacSecretVariable,
+            IdentityHmacSecretParameter.AddFor(builder, name));
+
         if (configure is not null)
             CloudLoginConfigurationProjection.Apply(project, configuration);
         return new CloudLoginServerBuilder(project);
@@ -224,6 +256,25 @@ public sealed class CloudLoginServerAnnotation : IResourceAnnotation
 
     internal string DatabaseId { get; private set; } = "Users";
     internal string ContainerId { get; private set; } = "Data";
+
+    /// <summary>
+    /// The storage schema the CloudLogin server runs on, mirrored from its configuration so the
+    /// AppHost declares the same shape the server will open. Defaults to V3, matching
+    /// <c>CloudLoginWebConfiguration.DatabaseVersion</c>.
+    /// </summary>
+    internal CloudLoginDatabaseVersion DatabaseVersion { get; private set; } = CloudLoginDatabaseVersion.V3;
+
+    /// <summary>The V3 core database name, mirroring <c>CloudLoginCoreConfiguration.DatabaseId</c>.</summary>
+    internal string CoreDatabaseId { get; private set; } = CloudLoginCoreContainers.DefaultDatabaseId;
+
+    /// <summary>Captures the version-relevant settings from the server's own configuration.</summary>
+    internal void ApplyVersions(CloudLoginWebConfiguration configuration)
+    {
+        DatabaseVersion = configuration.DatabaseVersion;
+
+        if (configuration.Core?.DatabaseId is { Length: > 0 } coreDatabaseId)
+            CoreDatabaseId = coreDatabaseId;
+    }
 
     internal bool AddConsumer(string name) => _consumers.Add(name);
 

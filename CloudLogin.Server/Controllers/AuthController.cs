@@ -197,7 +197,7 @@ public class AuthController(
                     },
                     new AuthenticationToken
                     {
-                        Name = CloudLoginTokenProvider.ExpiresAtName,
+                        Name = CloudLoginTokenProvider.ExpiresOnName,
                         Value = DateTimeOffset.UtcNow.AddSeconds(tokens.ExpiresIn).ToString("o")
                     }
                 ]);

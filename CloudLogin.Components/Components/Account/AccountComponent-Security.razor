@@ -223,6 +223,95 @@
             }
         </div>
 
+        @* ── Signed-in devices ────────────────────────────────── *@
+        <div class="card">
+            <div class="card-header">
+                <h4>Your devices</h4>
+                <p class="card-description">Where your account is signed in. Sign out anything you don't recognise.</p>
+                @if (_otherActiveDeviceCount > 0 && !_confirmingSignOutOthers)
+                {
+                    <button class="link-action" disabled="@_busy" @onclick="() => _confirmingSignOutOthers = true">
+                        Sign out all other devices
+                    </button>
+                }
+            </div>
+
+            @if (_confirmingSignOutOthers)
+            {
+                @* Destructive and plural, so it asks first — and says exactly what stays behind. *@
+                <div class="stack" role="group" aria-label="Confirm signing out other devices">
+                    <p class="card-note">
+                        Sign out @_otherActiveDeviceCount other @(_otherActiveDeviceCount == 1 ? "device" : "devices")?
+                        This device stays signed in.
+                    </p>
+                    <div class="actions">
+                        <button class="btn btn-primary btn-sm" disabled="@_busy" @onclick="SignOutOtherDevices">
+                            @(_busy ? "Signing out…" : "Sign out other devices")
+                        </button>
+                        <button class="btn btn-outline btn-sm" disabled="@_busy" @onclick="() => _confirmingSignOutOthers = false">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            }
+
+            @if (_devices.Count == 0)
+            {
+                <div class="empty-state">
+                    <p>No signed-in devices to show. Applications you sign in to appear here.</p>
+                </div>
+            }
+            else
+            {
+                <div class="entry-list">
+                    @foreach (CloudLoginSignedInDevice device in _devices)
+                    {
+                        <div class="entry-row">
+                            <span class="entry-icon" aria-hidden="true"><ClockIcon /></span>
+                            <div class="entry-copy">
+                                <span class="entry-title">
+                                    @device.Name
+                                    @if (device.IsCurrent)
+                                    {
+                                        <text> · This device</text>
+                                    }
+                                    @if (!device.IsActive)
+                                    {
+                                        <text> · Signed out</text>
+                                    }
+                                </span>
+                                <span class="entry-meta">
+                                    @DescribePlatform(device)
+                                    @if (!string.IsNullOrWhiteSpace(device.LastSeenIp ?? device.SignedInFromIp))
+                                    {
+                                        <text> · @(device.LastSeenIp ?? device.SignedInFromIp)</text>
+                                    }
+                                    <text> · First seen @FormatRelative(device.SignedInOn)</text>
+                                    @if (device.LastSeenOn is { } lastSeen)
+                                    {
+                                        <text> · Last seen @FormatRelative(lastSeen)</text>
+                                    }
+                                    @if (!device.IsActive && !string.IsNullOrWhiteSpace(device.RevocationReason))
+                                    {
+                                        <text> · @DescribeRevocation(device.RevocationReason!)</text>
+                                    }
+                                </span>
+                            </div>
+                            @if (device.IsActive && !device.IsCurrent)
+                            {
+                                <button class="btn btn-outline btn-sm"
+                                        disabled="@_busy"
+                                        aria-label="@($"Sign out {device.Name}")"
+                                        @onclick="() => SignOutDevice(device)">
+                                    Sign out
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
         @* ── Login history ────────────────────────────────────── *@
         <div class="card">
             <div class="card-header">
@@ -286,9 +375,11 @@
 
     private CloudLoginSecurityOverviewModel _overview = new();
     private List<CloudLoginHistoryEntryModel> _history = [];
+    private List<CloudLoginSignedInDevice> _devices = [];
 
     private bool _loading = true;
     private bool _busy;
+    private bool _confirmingSignOutOthers;
     private string _message = string.Empty;
     private bool _messageSuccess;
 
@@ -344,6 +435,7 @@
         {
             _overview = (await cloudLogin.GetSecurityOverview()).ToModel();
             _history = [.. (await cloudLogin.GetMyLoginHistory()).Select(entry => entry.ToModel())];
+            _devices = await cloudLogin.GetMyDevices();
         }
         catch (Exception ex)
         {
@@ -504,6 +596,89 @@
     /// </summary>
     private void Connect(CloudLoginProviderDefinitionModel provider)
         => navigationManager.NavigateTo(cloudLogin.GetProviderLoginUrl(provider.Code, navigationManager.Uri), true);
+
+    // ── Devices ──────────────────────────────────────────────────────────────
+
+    private async Task SignOutDevice(CloudLoginSignedInDevice device)
+    {
+        _busy = true;
+
+        try
+        {
+            if (await cloudLogin.SignOutMyDevice(device.DeviceId))
+            {
+                SetMessage($"Signed {device.Name} out.", true);
+                await Reload();
+            }
+            else
+            {
+                SetMessage("That device is no longer signed in.", false);
+            }
+        }
+        catch (Exception ex)
+        {
+            SetMessage($"Couldn't sign that device out: {ex.Message}", false);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SignOutOtherDevices()
+    {
+        _busy = true;
+
+        try
+        {
+            int revoked = await cloudLogin.SignOutMyOtherDevices();
+
+            _confirmingSignOutOthers = false;
+            SetMessage(
+                revoked == 0
+                    ? "No other devices were signed in."
+                    : $"Signed {revoked} other {(revoked == 1 ? "device" : "devices")} out.",
+                true);
+
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            SetMessage($"Couldn't sign your other devices out: {ex.Message}", false);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    /// <summary>How many devices the "sign out all other devices" action would actually affect.</summary>
+    private int _otherActiveDeviceCount =>
+        _devices.Count(device => device.IsActive && !device.IsCurrent);
+
+    /// <summary>
+    /// The platform line: browser and operating system when the user agent gave them, falling
+    /// back to the broad device type. Everything here is client-supplied text shown so a person
+    /// can recognise their own device — it is never an input to an authorization decision.
+    /// </summary>
+    private static string DescribePlatform(CloudLoginSignedInDevice device)
+    {
+        string[] parts = [.. new[] { device.Browser, device.OperatingSystem }
+            .Where(part => !string.IsNullOrWhiteSpace(part))!];
+
+        return parts.Length == 0 ? device.Type : $"{device.Type} · {string.Join(" · ", parts)}";
+    }
+
+    /// <summary>Why an inactive device stopped, in words rather than an enum name.</summary>
+    private static string DescribeRevocation(string reason) => reason switch
+    {
+        "UserSignedOut" => "signed out",
+        "TokenReuseDetected" => "signed out automatically after suspicious activity",
+        "PasswordChanged" => "signed out after a password change",
+        "SecurityStampChanged" => "signed out after a security change",
+        "Expired" => "expired",
+        _ => "no longer active"
+    };
 
     // ── History ──────────────────────────────────────────────────────────────
 

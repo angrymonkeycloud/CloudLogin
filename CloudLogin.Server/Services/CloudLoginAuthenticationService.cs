@@ -14,18 +14,36 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
 
-    public async Task HandleSignIn(ClaimsPrincipal principal, HttpContext context)
+    public async Task<ClaimsPrincipal> HandleSignIn(
+        ClaimsPrincipal principal,
+        HttpContext context,
+        string? boundProfile = null,
+        string? profileClient = null)
     {
         if (principal.FindFirst(ClaimTypes.Hash)?.Value?.Equals("CloudLogin") ?? false)
-            return;
+            return principal;
 
-        CosmosMethods? cosmosMethods = context.RequestServices.GetService<CosmosMethods>();
-        if (cosmosMethods == null)
-            return;
+        ICloudLoginStore? store = context.RequestServices.GetService<ICloudLoginStore>();
+        if (store == null)
+            return principal;
 
         DateTimeOffset currentDateTime = DateTimeOffset.UtcNow;
-        await ProcessUserSignIn(principal, cosmosMethods, currentDateTime);
-        await RecordLoginHistory(principal, context, cosmosMethods, currentDateTime);
+        string authenticationMethod = GetProviderName(principal);
+        Core.Application.SignInProfileService? profiles =
+            context.RequestServices.GetService<Core.Application.SignInProfileService>();
+        if (profiles is not null && boundProfile is not null)
+        {
+            Core.Application.CloudLoginSignInProfile? profile =
+                profiles.Unbind(boundProfile, profileClient);
+            if (profile is null ||
+                !Core.Application.SignInProfileService.AllowsMethod(profile, authenticationMethod))
+                throw new UnauthorizedAccessException("The sign-in profile is invalid or does not allow this method.");
+        }
+        CloudUser user = await ProcessUserSignIn(principal, store, currentDateTime);
+        ClaimsPrincipal localPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
+            user, authenticationMethod, store);
+        await RecordLoginHistory(user, authenticationMethod, context, currentDateTime);
+        return localPrincipal;
     }
 
     /// <summary>
@@ -33,9 +51,9 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
     /// audit record must never be able to fail an otherwise successful authentication.
     /// </summary>
     private static async Task RecordLoginHistory(
-        ClaimsPrincipal principal,
+        CloudUser user,
+        string provider,
         HttpContext context,
-        CosmosMethods cosmosMethods,
         DateTimeOffset signedInOn)
     {
         try
@@ -45,25 +63,12 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             if (server is null)
                 return;
 
-            CloudLoginInputFormat format = principal.HasClaim(claim => claim.Type == ClaimTypes.Email)
-                ? CloudLoginInputFormat.EmailAddress
-                : CloudLoginInputFormat.PhoneNumber;
-
-            string input = GetUserInput(principal, format);
-
-            CloudUser? user = format == CloudLoginInputFormat.EmailAddress
-                ? await cosmosMethods.GetUserByEmailAddress(input)
-                : await cosmosMethods.GetUserByPhoneNumber(input);
-
-            if (user is null)
-                return;
-
             string? userAgent = context.Request.Headers.UserAgent.ToString();
 
             await server.RecordSignInForUser(user.ID, new CloudLoginHistoryEntry
             {
                 SignedInOn = signedInOn,
-                Provider = GetProviderName(principal),
+                Provider = provider,
                 IpAddress = context.Connection.RemoteIpAddress?.ToString(),
                 UserAgent = string.IsNullOrWhiteSpace(userAgent) ? null : userAgent,
                 Device = DescribeDevice(userAgent)
@@ -80,32 +85,15 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
     /// approximate: it exists to help someone recognise their own session in the timeline,
     /// not to fingerprint the client.
     /// </summary>
-    private static string? DescribeDevice(string? userAgent)
-    {
-        if (string.IsNullOrWhiteSpace(userAgent))
-            return null;
+    /// <summary>
+    /// One parser for the whole product: the sign-in history and the signed-in device list must
+    /// describe the same device the same way. See
+    /// <see cref="Core.Application.DeviceDescription"/>.
+    /// </summary>
+    private static string? DescribeDevice(string? userAgent) =>
+        string.IsNullOrWhiteSpace(userAgent) ? null : Core.Application.DeviceDescription.Parse(userAgent).Name;
 
-        string browser =
-            userAgent.Contains("Edg/", StringComparison.OrdinalIgnoreCase) ? "Edge" :
-            userAgent.Contains("OPR/", StringComparison.OrdinalIgnoreCase) ? "Opera" :
-            userAgent.Contains("Firefox/", StringComparison.OrdinalIgnoreCase) ? "Firefox" :
-            userAgent.Contains("Chrome/", StringComparison.OrdinalIgnoreCase) ? "Chrome" :
-            userAgent.Contains("Safari/", StringComparison.OrdinalIgnoreCase) ? "Safari" :
-            "Browser";
-
-        string platform =
-            userAgent.Contains("Windows", StringComparison.OrdinalIgnoreCase) ? "Windows" :
-            userAgent.Contains("Android", StringComparison.OrdinalIgnoreCase) ? "Android" :
-            userAgent.Contains("iPhone", StringComparison.OrdinalIgnoreCase) ? "iPhone" :
-            userAgent.Contains("iPad", StringComparison.OrdinalIgnoreCase) ? "iPad" :
-            userAgent.Contains("Mac OS", StringComparison.OrdinalIgnoreCase) ? "macOS" :
-            userAgent.Contains("Linux", StringComparison.OrdinalIgnoreCase) ? "Linux" :
-            "Unknown device";
-
-        return $"{browser} on {platform}";
-    }
-
-    private async Task ProcessUserSignIn(ClaimsPrincipal principal, CosmosMethods cosmosMethods, DateTimeOffset currentDateTime)
+    private async Task<CloudUser> ProcessUserSignIn(ClaimsPrincipal principal, ICloudLoginStore store, DateTimeOffset currentDateTime)
     {
         CloudLoginInputFormat formatValue = principal.HasClaim(claim => claim.Type == ClaimTypes.Email)
         ? CloudLoginInputFormat.EmailAddress
@@ -115,15 +103,15 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         string providerName = GetProviderName(principal);
         string? providerIdentifier = GetProviderIdentifier(principal);
 
-        CloudUser? user = await GetExistingUser(cosmosMethods, input, formatValue);
+        CloudUser? user = await ResolveExternalUser(principal, providerName, providerIdentifier, input, formatValue, store);
 
         if (user != null)
         {
-            await UpdateExistingUser(user, principal, providerName, providerIdentifier, input, formatValue, currentDateTime, cosmosMethods);
+            return await UpdateExistingUser(user, principal, providerName, providerIdentifier, input, formatValue, currentDateTime, store);
         }
         else
         {
-            await CreateNewUser(principal, providerName, providerIdentifier, input, formatValue, currentDateTime, cosmosMethods);
+            return await CreateNewUser(principal, providerName, providerIdentifier, input, formatValue, currentDateTime, store);
         }
     }
 
@@ -172,14 +160,74 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         return null;
     }
 
-    private static async Task<CloudUser?> GetExistingUser(CosmosMethods cosmosMethods, string input, CloudLoginInputFormat format)
+    private async Task<CloudUser?> ResolveExternalUser(
+        ClaimsPrincipal principal,
+        string providerName,
+        string? providerIdentifier,
+        string input,
+        CloudLoginInputFormat format,
+        ICloudLoginStore store)
     {
+        Core.Application.IdentityLinkingService? linking =
+            _serviceProvider.GetService<Core.Application.IdentityLinkingService>();
+
+        if (linking is not null)
+        {
+            if (string.IsNullOrWhiteSpace(providerIdentifier))
+                throw new UnauthorizedAccessException("The external provider did not return a stable subject identifier.");
+
+            string issuer = Core.Application.KnownProviderIssuers.GetOrFallback(providerName);
+            bool isEmail = format == CloudLoginInputFormat.EmailAddress;
+            string? providerEmail = isEmail ? input : null;
+            bool providerEmailIsVerified = isEmail && IsEmailVerified(principal);
+
+            Core.Application.ExternalSignInEvaluation evaluation =
+                await linking.EvaluateExternalSignInAsync(issuer, providerIdentifier, providerEmail, providerEmailIsVerified);
+
+            if (evaluation.Decision == Core.Application.ExternalSignInDecisions.RequireLinkingCeremony)
+                throw new UnauthorizedAccessException(
+                    "An account already uses this email. Sign in to that account first, then connect this provider.");
+
+            if (evaluation.UserId is Guid userId)
+            {
+                if (evaluation.Decision == Core.Application.ExternalSignInDecisions.AutoLink)
+                {
+                    // Which contact the provider's email corresponds to on the account being
+                    // linked, so the credential records the contact rather than the address.
+                    Core.Domain.IdentityKey? emailIdentity = providerEmail is null
+                        ? null
+                        : await linking.ResolveAsync(Core.Domain.IdentityKey.CanonicalEmail(
+                            Core.Application.IdentityNormalization.NormalizeEmail(providerEmail)));
+
+                    await linking.LinkExternalIdentityAsync(
+                        userId, issuer, providerIdentifier, providerName,
+                        providerEmail, providerEmailIsVerified, emailIdentity?.ContactId,
+                        new Core.Application.LinkingProof
+                        {
+                            RecentAuthentication = true,
+                            ProviderProofPresented = true
+                        });
+                }
+
+                return await store.GetUserById(userId);
+            }
+        }
+
         return format == CloudLoginInputFormat.EmailAddress
-        ? await cosmosMethods.GetUserByEmailAddress(input)
-        : await cosmosMethods.GetUserByPhoneNumber(input);
+            ? await store.GetUserByEmailAddress(input)
+            : await store.GetUserByPhoneNumber(input);
     }
 
-    private async Task UpdateExistingUser(CloudUser user, ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, CloudLoginInputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private static bool IsEmailVerified(ClaimsPrincipal principal)
+    {
+        string? value = principal.FindFirst("email_verified")?.Value
+            ?? principal.FindFirst("verified_email")?.Value
+            ?? principal.FindFirst("urn:google:email_verified")?.Value;
+
+        return bool.TryParse(value, out bool verified) && verified;
+    }
+
+    private async Task<CloudUser> UpdateExistingUser(CloudUser user, ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, CloudLoginInputFormat formatValue, DateTimeOffset currentDateTime, ICloudLoginStore store)
     {
         // Update user information with latest from provider, but never override existing non-empty values
         user.FirstName = string.IsNullOrWhiteSpace(user.FirstName) ? (principal.FindFirst(ClaimTypes.GivenName)?.Value ?? user.FirstName) : user.FirstName;
@@ -272,11 +320,12 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         }
 
         user.LastSignedIn = currentDateTime;
-        await cosmosMethods.Update(user);
+        await store.Update(user);
         await PublishUserEvent("User.Updated", "Updated", user.ID);
+        return user;
     }
 
-    private async Task CreateNewUser(ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, CloudLoginInputFormat formatValue, DateTimeOffset currentDateTime, CosmosMethods cosmosMethods)
+    private async Task<CloudUser> CreateNewUser(ClaimsPrincipal principal, string providerName, string? providerIdentifier, string input, CloudLoginInputFormat formatValue, DateTimeOffset currentDateTime, ICloudLoginStore store)
     {
         (string? countryCode, string? callingCode, string formattedInput) = await ProcessPhoneNumber(formatValue, input);
 
@@ -332,8 +381,9 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         ]
         };
 
-        await cosmosMethods.Create(user);
+        await store.Create(user);
         await PublishUserEvent("User.Created", "Created", user.ID);
+        return user;
     }
 
     private async Task PublishUserEvent(

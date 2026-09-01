@@ -2,7 +2,10 @@ using AngryMonkey.Cloud;
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.API.Controllers;
 using AngryMonkey.CloudLogin.Server;
+using AngryMonkey.CloudLogin.Server.Core;
 using AngryMonkey.CloudLogin.Server.Serialization;
+using AngryMonkey.CloudLogin.Server.Storage;
+using AngryMonkey.CloudLogin.Server.Versioning.V1;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using AngryMonkey.CloudBlazor.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -62,9 +65,33 @@ public static class MvcServiceCollectionExtensions
 
         builder.Services.AddCloudLoginWeb(loginConfig);
 
+        // Modern storage core (database version V3, the default): every API version is served
+        // through compatibility adapters over the seven-container model instead of the legacy store.
+        builder.Services.AddCloudLoginCore(loginConfig);
+
+        // CloudLogin owns its schema: it creates its database and containers itself, whichever
+        // database version is selected and whether or not an AppHost also declares them.
+        builder.Services.AddCloudLoginStorageProvisioning();
+
+        // API façade configuration is validated at startup: a bad default or an enabled V1
+        // without its adapter must fail loudly, never serve half an API.
+        builder.Services.EnsureVersion1Implemented(loginConfig.ApiVersion);
+
+        // The latest enabled version also answers at unversioned routes (/api/... alongside
+        // /api/v3/...); older versions stay reachable only through their versioned paths.
+        builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options =>
+            options.Conventions.Add(new AngryMonkey.CloudLogin.Server.Versioning.SelectedApiVersionRouteConvention(loginConfig.ApiVersion)));
+
         IConfigurationSection tokenConfiguration = builder.Configuration.GetSection("CloudLoginTokens");
         if (!string.IsNullOrWhiteSpace(tokenConfiguration["Issuer"]))
             builder.Services.AddCloudLoginTokenIssuer(tokenConfiguration);
+
+        // Key Vault is the recommendation for production signing keys, but it is not demanded:
+        // the Cosmos fallback is Data Protection-wrapped and TTL-retired, and the V3 storage
+        // model is now the default for every deployment rather than something opted into. Making
+        // the choice mandatory here would fail the startup of every deployment that simply took
+        // the defaults. Deployments that want the requirement enforced set
+        // CloudLoginTokens:SigningKeys:RequireExplicitStoreChoice themselves.
     }
 
     /// <summary>Registers CloudLogin using a concise options callback.</summary>
@@ -107,13 +134,21 @@ public static class MvcServiceCollectionExtensions
         // choice, along with the custom serializer every client in this repository must carry.
         CosmosClient cosmosClient = loginConfig.Cosmos.CreateClient();
 
-        Container container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
+        // Shared so the core, the legacy store and the provisioner all use one client rather than
+        // each building their own connection pool.
+        builder.Services.TryAddSingleton(cosmosClient);
 
-        // Register as singleton
-        builder.Services.AddSingleton(container);
-        builder.Services.AddScoped<CosmosMethods>();
-        builder.Services.AddScoped<ICloudLoginStore>(services => services.GetRequiredService<CosmosMethods>());
-        
+        // The legacy single-container store belongs to database version V2 only. Under V3 it is
+        // not registered at all - no legacy container is opened, and Cosmos:DatabaseId need not
+        // even be configured.
+        if (!loginConfig.UsesCoreDatabase)
+        {
+            Container container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
+
+            builder.Services.AddSingleton(container);
+            builder.Services.AddScoped<CosmosMethods>();
+            builder.Services.AddScoped<ICloudLoginStore>(services => services.GetRequiredService<CosmosMethods>());
+        }
     }
 
     private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginWebConfiguration loginConfig)
@@ -179,10 +214,13 @@ public static class MvcServiceCollectionExtensions
 
         options.Events = new CookieAuthenticationEvents
         {
-            OnSignedIn = async context =>
+            OnSigningIn = async context =>
             {
                 CloudLoginAuthenticationService authService = context.HttpContext.RequestServices.GetRequiredService<CloudLoginAuthenticationService>();
-                await authService.HandleSignIn(context.Principal!, context.HttpContext);
+                context.Properties.Items.TryGetValue("cloudlogin:profile", out string? boundProfile);
+                context.Properties.Items.TryGetValue("cloudlogin:profile_client", out string? profileClient);
+                context.Principal = await authService.HandleSignIn(
+                    context.Principal!, context.HttpContext, boundProfile, profileClient);
             }
         };
     }

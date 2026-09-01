@@ -214,6 +214,7 @@
     <div class="card">
         <div class="card-header">
             <h4>Members</h4>
+            <p class="card-description">@OwnershipSummary</p>
             @if (Workspace.CanManage && !_inviting)
             {
                 <button class="link-action" @onclick="StartInvite" disabled="@_busy">Invite someone</button>
@@ -346,6 +347,27 @@
     [Parameter] public string WorkspaceLabelPlural { get; set; } = "Workspaces";
 
     private string WorkspaceLabelLower => WorkspaceLabel.ToLowerInvariant();
+
+    /// <summary>
+    /// Who owns this workspace, in one line. A workspace can have several owners, and the last
+    /// one cannot be removed or demoted — saying so here is what makes that rule understandable
+    /// when someone hits it, rather than an error appearing from nowhere.
+    /// </summary>
+    private string OwnershipSummary
+    {
+        get
+        {
+            int owners = Workspace.Members.Count(member =>
+                member.IsOwner && member.State == CloudWorkspaceMembershipStates.Active);
+
+            return owners switch
+            {
+                0 => $"This {WorkspaceLabelLower} has no active owner.",
+                1 => $"One owner. A {WorkspaceLabelLower} always keeps at least one, so the last owner can't be removed.",
+                _ => $"{owners} owners. A {WorkspaceLabelLower} always keeps at least one, so the last owner can't be removed."
+            };
+        }
+    }
 
     /// <summary>Asks the parent to reload this workspace after a change lands.</summary>
     [Parameter] public EventCallback OnChanged { get; set; }

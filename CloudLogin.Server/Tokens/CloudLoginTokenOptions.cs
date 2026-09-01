@@ -61,8 +61,13 @@ public sealed class CloudLoginTokenOptions
     public Dictionary<string, CloudLoginServiceClient> ServiceClients { get; set; } =
         new(StringComparer.Ordinal);
 
+    /// <summary>Where the authority's signing keys live: Key Vault, or the Cosmos fallback.</summary>
+    public CloudLoginSigningKeyStoreOptions SigningKeys { get; set; } = new();
+
     internal void Validate()
     {
+        SigningKeys.Validate();
+
         if (string.IsNullOrWhiteSpace(Issuer))
             throw new InvalidOperationException(
                 "CloudLogin token issuer requires an Issuer. Set it to the authority's public HTTPS origin.");
@@ -89,6 +94,60 @@ public sealed class CloudLoginTokenOptions
 
             client.NormalizeSecret();
         }
+    }
+}
+
+/// <summary>
+/// Where the ES256 signing keys live.
+/// <para>
+/// Production deployments should use Azure Key Vault or Managed HSM
+/// (<see cref="KeyVaultKeyId"/>): the private key is created non-exportable and every signature
+/// is computed inside the vault, so no process memory or database ever holds material that can
+/// mint tokens. The Cosmos <c>SigningKeys</c> container remains available as a fallback — its
+/// private keys are Data Protection-wrapped and retire through TTL — but a modernized (Core)
+/// production deployment must choose explicitly: configure the vault key, or opt in to the
+/// fallback with <see cref="AllowCosmosFallback"/>.
+/// </para>
+/// </summary>
+public sealed class CloudLoginSigningKeyStoreOptions
+{
+    /// <summary>
+    /// The Key Vault key identifier, for example
+    /// <c>https://myvault.vault.azure.net/keys/cloudlogin-signing</c>. The key must be an EC
+    /// P-256 key with the Sign operation permitted; create it non-exportable and rotate it with
+    /// a vault rotation policy.
+    /// </summary>
+    public Uri? KeyVaultKeyId { get; set; }
+
+    /// <summary>
+    /// The credential for Key Vault. Set in code (a credential is an object, not a value);
+    /// defaults to <c>DefaultAzureCredential</c> when a vault key is configured.
+    /// </summary>
+    public global::Azure.Core.TokenCredential? KeyVaultCredential { get; set; }
+
+    /// <summary>
+    /// Explicit opt-in to the Cosmos SigningKeys fallback. Left unset, legacy deployments keep
+    /// their current behavior; a Core-enabled production deployment fails startup until it
+    /// either configures <see cref="KeyVaultKeyId"/> or sets this to true deliberately.
+    /// </summary>
+    public bool? AllowCosmosFallback { get; set; }
+
+    /// <summary>
+    /// Turns the store choice above from a recommendation into a startup check. Off by default:
+    /// the Cosmos fallback is Data Protection-wrapped and TTL-retired, so it is a supported
+    /// production configuration, and the V3 storage model is every deployment's default rather
+    /// than something opted into - demanding a choice by default would fail startup for anyone
+    /// who simply took the defaults. Set this in a deployment whose policy requires a vault key.
+    /// </summary>
+    public bool RequireExplicitStoreChoice { get; set; }
+
+    internal void Validate()
+    {
+        if (RequireExplicitStoreChoice && KeyVaultKeyId is null && AllowCosmosFallback != true)
+            throw new InvalidOperationException(
+                "CloudLogin core deployments must choose a production signing-key store: set " +
+                "CloudLoginTokens:SigningKeys:KeyVaultKeyId to a Key Vault key, or explicitly set " +
+                "CloudLoginTokens:SigningKeys:AllowCosmosFallback to true to keep the encrypted Cosmos fallback.");
     }
 }
 

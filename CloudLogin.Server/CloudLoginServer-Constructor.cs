@@ -4,7 +4,7 @@ using AngryMonkey.CloudLogin.Interfaces;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, ICloudLoginStore? cloudLoginStore = null, IHttpClientFactory? httpClientFactory = null, ICloudLoginWorkspaceRegistry? workspaceRegistry = null, ICloudLoginEventPublisher? eventPublisher = null)
+public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, ICloudLoginStore? cloudLoginStore = null, IHttpClientFactory? httpClientFactory = null, ICloudLoginWorkspaceRegistry? workspaceRegistry = null, ICloudLoginEventPublisher? eventPublisher = null, ICloudLoginSecurityStore? securityStore = null, Core.Application.SessionService? sessionService = null)
 {
     readonly CloudGeographyClient _cloudGeography = cloudGeography;
     readonly ICloudLoginStore? _cosmosMethods = cloudLoginStore;
@@ -12,6 +12,13 @@ public partial class CloudLoginServer(CloudGeographyClient cloudGeography, Cloud
     readonly IHttpContextAccessor _accessor = httpContextAccessor;
     readonly IHttpClientFactory? _httpClientFactory = httpClientFactory;
     readonly ICloudLoginWorkspaceRegistry? _workspaceRegistry = workspaceRegistry;
+    readonly ICloudLoginSecurityStore? _injectedSecurityStore = securityStore;
+
+    /// <summary>
+    /// Present only on a deployment running the V3 storage core, which is where sessions live.
+    /// Null on the legacy database version, where the device list is simply unavailable.
+    /// </summary>
+    readonly Core.Application.SessionService? _sessionService = sessionService;
 
     readonly ICloudLoginEventPublisher? _eventPublisher = eventPublisher;
     private HttpRequest _request => _accessor.HttpContext!.Request;

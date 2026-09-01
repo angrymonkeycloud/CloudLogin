@@ -161,6 +161,7 @@
         return string.IsNullOrWhiteSpace(full) ? "(no name)" : full;
     }
 
+    // Stored in UTC, shown in the viewer's own timezone.
     private static string FormatDate(DateTimeOffset dt) =>
-        dt == DateTimeOffset.MinValue ? "—" : dt.ToString("MMM d, yyyy");
+        dt == DateTimeOffset.MinValue ? "—" : dt.ToLocalTime().ToString("MMM d, yyyy");
 }

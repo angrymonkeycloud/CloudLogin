@@ -16,7 +16,8 @@ internal sealed class LoginTestFixture
         bool testModeEnabled = false,
         IEnumerable<string>? allowedOrigins = null,
         IEnumerable<string>? allowedMobileSchemes = null,
-        ICloudLoginEventPublisher? eventPublisher = null)
+        ICloudLoginEventPublisher? eventPublisher = null,
+        Server.Core.Application.SignInProfileConfiguration? signInProfiles = null)
     {
         Configuration = new CloudLoginWebConfiguration
         {
@@ -41,11 +42,22 @@ internal sealed class LoginTestFixture
                 configuration.GetSection("TestMode")));
         }
 
+        if (signInProfiles is not null)
+            Configuration.SignInProfiles = signInProfiles;
+
         HttpContext.Request.Scheme = "https";
         HttpContext.Request.Host = new HostString("login.example", 443);
-        HttpContext.RequestServices = new ServiceCollection()
-            .AddSingleton<IAuthenticationService>(Authentication)
-            .BuildServiceProvider();
+
+        ServiceCollection services = new();
+        services.AddSingleton<IAuthenticationService>(Authentication);
+
+        // Registered only when a test supplies profiles, so every other test keeps exercising the
+        // deployment shape where no profile service exists at all.
+        if (signInProfiles is not null)
+            services.AddSingleton(new Server.Core.Application.SignInProfileService(
+                signInProfiles, new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider()));
+
+        HttpContext.RequestServices = services.BuildServiceProvider();
 
         Accessor.HttpContext = HttpContext;
         Server = new CloudLoginServer(

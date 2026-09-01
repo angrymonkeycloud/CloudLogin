@@ -52,6 +52,54 @@ public class SecurityController(CloudLoginWebConfiguration configuration, ICloud
         }
     }
 
+    /// <summary>The devices the signed-in user's account is signed in on.</summary>
+    [HttpGet("Devices")]
+    public async Task<ActionResult<List<CloudLoginSignedInDevice>>> Devices()
+    {
+        try
+        {
+            return Ok(await _server.GetMyDevices());
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+    }
+
+    /// <summary>
+    /// Signs one of the signed-in user's own devices out. Answers 404 for an id that is not
+    /// theirs, which is indistinguishable from one that never existed.
+    /// </summary>
+    [HttpDelete("Devices/{deviceId}")]
+    public async Task<ActionResult> SignOutDevice(string deviceId)
+    {
+        try
+        {
+            return await _server.SignOutMyDevice(deviceId) ? Ok() : NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+    }
+
+    /// <summary>
+    /// Signs every device except the current one out. Which one to keep is read from the
+    /// caller's own ticket, never from the request.
+    /// </summary>
+    [HttpDelete("Devices")]
+    public async Task<ActionResult<int>> SignOutOtherDevices()
+    {
+        try
+        {
+            return Ok(await _server.SignOutMyOtherDevices());
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+    }
+
     [HttpPost("Password")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
     public async Task<IActionResult> Password([FromBody] CloudLoginChangePasswordRequest request)

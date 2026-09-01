@@ -57,7 +57,7 @@ public class DataAccessConfigurationTests
         BlobContainerClient container = storage.CreateContainerClient();
 
         Assert.Equal("examplestore", container.AccountName);
-        Assert.Equal("users", container.Name);
+        Assert.Equal(AzureStorageConfiguration.DefaultContainerName, container.Name);
     }
 
     [Fact]
@@ -96,7 +96,9 @@ public class DataAccessConfigurationTests
     {
         AzureStorageConfiguration storage = new() { ConnectionString = StorageConnectionString };
 
-        Assert.Equal("https://examplestore.blob.core.windows.net/users/", storage.PublicBaseUrl);
+        Assert.Equal(
+            $"https://examplestore.blob.core.windows.net/{AzureStorageConfiguration.DefaultContainerName}/",
+            storage.PublicBaseUrl);
     }
 
     [Fact]

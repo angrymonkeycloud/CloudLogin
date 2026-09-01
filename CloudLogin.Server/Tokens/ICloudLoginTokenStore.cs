@@ -26,3 +26,22 @@ public interface ICloudLoginTokenStore
     /// <summary>Revokes every refresh token belonging to a user, across all sessions.</summary>
     Task RevokeUserAsync(Guid userId, CancellationToken cancellationToken = default);
 }
+
+public enum CloudLoginRefreshRotationResult
+{
+    Succeeded,
+    Rejected,
+    ReuseDetected
+}
+
+/// <summary>
+/// Optional capability implemented by stores that can consume the current token, create its
+/// successor, and advance the family head atomically.
+/// </summary>
+public interface IAtomicCloudLoginTokenStore
+{
+    Task<CloudLoginRefreshRotationResult> RotateRefreshTokenAsync(
+        CloudLoginRefreshToken current,
+        CloudLoginRefreshToken replacement,
+        CancellationToken cancellationToken = default);
+}

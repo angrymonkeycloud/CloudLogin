@@ -136,21 +136,39 @@ public partial class CloudLoginServer : ICloudLogin
         ClaimsIdentity? userIdentity = _request.HttpContext.User.Identities
             .FirstOrDefault(identity => identity.IsAuthenticated);
 
-        string? loginIdentity = userIdentity?.FindFirst(ClaimTypes.UserData)?.Value;
+        Guid userId;
+        string? idClaim = userIdentity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (string.IsNullOrEmpty(loginIdentity))
+        if (!Guid.TryParse(idClaim, out userId))
+        {
+            // Read-only compatibility for pre-upgrade cookies. New tickets never contain
+            // UserData; the legacy payload is used only to obtain the local id.
+            string? legacyPayload = userIdentity?.FindFirst(ClaimTypes.UserData)?.Value;
+            CloudUser? legacyUser = string.IsNullOrWhiteSpace(legacyPayload)
+                ? null
+                : JsonSerializer.Deserialize<CloudUser>(legacyPayload, CloudLoginSerialization.Options);
+
+            if (legacyUser is null || legacyUser.ID == Guid.Empty)
+                return null;
+
+            userId = legacyUser.ID;
+        }
+
+        if (_cosmosMethods is null)
             return null;
 
-        CloudUser? user = JsonSerializer.Deserialize<CloudUser?>(loginIdentity, CloudLoginSerialization.Options);
+        CloudUser? user = await _cosmosMethods.GetUserById(userId);
+        if (user is null || user.IsLocked)
+            return null;
 
-        // Refresh from Cosmos DB so that DB-managed flags (e.g. IsGlobalAdmin, IsLocked) are
-        // always current, even when the auth cookie pre-dates the last DB change.
-        if (user != null && _cosmosMethods != null)
+        string? currentStamp = await _cosmosMethods.GetSecurityStamp(userId);
+        if (!string.IsNullOrWhiteSpace(currentStamp))
         {
-            CloudUser? freshUser = await _cosmosMethods.GetUserById(user.ID);
-
-            if (freshUser != null)
-                user = freshUser;
+            string? ticketStamp = userIdentity?.FindFirst(CloudLoginAuthenticationClaims.SecurityStamp)?.Value;
+            if (!CryptographicOperations.FixedTimeEquals(
+                    Encoding.UTF8.GetBytes(currentStamp),
+                    Encoding.UTF8.GetBytes(ticketStamp ?? string.Empty)))
+                return null;
         }
 
         if (user != null)
@@ -254,6 +272,15 @@ public partial class CloudLoginServer : ICloudLogin
 
         return await _cosmosMethods.GetUserByRequestId(requestId);
     }
+
+    /// <summary>
+    /// The browser that completed the interactive sign-in behind a login request. Read before
+    /// consuming the request, so a relying party redeeming it over a back channel can attribute
+    /// the resulting session to the person's own device rather than to its own server.
+    /// Null when the store keeps no such record.
+    /// </summary>
+    public async Task<CloudLoginRequestOrigin?> GetLoginRequestOrigin(Guid requestId) =>
+        _cosmosMethods is null ? null : await _cosmosMethods.GetRequestOrigin(requestId);
 
     public async Task<Guid> CreateLoginRequest(Guid userId, Guid? requestId = null)
     {
@@ -491,6 +518,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         user.IsLocked = locked;
         await _cosmosMethods.Update(user);
+        await _cosmosMethods.RotateSecurityStamp(userId);
     }
 
     public async Task AdminResetPassword(Guid userId, string newPassword)
@@ -514,6 +542,7 @@ public partial class CloudLoginServer : ICloudLogin
         }
 
         await _cosmosMethods.Update(user);
+        await _cosmosMethods.RotateSecurityStamp(userId);
     }
 
     public async Task SetGlobalAdmin(Guid userId, bool isAdmin)
@@ -525,6 +554,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         user.IsGlobalAdmin = isAdmin;
         await _cosmosMethods.Update(user);
+        await _cosmosMethods.RotateSecurityStamp(userId);
     }
 
     public async Task<int> GetUserCount()
@@ -592,20 +622,14 @@ public partial class CloudLoginServer : ICloudLogin
         if (user.IsLocked)
             throw new UnauthorizedAccessException("The account is locked.");
 
-        List<Claim> claims =
-        [
-            new(ClaimTypes.NameIdentifier, user.ID.ToString()),
-            new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}"),
-            new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
-            new(ClaimTypes.Surname, user.LastName ?? string.Empty),
-            new(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
-        ];
+        // The single choke point for every sign-in that does not go through a provider challenge
+        // (password, verification code, test mode), so a restricted sign-in profile applies here
+        // exactly as it does to a provider redirect.
+        if (!SignInProfileAllows(authenticationType))
+            throw new UnauthorizedAccessException("This sign-in method is not allowed for the requested sign-in profile.");
 
-        string? email = user.PrimaryEmailAddress?.Input;
-        if (!string.IsNullOrWhiteSpace(email))
-            claims.Add(new Claim(ClaimTypes.Email, email));
-
-        ClaimsPrincipal principal = new(new ClaimsIdentity(claims, authenticationType));
+        ClaimsPrincipal principal = await CloudLoginAuthenticationClaims.CreateAsync(
+            user, authenticationType, _cosmosMethods);
         AuthenticationProperties properties = new()
         {
             IsPersistent = keepMeSignedIn,
@@ -763,19 +787,4 @@ public partial class CloudLoginServer : ICloudLogin
         return !_configuration.Security.PasswordBlocklist.Contains(password);
     }
 
-    private static string SerializeUserForAuthenticationTicket(CloudUser user)
-    {
-        CloudUser safeUser = user with
-        {
-            Inputs = [.. user.Inputs.Select(input => input with
-            {
-                Providers = [.. input.Providers.Select(provider => provider with
-                {
-                    PasswordHash = null
-                })]
-            })]
-        };
-
-        return JsonSerializer.Serialize(safeUser, CloudLoginSerialization.Options);
-    }
 }

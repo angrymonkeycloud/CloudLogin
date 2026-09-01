@@ -192,6 +192,17 @@ public static class CloudLoginReferenceExtensions
                 .WithEnvironment("CloudLogin:Security:RequireHttps", "false")
                 .WithEnvironment("TestMode:IsEnabled", "true");
         }
+        else
+        {
+            // Windows App Service runs without a loaded user profile unless asked, and CNG - which
+            // is what ECDsa.Create() resolves to on Windows - then has nowhere to keep the key it
+            // is handed. Importing the token signing key fails with "The system cannot find the
+            // file specified", the token endpoint returns 500, and the person signing in is told by
+            // the relying party that they were not found. Nothing in that chain names the cause.
+            //
+            // Harmless anywhere else: a platform that does not know this setting ignores it.
+            cloudLogin.WithEnvironment("WEBSITE_LOAD_USER_PROFILE", "1");
+        }
 
         // Where the user store and the file store live is the host's decision, made explicitly at
         // the AppHost with WithReference(cosmos) / WithReference(storage). Nothing is adopted or

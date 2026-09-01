@@ -23,7 +23,7 @@ public sealed record CloudLoginTokenResponse
     /// authority &mdash; clients must not trust a server-supplied wall-clock time.
     /// </summary>
     [JsonIgnore]
-    public DateTimeOffset ExpiresAtUtc { get; init; } = DateTimeOffset.MinValue;
+    public DateTimeOffset ExpiresOn { get; init; } = DateTimeOffset.MinValue;
 
     /// <summary>
     /// Present only for flows that issue one (interactive sign-in, native apps).

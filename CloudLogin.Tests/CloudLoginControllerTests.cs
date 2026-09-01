@@ -138,8 +138,9 @@ public class CloudLoginControllerTests
     }
 
     [Fact]
-    public async Task CompleteLogin_NoAllowlistConfigured_AllowsAnyDestination()
+    public async Task CompleteLogin_NoAllowlistConfigured_RefusesTheDestination()
     {
+        // Fail closed: no configured origins means nothing is approved, not that everything is.
         LoginTestFixture fixture = new();
         CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
@@ -147,11 +148,8 @@ public class CloudLoginControllerTests
 
         IActionResult result = await controller.CompleteLogin("https://anywebsite.example/callback");
 
-        OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
-        string redirectUrl = Assert.IsType<string>(ok.Value);
-        Assert.StartsWith("https://anywebsite.example/callback", redirectUrl);
-        Assert.Contains("requestId=", redirectUrl);
-        Assert.Equal(1, fixture.Store.CreateRequestCount);
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(0, fixture.Store.CreateRequestCount);
     }
 
     [Fact]

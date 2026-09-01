@@ -240,16 +240,17 @@ public class CloudLoginServerLoginTests
     [Theory]
     [InlineData("https://anywebsite.example/callback")]
     [InlineData("unknownapp://auth/callback")]
-    public async Task CompleteLoginRedirect_NoAllowlistConfigured_AllowsAnyWebsiteOrAppDestination(string destination)
+    public async Task CompleteLoginRedirect_NoAllowlistConfigured_RefusesEveryExternalDestination(string destination)
     {
+        // Fail closed: an empty allowlist is an unconfigured deployment, not a permissive one.
+        // This endpoint hands out a freshly authenticated session, so a forgotten configuration
+        // entry must break the redirect visibly rather than work for anyone who asks.
         LoginTestFixture fixture = new();
         CloudUser user = await fixture.AddPasswordUserAsync();
         fixture.AuthenticateAs(user);
 
-        string redirect = await fixture.Server.CompleteLoginRedirect(destination);
-
-        Assert.StartsWith(destination, redirect);
-        Assert.Equal(1, fixture.Store.CreateRequestCount);
+        await Assert.ThrowsAsync<ArgumentException>(() => fixture.Server.CompleteLoginRedirect(destination));
+        Assert.Equal(0, fixture.Store.CreateRequestCount);
     }
 
     [Fact]
@@ -340,15 +341,14 @@ public class CloudLoginServerLoginTests
     }
 
     [Fact]
-    public async Task Login_NoAllowlistConfigured_AllowsAnyReferer()
+    public async Task Login_NoAllowlistConfigured_RefusesAnExternalReferer()
     {
         LoginTestFixture fixture = new();
 
         IActionResult result = await fixture.Server.Login(
             "google", false, false, referer: "https://anywebsite.example/callback");
 
-        ChallengeResult challenge = Assert.IsType<ChallengeResult>(result);
-        Assert.Equal("https://anywebsite.example/callback", challenge.Properties!.Items["referer"]);
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 
     [Fact]

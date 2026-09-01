@@ -14,6 +14,8 @@ public sealed record CloudLoginRedirectParameters
     public string? UserInfo { get; init; }
     public string? InputValue { get; init; }
     public string? Referer { get; init; } // External website URL
+    public string? Profile { get; init; }
+    public string? Client { get; init; }
 
     /// <summary>
     /// Creates parameters for a basic redirect
@@ -36,7 +38,7 @@ public sealed record CloudLoginRedirectParameters
     /// <summary>
     /// Creates parameters for a custom login redirect
     /// </summary>
-    public static CloudLoginRedirectParameters CreateCustomLogin(string controller, string action, bool keepMeSignedIn = false, string? referer = null, bool sameSite = false, string? primaryEmail = null, string? userInfo = null, string? inputValue = null)
+    public static CloudLoginRedirectParameters CreateCustomLogin(string controller, string action, bool keepMeSignedIn = false, string? referer = null, bool sameSite = false, string? primaryEmail = null, string? userInfo = null, string? inputValue = null, string? profile = null, string? client = null)
         => new()
         {
             Controller = controller,
@@ -46,6 +48,8 @@ public sealed record CloudLoginRedirectParameters
             SameSite = sameSite.ToString().ToLowerInvariant(),
             PrimaryEmail = primaryEmail,
             UserInfo = userInfo,
-            InputValue = inputValue
+            InputValue = inputValue,
+            Profile = profile,
+            Client = client
         };
 }

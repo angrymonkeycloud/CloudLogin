@@ -42,12 +42,57 @@ public static class CloudLoginConfigurationKeys
         /// <summary>Blob service endpoint reached with a credential rather than an account key.</summary>
         public const string BlobEndpoint = "Storage:BlobEndpoint";
 
+        /// <summary>
+        /// Table service endpoint for the core identity index (IdentityKeys, UserWorkspaceIndex),
+        /// reached with a credential rather than an account key.
+        /// </summary>
+        public const string TableEndpoint = "Storage:TableEndpoint";
+
         /// <summary>Account name, reached with a credential rather than a key.</summary>
         public const string AccountName = "Storage:AccountName";
 
         /// <summary>Blob container holding CloudLogin's own files.</summary>
         public const string ContainerName = "Storage:ContainerName";
     }
+
+    /// <summary>The modern seven-container storage core (see docs/architecture-core.md).</summary>
+    public static class Core
+    {
+        /// <summary>The whole section; binding it at all activates the core storage model.</summary>
+        public const string Section = "CloudLogin:Core";
+
+        /// <summary>The deployment realm isolating identity keys and audit partitions.</summary>
+        public const string RealmId = "CloudLogin:Core:RealmId";
+
+        /// <summary>The Cosmos database holding the seven core containers.</summary>
+        public const string DatabaseId = "CloudLogin:Core:DatabaseId";
+    }
+
+    /// <summary>Which API façade versions a deployment serves.</summary>
+    public const string ApiVersion = "CloudLogin:ApiVersion";
+
+    /// <summary>
+    /// The secret keying the V3 identity index, in its logical configuration form.
+    /// </summary>
+    public const string IdentityHmacSecret = "CloudLogin:IdentityHmacSecret";
+
+    /// <summary>
+    /// The environment-variable spelling of <see cref="IdentityHmacSecret"/>, which is what is
+    /// actually injected. Double underscores rather than a colon because that is the form every
+    /// host accepts - Linux App Service and containers will not take a colon in a variable name -
+    /// so the same wiring works whether the server runs locally or deployed.
+    /// <para>
+    /// Always supplied through an Aspire parameter, never as a literal: see
+    /// <c>WithIdentityHmacSecret</c> and <c>IdentityHmacSecretParameter</c>.
+    /// </para>
+    /// </summary>
+    public const string IdentityHmacSecretVariable = "CloudLogin__IdentityHmacSecret";
+
+    /// <summary>One JSON-array setting containing old read-only identity HMAC keys.</summary>
+    public const string IdentityHmacFallbackSecrets = "CloudLogin:IdentityHmacFallbackSecrets";
+
+    /// <summary>The portable environment-variable spelling of <see cref="IdentityHmacFallbackSecrets"/>.</summary>
+    public const string IdentityHmacFallbackSecretsVariable = "CloudLogin__IdentityHmacFallbackSecrets";
 
     /// <summary>Token-authority configuration inferred from CloudLogin resource references.</summary>
     public static class Tokens

@@ -101,6 +101,16 @@ public sealed class TokenController(
         if (requestId == Guid.Empty)
             return BadRequest(new { error = "invalid_request" });
 
+        // Read before consuming: this call arrives from the relying party's server, so its own
+        // address and HTTP-client user agent describe that server, not the person who signed in.
+        // The login request remembers the browser that created it; prefer that, and fall back to
+        // this request only when the store keeps no such record.
+        // Server-side only: the origin record is storage detail, so it is not on the shared
+        // ICloudLogin contract. A host with a different implementation simply falls back below.
+        CloudLoginRequestOrigin? origin = _server is CloudLoginServer cloudLoginServer
+            ? await cloudLoginServer.GetLoginRequestOrigin(requestId)
+            : null;
+
         // Consumes the request id: it is single use and short lived by design.
         CloudUser? user = await _server.GetUserByRequestId(requestId);
 
@@ -113,8 +123,8 @@ public sealed class TokenController(
                 user,
                 audience,
                 scope,
-                clientIp: ClientIp(),
-                userAgent: UserAgent(),
+                clientIp: origin?.IpAddress ?? ClientIp(),
+                userAgent: origin?.UserAgent ?? UserAgent(),
                 cancellationToken: cancellationToken);
 
             _logger.LogInformation(

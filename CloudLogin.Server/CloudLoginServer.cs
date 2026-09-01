@@ -152,23 +152,10 @@ public partial class CloudLoginServer
     /// <summary>
     /// Creates an authenticated session for the user
     /// </summary>
-    private static async Task CreateAuthenticatedSession(HttpContext context, CloudUser user, bool keepMeSignedIn)
+    private async Task CreateAuthenticatedSession(HttpContext context, CloudUser user, bool keepMeSignedIn)
     {
-        ClaimsIdentity claimsIdentity = new(
-        [
-            new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
-            new Claim(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
-            new Claim(ClaimTypes.Surname, user.LastName ?? string.Empty),
-            new Claim(ClaimTypes.Name, user.DisplayName ?? string.Empty),
-            new Claim(ClaimTypes.UserData, SerializeUserForAuthenticationTicket(user))
-        ], "CloudLogin");
-
-        // Add email claim - prefer primary email, fallback to first input
-        string emailClaim = user.PrimaryEmailAddress?.Input ?? user.Inputs.FirstOrDefault()?.Input ?? string.Empty;
-        if (!string.IsNullOrEmpty(emailClaim))
-            claimsIdentity.AddClaim(new Claim(ClaimTypes.Email, emailClaim));
-
-        ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
+        ClaimsPrincipal claimsPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
+            user, "CloudLogin", _cosmosMethods);
 
         AuthenticationProperties properties = new()
         {

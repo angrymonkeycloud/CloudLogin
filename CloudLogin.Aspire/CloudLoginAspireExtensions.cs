@@ -178,14 +178,19 @@ public static class CloudLoginAspireExtensions
             : hasAccountName || hasConnectionString ? null : projectStorage?.BlobEndpoint;
         string? connectionString = usesHostCredential ? null : hasConnectionString ? configuredConnectionString : projectStorage?.ConnectionString;
 
+        Uri? tableEndpoint = Uri.TryCreate(section["TableEndpoint"], UriKind.Absolute, out Uri? tableUri)
+            ? tableUri
+            : hostChangedAuthentication ? null : projectStorage?.TableEndpoint;
+
         AzureStorageConfiguration storage = new()
         {
             AccountName = accountName,
             BlobEndpoint = blobEndpoint,
+            TableEndpoint = tableEndpoint,
             ConnectionString = connectionString,
             ContainerName = section["ContainerName"] is { Length: > 0 } containerName
                 ? containerName
-                : projectStorage?.ContainerName ?? "users",
+                : projectStorage?.ContainerName ?? AzureStorageConfiguration.DefaultContainerName,
             PublicBaseUrl = section["PublicBaseUrl"]
                 ?? (hostChangedAuthentication ? null : projectStorage?.PublicBaseUrl)
         };

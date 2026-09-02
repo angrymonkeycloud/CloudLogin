@@ -104,6 +104,11 @@ public static class CoreServiceCollectionExtensions
         services.RemoveAll<Tokens.ICloudLoginTokenStore>();
         services.AddSingleton<Tokens.ICloudLoginTokenStore, CoreTokenStoreAdapter>();
 
+        // Verification codes join the other short-lived, single-winner requests in the core model,
+        // ahead of the in-process fallback AddCloudLoginWeb registers for hosts without a database.
+        services.RemoveAll<Verification.ICloudLoginVerificationStore>();
+        services.AddSingleton<Verification.ICloudLoginVerificationStore, CoreVerificationStore>();
+
         return services;
     }
 }

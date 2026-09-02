@@ -21,6 +21,18 @@ public interface ICloudLogin
     Task<Guid> CreateLoginRequest(Guid userId, Guid? requestId = null);
     Task SendWhatsAppCode(string receiver, string code);
     Task SendEmailCode(string receiver, string code);
+
+    /// <summary>
+    /// Asks the server to issue a one-time code and deliver it. The code itself never reaches the
+    /// caller - only the handle it is redeemed against.
+    /// </summary>
+    Task<CloudLoginVerificationChallenge> SendVerificationCode(CloudLoginSendCodeRequest request);
+
+    /// <summary>
+    /// Redeems a code. The server decides whether it matched; a correct code for a sign-in signs the
+    /// caller in before this returns.
+    /// </summary>
+    Task<CloudLoginVerificationResult> VerifyCode(CloudLoginVerifyCodeRequest request);
     Task UpdateUser(CloudUser user);
     Task CreateUser(CloudUser user);
     Task DeleteUser(Guid userId);

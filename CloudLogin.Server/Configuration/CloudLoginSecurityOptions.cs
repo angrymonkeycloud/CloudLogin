@@ -51,10 +51,24 @@ public sealed class CloudLoginSecurityOptions
     public ISet<string> AllowedProfileImageHosts { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Enables the deprecated flow that creates and validates verification codes
-    /// in browser code. This is insecure and must remain disabled in production.
+    /// Enables the deprecated endpoints that let browser code choose a verification code and have
+    /// the server mail it. The modern flow needs none of them - the server issues and checks the
+    /// code itself - so this stays off, and cannot be turned on outside Development.
     /// </summary>
     public bool EnableLegacyClientVerificationCodes { get; set; }
+
+    /// <summary>Digits in a server-issued verification code.</summary>
+    public int VerificationCodeLength { get; set; } = 6;
+
+    /// <summary>How long a verification code is accepted after it is issued.</summary>
+    public TimeSpan VerificationCodeLifetime { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Wrong codes accepted against one challenge before it is dead and a new code must be sent.
+    /// This is what keeps a short numeric code out of reach of guessing: with the default six
+    /// digits, five attempts leave a one-in-two-hundred-thousand chance per challenge.
+    /// </summary>
+    public int MaximumVerificationAttempts { get; set; } = 5;
 
     /// <summary>
     /// Most recent sign-in records kept per user. Older records are pruned on write so the

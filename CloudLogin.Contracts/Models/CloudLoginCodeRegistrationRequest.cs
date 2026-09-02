@@ -31,6 +31,16 @@ public sealed record CloudLoginCodeRegistrationRequest
     public required string DisplayName { get; init; }
 
     /// <summary>
+    /// Proof that the code sent to <see cref="Input"/> was answered correctly, from
+    /// <see cref="CloudLoginVerificationResult.VerificationToken"/>. Registration without it is
+    /// refused - otherwise an account could be created for an address nobody had proven.
+    /// </summary>
+    public string? VerificationToken { get; init; }
+
+    /// <summary>Whether the sign-in that completes the registration is persistent.</summary>
+    public bool KeepMeSignedIn { get; init; }
+
+    /// <summary>
     /// Creates a new CloudLoginCodeRegistrationRequest
     /// </summary>
     /// <param name="input">User's input (email or phone)</param>
@@ -38,14 +48,25 @@ public sealed record CloudLoginCodeRegistrationRequest
     /// <param name="firstName">User's first name</param>
     /// <param name="lastName">User's last name</param>
     /// <param name="displayName">User's display name (optional)</param>
+    /// <param name="verificationToken">Proof the address was verified</param>
+    /// <param name="keepMeSignedIn">Whether the resulting sign-in is persistent</param>
     /// <returns>A new CloudLoginCodeRegistrationRequest instance</returns>
-    public static CloudLoginCodeRegistrationRequest Create(string input, CloudLoginInputFormat inputFormat, string firstName, string lastName, string? displayName = null)
+    public static CloudLoginCodeRegistrationRequest Create(
+        string input,
+        CloudLoginInputFormat inputFormat,
+        string firstName,
+        string lastName,
+        string? displayName = null,
+        string? verificationToken = null,
+        bool keepMeSignedIn = false)
         => new()
         {
             Input = input,
             InputFormat = inputFormat,
             FirstName = firstName,
             LastName = lastName,
-            DisplayName = displayName ?? $"{firstName} {lastName}"
+            DisplayName = displayName ?? $"{firstName} {lastName}",
+            VerificationToken = verificationToken,
+            KeepMeSignedIn = keepMeSignedIn
         };
 }

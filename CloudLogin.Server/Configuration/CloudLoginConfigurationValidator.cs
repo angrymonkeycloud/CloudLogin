@@ -92,15 +92,21 @@ public static partial class CloudLoginConfigurationValidator
                 throw new InvalidOperationException($"Allowed mobile scheme '{scheme}' is invalid.");
         }
 
-        bool hasLegacyCodeProvider = configuration.Providers.Any(provider =>
-            provider.IsCodeVerification && !provider.IsExternal);
-
-        if (hasLegacyCodeProvider && !security.EnableLegacyClientVerificationCodes)
-            throw new InvalidOperationException(
-                "A client-managed verification-code provider is configured. This legacy flow is disabled by default because verification occurs in browser code.");
-
+        // A verification-code provider is no longer gated: codes are issued, counted and checked on
+        // the server, and the sign-in that follows a correct one is the server's own. What stays
+        // gated is the deprecated endpoint set that lets browser code pick the code - which the
+        // provider no longer uses, and which nothing may enable outside Development.
         if (security.EnableLegacyClientVerificationCodes && !isDevelopment)
             throw new InvalidOperationException("Legacy client-managed verification codes cannot be enabled outside Development.");
+
+        if (security.VerificationCodeLength < 4)
+            throw new InvalidOperationException("VerificationCodeLength must be at least 4 digits.");
+
+        if (security.MaximumVerificationAttempts < 1)
+            throw new InvalidOperationException("MaximumVerificationAttempts must be at least 1.");
+
+        if (security.VerificationCodeLifetime <= TimeSpan.Zero)
+            throw new InvalidOperationException("VerificationCodeLifetime must be greater than zero.");
 
         ValidateApiVersion(configuration);
         ValidateDatabaseVersion(configuration);

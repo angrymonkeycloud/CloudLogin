@@ -136,15 +136,44 @@ public class CloudLoginConfigurationSecurityTests
         Assert.Contains("ClientId", exception.Message, StringComparison.Ordinal);
     }
 
+    // The verification-code provider used to be refused outright, because the code was created and
+    // checked in browser code. It is now issued, counted and checked on the server, so it is an
+    // ordinary provider that any environment may configure.
     [Fact]
-    public void ClientManagedVerificationProvider_IsDisabledByDefault()
+    public void VerificationCodeProvider_IsAcceptedInEveryEnvironment()
     {
         IConfiguration configurationValues = new ConfigurationBuilder().Build();
         CloudLoginWebConfiguration configuration = new();
         configuration.Providers.Add(new LoginProviders.CodeProviderConfiguration(
             configurationValues.GetSection("Code")));
 
+        CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: false);
+    }
+
+    // What stays refused is the deprecated endpoint set that lets browser code choose the code.
+    [Fact]
+    public void LegacyClientManagedVerificationCodes_CannotBeEnabledOutsideDevelopment()
+    {
+        CloudLoginWebConfiguration configuration = new();
+        configuration.Security.EnableLegacyClientVerificationCodes = true;
+
         Assert.Throws<InvalidOperationException>(() =>
-            CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: true));
+            CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: false));
+    }
+
+    [Theory]
+    [InlineData(3, 5, 5)]
+    [InlineData(6, 0, 5)]
+    [InlineData(6, 5, 0)]
+    public void VerificationCodeSettings_AreRejectedWhenTheyWouldWeakenTheCode(
+        int length, int attempts, int lifetimeMinutes)
+    {
+        CloudLoginWebConfiguration configuration = new();
+        configuration.Security.VerificationCodeLength = length;
+        configuration.Security.MaximumVerificationAttempts = attempts;
+        configuration.Security.VerificationCodeLifetime = TimeSpan.FromMinutes(lifetimeMinutes);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: false));
     }
 }

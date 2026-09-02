@@ -107,8 +107,20 @@ public partial class LoginComponent : IDisposable
     #region Verification Management
     public string VerificationValue { get; set; } = string.Empty;
     public bool ExpiredCode { get; set; } = false;
-    public string? VerificationCode { get; set; }
+
+    /// <summary>
+    /// The challenge the server issued. It is a handle, not the code: this component never learns
+    /// the code, never compares it, and never decides that a sign-in may proceed.
+    /// </summary>
+    public string? VerificationChallengeId { get; set; }
+
     public DateTimeOffset? VerificationCodeExpiry { get; set; }
+
+    /// <summary>Proof of an address the server verified, spent by the registration that follows.</summary>
+    public string? VerificationToken { get; set; }
+
+    private string? _verificationAddress;
+    private CloudLoginVerificationPurposes _verificationPurpose = CloudLoginVerificationPurposes.SignIn;
     #endregion
 
     #region Registration Data
@@ -324,7 +336,7 @@ public partial class LoginComponent : IDisposable
 
         if (provider.IsCodeVerification)
         {
-            await RefreshVerificationCode();
+            await RefreshVerificationCode(InputValue, CloudLoginVerificationPurposes.SignIn);
             await Auth.SwitchStep(ProcessStep.CodeVerification);
         }
         else ProviderSignInChallenge(provider.Code);
@@ -342,14 +354,16 @@ public partial class LoginComponent : IDisposable
     #region Registration Flow
     private async Task StartRegistrationProcess()
     {
+        string address = Auth.Input?.Input ?? InputValue;
+
         if (SelectedRegistrationMethod == "code")
         {
-            await RefreshVerificationCode();
+            await RefreshVerificationCode(address, CloudLoginVerificationPurposes.Registration);
             await Auth.SwitchStep(ProcessStep.RegistrationCodeVerification);
         }
         else if (SelectedRegistrationMethod == "password")
         {
-            await RefreshVerificationCode();
+            await RefreshVerificationCode(address, CloudLoginVerificationPurposes.Registration);
             await Auth.SwitchStep(ProcessStep.RegistrationPasswordVerification);
         }
     }
@@ -466,22 +480,24 @@ public partial class LoginComponent : IDisposable
     private async Task OnRegistrationCodeVerifyClicked()
     {
         Auth.StartLoading();
+        Auth.Errors.Clear();
 
-        switch (GetVerificationCodeResult(VerificationValue))
+        if (await VerifyEnteredCodeAsync() is null)
         {
-            case VerificationCodeResult.NotValid:
-                Auth.Errors.Add("The code you entered is incorrect. Please check your email/phone again or resend another one.");
-                Auth.EndLoading();
-                return;
-
-            case VerificationCodeResult.Expired:
-                Auth.Errors.Add("The code validity has expired, please send another one.");
-                Auth.EndLoading();
-                return;
-
-            default: break;
+            Auth.EndLoading();
+            return;
         }
 
+        await CompleteCodeRegistrationAsync();
+    }
+
+    /// <summary>
+    /// Creates the account for an address the server just verified. The token is what proves it:
+    /// registration is refused without one, so this can never create an account for someone else's
+    /// address.
+    /// </summary>
+    private async Task CompleteCodeRegistrationAsync()
+    {
         try
         {
             CloudLoginCodeRegistrationRequest request = CloudLoginCodeRegistrationRequest.Create(
@@ -489,10 +505,16 @@ public partial class LoginComponent : IDisposable
                 InputValueFormat,
                 FirstName,
                 LastName,
-                DisplayName);
+                DisplayName,
+                VerificationToken,
+                KeepMeSignedIn);
 
-            CloudUser newUser = await cloudLogin.CodeRegistration(request);
-            await CustomSignInChallengeAsync(newUser);
+            await cloudLogin.CodeRegistration(request);
+
+            // CodeRegistration signs the new account in as it creates it.
+            VerificationToken = null;
+            Auth.EndLoading();
+            await NavigateToRefererAsync();
         }
         catch (Exception ex)
         {
@@ -504,20 +526,12 @@ public partial class LoginComponent : IDisposable
     private async Task OnRegistrationPasswordVerifyClicked()
     {
         Auth.StartLoading();
+        Auth.Errors.Clear();
 
-        switch (GetVerificationCodeResult(VerificationValue))
+        if (await VerifyEnteredCodeAsync() is null)
         {
-            case VerificationCodeResult.NotValid:
-                Auth.Errors.Add("The code you entered is incorrect. Please check your email/phone again or resend another one.");
-                Auth.EndLoading();
-                return;
-
-            case VerificationCodeResult.Expired:
-                Auth.Errors.Add("The code validity has expired, please send another one.");
-                Auth.EndLoading();
-                return;
-
-            default: break;
+            Auth.EndLoading();
+            return;
         }
 
         if (!cloudLogin.IsValidPassword(Password))
@@ -559,51 +573,39 @@ public partial class LoginComponent : IDisposable
     private async Task OnVerifyClicked()
     {
         Auth.StartLoading();
+        Auth.Errors.Clear();
 
-        switch (GetVerificationCodeResult(VerificationValue))
+        CloudLoginVerificationResult? result = await VerifyEnteredCodeAsync();
+
+        if (result is null)
         {
-            case VerificationCodeResult.NotValid:
-                Auth.Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
-                return;
-
-            case VerificationCodeResult.Expired:
-                Auth.Errors.Add("The code validity has expired, please send another one.");
-                return;
-
-            default: break;
+            EndLoading();
+            return;
         }
 
-        EndLoading();
-        CloudUser? checkUser = SelectedProvider?.Code?.ToLower() switch
+        // A correct code for an account that exists has already signed this browser in: the server
+        // issued the cookie as it verified, so there is nothing left to ask it for.
+        if (result.Status == CloudLoginVerificationStatuses.Verified)
         {
-            "whatsapp" => await cloudLogin.GetUserByPhoneNumber(InputValue),
-            "custom" => await cloudLogin.GetUserByEmailAddress(InputValue),
-            _ => await cloudLogin.GetUserByEmailAddress(InputValue),
-        };
+            EndLoading();
+            await NavigateToRefererAsync();
+            return;
+        }
 
-        if (checkUser != null)
-            await CustomSignInChallengeAsync(checkUser);
-        else 
-            await Auth.SwitchStep(ProcessStep.Registration);
+        // Verified, but the address has no account yet. The proof is carried into registration.
+        EndLoading();
+        await Auth.SwitchStep(ProcessStep.Registration);
     }
 
     private async Task OnVerifyEmailClicked()
     {
         Auth.StartLoading();
+        Auth.Errors.Clear();
 
-        switch (GetVerificationCodeResult(VerificationValue))
+        if (await VerifyEnteredCodeAsync() is null)
         {
-            case VerificationCodeResult.NotValid:
-                Auth.Errors.Add("The code you entered is incorrect. Please check your email/WhatsApp again or resend another one.");
-                EndLoading();
-                return;
-
-            case VerificationCodeResult.Expired:
-                Auth.Errors.Add("The code validity has expired, please send another one.");
-                EndLoading();
-                return;
-
-            default: break;
+            EndLoading();
+            return;
         }
 
         if (!Password.Equals(ConfirmPassword))
@@ -662,16 +664,6 @@ public partial class LoginComponent : IDisposable
         return CustomSignInChallengeAsync(userValues);
     }
 
-    private VerificationCodeResult GetVerificationCodeResult(string code)
-    {
-        if (VerificationCode != code.Trim())
-            return VerificationCodeResult.NotValid;
-
-        if (VerificationCodeExpiry.HasValue && DateTimeOffset.UtcNow >= VerificationCodeExpiry.Value)
-            return VerificationCodeResult.Expired;
-
-        return VerificationCodeResult.Valid;
-    }
     #endregion
 
     #region Keyboard Handling
@@ -991,70 +983,86 @@ public partial class LoginComponent : IDisposable
     #endregion
 
     #region Code Management
-    private static string CreateRandomCode(int length)
+    /// <summary>
+    /// Asks the server for a code and keeps only the handle it answers with. Which address it goes
+    /// to is still decided here, because that is what the person typed; everything after that -
+    /// the code, its deadline, how many wrong answers it tolerates - belongs to the server.
+    /// </summary>
+    /// <remarks>
+    /// Address and purpose are passed in rather than read from <c>Auth.CurrentStep</c>: every caller
+    /// requests the code before switching to the step that collects it, so the step still says where
+    /// the flow came from, not where it is going.
+    /// </remarks>
+    private async Task RefreshVerificationCode(string address, CloudLoginVerificationPurposes purpose)
     {
-        StringBuilder builder = new();
+        Auth.StartLoading();
+        Auth.Errors.Clear();
 
-        using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-        byte[] randomBytes = new byte[length];
-        rng.GetBytes(randomBytes);
+        VerificationChallengeId = null;
+        VerificationToken = null;
+        _verificationAddress = address;
+        _verificationPurpose = purpose;
 
-        for (int i = 0; i < length; i++)
-            builder.Append(randomBytes[i] % 10);
-
-        return builder.ToString();
-    }
-
-    public async Task SendEmailCode(string receiver, string code)
-    {
         try
         {
-            await cloudLogin.SendEmailCode(receiver, code);
+            CloudLoginVerificationChallenge challenge =
+                await cloudLogin.SendVerificationCode(CloudLoginSendCodeRequest.Create(address, purpose));
+
+            VerificationChallengeId = challenge.ChallengeId;
+            VerificationCodeExpiry = challenge.ExpiresOn;
         }
-        catch (Exception)
+        catch (Exception exception)
         {
-            Auth.Errors.Add("Failed to send email code.");
+            Auth.Errors.Add(exception.Message);
             EndLoading();
         }
     }
 
-    public async Task SendWhatsAppCode(string receiver, string code)
+    /// <summary>Sends another code for whatever the last one was for.</summary>
+    private Task RefreshVerificationCode() =>
+        RefreshVerificationCode(_verificationAddress ?? InputValue, _verificationPurpose);
+
+    /// <summary>
+    /// Sends what the person typed to the server and reports what it decided. A wrong or expired
+    /// code produces an error here and nothing else - the component has no way to proceed past one.
+    /// </summary>
+    private async Task<CloudLoginVerificationResult?> VerifyEnteredCodeAsync()
     {
-        await cloudLogin.SendWhatsAppCode(receiver, code);
-    }
-
-    private async Task RefreshVerificationCode()
-    {
-        Auth.StartLoading();
-
-        VerificationCode = CreateRandomCode(6);
-        VerificationCodeExpiry = DateTimeOffset.UtcNow.AddMinutes(5);
-
-        Auth.Errors.Clear();
-
-        if (Auth.CurrentStep == ProcessStep.EmailForgetPassword)
-            await SendEmailCode(InputValue, VerificationCode);
-        else if (Auth.CurrentStep == ProcessStep.RegistrationCodeVerification || Auth.CurrentStep == ProcessStep.RegistrationPasswordVerification)
+        if (string.IsNullOrWhiteSpace(VerificationChallengeId))
         {
-            string targetInput = Auth.Input?.Input ?? InputValue;
-            CloudLoginInputFormat format = cloudLogin.GetInputFormat(targetInput);
-
-            if (format == CloudLoginInputFormat.PhoneNumber)
-                await SendWhatsAppCode(targetInput, VerificationCode);
-            else
-                await SendEmailCode(targetInput, VerificationCode);
+            Auth.Errors.Add("The code validity has expired, please send another one.");
+            return null;
         }
-        else
-            switch (SelectedProvider?.Code.ToLower())
-            {
-                case "whatsapp":
-                    await SendWhatsAppCode(InputValue, VerificationCode);
-                    break;
 
-                default:
-                    await SendEmailCode(InputValue, VerificationCode);
-                    break;
-            }
+        CloudLoginVerificationResult result = await cloudLogin.VerifyCode(
+            CloudLoginVerifyCodeRequest.Create(VerificationChallengeId, VerificationValue, KeepMeSignedIn));
+
+        switch (result.Status)
+        {
+            case CloudLoginVerificationStatuses.Invalid:
+                Auth.Errors.Add("The code you entered is incorrect. Please check your email/phone again or resend another one.");
+                return null;
+
+            case CloudLoginVerificationStatuses.Expired:
+            case CloudLoginVerificationStatuses.NotFound:
+                VerificationChallengeId = null;
+                Auth.Errors.Add("The code validity has expired, please send another one.");
+                return null;
+
+            case CloudLoginVerificationStatuses.TooManyAttempts:
+                VerificationChallengeId = null;
+                Auth.Errors.Add("Too many incorrect codes were entered. Please send another one.");
+                return null;
+
+            default: break;
+        }
+
+        // A code is spent by the attempt that answers it correctly, so the challenge cannot be
+        // reused whatever the caller does next.
+        VerificationChallengeId = null;
+        VerificationToken = result.VerificationToken;
+
+        return result;
     }
 
     private async Task OnNewCodeClicked()
@@ -1086,7 +1094,7 @@ public partial class LoginComponent : IDisposable
             return;
         }
 
-        await RefreshVerificationCode();
+        await RefreshVerificationCode(InputValue, CloudLoginVerificationPurposes.PasswordReset);
         await Auth.SwitchStep(ProcessStep.CodeEmailVerification);
         EndLoading();
     }

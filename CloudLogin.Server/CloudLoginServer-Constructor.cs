@@ -4,7 +4,7 @@ using AngryMonkey.CloudLogin.Interfaces;
 
 namespace AngryMonkey.CloudLogin.Server;
 
-public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, ICloudLoginStore? cloudLoginStore = null, IHttpClientFactory? httpClientFactory = null, ICloudLoginWorkspaceRegistry? workspaceRegistry = null, ICloudLoginEventPublisher? eventPublisher = null, ICloudLoginSecurityStore? securityStore = null, Core.Application.SessionService? sessionService = null)
+public partial class CloudLoginServer(CloudGeographyClient cloudGeography, CloudLoginWebConfiguration configuration, IHttpContextAccessor httpContextAccessor, ICloudLoginStore? cloudLoginStore = null, IHttpClientFactory? httpClientFactory = null, ICloudLoginWorkspaceRegistry? workspaceRegistry = null, ICloudLoginEventPublisher? eventPublisher = null, ICloudLoginSecurityStore? securityStore = null, Core.Application.SessionService? sessionService = null, Verification.ICloudLoginVerificationStore? verificationStore = null)
 {
     readonly CloudGeographyClient _cloudGeography = cloudGeography;
     readonly ICloudLoginStore? _cosmosMethods = cloudLoginStore;
@@ -21,6 +21,9 @@ public partial class CloudLoginServer(CloudGeographyClient cloudGeography, Cloud
     readonly Core.Application.SessionService? _sessionService = sessionService;
 
     readonly ICloudLoginEventPublisher? _eventPublisher = eventPublisher;
+
+    /// <summary>Where one-time verification codes are held while they are alive.</summary>
+    readonly Verification.ICloudLoginVerificationStore? _verificationStore = verificationStore;
     private HttpRequest _request => _accessor.HttpContext!.Request;
 
     // Use BaseAddress from configuration as the LoginUrl, with fallback to current request

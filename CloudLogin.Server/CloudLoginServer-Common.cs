@@ -789,6 +789,16 @@ public partial class CloudLoginServer : ICloudLogin
         if (existing != null)
             throw new Exception("User already exists.");
 
+        // The address has to have been proven before an account is created for it, and the proof is
+        // spent here so one verified code creates exactly one account. Either purpose proves the
+        // same thing: a sign-in code that found no account is how most registrations start.
+        await ConsumeVerifiedAddress(
+            request.VerificationToken,
+            request.Input,
+            request.InputFormat,
+            CloudLoginVerificationPurposes.SignIn,
+            CloudLoginVerificationPurposes.Registration);
+
         CloudUser newUser = new()
         {
             ID = Guid.NewGuid(),
@@ -813,6 +823,7 @@ public partial class CloudLoginServer : ICloudLogin
         };
 
         await CreateUser(newUser);
+        await SignInVerifiedUser(newUser, request.KeepMeSignedIn);
 
         return newUser;
     }

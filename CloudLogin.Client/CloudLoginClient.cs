@@ -385,6 +385,56 @@ public class CloudLoginClient : ICloudLogin
     {
         await HttpServer.PostAsync($"{UserRoute}/SendWhatsAppCode?receiver={HttpUtility.UrlEncode(receiver)}&code={HttpUtility.UrlEncode(code)}", null);
     }
+    public async Task<CloudLoginVerificationChallenge> SendVerificationCode(CloudLoginSendCodeRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        MultipartFormDataContent form = new()
+        {
+            { new StringContent(request.Address), "address" },
+            { new StringContent(request.Purpose.ToString()), "purpose" }
+        };
+
+        HttpResponseMessage message = await HttpServer.PostAsync("CloudLogin/Login/Code/Send", form);
+
+        if (!message.IsSuccessStatusCode)
+        {
+            string reason = (await message.Content.ReadAsStringAsync()).Trim();
+
+            throw new Exception(reason.Length > 0
+                ? $"Could not send the verification code ({(int)message.StatusCode}): {reason}"
+                : $"Could not send the verification code ({(int)message.StatusCode} {message.ReasonPhrase}).");
+        }
+
+        return (await message.Content.ReadFromJsonAsync<CloudLoginVerificationChallenge>(CloudLoginSerialization.Options))!;
+    }
+
+    public async Task<CloudLoginVerificationResult> VerifyCode(CloudLoginVerifyCodeRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        MultipartFormDataContent form = new()
+        {
+            { new StringContent(request.ChallengeId), "challengeId" },
+            { new StringContent(request.Code), "code" },
+            { new StringContent(request.KeepMeSignedIn.ToString()), "keepMeSignedIn" }
+        };
+
+        HttpResponseMessage message = await HttpServer.PostAsync("CloudLogin/Login/Code/Verify", form);
+
+        // A rejected code is an answer, not a transport failure - but a rate limit or an outage has
+        // no body to read, and reporting those as "wrong code" would send someone back to their inbox
+        // for a code that was never going to be accepted.
+        if (!message.IsSuccessStatusCode)
+        {
+            return message.StatusCode == System.Net.HttpStatusCode.TooManyRequests
+                ? CloudLoginVerificationResult.Create(CloudLoginVerificationStatuses.TooManyAttempts)
+                : throw new Exception($"Could not verify the code ({(int)message.StatusCode} {message.ReasonPhrase}).");
+        }
+
+        return (await message.Content.ReadFromJsonAsync<CloudLoginVerificationResult>(CloudLoginSerialization.Options))!;
+    }
+
     public async Task SendEmailCode(string receiver, string code)
     {
         await HttpServer.PostAsync($"{UserRoute}/SendEmailCode?receiver={HttpUtility.UrlEncode(receiver)}&code={HttpUtility.UrlEncode(code)}", null);
@@ -587,10 +637,16 @@ public class CloudLoginClient : ICloudLogin
             { new StringContent(request.InputFormat.ToString()), "inputFormat" },
             { new StringContent(request.FirstName), "firstName" },
             { new StringContent(request.LastName), "lastName" },
-            { new StringContent(request.DisplayName), "displayName" }
+            { new StringContent(request.DisplayName), "displayName" },
+            { new StringContent(request.VerificationToken ?? string.Empty), "verificationToken" },
+            { new StringContent(request.KeepMeSignedIn.ToString()), "keepMeSignedIn" }
         };
 
         HttpResponseMessage message = await HttpServer.PostAsync("CloudLogin/Login/CodeRegistration", form);
+
+        if (message.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            throw new Exception("The verification code for this address has expired. Please request a new one.");
+
         if (!message.IsSuccessStatusCode) throw new Exception("Code registration failed");
         return (await message.Content.ReadFromJsonAsync<CloudUser>(CloudLoginSerialization.Options))!;
     }

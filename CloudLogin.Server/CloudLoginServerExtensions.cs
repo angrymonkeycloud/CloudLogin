@@ -44,6 +44,10 @@ public static class CloudLoginServerExtensions
         services.TryAddScoped<CloudLoginServer>();
         services.AddHttpClient<ICloudLoginEventPublisher, CloudLoginWebhookPublisher>();
 
+        // The fallback for a host with no core database. A core-enabled deployment replaces it with
+        // the shared store, which is the only one correct across more than one instance.
+        services.TryAddSingleton<Verification.ICloudLoginVerificationStore, Verification.InMemoryVerificationStore>();
+
         return services;
     }
 }

@@ -196,7 +196,7 @@
     {
         await OnKeyDown.InvokeAsync(e);
 
-        switch (e.Key.ToLowerInvariant())
+        switch (e.Key?.ToLowerInvariant())
         {
             case "enter":
                 await OnEnterPressed.InvokeAsync(e);

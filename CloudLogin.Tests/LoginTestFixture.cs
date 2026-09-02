@@ -59,6 +59,14 @@ internal sealed class LoginTestFixture
 
         HttpContext.RequestServices = services.BuildServiceProvider();
 
+        // Every code the server issues lands here instead of an inbox, which is the only way a test
+        // can know it: the server hands the code to delivery and to nothing else.
+        Configuration.EmailSendCodeRequest = value =>
+        {
+            SentCodes.Add(value);
+            return Task.CompletedTask;
+        };
+
         Accessor.HttpContext = HttpContext;
         Server = new CloudLoginServer(
             new CloudGeographyClient(),
@@ -66,8 +74,14 @@ internal sealed class LoginTestFixture
             Accessor,
             cloudLoginStore: Store,
             eventPublisher: eventPublisher,
-            securityStore: SecurityStore);
+            securityStore: SecurityStore,
+            verificationStore: VerificationStore);
     }
+
+    public Server.Verification.InMemoryVerificationStore VerificationStore { get; } = new();
+
+    /// <summary>Codes the server issued and delivered, in order.</summary>
+    public List<CloudLoginSendCodeValue> SentCodes { get; } = [];
 
     public CloudLoginWebConfiguration Configuration { get; }
     public InMemoryCloudLoginStore Store { get; } = new();

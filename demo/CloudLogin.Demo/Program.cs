@@ -36,10 +36,6 @@ builder.AddCloudLoginWeb(options =>
 {
     options.WebConfig = web => web.PageDefaults.SetTitle("CloudLogin Demo - Authority");
 
-    // The Code provider uses the legacy client-managed verification-code flow, which is
-    // disabled by default in production. It's safe to opt in here since this demo only
-    // ever runs in Development.
-    options.Security.EnableLegacyClientVerificationCodes = true;
     options.EnableLegacyClientManagedLogin = true;
 
     options.Providers =

@@ -10,7 +10,10 @@ public enum LoginRequestKinds
     Login,
 
     /// <summary>An RFC 8628 device authorization request (QR / TV sign-in).</summary>
-    Device
+    Device,
+
+    /// <summary>A one-time verification code mailed or messaged to an address.</summary>
+    Verification
 }
 
 /// <summary>States of a login or device authorization request.</summary>
@@ -92,6 +95,19 @@ public sealed class LoginRequestDocument : CloudLoginCoreDocument, IExpiringDocu
 
     /// <summary>Deterministic one-time login handoff created before device consumption.</summary>
     public string? HandoffRequestId { get; set; }
+
+    // ── Verification codes (Kind = Verification) ──────────────────────────────
+    // The same single-winner machinery as the device flow, for the same reason: a code must be
+    // spendable exactly once, and its attempts counted where the browser cannot reach them.
+
+    /// <summary>SHA-256 of the challenge handle and the verification code together.</summary>
+    public string? CodeHash { get; set; }
+
+    /// <summary>The normalized address the code was delivered to.</summary>
+    public string? Address { get; set; }
+
+    /// <summary>What the code was issued for.</summary>
+    public CloudLoginVerificationPurposes? VerificationPurpose { get; set; }
 
     public DateTimeOffset CreatedOn { get; set; }
 

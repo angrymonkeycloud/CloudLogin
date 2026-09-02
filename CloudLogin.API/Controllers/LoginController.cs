@@ -96,18 +96,78 @@ public class LoginController(CloudLoginWebConfiguration configuration, CloudLogi
 
     [HttpPost("Login/CodeRegistration")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<IActionResult> CodeRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? referer = null)
+    public async Task<IActionResult> CodeRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? verificationToken = null, [FromForm] bool keepMeSignedIn = false, [FromForm] string? referer = null)
     {
-        if (!Configuration.Security.EnableLegacyClientVerificationCodes)
-            return NotFound();
-
         if (!Enum.TryParse(inputFormat, true, out CloudLoginInputFormat format))
             return BadRequest("Invalid input format.");
 
-        CloudLoginCodeRegistrationRequest request = CloudLoginCodeRegistrationRequest.Create(input, format, firstName, lastName, displayName);
-        CloudUser user = await _server.CodeRegistration(request);
+        CloudLoginCodeRegistrationRequest request = CloudLoginCodeRegistrationRequest.Create(
+            input, format, firstName, lastName, displayName, verificationToken, keepMeSignedIn);
 
-        return Ok(CloudLoginTransportSecurity.ForTransport(user));
+        try
+        {
+            CloudUser user = await _server.CodeRegistration(request);
+
+            return Ok(CloudLoginTransportSecurity.ForTransport(user));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // The address was never proven, or the proof was already spent. Registration is the only
+            // thing a verified code buys, so there is nothing else to fall back to.
+            return Unauthorized();
+        }
+    }
+
+    /// <summary>
+    /// Issues a one-time code and delivers it to the address. The code is created here and never
+    /// leaves the server - the caller receives only the handle it redeems against.
+    /// </summary>
+    [HttpPost("Login/Code/Send")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
+    public async Task<IActionResult> SendCode([FromForm] string address, [FromForm] string? purpose = null)
+    {
+        if (!TryReadPurpose(purpose, out CloudLoginVerificationPurposes verificationPurpose))
+            return BadRequest("Invalid verification purpose.");
+
+        try
+        {
+            return Ok(await _server.SendVerificationCode(
+                CloudLoginSendCodeRequest.Create(address, verificationPurpose)));
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
+    /// <summary>
+    /// Redeems a code. The comparison, the attempt count and the sign-in that follows all happen
+    /// here; the caller is told the outcome and nothing else.
+    /// </summary>
+    [HttpPost("Login/Code/Verify")]
+    [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
+    public async Task<IActionResult> VerifyCode([FromForm] string challengeId, [FromForm] string code, [FromForm] bool keepMeSignedIn = false)
+    {
+        try
+        {
+            return Ok(await _server.VerifyCode(
+                CloudLoginVerifyCodeRequest.Create(challengeId, code, keepMeSignedIn)));
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
+    private static bool TryReadPurpose(string? value, out CloudLoginVerificationPurposes purpose)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            purpose = CloudLoginVerificationPurposes.SignIn;
+            return true;
+        }
+
+        return Enum.TryParse(value, true, out purpose) && Enum.IsDefined(purpose);
     }
 
     /// <summary>

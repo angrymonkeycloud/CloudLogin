@@ -171,6 +171,14 @@ public partial class CloudLoginServer : ICloudLogin
                 return null;
         }
 
+        // A ticket names the browser session it belongs to. Signing that device out - from
+        // another device, or with "sign out other devices" - revokes the session, and a revoked
+        // session is no longer a signed-in user, whatever the cookie says.
+        if (_sessionService is not null
+            && userIdentity?.FindFirst(CloudLoginAuthenticationClaims.SessionFamily)?.Value is { Length: > 0 } familyId
+            && !await _sessionService.IsFamilyActiveAsync(familyId))
+            return null;
+
         if (user != null)
         {
             // normalize blob-stored filenames to public URLs when Azure Storage is configured
@@ -637,6 +645,60 @@ public partial class CloudLoginServer : ICloudLogin
         };
 
         await _accessor.HttpContext!.SignInAsync(principal, properties);
+
+        // A provider sign-in is recorded by the cookie handler as it converts the provider's
+        // principal; a local one arrives already converted and skips that, so it is recorded here
+        // - otherwise "Recent sign-ins" stayed empty for everyone who signs in with a password,
+        // a code, or a test account.
+        await RecordSignInAsync(user, authenticationType);
+    }
+
+    /// <summary>
+    /// Appends the sign-in that just completed on this request to the user's security timeline.
+    /// Best-effort: the history must never be what fails a sign-in.
+    /// </summary>
+    private async Task RecordSignInAsync(CloudUser user, string provider)
+    {
+        Microsoft.AspNetCore.Http.HttpContext? context = _accessor.HttpContext;
+
+        if (context is null)
+            return;
+
+        string? userAgent = context.Request.Headers.UserAgent.ToString();
+
+        await RecordSignInForUser(user.ID, new CloudLoginHistoryEntry
+        {
+            SignedInOn = DateTimeOffset.UtcNow,
+            Provider = provider,
+            IpAddress = context.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = string.IsNullOrWhiteSpace(userAgent) ? null : userAgent,
+            Device = string.IsNullOrWhiteSpace(userAgent) ? null : Core.Application.DeviceDescription.Parse(userAgent).Name
+        });
+    }
+
+    /// <summary>
+    /// Ends the browser session behind the caller's cookie - its own family and every application
+    /// family signed in from it - so the device drops off the account page's list and any tokens
+    /// minted from this sign-in stop refreshing. Best-effort: signing out must always succeed.
+    /// </summary>
+    private async Task RevokeOwnSessionAsync()
+    {
+        if (_sessionService is null)
+            return;
+
+        (string? sessionId, string? familyId) = CloudLoginAuthenticationClaims.SessionOf(_accessor.HttpContext?.User);
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(sessionId))
+                await _sessionService.RevokeSessionAsync(sessionId, Core.Domain.SessionRevocationReasons.UserSignedOut);
+            else if (!string.IsNullOrWhiteSpace(familyId))
+                await _sessionService.RevokeFamilyAsync(familyId, Core.Domain.SessionRevocationReasons.UserSignedOut);
+        }
+        catch
+        {
+            // Intentionally ignored - see summary.
+        }
     }
 
     public async Task<CloudUser> PasswordRegistration(CloudLoginPasswordRegistrationRequest request)

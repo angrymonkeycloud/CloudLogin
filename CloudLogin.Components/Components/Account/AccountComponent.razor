@@ -260,6 +260,16 @@ else
     {
         CurrentUser = (await cloudLogin.CurrentUser())?.ToModel();
 
+        if (CurrentUser is null)
+        {
+            // The cookie no longer resolves to a signed-in user: it expired, or the device was
+            // signed out from elsewhere. Clearing it and returning to sign-in is the only honest
+            // answer - rendering the shell over a dead session is what showed people a blank or
+            // default-valued account page that only a manual sign-out could recover from.
+            navigationManager.NavigateTo("/CloudLogin/Logout", forceLoad: true);
+            return;
+        }
+
         _errorCenter.Changed += OnErrorCenterChanged;
         navigationManager.LocationChanged += OnLocationChanged;
 

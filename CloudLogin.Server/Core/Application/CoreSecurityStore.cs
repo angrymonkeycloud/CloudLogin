@@ -57,6 +57,7 @@ public sealed class CoreSecurityStore(
     public async Task UpdateCredentials(Guid userId, Action<CloudLoginUserSecurityDocument> mutate)
     {
         CloudLoginUserSecurityDocument document = await GetCredentials(userId);
+        string before = EffectiveCredentials(document);
         mutate(document);
         DateTimeOffset now = DateTimeOffset.UtcNow;
         List<CredentialDocument> existing = await credentials.GetAllForUserAsync(userId);
@@ -110,7 +111,31 @@ public sealed class CoreSecurityStore(
             });
         }
 
-        await RotateSecurityStampAsync(userId);
+        // Rotating the stamp signs every other device out ("SecurityStampChanged"), which is right
+        // when the set of credentials that can prove this person changed - a passkey added or
+        // removed, an authenticator confirmed or disabled. It is wrong for a write that changed
+        // nothing of the sort: starting an enrollment that has not been confirmed yet, or renaming
+        // a passkey. Rotating there signed people out of every device for abandoning a QR code.
+        if (!string.Equals(before, EffectiveCredentials(document), StringComparison.Ordinal))
+            await RotateSecurityStampAsync(userId);
+    }
+
+    /// <summary>
+    /// The credentials that can currently prove the user, as a comparable fingerprint: the
+    /// confirmed authenticator secret and the registered passkeys. Names, timestamps and an
+    /// unconfirmed enrollment are not part of it.
+    /// </summary>
+    private static string EffectiveCredentials(CloudLoginUserSecurityDocument document)
+    {
+        IEnumerable<string> parts =
+        [
+            document.Authenticator is { IsConfirmed: true } authenticator ? $"totp:{authenticator.SecretKey}" : "totp:-",
+            .. document.Passkeys
+                .Select(passkey => $"passkey:{passkey.CredentialId}:{Convert.ToBase64String(passkey.PublicKey)}")
+                .Order(StringComparer.Ordinal)
+        ];
+
+        return string.Join("|", parts);
     }
 
     public Task DeleteCredentials(Guid userId) => credentials.DeleteAllForUserAsync(userId);

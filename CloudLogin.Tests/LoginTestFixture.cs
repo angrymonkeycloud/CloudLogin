@@ -65,11 +65,13 @@ internal sealed class LoginTestFixture
             Configuration,
             Accessor,
             cloudLoginStore: Store,
-            eventPublisher: eventPublisher);
+            eventPublisher: eventPublisher,
+            securityStore: SecurityStore);
     }
 
     public CloudLoginWebConfiguration Configuration { get; }
     public InMemoryCloudLoginStore Store { get; } = new();
+    public InMemorySecurityStore SecurityStore { get; } = new();
     public RecordingAuthenticationService Authentication { get; } = new();
     public DefaultHttpContext HttpContext { get; } = new();
     public HttpContextAccessor Accessor { get; } = new();
@@ -77,12 +79,18 @@ internal sealed class LoginTestFixture
 
     public void AuthenticateAs(CloudUser user)
     {
-        ClaimsIdentity identity = new(
+        List<Claim> claims =
         [
             new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
             new Claim(ClaimTypes.Name, user.DisplayName ?? string.Empty),
             new Claim(ClaimTypes.UserData, System.Text.Json.JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
-        ], "UnitTest");
+        ];
+
+        // A ticket issued while the store holds a stamp carries it, as a real cookie would.
+        if (Store.SecurityStamps.TryGetValue(user.ID, out string? stamp))
+            claims.Add(new Claim(CloudLoginAuthenticationClaims.SecurityStamp, stamp));
+
+        ClaimsIdentity identity = new(claims, "UnitTest");
 
         HttpContext.User = new ClaimsPrincipal(identity);
         HttpContext.Request.Headers.Cookie = $"{Configuration.CookieName}=unit-test-cookie";
@@ -164,12 +172,71 @@ internal sealed class RecordingAuthenticationService : IAuthenticationService
     }
 }
 
+/// <summary>
+/// The security timeline and credentials, in memory: what <see cref="CloudLoginServer"/> writes
+/// sign-ins and authenticator/passkey state to when a test does not want Azure Storage.
+/// </summary>
+internal sealed class InMemorySecurityStore : ICloudLoginSecurityStore
+{
+    public Dictionary<Guid, List<CloudLoginHistoryEntry>> History { get; } = [];
+    public Dictionary<Guid, CloudLoginUserSecurityDocument> Credentials { get; } = [];
+
+    public Task<List<CloudLoginHistoryEntry>> GetLoginHistory(Guid userId) =>
+        Task.FromResult(History.TryGetValue(userId, out List<CloudLoginHistoryEntry>? entries) ? [.. entries] : new List<CloudLoginHistoryEntry>());
+
+    public Task RecordSignIn(Guid userId, CloudLoginHistoryEntry entry)
+    {
+        if (!History.TryGetValue(userId, out List<CloudLoginHistoryEntry>? entries))
+            History[userId] = entries = [];
+
+        entries.Add(entry);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteLoginHistory(Guid userId)
+    {
+        History.Remove(userId);
+        return Task.CompletedTask;
+    }
+
+    public Task<CloudLoginUserSecurityDocument> GetCredentials(Guid userId) =>
+        Task.FromResult(Credentials.TryGetValue(userId, out CloudLoginUserSecurityDocument? document)
+            ? document
+            : new CloudLoginUserSecurityDocument { UserId = userId });
+
+    public async Task UpdateCredentials(Guid userId, Action<CloudLoginUserSecurityDocument> mutate)
+    {
+        CloudLoginUserSecurityDocument document = await GetCredentials(userId);
+        mutate(document);
+        Credentials[userId] = document;
+    }
+
+    public Task DeleteCredentials(Guid userId)
+    {
+        Credentials.Remove(userId);
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class InMemoryCloudLoginStore : ICloudLoginStore
 {
     public Dictionary<Guid, CloudUser> Users { get; } = [];
     public Dictionary<Guid, Guid> Requests { get; } = [];
+
+    /// <summary>The ticket revocation stamp per user; absent means the store keeps none, like a legacy store.</summary>
+    public Dictionary<Guid, string> SecurityStamps { get; } = [];
+
     public int UpdateCount { get; private set; }
     public int CreateRequestCount { get; private set; }
+
+    public Task<string?> GetSecurityStamp(Guid userId) =>
+        Task.FromResult(SecurityStamps.GetValueOrDefault(userId));
+
+    public Task RotateSecurityStamp(Guid userId)
+    {
+        SecurityStamps[userId] = Guid.NewGuid().ToString("N");
+        return Task.CompletedTask;
+    }
 
     public Task<List<CloudUser>> GetUsers() => Task.FromResult(Users.Values.ToList());
 

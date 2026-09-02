@@ -198,6 +198,166 @@ public class ServiceControllerTests
     private static Dictionary<string, JsonElement> Values(object fields) =>
         JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(JsonSerializer.Serialize(fields))!;
 
+    /// <summary>
+    /// The whitelist is the whole profile: everything a workspace carries about itself, the
+    /// billing address included - a backend mirroring the workspace (CDM's Business) has every
+    /// one of these fields, and an edit to any of them must be able to come back.
+    /// </summary>
+    [Fact]
+    public async Task UpdateWorkspace_accepts_every_profile_field_including_the_billing_address()
+    {
+        WorkspaceRegistry registry = new(new InMemoryCloudLoginAccountStore());
+        CloudWorkspace workspace = await registry.CreateAsync("ACME", Guid.NewGuid());
+        ServiceController controller = CreateController(workspaceRegistry: registry);
+
+        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.ID, Values(new
+        {
+            LegalName = "ACME Holdings SAL",
+            Website = "https://acme.test",
+            Phone = "+961 1 234567",
+            TaxId = "LB-123",
+            BillingAddress = new { Line1 = "1 Main St", City = "Beirut", State = "Beirut", PostalCode = "1100", Country = "LB" }
+        }));
+
+        CloudWorkspace updated = Assert.IsType<CloudWorkspace>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal("ACME Holdings SAL", updated.LegalName);
+        Assert.Equal("https://acme.test", updated.Website);
+        Assert.Equal("+961 1 234567", updated.Phone);
+        Assert.Equal("LB-123", updated.TaxId);
+        Assert.Equal("1 Main St", updated.BillingAddress.Line1);
+        Assert.Equal("Beirut", updated.BillingAddress.State);
+        Assert.Equal("LB", updated.BillingAddress.Country);
+    }
+
+    /// <summary>
+    /// A workspace nobody owns is reachable from nobody's account, so a backend creating one names
+    /// the owner - and it has to be a real user, not an id that happens to parse.
+    /// </summary>
+    [Fact]
+    public async Task CreateWorkspace_needs_an_existing_owner()
+    {
+        WorkspaceRegistry registry = new(new InMemoryCloudLoginAccountStore());
+        ServiceController controller = CreateController(cloudLoginStore: new InMemoryCloudLoginStore(), workspaceRegistry: registry);
+
+        Assert.IsType<BadRequestObjectResult>((await controller.CreateWorkspace(Values(new { Name = "ACME" }))).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.CreateWorkspace(Values(new { Name = "ACME", OwnerUserId = Guid.NewGuid() }))).Result);
+        Assert.Empty(await registry.GetAllAsync());
+    }
+
+    [Fact]
+    public async Task CreateWorkspace_creates_it_for_the_owner_with_the_profile_it_was_sent()
+    {
+        InMemoryCloudLoginStore users = new();
+        CloudUser owner = LoginTestFixture.CreateUser();
+        users.Users[owner.ID] = owner;
+        WorkspaceRegistry registry = new(new InMemoryCloudLoginAccountStore());
+        ServiceController controller = CreateController(cloudLoginStore: users, workspaceRegistry: registry);
+
+        ActionResult<CloudWorkspace> result = await controller.CreateWorkspace(Values(new
+        {
+            Name = "ACME",
+            OwnerUserId = owner.ID,
+            BillingEmail = "billing@acme.test",
+            BillingAddress = new { City = "Beirut", Country = "LB" }
+        }));
+
+        CloudWorkspace created = Assert.IsType<CloudWorkspace>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal("ACME", created.Name);
+        Assert.Equal(owner.ID, created.OwnerUserId);
+        Assert.Equal("billing@acme.test", created.BillingEmail);
+        Assert.Equal("Beirut", created.BillingAddress.City);
+        Assert.Equal(created.ID, Assert.Single(await registry.GetAllAsync()).ID);
+    }
+
+    /// <summary>A rejected field must not leave a half-made workspace behind.</summary>
+    [Fact]
+    public async Task CreateWorkspace_rejects_a_field_outside_the_whitelist_before_creating_anything()
+    {
+        InMemoryCloudLoginStore users = new();
+        CloudUser owner = LoginTestFixture.CreateUser();
+        users.Users[owner.ID] = owner;
+        WorkspaceRegistry registry = new(new InMemoryCloudLoginAccountStore());
+        ServiceController controller = CreateController(cloudLoginStore: users, workspaceRegistry: registry);
+
+        ActionResult<CloudWorkspace> result = await controller.CreateWorkspace(Values(new
+        {
+            Name = "ACME",
+            OwnerUserId = owner.ID,
+            Metadata = "not a profile field"
+        }));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Empty(await registry.GetAllAsync());
+    }
+
+    /// <summary>A user with nothing to sign in with is not a user.</summary>
+    [Fact]
+    public async Task CreateUser_needs_an_identifier_to_sign_in_with()
+    {
+        InMemoryCloudLoginStore users = new();
+        ServiceController controller = CreateController(cloudLoginStore: users);
+
+        ActionResult<CloudUser> result = await controller.CreateUser(Values(new { DisplayName = "Nobody" }));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Empty(users.Users);
+    }
+
+    [Fact]
+    public async Task CreateUser_creates_the_user_with_the_email_as_primary_input_and_the_profile()
+    {
+        InMemoryCloudLoginStore users = new();
+        ServiceController controller = CreateController(cloudLoginStore: users);
+
+        ActionResult<CloudUser> result = await controller.CreateUser(Values(new
+        {
+            PrimaryEmail = "dana@acme.test",
+            DisplayName = "Dana Haddad",
+            FirstName = "Dana",
+            Country = "LB",
+            DateOfBirth = "1990-05-17"
+        }));
+
+        CloudUser created = Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal("Dana Haddad", created.DisplayName);
+        Assert.Equal("Dana", created.FirstName);
+        Assert.Equal("LB", created.Country);
+        Assert.Equal(new DateOnly(1990, 5, 17), created.DateOfBirth);
+        Assert.Equal("dana@acme.test", created.PrimaryEmailAddress?.Input);
+        Assert.False(created.IsGlobalAdmin);
+        Assert.False(created.IsLocked);
+        Assert.Single(users.Users);
+    }
+
+    /// <summary>An identifier that belongs to someone is a conflict, never a silent merge.</summary>
+    [Fact]
+    public async Task CreateUser_refuses_an_email_that_already_belongs_to_someone()
+    {
+        InMemoryCloudLoginStore users = new();
+        CloudUser existing = LoginTestFixture.CreateUser(email: "dana@acme.test");
+        users.Users[existing.ID] = existing;
+        ServiceController controller = CreateController(cloudLoginStore: users);
+
+        ActionResult<CloudUser> result = await controller.CreateUser(Values(new { PrimaryEmail = "dana@acme.test" }));
+
+        Assert.IsType<ConflictObjectResult>(result.Result);
+        Assert.Single(users.Users);
+    }
+
+    [Fact]
+    public async Task UpdateUser_accepts_a_date_of_birth()
+    {
+        InMemoryCloudLoginStore users = new();
+        CloudUser user = LoginTestFixture.CreateUser();
+        users.Users[user.ID] = user;
+        ServiceController controller = CreateController(cloudLoginStore: users);
+
+        ActionResult<CloudUser> result = await controller.UpdateUser(user.ID, Values(new { DateOfBirth = "1990-05-17" }));
+
+        CloudUser updated = Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(new DateOnly(1990, 5, 17), updated.DateOfBirth);
+    }
+
     private static ServiceController CreateController(
         ICloudLoginStore? cloudLoginStore = null,
         ICloudLoginWorkspaceRegistry? workspaceRegistry = null)

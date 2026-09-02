@@ -434,7 +434,11 @@ public class CloudLoginClient : ICloudLogin
         {
             HttpResponseMessage message = await HttpServer.GetAsync($"{UserRoute}/CurrentUser");
 
-            if (message.StatusCode == HttpStatusCode.NoContent)
+            // Anything but a user is no user: a 401 (no valid cookie) or a 404 (a cookie that no
+            // longer resolves, after a security change elsewhere) answers with a problem document,
+            // and deserializing that as a CloudUser produced a "signed-in" account with every field
+            // blank - the empty account page people saw after enabling an authenticator.
+            if (!message.IsSuccessStatusCode || message.StatusCode == HttpStatusCode.NoContent)
                 return null;
 
             return await message.Content.ReadFromJsonAsync<CloudUser>(CloudLoginSerialization.Options);
@@ -783,7 +787,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/Overview");
 
         if (!message.IsSuccessStatusCode)
-            return new CloudLoginSecurityOverview();
+            throw await ReadFailure(message);
 
         return await message.Content.ReadFromJsonAsync<CloudLoginSecurityOverview>(CloudLoginSerialization.Options) ?? new CloudLoginSecurityOverview();
     }
@@ -793,7 +797,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/LoginHistory");
 
         if (!message.IsSuccessStatusCode)
-            return [];
+            throw await ReadFailure(message);
 
         return await message.Content.ReadFromJsonAsync<List<CloudLoginHistoryEntry>>(CloudLoginSerialization.Options) ?? [];
     }
@@ -803,7 +807,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.GetAsync($"{SecurityRoute}/Devices");
 
         if (!message.IsSuccessStatusCode)
-            return [];
+            throw await ReadFailure(message);
 
         return await message.Content.ReadFromJsonAsync<List<CloudLoginSignedInDevice>>(CloudLoginSerialization.Options) ?? [];
     }
@@ -821,7 +825,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.DeleteAsync($"{SecurityRoute}/Devices");
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
 
         return await message.Content.ReadFromJsonAsync<int>(CloudLoginSerialization.Options);
     }
@@ -832,7 +836,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Password", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
     }
 
     public async Task DisconnectProvider(string providerCode, string input)
@@ -841,7 +845,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/DisconnectProvider", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
     }
 
     public async Task<CloudLoginAuthenticatorEnrollment> BeginAuthenticatorEnrollment()
@@ -849,7 +853,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Authenticator/Begin", null);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
 
         return (await message.Content.ReadFromJsonAsync<CloudLoginAuthenticatorEnrollment>(CloudLoginSerialization.Options))!;
     }
@@ -859,8 +863,10 @@ public class CloudLoginClient : ICloudLogin
         HttpContent content = JsonContent.Create(new { code }, options: CloudLoginSerialization.Options);
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Authenticator/Confirm", content);
 
+        // A wrong code answers 200 with false. A failure is something else - a dead session, a
+        // rate limit - and must not be reported as "that code isn't right".
         if (!message.IsSuccessStatusCode)
-            return false;
+            throw await ReadFailure(message);
 
         return await message.Content.ReadFromJsonAsync<bool>(CloudLoginSerialization.Options);
     }
@@ -870,7 +876,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Authenticator/Disable", null);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
     }
 
     public async Task<string> BeginPasskeyRegistration()
@@ -878,7 +884,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Begin", null);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
 
         return await message.Content.ReadAsStringAsync();
     }
@@ -889,7 +895,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Complete", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
 
         return (await message.Content.ReadFromJsonAsync<CloudLoginPasskeySummary>(CloudLoginSerialization.Options))!;
     }
@@ -900,7 +906,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Remove", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
     }
 
     public async Task RenamePasskey(string credentialId, string name)
@@ -909,7 +915,7 @@ public class CloudLoginClient : ICloudLogin
         HttpResponseMessage message = await HttpServer.PostAsync($"{SecurityRoute}/Passkeys/Rename", content);
 
         if (!message.IsSuccessStatusCode)
-            throw new Exception(await ReadProblem(message));
+            throw await ReadFailure(message);
     }
 
     /// <summary>
@@ -922,4 +928,15 @@ public class CloudLoginClient : ICloudLogin
 
         return string.IsNullOrWhiteSpace(body) ? message.ReasonPhrase ?? "Request failed." : body;
     }
+
+    /// <summary>
+    /// A failed security call is never "nothing to show". A 401 means the session behind the page
+    /// is gone - expired, or signed out from another device - and the account page must send the
+    /// person back to sign in; anything else carries a reason worth showing. Answering with an
+    /// empty default here is what once let the page keep rendering, blank, over a dead session.
+    /// </summary>
+    private static async Task<Exception> ReadFailure(HttpResponseMessage message) =>
+        message.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
+            ? new UnauthorizedAccessException("Your session has ended. Sign in again to continue.")
+            : new Exception(await ReadProblem(message));
 }

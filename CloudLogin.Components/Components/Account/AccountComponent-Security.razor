@@ -291,6 +291,10 @@
                                     {
                                         <text> · Last seen @FormatRelative(lastSeen)</text>
                                     }
+                                    @if (device.Audiences.Count > 0)
+                                    {
+                                        <text> · Signed in to @string.Join(", ", device.Audiences)</text>
+                                    }
                                     @if (!device.IsActive && !string.IsNullOrWhiteSpace(device.RevocationReason))
                                     {
                                         <text> · @DescribeRevocation(device.RevocationReason!)</text>
@@ -436,6 +440,10 @@
             _overview = (await cloudLogin.GetSecurityOverview()).ToModel();
             _history = [.. (await cloudLogin.GetMyLoginHistory()).Select(entry => entry.ToModel())];
             _devices = await cloudLogin.GetMyDevices();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            SessionEnded();
         }
         catch (Exception ex)
         {
@@ -711,6 +719,10 @@
         {
             await action();
         }
+        catch (UnauthorizedAccessException)
+        {
+            SessionEnded();
+        }
         catch (Exception ex)
         {
             SetMessage(ex.Message, false);
@@ -722,6 +734,13 @@
             StateHasChanged();
         }
     }
+
+    /// <summary>
+    /// The session behind this page is gone - expired, or this device was signed out from another
+    /// one. Nothing on the page can work any more, so it clears the stale cookie and returns to
+    /// sign-in instead of showing an error over a dead session.
+    /// </summary>
+    private void SessionEnded() => navigationManager.NavigateTo("/CloudLogin/Logout", forceLoad: true);
 
     private void SetMessage(string message, bool success)
     {

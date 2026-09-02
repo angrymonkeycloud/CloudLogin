@@ -239,6 +239,7 @@ public partial class CloudLoginServer
             user, "CloudLogin", _cosmosMethods);
 
         await _accessor.HttpContext!.SignInAsync(claimsPrincipal, properties);
+        await RecordSignInAsync(user, "Code");
 
         if (string.IsNullOrEmpty(referer))
             referer = "/";
@@ -413,6 +414,11 @@ public partial class CloudLoginServer
         ClaimsPrincipal claimsPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
             user, "CloudLogin", _cosmosMethods);
 
+        // The provider callback already signed this browser in once (that is where the cookie
+        // handler converted the provider's identity and opened its session); this second ticket
+        // is the same sign-in, so it keeps that session rather than opening another device.
+        CloudLoginAuthenticationClaims.CarrySession(_request.HttpContext.User, claimsPrincipal);
+
         await _request.HttpContext.SignInAsync(claimsPrincipal, properties);
 
 
@@ -473,6 +479,7 @@ public partial class CloudLoginServer
         if (!IsAllowedRedirect(referer))
             return new BadRequestObjectResult("The requested return URL is not allowed.");
 
+        await RevokeOwnSessionAsync();
         await _request.HttpContext.SignOutAsync();
 
         string logoutUrl = !string.IsNullOrEmpty(referer) ? referer : "/";

@@ -21,7 +21,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         string? profileClient = null)
     {
         if (principal.FindFirst(ClaimTypes.Hash)?.Value?.Equals("CloudLogin") ?? false)
-            return principal;
+            return await AttachBrowserSessionAsync(principal, context);
 
         ICloudLoginStore? store = context.RequestServices.GetService<ICloudLoginStore>();
         if (store == null)
@@ -42,8 +42,51 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         CloudUser user = await ProcessUserSignIn(principal, store, currentDateTime);
         ClaimsPrincipal localPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
             user, authenticationMethod, store);
+        localPrincipal = await AttachBrowserSessionAsync(localPrincipal, context);
         await RecordLoginHistory(user, authenticationMethod, context, currentDateTime);
         return localPrincipal;
+    }
+
+    /// <summary>
+    /// Makes the cookie sign-in a session of its own in the <c>Sessions</c> container, so the
+    /// browser shows up on the account page as "this device", "sign out other devices" knows
+    /// which one to keep, and signing the device out from elsewhere ends this cookie too.
+    /// </summary>
+    /// <remarks>
+    /// This is the one place every cookie ticket passes through, whichever flow issued it: a
+    /// provider callback, the password form, a verification code, test mode. A ticket that already
+    /// names a session keeps it - a re-issued ticket is the same device, not a new one. Best-effort,
+    /// like the login history: a session record must never be what stops a valid sign-in.
+    /// </remarks>
+    private static async Task<ClaimsPrincipal> AttachBrowserSessionAsync(ClaimsPrincipal principal, HttpContext context)
+    {
+        if (principal.FindFirst(CloudLoginClaims.SessionId) is not null)
+            return principal;
+
+        Core.Application.SessionService? sessions = context.RequestServices.GetService<Core.Application.SessionService>();
+
+        if (sessions is null)
+            return principal;
+
+        if (!Guid.TryParse(principal.FindFirst(ClaimTypes.NameIdentifier)?.Value, out Guid userId))
+            return principal;
+
+        try
+        {
+            string? userAgent = context.Request.Headers.UserAgent.ToString();
+
+            Core.Application.SessionIssueResult session = await sessions.IssueFamilyAsync(
+                userId,
+                audience: Core.Application.SessionService.BrowserAudience,
+                createdByIp: context.Connection.RemoteIpAddress?.ToString(),
+                userAgent: string.IsNullOrWhiteSpace(userAgent) ? null : userAgent);
+
+            return CloudLoginAuthenticationClaims.WithSession(principal, session.SessionId, session.FamilyId);
+        }
+        catch
+        {
+            return principal;
+        }
     }
 
     /// <summary>

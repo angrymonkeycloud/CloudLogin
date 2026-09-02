@@ -4,7 +4,13 @@ namespace AngryMonkey.CloudLogin.Server;
 /// The browser a login request was created from, so a session can be attributed to the person's
 /// own device rather than to the relying party's server that redeemed the request.
 /// </summary>
-public sealed record CloudLoginRequestOrigin(string? IpAddress, string? UserAgent);
+/// <summary>
+/// The browser that completed the interactive sign-in behind a login request: where it was, what
+/// it was, and which sign-in session it belongs to. The session is what lets the tokens a relying
+/// party redeems the request for be grouped with that browser as one device, instead of every
+/// application sign-in appearing as a device of its own.
+/// </summary>
+public sealed record CloudLoginRequestOrigin(string? IpAddress, string? UserAgent, string? SessionId = null);
 
 /// <summary>
 /// Persistence operations required by <see cref="CloudLoginServer"/>.

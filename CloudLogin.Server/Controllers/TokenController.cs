@@ -54,6 +54,9 @@ public sealed class TokenController(
                 user,
                 audience,
                 scope,
+                // The cookie's own session, so these tokens count as the same device as the
+                // browser holding it rather than as a new one.
+                sessionId: User.FindFirst(CloudLoginClaims.SessionId)?.Value,
                 clientIp: ClientIp(),
                 userAgent: UserAgent(),
                 cancellationToken: cancellationToken);
@@ -123,6 +126,10 @@ public sealed class TokenController(
                 user,
                 audience,
                 scope,
+                // The browser's sign-in session, when the request remembers it: the tokens then
+                // belong to that device on the account page instead of adding another row for
+                // every application the person signs in to.
+                sessionId: origin?.SessionId,
                 clientIp: origin?.IpAddress ?? ClientIp(),
                 userAgent: origin?.UserAgent ?? UserAgent(),
                 cancellationToken: cancellationToken);

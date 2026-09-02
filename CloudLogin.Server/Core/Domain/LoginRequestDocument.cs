@@ -58,6 +58,13 @@ public sealed class LoginRequestDocument : CloudLoginCoreDocument, IExpiringDocu
     /// <summary>User agent of the browser that completed the interactive sign-in.</summary>
     public string? OriginUserAgent { get; set; }
 
+    /// <summary>
+    /// The sign-in session (<c>sid</c>) of the browser that created this request. Tokens redeemed
+    /// from the request join that session, so the account page shows one device rather than one
+    /// entry per application signed in to from it.
+    /// </summary>
+    public string? OriginSessionId { get; set; }
+
     // ── Device authorization (Kind = Device) ──────────────────────────────────
 
     /// <summary>SHA-256 of the high-entropy device code. Also the document id.</summary>

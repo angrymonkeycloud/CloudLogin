@@ -102,6 +102,7 @@ public sealed class V3DevicesController(CloudLoginWebConfiguration configuration
         // Only meaningful once a device is inactive; "None" on an active one would read as a fact.
         RevocationReason = device.IsActive ? null : device.RevocationReason.ToString(),
         RevokedOn = device.RevokedOn,
-        IsCurrent = device.IsCurrent
+        IsCurrent = device.IsCurrent,
+        Audiences = [.. device.Audiences]
     };
 }

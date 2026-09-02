@@ -71,6 +71,7 @@ public partial class CloudLoginServer
     /// </summary>
     public async Task<string> Logout(HttpRequest request, HttpResponse response, bool _ = false)
     {
+        await RevokeOwnSessionAsync();
         await request.HttpContext.SignOutAsync();
         response.Cookies.Delete("AutomaticSignIn");
 

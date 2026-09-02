@@ -87,6 +87,21 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
         return await _workspaceRegistry.UpdateAsync(workspace, workspace.OwnerUserId);
     }
 
+    /// <summary>
+    /// Creates a workspace on behalf of a trusted backend caller - the counterpart of a record that
+    /// was born in another system (a CDM Business) rather than on the account page. There is no
+    /// signed-in user to own it, so the caller names the owner: a workspace without one would be
+    /// reachable from nobody's account. The owner's workspace allowance is enforced exactly as it
+    /// is for a self-service creation.
+    /// </summary>
+    public async Task<CloudWorkspace> CreateWorkspaceAsService(string name, Guid ownerUserId)
+    {
+        if (_workspaceRegistry == null)
+            throw new InvalidOperationException("The account registry is not configured on this host.");
+
+        return await _workspaceRegistry.CreateAsync(name, ownerUserId);
+    }
+
     public async Task DeleteWorkspace(Guid workspaceId)
     {
         if (_workspaceRegistry == null)

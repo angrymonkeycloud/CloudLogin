@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using System.Text.Json;
 using Fido2NetLib;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -41,6 +44,42 @@ public partial class CloudLoginServer
 
     private async Task<CloudUser> RequireCurrentUser()
         => await CurrentUser() ?? throw new UnauthorizedAccessException("No signed-in user.");
+
+    /// <summary>
+    /// Re-issues the caller's own cookie after a security change they made themselves.
+    /// <para>
+    /// A security change rotates the account's security stamp, and every ticket carrying the old
+    /// stamp stops resolving to a user - which is the point for every <em>other</em> device. But
+    /// the ticket in the browser that made the change carries the old stamp too, so without this
+    /// the very next request found a stale stamp and treated the person as signed out while the
+    /// page still showed them as signed in: an account page full of default values, fixed only by
+    /// signing out and back in. The replacement ticket keeps the same session, properties and
+    /// sign-in method; only the stamp is new.
+    /// </para>
+    /// </summary>
+    private async Task RefreshOwnTicketAsync(CloudUser user)
+    {
+        HttpContext? context = _accessor.HttpContext;
+
+        if (context is null || _cosmosMethods is null || context.User.Identity?.IsAuthenticated != true)
+            return;
+
+        ClaimsIdentity? identity = context.User.Identities.FirstOrDefault(candidate => candidate.IsAuthenticated);
+        string method = identity?.FindFirst(CloudLoginAuthenticationClaims.AuthenticationMethod)?.Value
+            ?? identity?.AuthenticationType
+            ?? "CloudLogin";
+
+        CloudUser current = await _cosmosMethods.GetUserById(user.ID) ?? user;
+        ClaimsPrincipal refreshed = await CloudLoginAuthenticationClaims.CreateAsync(current, method, _cosmosMethods);
+        CloudLoginAuthenticationClaims.CarrySession(context.User, refreshed);
+
+        AuthenticateResult existing = await context.AuthenticateAsync();
+        AuthenticationProperties properties = existing.Succeeded && existing.Properties is not null
+            ? existing.Properties
+            : new AuthenticationProperties();
+
+        await context.SignInAsync(refreshed, properties);
+    }
 
     private static bool IsPasswordProvider(CloudLoginProvider provider)
         => provider.Code.Equals("password", StringComparison.OrdinalIgnoreCase);
@@ -144,7 +183,8 @@ public partial class CloudLoginServer
             // Only meaningful once inactive; "None" on an active device would read as a fact.
             RevocationReason = device.IsActive ? null : device.RevocationReason.ToString(),
             RevokedOn = device.RevokedOn,
-            IsCurrent = device.IsCurrent
+            IsCurrent = device.IsCurrent,
+            Audiences = [.. device.Audiences]
         })];
     }
 
@@ -248,6 +288,7 @@ public partial class CloudLoginServer
 
         await UpdateUser(user);
         await _cosmosMethods!.RotateSecurityStamp(user.ID);
+        await RefreshOwnTicketAsync(user);
     }
 
     // ── Linked providers ─────────────────────────────────────────────────────
@@ -277,6 +318,7 @@ public partial class CloudLoginServer
         await _cosmosMethods!.RemoveLoginProvider(user.ID, provider.Code, targetInput.Input, provider.Identifier);
         targetInput.Providers.Remove(provider);
         await UpdateUser(user);
+        await RefreshOwnTicketAsync(user);
     }
 
     // ── Authenticator app (TOTP) ─────────────────────────────────────────────
@@ -329,6 +371,8 @@ public partial class CloudLoginServer
                 document.Authenticator.IsConfirmed = true;
         });
 
+        await RefreshOwnTicketAsync(user);
+
         return true;
     }
 
@@ -337,6 +381,7 @@ public partial class CloudLoginServer
     {
         CloudUser user = await RequireCurrentUser();
         await SecurityStore.UpdateCredentials(user.ID, document => document.Authenticator = null);
+        await RefreshOwnTicketAsync(user);
     }
 
     /// <summary>Validates a TOTP code against the signed-in user's confirmed enrollment.</summary>
@@ -376,7 +421,10 @@ public partial class CloudLoginServer
         AuthenticatorAttestationRawResponse attestation = JsonSerializer.Deserialize<AuthenticatorAttestationRawResponse>(attestationJson, WebAuthnJsonOptions)
             ?? throw new ArgumentException("Invalid attestation response.", nameof(attestationJson));
 
-        return await WebAuthn.CompleteRegistration(user, RequestOrigin(), options, attestation, name);
+        CloudLoginPasskeySummary passkey = await WebAuthn.CompleteRegistration(user, RequestOrigin(), options, attestation, name);
+        await RefreshOwnTicketAsync(user);
+
+        return passkey;
     }
 
     /// <summary>Request options for <c>navigator.credentials.get()</c>, as JSON.</summary>
@@ -406,6 +454,7 @@ public partial class CloudLoginServer
     {
         CloudUser user = await RequireCurrentUser();
         await WebAuthn.RemovePasskey(user.ID, credentialId);
+        await RefreshOwnTicketAsync(user);
     }
 
     public async Task RenamePasskey(string credentialId, string name)

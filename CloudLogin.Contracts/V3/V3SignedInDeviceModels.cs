@@ -38,6 +38,9 @@ public sealed record V3SignedInDeviceResponse
 
     /// <summary>True for the device making this request, so it can be labelled "This device".</summary>
     public bool IsCurrent { get; init; }
+
+    /// <summary>The applications signed in to from this device (token audiences).</summary>
+    public List<string> Audiences { get; init; } = [];
 }
 
 /// <summary>The result of signing every other device out.</summary>

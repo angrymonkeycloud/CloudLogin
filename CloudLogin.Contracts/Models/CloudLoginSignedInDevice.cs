@@ -42,4 +42,10 @@ public record CloudLoginSignedInDevice
 
     /// <summary>True for the device viewing the page, so it can be labelled "This device".</summary>
     public bool IsCurrent { get; set; }
+
+    /// <summary>
+    /// The applications signed in to from this device (token audiences), so a person can tell a
+    /// device that only opened the account page from one that is signed in to their products.
+    /// </summary>
+    public List<string> Audiences { get; set; } = [];
 }

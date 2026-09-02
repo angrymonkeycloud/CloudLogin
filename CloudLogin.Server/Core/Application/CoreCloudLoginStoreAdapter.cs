@@ -116,6 +116,7 @@ public sealed class CoreCloudLoginStoreAdapter(
             // request over a back channel where only its own server is visible.
             OriginIp = context?.Connection.RemoteIpAddress?.ToString(),
             OriginUserAgent = Truncate(context?.Request.Headers.UserAgent.ToString(), 256),
+            OriginSessionId = context?.User?.FindFirst(CloudLoginClaims.SessionId)?.Value,
             ExpiresOn = now + _configuration.LoginRequestLifetime
         };
 
@@ -138,10 +139,12 @@ public sealed class CoreCloudLoginStoreAdapter(
         if (request is null || DocumentExpiry.IsExpired(request))
             return null;
 
-        if (string.IsNullOrWhiteSpace(request.OriginIp) && string.IsNullOrWhiteSpace(request.OriginUserAgent))
+        if (string.IsNullOrWhiteSpace(request.OriginIp)
+            && string.IsNullOrWhiteSpace(request.OriginUserAgent)
+            && string.IsNullOrWhiteSpace(request.OriginSessionId))
             return null;
 
-        return new CloudLoginRequestOrigin(request.OriginIp, request.OriginUserAgent);
+        return new CloudLoginRequestOrigin(request.OriginIp, request.OriginUserAgent, request.OriginSessionId);
     }
 
     /// <summary>A user agent is unbounded client input; cap it before it reaches storage.</summary>

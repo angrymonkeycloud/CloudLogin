@@ -201,60 +201,12 @@ public partial class CloudLoginServer
 
     public async Task<IActionResult> CustomLogin(Guid userId, bool keepMeSignedIn, string? referer = null, bool sameSite = false, bool isMobileApp = false)
     {
-        if (!_configuration.EnableLegacyClientManagedLogin)
-            return new NotFoundResult();
+        // Caller-selected user ids are never authentication. Kept as an internal compatibility
+        // signature until every component package is updated, but no route exposes it and it
+        // always fails closed.
+        await Task.CompletedTask;
+        return new NotFoundResult();
 
-        if (!IsAllowedRedirect(referer))
-            return new BadRequestObjectResult("The requested return URL is not allowed.");
-
-        // The verification-code flow completes here, so the profile has to be honoured here too.
-        if (!SignInProfileAllows("Code"))
-            return new NotFoundResult();
-
-        CloudUser? user = await GetUserById(userId);
-        if (user is null || user.IsTest || user.IsLocked)
-            return new UnauthorizedResult();
-
-        string baseUrl = $"http{(_request.IsHttps ? "s" : string.Empty)}://{_request.Host}";
-
-        referer ??= string.Empty;
-        sameSite = string.IsNullOrWhiteSpace(referer) ||
-                   !Uri.TryCreate(referer, UriKind.Absolute, out _) ||
-                   CloudLoginShared.IsSameOrigin(referer, baseUrl);
-
-        if (sameSite)
-        {
-            referer = referer.Replace($"{baseUrl}/", "");
-            referer = referer.Replace($"/login", "");
-        }
-
-        AuthenticationProperties properties = new()
-        {
-            ExpiresUtc = keepMeSignedIn ? DateTimeOffset.UtcNow.Add(_configuration.LoginDuration) : null,
-            IsPersistent = keepMeSignedIn,
-            RedirectUri = referer
-        };
-
-        ClaimsPrincipal claimsPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
-            user, "CloudLogin", _cosmosMethods);
-
-        await _accessor.HttpContext!.SignInAsync(claimsPrincipal, properties);
-        await RecordSignInAsync(user, "Code");
-
-        if (string.IsNullOrEmpty(referer))
-            referer = "/";
-
-        if (!sameSite)
-        {
-            Guid requestId = await CreateLoginRequest(user.ID);
-            referer = CloudLoginShared.AppendQueryParameter(referer, "requestId", requestId.ToString());
-            referer = CloudLoginShared.AppendQueryParameter(referer, "keepMeSignedIn", keepMeSignedIn.ToString().ToLowerInvariant());
-        }
-
-        if (isMobileApp)
-            referer = CloudLoginShared.AppendQueryParameter(referer, "isMobileApp", "true");
-
-        return new RedirectResult(referer);
     }
 
     /// <summary>
@@ -283,7 +235,7 @@ public partial class CloudLoginServer
     public async Task<IActionResult> LoginResult(bool keepMeSignedIn, bool sameSite, bool isMobileApp = false)
     {
         if (_cosmosMethods == null)
-            throw new ArgumentNullException(nameof(CosmosMethods));
+            throw new InvalidOperationException("CloudLogin storage is not configured.");
 
         ClaimsIdentity userIdentity = _request.HttpContext.User.Identities.First();
         string emailaddress = userIdentity.FindFirst(ClaimTypes.Email)?.Value!;

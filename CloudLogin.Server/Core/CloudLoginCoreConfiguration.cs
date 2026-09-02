@@ -148,17 +148,14 @@ public static class CloudLoginCoreContainers
 }
 
 /// <summary>
-/// Configuration of the modern CloudLogin core storage and services. Setting
-/// <c>CloudLoginWebConfiguration.Core</c> activates the seven-container Cosmos model, the Table
-/// Storage identity index, and the compatibility adapters that route every API version through
-/// them. Leaving it unset keeps the legacy single-container store — the supported state until a
-/// deployment has run the migration.
+/// Configuration of CloudLogin's seven-container Cosmos model, Table Storage identity index,
+/// and application services.
 /// </summary>
 public sealed class CloudLoginCoreConfiguration
 {
     /// <summary>
     /// The deployment realm, isolating identity keys and audit partitions when several
-    /// authorities share storage accounts. Independent of API versions and SchemaVersion.
+    /// authorities share storage accounts. Independent of document SchemaVersion.
     /// </summary>
     public string RealmId { get; set; } = CloudLoginCoreContainers.DefaultRealmId;
 

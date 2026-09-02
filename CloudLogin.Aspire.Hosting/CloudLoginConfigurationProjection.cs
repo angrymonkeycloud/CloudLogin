@@ -27,11 +27,6 @@ internal static class CloudLoginConfigurationProjection
     {
         AngryMonkey.CloudLogin.Server.CloudLoginWebConfiguration defaults = new();
 
-        // The configuration being projected has already had its version defaults resolved, so the
-        // baseline must be resolved the same way. Without this, V3's defaulted-in Core compares
-        // against a null one and every one of its default values is projected as an override.
-        defaults.NormalizeVersions();
-
         ProjectObject(
             cloudLogin,
             "CloudLogin",

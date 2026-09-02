@@ -377,18 +377,6 @@ public class CloudLoginServerLoginTests
     }
 
     [Fact]
-    public async Task CustomLogin_IsDisabledByDefault()
-    {
-        LoginTestFixture fixture = new();
-        CloudUser user = await fixture.AddPasswordUserAsync();
-
-        IActionResult result = await fixture.Server.CustomLogin(user.ID, false, "/Account");
-
-        Assert.IsType<NotFoundResult>(result);
-        Assert.Equal(0, fixture.Authentication.SignInCount);
-    }
-
-    [Fact]
     public async Task UpdateAuth_LegacyCallerControlledCookieEndpoint_IsGone()
     {
         LoginTestFixture fixture = new();
@@ -450,6 +438,14 @@ public class CloudLoginServerLoginTests
     public async Task PasswordRegistration_CreatesNormalizedPasswordUser()
     {
         LoginTestFixture fixture = new();
+        CloudLoginVerificationChallenge challenge = await fixture.Server.SendVerificationCode(
+            CloudLoginSendCodeRequest.Create(
+                "  NEW@EXAMPLE.COM ",
+                CloudLoginVerificationPurposes.Registration));
+        CloudLoginVerificationResult verification = await fixture.Server.VerifyCode(
+            CloudLoginVerifyCodeRequest.Create(
+                challenge.ChallengeId,
+                Assert.Single(fixture.SentCodes).Code));
 
         CloudUser user = await fixture.Server.PasswordRegistration(
             CloudLoginPasswordRegistrationRequest.Create(
@@ -458,14 +454,33 @@ public class CloudLoginServerLoginTests
                 "Valid#123456",
                 "New",
                 "Person",
-                "New Person"));
+                "New Person",
+                verification.VerificationToken,
+                keepMeSignedIn: true));
 
         Assert.False(user.IsTest);
+        Assert.Equal(1, fixture.Authentication.SignInCount);
+        Assert.True(fixture.Authentication.SignedInProperties!.IsPersistent);
         Assert.Equal("new@example.com", user.PrimaryEmailAddress!.Input);
         CloudLoginProvider passwordProvider = Assert.Single(user.Inputs[0].Providers, provider => provider.Code == "Password");
         Assert.NotEqual("Valid#123456", passwordProvider.PasswordHash);
         Assert.True(await fixture.Server.PasswordLogin(
             CloudLoginPasswordLoginRequest.Create("new@example.com", "Valid#123456")));
+    }
+
+    [Fact]
+    public async Task PasswordRegistration_WithoutAddressProof_IsRejected()
+    {
+        LoginTestFixture fixture = new();
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            fixture.Server.PasswordRegistration(
+                CloudLoginPasswordRegistrationRequest.Create(
+                    "unverified@example.com",
+                    CloudLoginInputFormat.EmailAddress,
+                    "Valid#123456",
+                    "Unverified",
+                    "Person")));
     }
 
     [Fact]

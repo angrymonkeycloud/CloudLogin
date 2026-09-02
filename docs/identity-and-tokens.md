@@ -54,7 +54,7 @@ builder.Services.AddCloudLoginTokenIssuer(builder.Configuration.GetSection("Clou
     "portal": {
       "ClientId": "portal",
       "SecretHash": "<base64 SHA-256 of the secret>",
-      "AllowedAudiences": [ "cdm-api" ]
+      "AllowedAudiences": [ "portal", "cdm-api" ]
     }
   }
 }

@@ -1,6 +1,5 @@
 using AngryMonkey.CloudLogin.Interfaces;
 using AngryMonkey.CloudLogin.Server;
-using AngryMonkey.CloudLogin.Server.Versioning;
 using AngryMonkey.CloudLogin.V3;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +13,6 @@ namespace AngryMonkey.CloudLogin.API.V3;
 /// endpoints answer 501 with a clear explanation instead of half-working.
 /// </summary>
 [ApiController]
-[ApiVersionGate(CloudLoginApiVersion.V3)]
 public abstract class V3ControllerBase(CloudLoginWebConfiguration configuration, ICloudLogin server) : ControllerBase
 {
     protected readonly CloudLoginWebConfiguration Configuration = configuration;
@@ -27,9 +25,8 @@ public abstract class V3ControllerBase(CloudLoginWebConfiguration configuration,
 
     protected ObjectResult CoreUnavailable() => Problem(
         statusCode: StatusCodes.Status501NotImplemented,
-        title: "V3 requires the CloudLogin core storage model",
-        detail: "This deployment has not configured CloudLoginWebConfiguration.Core. " +
-                "Run the storage migration and enable the core to serve API version 3.");
+        title: "CloudLogin core storage is unavailable",
+        detail: "Configure the required Cosmos and Azure Storage resources for this deployment.");
 
     protected void SetNoStore()
     {

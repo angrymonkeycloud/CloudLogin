@@ -55,7 +55,7 @@ public interface ICloudLoginStore
     Task RotateSecurityStamp(Guid userId) => Task.CompletedTask;
 
     /// <summary>
-    /// Removes the persisted credential represented by a V2 provider entry. Legacy stores keep
+    /// Removes the persisted credential represented by a provider entry. Custom stores keep
     /// the credential inside <see cref="CloudUser"/> and therefore need no separate operation.
     /// </summary>
     Task RemoveLoginProvider(Guid userId, string providerCode, string input, string? identifier) =>

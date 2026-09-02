@@ -31,7 +31,7 @@ public sealed class CloudLoginConfigurationPrecedenceTests
         {
             ["CloudLogin:PrimaryColor"] = "#222222",
             ["Cosmos:AccountEndpoint"] = "https://host.documents.azure.com:443/",
-            ["Cosmos:DatabaseId"] = "HostUsers",
+            ["CloudLogin:Core:DatabaseId"] = "HostUsers",
             ["Storage:BlobEndpoint"] = "https://hoststorage.blob.core.windows.net/",
             ["Microsoft:ClientId"] = "host-client",
             ["Microsoft:Label"] = "Host Microsoft"
@@ -56,9 +56,7 @@ public sealed class CloudLoginConfigurationPrecedenceTests
         {
             options.PrimaryColor = "#111111";
             options.Cosmos.AccountEndpoint = "https://project.documents.azure.com:443/";
-            options.Cosmos.DatabaseId = "ProjectUsers";
-            options.Cosmos.ContainerId = "ProjectData";
-            options.Cosmos.IncludeLegacySchema = true;
+            options.Core.DatabaseId = "ProjectUsers";
             options.AzureStorage = new AzureStorageConfiguration
             {
                 AccountName = "projectstorage",
@@ -76,9 +74,7 @@ public sealed class CloudLoginConfigurationPrecedenceTests
 
         Assert.Equal("#222222", configuration.PrimaryColor);
         Assert.Equal("https://host.documents.azure.com:443/", configuration.Cosmos.AccountEndpoint);
-        Assert.Equal("HostUsers", configuration.Cosmos.DatabaseId);
-        Assert.Equal("ProjectData", configuration.Cosmos.ContainerId);
-        Assert.True(configuration.Cosmos.IncludeLegacySchema);
+        Assert.Equal("HostUsers", configuration.Core.DatabaseId);
         Assert.Same(credential, configuration.Cosmos.Credential);
         Assert.Equal("https://hoststorage.blob.core.windows.net/", configuration.AzureStorage?.BlobEndpoint?.AbsoluteUri);
         Assert.Equal("projectusers", configuration.AzureStorage?.ContainerName);

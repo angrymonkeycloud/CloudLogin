@@ -4,7 +4,6 @@ using AngryMonkey.CloudLogin.Server.Core;
 using AngryMonkey.CloudLogin.Server.Core.Abstractions;
 using AngryMonkey.CloudLogin.Server.Core.Application;
 using AngryMonkey.CloudLogin.Server.Core.Domain;
-using AngryMonkey.CloudLogin.Server.Core.Migration;
 
 namespace AngryMonkey.CloudLogin.Tests.Core;
 
@@ -614,46 +613,6 @@ internal sealed class InMemoryUserWorkspaceIndexStore : IUserWorkspaceIndexStore
     public Task DeleteAsync(string realm, Guid userId, Guid workspaceId, CancellationToken cancellationToken = default)
     {
         Entries.TryRemove((realm, userId, workspaceId), out _);
-        return Task.CompletedTask;
-    }
-}
-
-internal sealed class ListLegacyUserSource(List<CloudUser> users) : ILegacyUserSource
-{
-    private readonly List<CloudUser> _users = users;
-
-    public async IAsyncEnumerable<CloudUser> EnumerateUsersAsync(
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        foreach (CloudUser user in _users)
-        {
-            await Task.Yield();
-            yield return user;
-        }
-    }
-
-    public Task<int> CountUsersAsync(CancellationToken cancellationToken = default) => Task.FromResult(_users.Count);
-}
-
-internal sealed class InMemoryMigrationCheckpointStore : IMigrationCheckpointStore
-{
-    public MigrationCheckpoint? Stored { get; set; }
-    public List<MigrationReport> Reports { get; } = [];
-    public int SaveCount { get; private set; }
-
-    public Task<MigrationCheckpoint?> LoadAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(Stored is null ? null : TestClone.Clone(Stored));
-
-    public Task SaveAsync(MigrationCheckpoint checkpoint, CancellationToken cancellationToken = default)
-    {
-        Stored = TestClone.Clone(checkpoint);
-        SaveCount++;
-        return Task.CompletedTask;
-    }
-
-    public Task SaveReportAsync(MigrationReport report, CancellationToken cancellationToken = default)
-    {
-        Reports.Add(report);
         return Task.CompletedTask;
     }
 }

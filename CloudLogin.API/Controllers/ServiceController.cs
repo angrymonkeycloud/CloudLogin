@@ -15,7 +15,7 @@ namespace AngryMonkey.CloudLogin.API.Controllers;
 /// <para>
 /// Deliberately not version-gated. This is the authority's own trusted backend channel, like its
 /// UI and flow endpoints, rather than one of the versioned public façades — and
-/// <c>api/v3/service</c> covers only <c>users/{id}</c>, so gating this to V2 removed workspace and
+/// <c>api/v3/service</c> covers only <c>users/{id}</c>, while this authority surface also provides workspace and
 /// membership reads that have no replacement. With the API version defaulting to V3 the gate made
 /// every <c>CloudLogin/Service/*</c> route answer 404 to a correctly authenticated caller, which
 /// reads to the calling component as its data simply not being there.

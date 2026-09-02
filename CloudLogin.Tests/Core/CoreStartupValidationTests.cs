@@ -5,13 +5,13 @@ using AngryMonkey.CloudLogin.Server.Core.Domain;
 namespace AngryMonkey.CloudLogin.Tests.Core;
 
 /// <summary>
-/// What a V3 deployment must get right before it is allowed to start. Every rule here exists
+/// What a CloudLogin deployment must get right before it is allowed to start. Every rule here exists
 /// because the alternative failure is silent: an unresolvable identity index, or two realms
 /// quietly sharing one set of containers.
 /// </summary>
 public class CoreStartupValidationTests
 {
-    private static CloudLoginWebConfiguration ValidV3() => new()
+    private static CloudLoginWebConfiguration ValidConfiguration() => new()
     {
         Cosmos = new CosmosConfiguration { ConnectionString = "AccountEndpoint=https://localhost:8081/;AccountKey=key" },
         AzureStorage = new AzureStorageConfiguration { ConnectionString = "UseDevelopmentStorage=true" },
@@ -24,14 +24,14 @@ public class CoreStartupValidationTests
     // ── The identity HMAC secret ──────────────────────────────────────────────
 
     [Fact]
-    public void ValidConfiguration_Passes() => Validate(ValidV3());
+    public void ValidConfiguration_Passes() => Validate(ValidConfiguration());
 
     [Fact]
     public void MissingIdentityHmacSecret_FailsStartup()
     {
         // Outside Aspire nothing supplies it, and CloudLogin will not invent one: a substituted
         // key resolves none of the rows written under the real one.
-        CloudLoginWebConfiguration configuration = ValidV3();
+        CloudLoginWebConfiguration configuration = ValidConfiguration();
         configuration.IdentityHmacSecret = null;
 
         IdentityHmacSecretException exception = Assert.Throws<IdentityHmacSecretException>(
@@ -47,7 +47,7 @@ public class CoreStartupValidationTests
     [InlineData("!!! not base64 or hex !!!")]                   // malformed
     public void InvalidIdentityHmacSecret_FailsStartup(string secret)
     {
-        CloudLoginWebConfiguration configuration = ValidV3();
+        CloudLoginWebConfiguration configuration = ValidConfiguration();
         configuration.IdentityHmacSecret = secret;
 
         Assert.Throws<IdentityHmacSecretException>(() => Validate(configuration));
@@ -57,37 +57,8 @@ public class CoreStartupValidationTests
     public void HmacSecret_IsNotRequiredWithoutAzureStorage()
     {
         // A host on its own in-memory ICloudLoginStore (the demos, the tests) has no identity
-        // index to key, so V3 being the default must not force a secret on it.
+        // index to key, so the default configuration must not force a secret on it.
         Validate(new CloudLoginWebConfiguration());
-    }
-
-    [Fact]
-    public void HmacSecret_IsNotRequiredUnderV2()
-    {
-        // V1/V2 deployments keep working untouched: the legacy single container has no keyed index.
-        CloudLoginWebConfiguration configuration = ValidV3();
-        configuration.IdentityHmacSecret = null;
-        configuration.DatabaseVersion = Server.Versioning.CloudLoginDatabaseVersion.V2;
-        configuration.Cosmos.DatabaseId = "LegacyLogin";
-        configuration.Cosmos.ContainerId = "Users";
-
-        Validate(configuration);
-    }
-
-    [Theory]
-    [InlineData(Server.Versioning.CloudLoginApiVersion.V1)]
-    [InlineData(Server.Versioning.CloudLoginApiVersion.V2)]
-    public void ApiVersion_DoesNotChangeWhetherTheSecretIsNeeded(Server.Versioning.CloudLoginApiVersion apiVersion)
-    {
-        // The secret belongs to the storage axis, not the API axis. A V1 or V2 façade over V3
-        // storage still resolves through the keyed index and still needs it.
-        CloudLoginWebConfiguration configuration = ValidV3();
-        configuration.ApiVersion = apiVersion;
-
-        Validate(configuration);
-
-        configuration.IdentityHmacSecret = null;
-        Assert.Throws<IdentityHmacSecretException>(() => Validate(configuration));
     }
 
     // ── One Cosmos database per realm ─────────────────────────────────────────
@@ -95,7 +66,7 @@ public class CoreStartupValidationTests
     [Fact]
     public void NonDefaultRealm_GetsItsOwnDatabaseWithoutConfiguringOne()
     {
-        CloudLoginWebConfiguration configuration = ValidV3();
+        CloudLoginWebConfiguration configuration = ValidConfiguration();
         configuration.Core = new CloudLoginCoreConfiguration { RealmId = "tenant-b" };
 
         Validate(configuration);
@@ -109,7 +80,7 @@ public class CoreStartupValidationTests
     {
         // "Login…" is the namespace realm databases are derived into, so a hand-picked name in it
         // is another realm's database. Two realms sharing containers is worse than failing.
-        CloudLoginWebConfiguration configuration = ValidV3();
+        CloudLoginWebConfiguration configuration = ValidConfiguration();
         configuration.Core = new CloudLoginCoreConfiguration
         {
             RealmId = "tenant-b",
@@ -127,7 +98,7 @@ public class CoreStartupValidationTests
     {
         // A deployment that wants to name its own database still can; it just cannot squat inside
         // the derived namespace.
-        CloudLoginWebConfiguration configuration = ValidV3();
+        CloudLoginWebConfiguration configuration = ValidConfiguration();
         configuration.Core = new CloudLoginCoreConfiguration { RealmId = "tenant-b", DatabaseId = "ContosoTenantB" };
 
         Validate(configuration);
@@ -136,7 +107,7 @@ public class CoreStartupValidationTests
     [Fact]
     public void TheRealmsOwnDerivedDatabase_IsAllowedExplicitly()
     {
-        CloudLoginWebConfiguration configuration = ValidV3();
+        CloudLoginWebConfiguration configuration = ValidConfiguration();
         configuration.Core = new CloudLoginCoreConfiguration
         {
             RealmId = "tenant-b",
@@ -146,25 +117,4 @@ public class CoreStartupValidationTests
         Validate(configuration);
     }
 
-    [Fact]
-    public void CoreDatabase_SharingTheLegacyDatabaseName_FailsStartup()
-    {
-        CloudLoginWebConfiguration configuration = ValidV3();
-        configuration.Cosmos.DatabaseId = "SharedDatabase";
-        configuration.Core = new CloudLoginCoreConfiguration { DatabaseId = "SharedDatabase" };
-
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
-            () => Validate(configuration));
-
-        Assert.Contains("SharedDatabase", exception.Message);
-    }
-
-    [Fact]
-    public void CoreDatabase_BesideADifferentlyNamedLegacyDatabase_Passes()
-    {
-        CloudLoginWebConfiguration configuration = ValidV3();
-        configuration.Cosmos.DatabaseId = "LegacyLogin";
-
-        Validate(configuration);
-    }
 }

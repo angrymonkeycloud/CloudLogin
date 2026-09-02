@@ -18,9 +18,9 @@ public class CloudLoginController(CloudLoginServer cloudLoginServer) : Controlle
     }
 
     [Route("LoginResult")]
-    public async Task<IActionResult> LoginResult(Guid requestId, string? currentUser, string? ReturnUrl, bool KeepMeSignedIn)
+    public async Task<IActionResult> LoginResult(Guid requestId, string? ReturnUrl, bool KeepMeSignedIn)
     {
-        return await _cloudLoginServer.LoginResult(Request, Response, requestId, currentUser, ReturnUrl, KeepMeSignedIn);
+        return await _cloudLoginServer.LoginResult(Request, Response, requestId, ReturnUrl, KeepMeSignedIn);
     }
 
     [Route("Logout")]
@@ -37,7 +37,7 @@ public class CloudLoginController(CloudLoginServer cloudLoginServer) : Controlle
         if (user == null)
             return new NotFoundResult();
 
-        return new OkObjectResult(user);
+        return new OkObjectResult(CloudLoginTransportSecurity.ForTransport(user));
     }
 
     [HttpGet("IsAuthenticated")]

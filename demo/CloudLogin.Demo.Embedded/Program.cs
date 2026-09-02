@@ -37,7 +37,6 @@ CloudLoginWebConfiguration loginConfig = new()
 {
     WebConfig = web => web.PageDefaults.SetTitle("CloudLogin Developer Demo"),
     Security = new() { EnableLegacyClientVerificationCodes = true },
-    EnableLegacyClientManagedLogin = true,
     Providers =
     [
         new LoginProviders.PasswordProviderConfiguration(builder.Configuration.GetSection("Password")),

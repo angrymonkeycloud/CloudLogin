@@ -7,7 +7,7 @@ restarts and seeds a Demo Admin account for the administration UI.
 | App | Default URL | Purpose |
 | --- | --- | --- |
 | [`CloudLogin.Demo`](CloudLogin.Demo) | `https://localhost:7100` | Standalone CloudLogin authority with login, account, administration, and recovery flows. |
-| [`CloudLogin.Demo.Consumer`](CloudLogin.Demo.Consumer) | `https://localhost:7200` | Consumer-site integration through `AddCloudLoginServer`, including redirects and coordinated logout. |
+| [`CloudLogin.Demo.Consumer`](CloudLogin.Demo.Consumer) | `https://localhost:7200` | Consumer-site integration through the cookie redirect and confidential token exchange, including coordinated logout. |
 | [`CloudLogin.Demo.Embedded`](CloudLogin.Demo.Embedded) | `https://localhost:7300` | Comprehensive component and account-registry showcase embedded in a custom host. |
 
 ## Run the demos

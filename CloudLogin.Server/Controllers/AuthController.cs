@@ -29,8 +29,8 @@ public class AuthController(
 {
     /// <summary>
     /// Service-client settings for the token exchange. Null when this application has
-    /// not registered as a service client, in which case sign-in still works but the
-    /// application cannot prove the user's identity to downstream services.
+    /// not registered as a service client, in which case the secure login-request exchange
+    /// cannot complete.
     /// </summary>
     private readonly CloudLoginTokenClientOptions? _tokenOptions = tokenOptions?.Value;
 
@@ -129,14 +129,10 @@ public class AuthController(
 
             string returnUrl = NormalizeLocalReturnUrl(DecodeReturnUrl(state));
 
-            // Prefer the token exchange: it consumes the request id and returns both the
-            // user and the credentials this application needs to call other services on
-            // their behalf. GetUserFromCloudLogin is the fallback for deployments that
-            // have not registered a service client yet.
+            // The confidential back-channel exchange is the only supported redemption path.
+            // A request id crosses the browser and is not authentication by itself.
             CloudLoginTokenResponse? tokens = await ExchangeRequestForTokens(parsedRequestId);
-            CloudUser? user = tokens?.User ?? (tokens is null
-                ? await GetUserFromCloudLogin(parsedRequestId)
-                : null);
+            CloudUser? user = tokens?.User;
 
             if (user == null)
             {
@@ -375,9 +371,8 @@ public class AuthController(
     /// <para>
     /// When service-client credentials are configured, the exchange returns an access
     /// and refresh token as well as the user, and those tokens become what downstream
-    /// calls present. Without credentials it falls back to resolving just the user,
-    /// which still signs the browser in but leaves this application unable to prove
-    /// the user's identity to any other service.
+    /// calls present. Client credentials are mandatory because the request id travels
+    /// through the browser and is not a secret.
     /// </para>
     /// </summary>
     private async Task<CloudLoginTokenResponse?> ExchangeRequestForTokens(Guid requestId)
@@ -416,32 +411,6 @@ public class AuthController(
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error exchanging the login request for tokens");
-            return null;
-        }
-    }
-
-    private async Task<CloudUser?> GetUserFromCloudLogin(Guid requestId)
-    {
-        try
-        {
-            HttpClient httpClient = _httpClientFactory.CreateClient();
-            httpClient.BaseAddress = new Uri(_loginBaseUrl);
-
-            // Call CloudLogin API to get user by request ID
-            using HttpResponseMessage response = await httpClient.GetAsync($"/CloudLogin/Request/GetUserByRequestId?requestId={Uri.EscapeDataString(requestId.ToString())}");
-
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Failed to get user from CloudLogin. Status: {Status}", response.StatusCode);
-                return null;
-            }
-
-            CloudUser? user = await response.Content.ReadFromJsonAsync<CloudUser>();
-            return user;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving user from CloudLogin");
             return null;
         }
     }

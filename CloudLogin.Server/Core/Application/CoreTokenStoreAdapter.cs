@@ -7,8 +7,7 @@ using Microsoft.Azure.Cosmos;
 namespace AngryMonkey.CloudLogin.Server.Core.Application;
 
 /// <summary>
-/// The V2 token-surface compatibility adapter: serves the legacy
-/// <see cref="ICloudLoginTokenStore"/> contract — refresh tokens addressed by hash, revocation
+/// Serves the <see cref="ICloudLoginTokenStore"/> contract — refresh tokens addressed by hash, revocation
 /// by family, session, or user — from the core <c>Sessions</c> container, and keeps the Cosmos
 /// signing-key fallback in its own <c>SigningKeys</c> container. With this in place, a
 /// core-enabled deployment holds no expiring security state outside the core model.

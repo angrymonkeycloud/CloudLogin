@@ -7,6 +7,13 @@ builder.Services.AddRateLimiter();
 
 // Matches the fixed port used by demo/CloudLogin.Demo (the standalone authority).
 builder.Services.AddCloudLoginServer("https://localhost:7100");
+builder.Services.AddCloudLoginTokenAuthentication(options =>
+{
+    options.Authority = "https://localhost:7100";
+    options.Audience = "cloudlogin-demo-consumer";
+    options.ClientId = "cloudlogin-demo-consumer";
+    options.ClientSecret = "local-demo-only-client-secret-32-chars";
+});
 
 WebApplication app = builder.Build();
 

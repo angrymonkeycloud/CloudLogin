@@ -116,7 +116,7 @@ public class CloudLoginConfigurationSecurityTests
     public void Development_OmitsMicrosoftUntilCredentialsAreAvailable()
     {
         CloudLoginWebConfiguration configuration = new();
-        configuration.AddMicrosoft();
+        configuration.Providers.Add(new LoginProviders.MicrosoftProviderConfiguration());
 
         CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: true);
 
@@ -128,7 +128,7 @@ public class CloudLoginConfigurationSecurityTests
     public void Production_RejectsMicrosoftWithoutCredentials()
     {
         CloudLoginWebConfiguration configuration = new();
-        configuration.AddMicrosoft();
+        configuration.Providers.Add(new LoginProviders.MicrosoftProviderConfiguration());
 
         InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() =>
             CloudLoginConfigurationValidator.Validate(configuration, isDevelopment: false));

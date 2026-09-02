@@ -86,7 +86,8 @@ public sealed class IdentityLinkingService(
     ICredentialRepository credentials,
     IUserRepository users,
     CloudLoginCoreConfiguration configuration,
-    IAuditLogger audit)
+    IAuditLogger audit,
+    SessionService? sessions = null)
 {
     private readonly IIdentityKeyStore _identityKeys = identityKeys;
     private readonly ICredentialRepository _credentials = credentials;
@@ -362,5 +363,9 @@ public sealed class IdentityLinkingService(
             current.UpdatedOn = DateTimeOffset.UtcNow;
             await _users.ReplaceAsync(current, cancellationToken);
         }
+
+        if (sessions is not null)
+            await sessions.RevokeAllForUserAsync(
+                userId, SessionRevocationReasons.SecurityStampChanged, cancellationToken);
     }
 }

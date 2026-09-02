@@ -30,7 +30,7 @@ CloudLogin is secure by default: HTTPS-only cookies, exact redirect allowlists, 
 - [Secure defaults](#secure-defaults)
 - [Production key and secret management](#production-key-and-secret-management)
 - [Production startup troubleshooting](#production-startup-troubleshooting)
-- [Migration notes](#migration-notes)
+- [Breaking changes](#breaking-changes)
 - [Security scope](#security-scope)
 - [Additional guidance](#additional-guidance)
 
@@ -190,26 +190,29 @@ does not support deletion. Implement them to let owners delete their workspaces.
 
 ## Consumer website
 
-Register CloudLogin using the authority URL:
+Register the redirect/cookie integration and the confidential token exchange:
 
 ```csharp
 builder.Services.AddCloudLoginServer("https://login.example.com");
+builder.AddCloudLoginTokenAuthentication();
 ```
 
-Or keep the URL in configuration:
+Configuration supplies the same authority, audience, client id, and secret that the
+authority registered for this application:
 
 ```json
 {
-  "LoginUrl": "https://login.example.com"
+  "CloudLogin": {
+    "Authority": "https://login.example.com",
+    "Audience": "portal",
+    "ClientId": "portal",
+    "ClientSecret": "<secret from protected configuration>"
+  }
 }
 ```
 
-```csharp
-builder.Services.AddCloudLoginServer(new CloudLoginServerConfiguration
-{
-    LoginUrl = builder.Configuration["LoginUrl"]
-});
-```
+When Aspire wires a CloudLogin reference, these values are injected automatically. Never
+send the client secret to browser or WebAssembly code.
 
 Use the standard ASP.NET Core pipeline:
 
@@ -399,22 +402,21 @@ Minimal configuration template (fill only sections for enabled features/provider
 
 ## Database schema
 
-CloudLogin's own Cosmos DB and Azure Blob Storage documents — every container, field, and a realistic JSON sample — are documented in [`docs/database-schema.md`](docs/database-schema.md).
+CloudLogin's Cosmos DB, Table Storage, and Blob Storage documents are documented in [`docs/architecture-core.md`](docs/architecture-core.md).
 
-## Modern storage core and versions
+## Storage and security core
 
-CloudLogin creates its own database and containers on startup and needs no storage configuration to do it — with or without Aspire/CoconutSharp. Two independent version axes, both defaulting to V3, so a deployment that configures nothing gets the modern API over the modern schema:
+CloudLogin has one API and one seven-container storage model:
 
-- **Database version** (`options.DatabaseVersion`, default `V3`) — V3 is the seven-container model (Users, Credentials, Workspaces, WorkspaceAccess, Sessions, LoginRequests, AuditEvents) in a `Login` database, plus a Table Storage identity index resolving emails, phones, and `(issuer, subject)` provider identities with create-only inserts. V2 is the existing single mixed container with its legacy schema settings. Legacy settings under V3 — or `Core` settings under V2 — fail startup rather than being silently ignored. See [`docs/architecture-core.md`](docs/architecture-core.md).
-- **API version** (`options.ApiVersion`, default `V3`) — V3 is the DTO-based API under `/api/v3` (and unversioned `/api/…`), V2 the previous integration surface, V1 the future legacy contract, which fails startup until its adapter is supplied. It gates the *integration* API only: the authority's own login/account UI and the authentication flow endpoints are version-neutral and always answer. See [`docs/api-versioning.md`](docs/api-versioning.md).
-- **One shared core for every version.** Whichever façade is selected, every API version reads and writes the same storage — there is never a second user database or a synchronization bridge.
+- **Seven purpose-specific Cosmos containers** — Users, Credentials, Workspaces, WorkspaceAccess, Sessions, LoginRequests, and AuditEvents in the realm's `Login` database.
+- **A keyed Table Storage identity index** resolves emails, phones, and `(issuer, subject)` provider identities with create-only inserts.
+- **Explicit API DTOs** are exposed under `/api/v3`; storage documents and credentials never cross the transport boundary.
 - **Native TTL everywhere something expires** — sessions, login and device requests, invitations, recovery artifacts, audit retention — with absolute expiry validated in application code and no background cleanup jobs.
 - **Refresh-token families** rotate in one Cosmos transactional batch with reuse detection that revokes the whole family; only token hashes are stored.
 - **Sign-in profiles** (`?profile=tv`) restrict entry and authorization methods per client, bound tamper-proof into the flow. See [`docs/signin-profiles.md`](docs/signin-profiles.md).
 - **QR/TV sign-in** implements RFC 8628 device authorization with hashed codes, single-winner approval and consumption, and poll throttling. See [`docs/device-authorization.md`](docs/device-authorization.md).
 - **Workspaces with multiple owners**, policy-based owner/admin/member permissions, ETag-guarded membership changes, and hard last-owner protection.
 - **Production signing keys in Azure Key Vault / Managed HSM** (non-exportable, vault-side signing), with the encrypted Cosmos fallback available only by explicit opt-in on core deployments.
-- **A checkpointed, idempotent migration** with dry run, duplicate-identity review reporting, and a read-only legacy container for rollback. See [`docs/migration-core.md`](docs/migration-core.md).
 
 ## Endpoints developers commonly use
 
@@ -436,7 +438,7 @@ Authority/API endpoints (selected):
 - `GET /CloudLogin/User/GetUserByInput` - public account discovery (rate-limited, transport-safe).
 - `POST /CloudLogin/User/Update` - authenticated profile update with server-side field protections.
 - `POST /CloudLogin/User/UploadProfilePicture` - authenticated profile image upload.
-- `GET /CloudLogin/Request/GetUserByRequestId` - resolve request-id to transport-safe user model.
+- `POST /CloudLogin/Token/FromRequest` - confidential-client, single-use login-request exchange.
 
 ## Developer implementation checklist
 
@@ -529,7 +531,7 @@ Disable stdout logging again after capturing the startup exception; logs can gro
 limit and may contain deployment details. An enabled test-mode provider is supported in
 Development, Staging, and Production and no longer causes a startup failure.
 
-## Migration notes
+## Breaking changes
 
 The secure defaults intentionally tighten previous behavior:
 

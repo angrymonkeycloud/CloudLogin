@@ -1,11 +1,44 @@
 using AngryMonkey.CloudLogin.API.Controllers;
+using AngryMonkey.CloudLogin.Server;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
+using System.Reflection;
 
 namespace AngryMonkey.CloudLogin.Tests;
 
 public class CloudLoginControllerTests
 {
+    [Fact]
+    public void LoginResult_DoesNotAcceptCallerSuppliedUserData()
+    {
+        MethodInfo action = typeof(AngryMonkey.CloudLogin.API.CloudLoginController)
+            .GetMethod(nameof(AngryMonkey.CloudLogin.API.CloudLoginController.LoginResult))!;
+
+        Assert.DoesNotContain(action.GetParameters(), parameter =>
+            string.Equals(parameter.Name, "currentUser", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CurrentUser_NeverReturnsCredentialMaterial()
+    {
+        LoginTestFixture fixture = new();
+        CloudUser user = await fixture.AddPasswordUserAsync();
+        fixture.AuthenticateAs(user);
+        AngryMonkey.CloudLogin.API.CloudLoginController controller = new(fixture.Server)
+        {
+            ControllerContext = new ControllerContext { HttpContext = fixture.HttpContext }
+        };
+
+        ActionResult<CloudUser?> result = await controller.CurrentUser();
+        CloudUser response = Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value);
+
+        Assert.All(response.Inputs.SelectMany(input => input.Providers), provider =>
+        {
+            Assert.Null(provider.PasswordHash);
+            Assert.Null(provider.Identifier);
+        });
+    }
+
     [Fact]
     public async Task TestSignIn_ValidTestUser_ReturnsOk()
     {
@@ -29,58 +62,6 @@ public class CloudLoginControllerTests
         IActionResult result = await controller.TestSignIn(Guid.NewGuid());
 
         Assert.IsType<UnauthorizedResult>(result);
-    }
-
-    [Fact]
-    public async Task LegacyTestSignIn_ReloadsTestUserAndCompletesExternalHandoff()
-    {
-        LoginTestFixture fixture = new(
-            testModeEnabled: true,
-            allowedOrigins: ["https://portal.example"]);
-        CloudUser user = await fixture.AddPasswordUserAsync(isTest: true);
-        LoginController controller = CreateLoginController(fixture);
-        string legacyUserInfo = JsonSerializer.Serialize(new
-        {
-            ID = user.ID,
-            DisplayName = "Caller-controlled value",
-            IsTest = false,
-            IsLocked = true
-        });
-
-        IActionResult result = await controller.CustomLogin(
-            Guid.Empty,
-            keepMeSignedIn: true,
-            referer: "https://portal.example/auth/callback?state=abc",
-            userInfo: legacyUserInfo);
-
-        RedirectResult redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Contains("requestId=", redirect.Url);
-        Assert.Equal(1, fixture.Authentication.SignInCount);
-        Assert.True(fixture.Authentication.SignedInProperties!.IsPersistent);
-        Assert.Single(fixture.Store.Requests);
-        Assert.Equal(user.ID, fixture.Store.Requests.Single().Value);
-    }
-
-    [Fact]
-    public async Task LegacyTestSignIn_RejectsSpoofedRegularUser()
-    {
-        LoginTestFixture fixture = new(testModeEnabled: true);
-        CloudUser user = await fixture.AddPasswordUserAsync(isTest: false);
-        LoginController controller = CreateLoginController(fixture);
-        string legacyUserInfo = JsonSerializer.Serialize(new
-        {
-            ID = user.ID,
-            IsTest = true
-        });
-
-        IActionResult result = await controller.CustomLogin(
-            Guid.Empty,
-            keepMeSignedIn: false,
-            referer: "/Account",
-            userInfo: legacyUserInfo);
-
-        Assert.IsType<UnauthorizedResult>(result);
-        Assert.Equal(0, fixture.Authentication.SignInCount);
     }
 
     [Fact]
@@ -224,6 +205,19 @@ public class CloudLoginControllerTests
         CloudUser response = Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result).Value);
         Assert.Null(response.Inputs[0].Providers.Single().PasswordHash);
         Assert.Equal(originalHash, user.Inputs[0].Providers.Single().PasswordHash);
+    }
+
+    [Fact]
+    public void RequestExchange_RequiresServiceAuthentication()
+    {
+        MethodInfo action = typeof(RequestController)
+            .GetMethod(nameof(RequestController.GetUserByRequestId))!;
+        AuthorizeAttribute authorization = Assert.Single(
+            action.GetCustomAttributes<AuthorizeAttribute>());
+
+        Assert.Equal(
+            ServiceKeyAuthenticationDefaults.AuthenticationScheme,
+            authorization.AuthenticationSchemes);
     }
 
     private static LoginController CreateLoginController(LoginTestFixture fixture) => new(

@@ -5,7 +5,7 @@ using AngryMonkey.CloudLogin.V3;
 namespace AngryMonkey.CloudLogin.Tests.Core;
 
 /// <summary>
-/// V2 contract snapshots: the JSON a V2 integration receives must not change shape while the
+/// Transport contract snapshots: API JSON must not expose storage-only values while the
 /// storage underneath is replaced. These tests pin the serialized property set.
 /// </summary>
 public class V2ContractSnapshotTests
@@ -106,7 +106,7 @@ public class V2ContractSnapshotTests
     public void TransportStrippedUser_NeverCarriesAProviderSubject()
     {
         // The provider's subject is a credential, not profile data: it is what the identity index
-        // is keyed on, and it correlates the same person across services. The V2 wire shape is
+        // is keyed on, and it correlates the same person across services. The wire shape is
         // preserved, but its secret-bearing values are not — no API version restores this one for
         // compatibility.
         CloudUser stripped = CloudLoginTransportSecurity.ForTransport(SampleUser())!;

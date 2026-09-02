@@ -1,7 +1,6 @@
 using AngryMonkey.CloudLogin.Aspire.Hosting;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Server.Core;
-using AngryMonkey.CloudLogin.Server.Versioning;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -55,38 +54,9 @@ public sealed class CloudLoginAspireHostingTests
     }
 
     [Fact]
-    public void CloudLoginDatabaseConfiguration_UpdatesProvisionedCosmosResources()
-    {
-        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
-            new DistributedApplicationOptions
-            {
-                Args = ["--operation", "publish"],
-                DisableDashboard = true
-            });
-
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login", configuration =>
-        {
-            // The legacy database/container names belong to database version V2.
-            configuration.DatabaseVersion = CloudLoginDatabaseVersion.V2;
-            configuration.Cosmos.DatabaseId = "Accounts";
-            configuration.Cosmos.ContainerId = "Users";
-        });
-
-        login.WithReference(builder.AddAzureCosmosDB("cosmos"));
-
-        AzureCosmosDBDatabaseResource database = Assert.Single(builder.Resources.OfType<AzureCosmosDBDatabaseResource>());
-        AzureCosmosDBContainerResource container = Assert.Single(builder.Resources.OfType<AzureCosmosDBContainerResource>());
-
-        Assert.Equal("Accounts", database.DatabaseName);
-        Assert.Equal("Users", container.ContainerName);
-        Assert.Equal("/pk", container.PartitionKeyPath);
-    }
-
-    [Fact]
     public void DefaultConfiguration_DeclaresTheCoreContainersInADatabaseNamedLogin()
     {
-        // No configuration at all: database version V3 is the default, so a plain reference
-        // declares the core schema and nothing legacy.
+        // No configuration at all: a plain reference declares the complete core schema.
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = ["--operation", "publish"], DisableDashboard = true });
 
@@ -132,30 +102,6 @@ public sealed class CloudLoginAspireHostingTests
         // The provisioning-time default and the runtime default must be the literal same string,
         // or the AppHost provisions a database the running server never opens.
         Assert.Equal(CloudLoginCoreContainers.DefaultDatabaseId, new CloudLoginCoreConfiguration().DatabaseId);
-        Assert.Equal(CloudLoginDatabaseVersion.V3, new CloudLoginWebConfiguration().DatabaseVersion);
-    }
-
-    [Fact]
-    public void DatabaseVersionV2_DeclaresOnlyTheLegacyDatabaseAndContainer()
-    {
-        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
-            new DistributedApplicationOptions { Args = ["--operation", "publish"], DisableDashboard = true });
-
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login", configuration =>
-        {
-            configuration.DatabaseVersion = CloudLoginDatabaseVersion.V2;
-            configuration.Cosmos.DatabaseId = "Accounts";
-            configuration.Cosmos.ContainerId = "Data";
-        });
-
-        login.WithReference(builder.AddAzureCosmosDB("cosmos"));
-
-        AzureCosmosDBDatabaseResource database = Assert.Single(builder.Resources.OfType<AzureCosmosDBDatabaseResource>());
-        AzureCosmosDBContainerResource container = Assert.Single(builder.Resources.OfType<AzureCosmosDBContainerResource>());
-
-        Assert.Equal("Accounts", database.DatabaseName);
-        Assert.Equal("Data", container.ContainerName);
-        Assert.Equal("/pk", container.PartitionKeyPath);
     }
 
     [Fact]
@@ -178,7 +124,7 @@ public sealed class CloudLoginAspireHostingTests
     }
 
     [Fact]
-    public async Task DatabaseVersionV3_ProjectsNoLegacyCosmosKeys()
+    public async Task Projection_EmitsNoObsoleteSingleContainerCosmosKeys()
     {
         // V3 opens its own database with fixed container names; sending the legacy names would
         // describe storage the server never touches.

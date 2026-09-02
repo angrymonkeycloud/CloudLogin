@@ -556,10 +556,14 @@ public partial class LoginComponent : IDisposable
                 Password,
                 FirstName,
                 LastName,
-                DisplayName);
+                DisplayName,
+                VerificationToken,
+                KeepMeSignedIn);
 
-            CloudUser newUser = await cloudLogin.PasswordRegistration(request);
-            await CustomSignInChallengeAsync(newUser);
+            await cloudLogin.PasswordRegistration(request);
+            VerificationToken = null;
+            Auth.EndLoading();
+            await NavigateToRefererAsync();
         }
         catch (Exception ex)
         {

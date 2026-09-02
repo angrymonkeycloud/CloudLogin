@@ -73,12 +73,6 @@ public static class CloudLoginAspireExtensions
         {
             section.Bind(cosmos);
 
-            if (section["IncludeLegacySchema"] is null && section["UseLegacySchema"] is not null)
-                cosmos.IncludeLegacySchema = section.GetValue<bool>("UseLegacySchema");
-
-            if (section["SaveIdMode"] is null && Enum.TryParse(section["IdFormat"], ignoreCase: true, out IdSaveMode saveMode))
-                cosmos.SaveIdMode = saveMode;
-
             bool hasEndpoint = section["AccountEndpoint"] is not null;
             bool hasConnectionString = section["ConnectionString"] is not null;
 

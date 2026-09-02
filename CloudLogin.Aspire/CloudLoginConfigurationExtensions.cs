@@ -94,6 +94,8 @@ public static class CloudLoginConfigurationExtensions
         AddWhenConfigured("WhatsApp", "WhatsApp", section => new LoginProviders.WhatsAppProviderConfiguration(section));
         AddWhenConfigured("TestMode", "testmode", section => new LoginTestProviders.TestModeConfiguration(section));
 
+        ApplyEntraCredentials(configuration, providers);
+
         return providers;
 
         void AddWhenConfigured(
@@ -125,6 +127,36 @@ public static class CloudLoginConfigurationExtensions
 
             providers.Add(provider);
         }
+    }
+
+    /// <summary>
+    /// Gives a Microsoft provider declared without credentials the ones CoconutSharp's Entra
+    /// reference wrote. An AppHost adds <c>new MicrosoftProviderConfiguration()</c> and references
+    /// the Entra registration from the login project; the client ID, tenant and the certificate (or
+    /// the local run's secret) then arrive under <c>Entra:*</c> rather than being restated under
+    /// <c>Microsoft:*</c>. Explicit <c>Microsoft:*</c> values still win.
+    /// </summary>
+    private static void ApplyEntraCredentials(IConfiguration configuration, List<ProviderConfiguration> providers)
+    {
+        LoginProviders.MicrosoftProviderConfiguration? microsoft = providers
+            .OfType<LoginProviders.MicrosoftProviderConfiguration>()
+            .FirstOrDefault();
+
+        if (microsoft is null || !string.IsNullOrWhiteSpace(microsoft.ClientId))
+            return;
+
+        IConfigurationSection entra = configuration.GetSection("Entra");
+
+        if (string.IsNullOrWhiteSpace(entra["ClientId"]))
+            return;
+
+        microsoft.ClientId = entra["ClientId"]!;
+        microsoft.TenantId ??= entra["TenantId"];
+        microsoft.ClientSecret ??= entra["ClientSecret"];
+        microsoft.CertificateName ??= entra["CertificateName"];
+
+        if (microsoft.VaultEndpoint is null && Uri.TryCreate(entra["VaultEndpoint"], UriKind.Absolute, out Uri? vaultEndpoint))
+            microsoft.VaultEndpoint = vaultEndpoint;
     }
 
     private static IConfigurationSection BuildMergedProviderSection(

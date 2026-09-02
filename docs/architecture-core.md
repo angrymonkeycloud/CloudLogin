@@ -1,8 +1,6 @@
 # CloudLogin core storage architecture
 
-The CloudLogin core is the modern storage and security model behind every API version. One shared domain/application/storage core serves the V2 compatibility façade, the V3 API, and the future V1 adapter — versions are presentation, never data. There is exactly one user database; no version ever gets its own store or a synchronization bridge to another one.
-
-Activate it by configuring `CloudLoginWebConfiguration.Core` (see [Configuration](#configuration)). Until a deployment migrates ([docs/migration-core.md](migration-core.md)), leaving `Core` unset keeps the legacy single-container model documented in [docs/database-schema.md](database-schema.md).
+The CloudLogin core is the product's only storage and security model. There is exactly one user database and no synchronization bridge to another model.
 
 ## Layering
 
@@ -20,15 +18,13 @@ Azure adapters (Core/Azure: Cosmos repositories, Table stores)
 
 Controllers call application services and repository interfaces only. No controller returns a persistence document or touches a Cosmos container directly. Authentication tickets carry only minimal identifiers — user id, session id, and the security stamp — never profile data or credentials.
 
-The V2 compatibility adapter (`CoreCloudLoginStoreAdapter`) implements the legacy `ICloudLoginStore` surface on top of these layers, so the whole existing V2 behavior — routes, JSON names, status codes, redirects, cookies — is preserved while persistence moves.
-
 ## Storage responsibilities
 
 | Store | Holds | Never holds |
 | --- | --- | --- |
 | Azure Cosmos DB (7 containers) | Everything that expires or is queried: users, credentials, workspaces, access records, sessions, login/device requests, audit events | — |
 | Azure Table Storage | Permanent point-lookup records only: the `LoginIdentityKeys` index and the optional `LoginUserWorkspaceIndex` | Anything expiring |
-| Azure Blob Storage | Large, non-queryable, non-expiring content: profile images, migration checkpoints and reports, legacy per-user security documents until migrated | Authentication requests, sessions, tokens, credentials, TOTP secrets, or any expiring security record |
+| Azure Blob Storage | Large, non-queryable, non-expiring content such as profile images | Authentication requests, sessions, tokens, credentials, TOTP secrets, or any expiring security record |
 | Azure Key Vault / Managed HSM | Production token signing keys, preferably non-exportable (see [Signing keys](#signing-keys)) | — |
 
 ### Azure Storage names
@@ -42,17 +38,6 @@ A storage account is normally shared with the other components of the same produ
 | Blob container | `login-users` | yes — `Storage:ContainerName` |
 
 The blob container carries a hyphen and the tables do not, because Azure's naming rules differ: **table names permit alphanumeric characters only**, so `Login-IdentityKeys` would be rejected by the service, while **blob container names permit lowercase letters, digits and hyphens**. The readable hyphenated form is used wherever it is legal. `StorageNamingTests` enforces both the prefix and the per-resource legality rules, so an illegal name fails the build rather than surfacing at runtime as a failed sign-in.
-
-#### Renaming an existing deployment
-
-Nothing is moved automatically — CloudLogin will not silently relocate storage it did not create.
-
-- **Blob container**: a deployment created before this convention keeps its existing blobs by setting `Storage:ContainerName` to its old value (`users`) explicitly.
-- **Tables**: the names are fixed constants, so there is no equivalent pin. A deployment that already has an `IdentityKeys` table gets a new, **empty** `LoginIdentityKeys` on first start, and the old rows are simply invisible.
-
-That last point is the dangerous one, and it is silent. The identity index is what every sign-in resolves through, so an empty index beside a populated `Users` container means a returning user's email resolves to nothing and is treated as a new person — a duplicate account, and possibly a second bootstrap global-admin reservation. There is no built-in rebuild: the index is written incrementally by `IdentityLinkingService` as identities are added, and only the legacy migration populates it in bulk.
-
-So for any deployment with real accounts, copy the rows before the first start on the new name (Azure Storage Explorer or `azcopy` will copy a table wholesale; the entities are self-contained and need no transformation). For a disposable environment, letting it recreate empty is fine as long as the `Users` container is empty too.
 
 ## The seven Cosmos containers
 
@@ -130,7 +115,7 @@ primary row, and only then conditionally removes the old row. New claims also ch
 locations, so an old identity cannot be claimed by a second user. Removing a fallback is a manual
 operation and is safe only after every row using it has been migrated.
 
-Required only where there is an identity index to key: database version V3 with Azure Storage configured. V1 and V2 deployments, and any host running on its own in-memory `ICloudLoginStore` (the demos, the tests), never need the setting.
+Required where Azure Storage provides the identity index. Hosts using an explicitly registered in-memory store for tests do not need it.
 
 #### Under Aspire
 
@@ -205,7 +190,7 @@ An email or phone identity is only reserved once it has been **verified**. The r
 - Trusted-issuer automatic linking exists but defaults to disabled (`Core.IdentityLinking.AllowTrustedIssuerAutoLink` plus an explicit issuer list).
 - Linking an identity already owned by another user is refused (`IdentityAlreadyLinkedException`).
 - Removing a user's final usable sign-in method is refused (`FinalSignInMethodException`).
-- New-user creation across Cosmos and Table Storage runs as a reservation saga: identity keys are claimed first (create-only), then the user document and credentials are written; any failure releases the keys that call claimed. Residue from a crash between compensation steps is repaired by re-running the idempotent migration/reconciliation.
+- New-user creation across Cosmos and Table Storage runs as a reservation saga: identity keys are claimed first (create-only), then the user document and credentials are written; any failure releases the keys that call claimed. Operational reconciliation repairs residue from a process failure between compensation steps.
 
 ## Signed-in devices
 
@@ -226,7 +211,7 @@ Production deployments sign tokens with an Azure Key Vault or Managed HSM key (`
 
 The Cosmos `SigningKeys` fallback remains available and is the default — private keys wrapped with Data Protection, retirement through TTL — so a deployment that configures nothing still runs. A deployment whose policy requires a vault key can make the choice mandatory by setting `CloudLoginTokens:SigningKeys:RequireExplicitStoreChoice` to `true`; startup then fails until either `KeyVaultKeyId` or `AllowCosmosFallback` is set.
 
-On a core deployment the fallback lives in its own `SigningKeys` container in the core database (created only on first use), and the V2 refresh-token surface is served from the `Sessions` container through `CoreTokenStoreAdapter` — no expiring security state remains outside the core model.
+The fallback lives in its own `SigningKeys` container in the core database, while refresh-token families live in `Sessions`; no expiring security state remains outside the core model.
 
 ## Configuration
 
@@ -255,18 +240,15 @@ The identity index key is configured separately from this object so it stays in 
 Two rules are enforced at startup rather than trusted:
 
 - A non-default `RealmId` must name its own `DatabaseId`. Sharing one database across realms would put both realms' users in the same containers with nothing separating them.
-- `Core.DatabaseId` must differ from `Cosmos:DatabaseId`. The V3 core database is separate from the legacy V2 database by design; pointing them at one name would leave two storage models writing into the same place.
-
-The same section binds from configuration under `CloudLogin:Core` for Aspire-projected or appsettings-driven hosts. The API version, the deployment/authority version, and the storage `SchemaVersion` are three independent axes: `ApiVersion` selects one façade, the package version is the deployment, and `SchemaVersion` on each document only changes when the persisted JSON layout changes.
+The same section binds from configuration under `CloudLogin:Core` for Aspire-projected or appsettings-driven hosts. `SchemaVersion` on each document changes only when its persisted JSON layout changes.
 
 ### CloudLogin creates its own database and containers
 
-CloudLogin owns its schema. On startup it creates whatever the selected database version needs -
-the `Login` database and its seven containers under V3, the legacy database and its single
-container under V2 - so **no external provisioning step is required**:
+CloudLogin owns its schema. On startup it creates the `Login` database and its containers, so
+**no external provisioning step is required**:
 
 ```csharp
-// Nothing about storage layout is configured: V3 is the default and CloudLogin builds it.
+// Nothing about storage layout is configured: CloudLogin builds its one supported model.
 builder.AddCloudLoginWeb(options =>
 {
     options.Cosmos = new(builder.Configuration.GetSection("Cosmos"));
@@ -294,10 +276,8 @@ login
     .WaitFor(storage);
 ```
 
-What gets declared follows the resource's own `DatabaseVersion`, so the AppHost and the running
-server never describe different storage: V3 declares the core database and its seven containers,
-V2 declares the legacy database and its single container. The names come from one source of
-truth - `CloudLoginCoreContainers` - on both sides.
+The AppHost and runtime use `CloudLoginCoreContainers` as their single source of truth for every
+database, container, partition-key and TTL declaration.
 
 ## Document samples (before and after)
 
@@ -634,8 +614,5 @@ There is no `CanonicalValue` column and no `Realm` column. The plaintext is gone
 
 ## Related pages
 
-- [docs/api-versioning.md](api-versioning.md) — façade configuration and V1 extension
-- [docs/migration-core.md](migration-core.md) — moving a legacy deployment onto the core
 - [docs/signin-profiles.md](signin-profiles.md) — named sign-in experiences
 - [docs/device-authorization.md](device-authorization.md) — QR / TV sign-in
-- [docs/database-schema.md](database-schema.md) — the legacy schema this model replaces

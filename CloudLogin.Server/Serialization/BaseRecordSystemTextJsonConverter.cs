@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace AngryMonkey.CloudLogin.Server.Serialization;
 
 /// <summary>
-/// Custom System.Text.Json converter for CloudLoginBaseRecord that handles conditional legacy property serialization
+/// System.Text.Json converter for the fixed CloudLogin authority record shape.
 /// </summary>
 public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : CloudLoginBaseRecord
 {
@@ -27,25 +27,10 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : C
                 instance.id = idValue;
         }
 
-        // Parse legacy ID property if present
-        if (root.TryGetProperty("ID", out JsonElement legacyIdElement))
-        {
-            if (legacyIdElement.ValueKind == JsonValueKind.String)
-            {
-                string? legacyIdValue = legacyIdElement.GetString();
-                if (!string.IsNullOrEmpty(legacyIdValue) && Guid.TryParse(legacyIdValue, out Guid legacyGuid))
-                {
-                    instance.SetId(legacyGuid);
-                }
-            }
-        }
-
         // Parse type/discriminator properties
         string? typeValue = null;
         if (root.TryGetProperty(CloudLoginBaseRecord.GetTypePropertyName(), out JsonElement typeElement))
             typeValue = typeElement.GetString();
-        else if (root.TryGetProperty("Discriminator", out JsonElement discriminatorElement))
-            typeValue = discriminatorElement.GetString();
 
         if (!string.IsNullOrEmpty(typeValue))
             instance.TypeValue = typeValue;
@@ -54,8 +39,6 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : C
         string? partitionKeyValue = null;
         if (root.TryGetProperty(CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName(), out JsonElement pkElement))
             partitionKeyValue = pkElement.GetString();
-        else if (root.TryGetProperty("PartitionKey", out JsonElement legacyPkElement))
-            partitionKeyValue = legacyPkElement.GetString();
 
         if (!string.IsNullOrEmpty(partitionKeyValue))
             instance.PartitionKeyValue = partitionKeyValue;
@@ -94,14 +77,6 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : C
         writer.WriteString("id", value.id);
         writer.WriteString("pk", value.pk);
         writer.WriteString(CloudLoginBaseRecord.GetTypePropertyName(), value.TypeValue);
-
-        // Conditionally write legacy properties
-        if (CloudLoginBaseRecord.ShouldIncludeLegacySchema())
-        {
-            writer.WriteString("ID", value.GetId().ToString());
-            writer.WriteString("PartitionKey", value.PartitionKeyValue);
-            writer.WriteString("Discriminator", value.TypeValue);
-        }
 
         // Write other properties using reflection
         Type objectType = value.GetType();

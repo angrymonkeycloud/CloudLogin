@@ -33,6 +33,7 @@ public class RequestController(CloudLoginWebConfiguration configuration, ICloudL
     }
 
     [HttpGet("GetUserByRequestId")]
+    [Authorize(AuthenticationSchemes = ServiceKeyAuthenticationDefaults.AuthenticationScheme)]
     public async Task<IActionResult> GetUserByRequestId(Guid requestId)
     {
         try

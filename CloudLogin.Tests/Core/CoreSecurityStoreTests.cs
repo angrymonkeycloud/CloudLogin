@@ -15,18 +15,24 @@ public class CoreSecurityStoreTests
 {
     private readonly InMemoryUserRepository _users = new();
     private readonly InMemoryCredentialRepository _credentials = new();
+    private readonly InMemorySessionRepository _sessions = new();
+    private readonly SessionService _sessionService;
     private readonly CoreSecurityStore _store;
 
     public CoreSecurityStoreTests()
     {
         CloudLoginCoreConfiguration configuration = new();
+        InMemoryAuditEventRepository audit = new();
+        _sessionService = new SessionService(
+            _sessions, configuration, new AuditLogger(audit, configuration));
 
         _store = new CoreSecurityStore(
             _credentials,
-            new InMemoryAuditEventRepository(),
+            audit,
             _users,
             new EphemeralDataProtectionProvider(),
-            configuration);
+            configuration,
+            _sessionService);
     }
 
     [Fact]
@@ -66,6 +72,28 @@ public class CoreSecurityStoreTests
         // Disabling it is a change of the same kind.
         await _store.UpdateCredentials(userId, document => document.Authenticator = null);
         Assert.NotEqual(confirmed, await StampAsync(userId));
+    }
+
+    [Fact]
+    public async Task Credential_change_revokes_every_refresh_session()
+    {
+        Guid userId = await NewUserAsync();
+        SessionIssueResult first = await _sessionService.IssueFamilyAsync(userId);
+        SessionIssueResult second = await _sessionService.IssueFamilyAsync(userId);
+
+        await _store.UpdateCredentials(userId, document => document.Passkeys.Add(new CloudLoginPasskey
+        {
+            CredentialId = "credential-1",
+            PublicKey = [1, 2, 3],
+            Name = "Security key",
+            CreatedOn = DateTimeOffset.UtcNow
+        }));
+
+        Assert.False(await _sessionService.IsFamilyActiveAsync(first.FamilyId));
+        Assert.False(await _sessionService.IsFamilyActiveAsync(second.FamilyId));
+        Assert.All(
+            _sessions.Documents.Values.OfType<SessionFamilyDocument>(),
+            family => Assert.Equal(SessionRevocationReasons.SecurityStampChanged, family.RevocationReason));
     }
 
     [Fact]

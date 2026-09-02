@@ -1,5 +1,6 @@
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
+using AngryMonkey.CloudLogin.Server.Tokens;
 
 namespace CloudLogin.Demo;
 
@@ -7,10 +8,12 @@ namespace CloudLogin.Demo;
 /// Zero-dependency <see cref="ICloudLoginStore"/> so the demo authority runs without a
 /// real Cosmos database. Users only live for the lifetime of the process.
 /// </summary>
-public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
+public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore, ICloudLoginTokenStore
 {
     private readonly Dictionary<Guid, CloudUser> _users = [];
     private readonly Dictionary<Guid, Guid> _requests = [];
+    private readonly Dictionary<string, CloudLoginSigningKey> _signingKeys = [];
+    private readonly Dictionary<string, CloudLoginRefreshToken> _refreshTokens = [];
     private readonly Lock _gate = new();
 
     public Task<List<CloudUser>> GetUsers()
@@ -113,6 +116,61 @@ public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
     {
         lock (_gate)
             return Task.FromResult(_users.Count);
+    }
+
+    public Task<IReadOnlyList<CloudLoginSigningKey>> GetSigningKeysAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+            return Task.FromResult<IReadOnlyList<CloudLoginSigningKey>>([.. _signingKeys.Values]);
+    }
+
+    public Task SaveSigningKeyAsync(CloudLoginSigningKey key, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+            _signingKeys[key.KeyId] = key;
+
+        return Task.CompletedTask;
+    }
+
+    public Task<CloudLoginRefreshToken?> FindRefreshTokenAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+            return Task.FromResult(_refreshTokens.GetValueOrDefault(tokenHash));
+    }
+
+    public Task SaveRefreshTokenAsync(CloudLoginRefreshToken token, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+            _refreshTokens[token.TokenHash] = token;
+
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeFamilyAsync(string familyId, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+            foreach (CloudLoginRefreshToken token in _refreshTokens.Values.Where(token => token.FamilyId == familyId))
+                token.IsRevoked = true;
+
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeSessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+            foreach (CloudLoginRefreshToken token in _refreshTokens.Values.Where(token => token.SessionId == sessionId))
+                token.IsRevoked = true;
+
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+            foreach (CloudLoginRefreshToken token in _refreshTokens.Values.Where(token => token.UserId == userId))
+                token.IsRevoked = true;
+
+        return Task.CompletedTask;
     }
 
     private CloudUser? FindByInput(string input, CloudLoginInputFormat? format = null) =>

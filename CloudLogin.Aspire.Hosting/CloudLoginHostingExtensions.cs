@@ -3,7 +3,6 @@ using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Server.Core;
-using AngryMonkey.CloudLogin.Server.Versioning;
 
 namespace AngryMonkey.CloudLogin.Aspire.Hosting;
 
@@ -50,18 +49,8 @@ public static class CloudLoginHostingExtensions
         CloudLoginWebConfiguration configuration = new();
         configure?.Invoke(configuration);
 
-        // Resolve version-implied defaults the same way the server will, so the resources declared
-        // below match the schema it opens.
-        configuration.NormalizeVersions();
-
         CloudLoginServerAnnotation annotation = new();
-        annotation.ApplyVersions(configuration);
-
-        if (configuration.Cosmos.DatabaseId is { Length: > 0 } databaseId)
-            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
-
-        if (configuration.Cosmos.ContainerId is { Length: > 0 } containerId)
-            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
+        annotation.Apply(configuration);
 
         IResourceBuilder<ProjectResource> project = builder.AddProject<TProject>(name)
             .WithExternalHttpEndpoints()
@@ -102,18 +91,8 @@ public static class CloudLoginHostingExtensions
         CloudLoginWebConfiguration configuration = new();
         configure?.Invoke(configuration);
 
-        // Resolve version-implied defaults the same way the server will, so the resources declared
-        // below match the schema it opens.
-        configuration.NormalizeVersions();
-
         CloudLoginServerAnnotation annotation = new();
-        annotation.ApplyVersions(configuration);
-
-        if (configuration.Cosmos.DatabaseId is { Length: > 0 } databaseId)
-            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.DatabaseId, databaseId);
-
-        if (configuration.Cosmos.ContainerId is { Length: > 0 } containerId)
-            annotation.Apply(CloudLoginConfigurationKeys.Cosmos.ContainerId, containerId);
+        annotation.Apply(configuration);
 
         IResourceBuilder<ProjectResource> project = builder
             .AddProject(name, CloudLoginStandaloneProject.Extract())
@@ -250,31 +229,14 @@ public static class CloudLoginHostingExtensions
 /// <summary>Marks the project hosting the application's CloudLogin server.</summary>
 public sealed class CloudLoginServerAnnotation : IResourceAnnotation
 {
-    private readonly List<(AzureCosmosDBDatabaseResource Database, AzureCosmosDBContainerResource Container)> _cosmosResources = [];
     private readonly HashSet<string> _consumers = new(StringComparer.Ordinal);
     private readonly HashSet<string> _serviceCallers = new(StringComparer.Ordinal);
 
-    internal string DatabaseId { get; private set; } = "Users";
-    internal string ContainerId { get; private set; } = "Data";
-
-    /// <summary>
-    /// The storage schema the CloudLogin server runs on, mirrored from its configuration so the
-    /// AppHost declares the same shape the server will open. Defaults to V3, matching
-    /// <c>CloudLoginWebConfiguration.DatabaseVersion</c>.
-    /// </summary>
-    internal CloudLoginDatabaseVersion DatabaseVersion { get; private set; } = CloudLoginDatabaseVersion.V3;
-
-    /// <summary>The V3 core database name, mirroring <c>CloudLoginCoreConfiguration.DatabaseId</c>.</summary>
+    /// <summary>The core database name, mirroring <c>CloudLoginCoreConfiguration.DatabaseId</c>.</summary>
     internal string CoreDatabaseId { get; private set; } = CloudLoginCoreContainers.DefaultDatabaseId;
 
-    /// <summary>Captures the version-relevant settings from the server's own configuration.</summary>
-    internal void ApplyVersions(CloudLoginWebConfiguration configuration)
-    {
-        DatabaseVersion = configuration.DatabaseVersion;
-
-        if (configuration.Core?.DatabaseId is { Length: > 0 } coreDatabaseId)
-            CoreDatabaseId = coreDatabaseId;
-    }
+    internal void Apply(CloudLoginWebConfiguration configuration) =>
+        CoreDatabaseId = configuration.Core.DatabaseId;
 
     internal bool AddConsumer(string name) => _consumers.Add(name);
 
@@ -291,29 +253,4 @@ public sealed class CloudLoginServerAnnotation : IResourceAnnotation
     /// </summary>
     internal int ServiceCallerCount => _serviceCallers.Count;
 
-    internal void Apply(string key, string value)
-    {
-        switch (key)
-        {
-            case CloudLoginConfigurationKeys.Cosmos.DatabaseId:
-                DatabaseId = value;
-                break;
-            case CloudLoginConfigurationKeys.Cosmos.ContainerId:
-                ContainerId = value;
-                break;
-            default:
-                return;
-        }
-
-        foreach ((AzureCosmosDBDatabaseResource database, AzureCosmosDBContainerResource container) in _cosmosResources)
-        {
-            database.DatabaseName = DatabaseId;
-            container.ContainerName = ContainerId;
-        }
-    }
-
-    internal void AddCosmosResources(
-        AzureCosmosDBDatabaseResource database,
-        AzureCosmosDBContainerResource container) =>
-        _cosmosResources.Add((database, container));
 }

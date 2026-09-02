@@ -10,7 +10,8 @@ public sealed class CoreSecurityStore(
     IAuditEventRepository auditEvents,
     IUserRepository users,
     IDataProtectionProvider dataProtection,
-    CloudLoginCoreConfiguration configuration) : ICloudLoginSecurityStore
+    CloudLoginCoreConfiguration configuration,
+    SessionService? sessions = null) : ICloudLoginSecurityStore
 {
     private readonly IDataProtector _totp =
         dataProtection.CreateProtector("AngryMonkey.CloudLogin.Totp.v1");
@@ -214,6 +215,9 @@ public sealed class CoreSecurityStore(
             try
             {
                 await users.ReplaceAsync(user);
+                if (sessions is not null)
+                    await sessions.RevokeAllForUserAsync(
+                        userId, SessionRevocationReasons.SecurityStampChanged);
                 return;
             }
             catch (CoreConcurrencyException) when (attempt == 0)

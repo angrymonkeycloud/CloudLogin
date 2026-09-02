@@ -2,7 +2,6 @@
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Server.Core;
 using AngryMonkey.CloudLogin.Server.Storage;
-using AngryMonkey.CloudLogin.Server.Versioning.V1;
 using AngryMonkey.CloudBlazor.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -63,17 +62,12 @@ public static partial class MvcServiceCollectionExtensions
 
         services.AddCloudLoginWeb(loginConfig);
 
-        // Modern storage core plus API façade validation, mirroring the standalone host.
+        // CloudLogin's single storage core, mirroring the standalone host.
         services.AddCloudLoginCore(loginConfig);
-        services.EnsureVersion1Implemented(loginConfig.ApiVersion);
 
         // CloudLogin creates its own database and containers here too: an embedded host gets the
         // same schema ownership as the standalone site, with or without an AppHost.
         services.AddCloudLoginStorageProvisioning();
-
-        // The selected façade also answers at unversioned routes.
-        services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options =>
-            options.Conventions.Add(new AngryMonkey.CloudLogin.Server.Versioning.SelectedApiVersionRouteConvention(loginConfig.ApiVersion)));
 
         return services;
     }

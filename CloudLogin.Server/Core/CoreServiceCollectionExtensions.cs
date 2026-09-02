@@ -15,25 +15,18 @@ public static class CoreServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the modern storage core: the seven-container Cosmos database, the Table Storage
-    /// identity index, the application services, and the compatibility adapter that carries the
-    /// legacy <see cref="ICloudLoginStore"/> surface — so every configured API version runs on
-    /// one shared core. Applies to database version V3 (the default); a no-op under V2, which
-    /// keeps the legacy single-container store.
+    /// identity index and the application services used by the CloudLogin authority.
     /// </summary>
     public static IServiceCollection AddCloudLoginCore(this IServiceCollection services, CloudLoginWebConfiguration configuration)
     {
         // No Cosmos account means no Cosmos storage to build a core over: a host running on its
         // own ICloudLoginStore (the demos, tests, an in-memory harness) keeps the store it
         // registered rather than having it replaced by an adapter with nothing to talk to. The
-        // legacy path gates on exactly the same condition.
-        if (!configuration.UsesCoreDatabase || !configuration.Cosmos.IsValid())
+        // registered rather than replacing it with Azure-backed services.
+        if (!configuration.Cosmos.IsValid())
             return services;
 
-        // V3 needs no configuration of its own; make sure its defaults are materialized even when
-        // this is called directly rather than through the hosts' validation path.
-        configuration.NormalizeVersions();
-
-        CloudLoginCoreConfiguration core = configuration.Core!;
+        CloudLoginCoreConfiguration core = configuration.Core;
         services.TryAddSingleton(core);
         services.TryAddSingleton(configuration.SignInProfiles);
 
@@ -90,7 +83,7 @@ public static class CoreServiceCollectionExtensions
             provider.GetRequiredService<IAuditLogger>(),
             provider.GetRequiredService<IUserRepository>()));
 
-        // ── V2 compatibility adapters: the legacy store surfaces over the core ─
+        // ── Authority contract adapters over the split storage core ──────────
         services.RemoveAll<ICloudLoginStore>();
         services.TryAddScoped<CoreCloudLoginStoreAdapter>();
         services.AddScoped<ICloudLoginStore>(provider => provider.GetRequiredService<CoreCloudLoginStoreAdapter>());

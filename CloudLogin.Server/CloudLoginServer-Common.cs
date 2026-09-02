@@ -735,6 +735,13 @@ public partial class CloudLoginServer : ICloudLogin
         if (existing != null)
             throw new Exception("User already exists.");
 
+        if (!isTestModeRegistration)
+            await ConsumeVerifiedAddress(
+                request.VerificationToken,
+                request.Input,
+                request.InputFormat,
+                CloudLoginVerificationPurposes.Registration);
+
         CloudUser newUser = new()
         {
             ID = Guid.NewGuid(),
@@ -766,6 +773,9 @@ public partial class CloudLoginServer : ICloudLogin
         };
 
         await CreateUser(newUser);
+
+        if (!isTestModeRegistration)
+            await SignInVerifiedUser(newUser, request.KeepMeSignedIn);
 
         return newUser;
     }

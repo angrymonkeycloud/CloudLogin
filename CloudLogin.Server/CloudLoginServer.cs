@@ -1,6 +1,5 @@
 ﻿using System.Web;
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +14,11 @@ public partial class CloudLoginServer
     /// If a referer/returnUrl is provided it appends the one-time requestId (if not already present) and redirects there.
     /// If not provided, redirects to the local /Account page.
     /// </summary>
-    public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? currentUser, string? returnUrl, bool keepMeSignedIn, bool _ = false)
+    public async Task<IActionResult> LoginResult(HttpRequest request, HttpResponse response, Guid requestId, string? returnUrl, bool keepMeSignedIn, bool _ = false)
     {
-        // Resolve user from requestId or serialized user payload
-        CloudUser? cloudUser = await ResolveUserFromRequest(requestId, currentUser);
+        // A one-time server-issued request is the only accepted proof. Never accept a caller-
+        // supplied user object here: doing so turns an identifier into authentication.
+        CloudUser? cloudUser = requestId == Guid.Empty ? null : await GetUserByRequestId(requestId);
         if (cloudUser == null)
             return Login(request, returnUrl, false); // Restart login flow if user vanished (e.g. expired request)
 
@@ -134,20 +134,6 @@ public partial class CloudLoginServer
             url += fragment;
 
         return url;
-    }
-
-    /// <summary>
-    /// Resolves user from either request ID or serialized user data
-    /// </summary>
-    private async Task<CloudUser?> ResolveUserFromRequest(Guid requestId, string? currentUser)
-    {
-        if (requestId != Guid.Empty)
-            return await GetUserByRequestId(requestId);
-
-        if (!string.IsNullOrEmpty(currentUser))
-            return JsonSerializer.Deserialize<CloudUser>(currentUser, CloudLoginSerialization.Options);
-
-        return null;
     }
 
     /// <summary>

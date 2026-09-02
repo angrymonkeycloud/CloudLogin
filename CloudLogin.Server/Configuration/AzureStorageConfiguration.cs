@@ -80,8 +80,7 @@ public class AzureStorageConfiguration
     public TokenCredential? Credential { get; set; }
 
     /// <summary>
-    /// The blob container holding CloudLogin's own files: profile pictures, the per-user security
-    /// documents, and migration checkpoints and reports.
+    /// The blob container holding CloudLogin's large, non-queryable files such as profile images.
     /// <para>
     /// Prefixed so ownership is obvious in a storage account shared with the rest of a product.
     /// Blob container names permit hyphens (unlike table names), so the readable

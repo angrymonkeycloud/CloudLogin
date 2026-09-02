@@ -7,8 +7,7 @@ using AngryMonkey.CloudLogin.Server.Core.Domain;
 namespace AngryMonkey.CloudLogin.Tests.Core;
 
 /// <summary>
-/// The V2 compatibility adapter: the legacy <c>ICloudLoginStore</c> surface must behave exactly
-/// as before while persistence happens in the split core model.
+/// The <c>ICloudLoginStore</c> application contract over the split storage model.
 /// </summary>
 public class CoreStoreAdapterTests
 {
@@ -92,7 +91,7 @@ public class CoreStoreAdapterTests
 
         CloudUser? loaded = await _adapter.GetUserById(user.ID);
 
-        // Password login logic reads the hash off the composed user, exactly like V2.
+        // Password login logic reads the hash from the server-side composed user.
         Assert.NotNull(loaded);
         Assert.Equal("PBKDF2$hash", loaded!.Inputs[0].Providers.Single(provider => provider.Code == "Password").PasswordHash);
     }

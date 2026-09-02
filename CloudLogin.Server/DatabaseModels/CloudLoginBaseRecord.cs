@@ -26,12 +26,11 @@ public abstract record CloudLoginBaseRecord
     [JsonIgnore]
     private string? _rawJsonId;
 
-    // Cosmos DB requires lowercase 'id' property. How it's saved depends on configuration.
-    // Setter parses either a raw GUID or "{type}|{guid}" and assigns to InternalId.
+    // Cosmos DB requires a lowercase raw-GUID id property.
     [JsonPropertyName("id")]
     public string id
     {
-        get => FormatIdForSave(InternalId, TypeValue);
+        get => InternalId.ToString();
         set
         {
             _rawJsonId = value;
@@ -86,16 +85,9 @@ public abstract record CloudLoginBaseRecord
     [JsonPropertyName("pk")]
     public string pk => PartitionKeyValue;
 
-    // Also include legacy partition key name for backward compatibility when configured
-    [JsonPropertyName("PartitionKey")]
-    public string? LegacyPartitionKey => ShouldIncludeLegacySchema() ? PartitionKeyValue : null;
-
-    // Include both modern and legacy type discriminator names so queries work in both modes
+    // Type discriminator for the remaining authority record types.
     [JsonPropertyName("$type")]
     public string JsonType => TypeValue;
-
-    [JsonPropertyName("Discriminator")]
-    public string? LegacyDiscriminator => ShouldIncludeLegacySchema() ? TypeValue : null;
 
     // Internal properties (not serialized directly)
     [JsonIgnore]
@@ -105,59 +97,29 @@ public abstract record CloudLoginBaseRecord
     public string PartitionKeyValue { get; internal set; }
 
     // Methods to get configured property names (kept for SQL queries and callers)
-    public static string GetTypePropertyName() => CosmosConfiguration?.TypeName ?? "$type";
-    public static string GetPartitionKeyPropertyName() => CosmosConfiguration?.PartitionKeyName ?? "/pk";
+    public static string GetTypePropertyName() => "$type";
+    public static string GetPartitionKeyPropertyName() => "/pk";
 
     // Method to get the partition key path for Cosmos container configuration
-    public static string GetPartitionKeyPath() => CosmosConfiguration?.PartitionKeyName ?? "/pk";
+    public static string GetPartitionKeyPath() => "/pk";
 
     // Get the JSON property name for PartitionKey (without the leading slash)
     public static string GetPartitionKeyJsonPropertyName() => GetPartitionKeyPath().TrimStart('/');
 
-    public static bool ShouldIncludeLegacySchema() => CosmosConfiguration?.IncludeLegacySchema ?? false;
-
-    // Get the JSON compatibility mode
-    public static JsonCompatibilityMode GetJsonCompatibilityMode() => CosmosConfiguration?.JsonCompatibilityMode ?? JsonCompatibilityMode.Standard;
-
-    // Get the ID save mode configuration
-    public static IdSaveMode GetIdSaveMode() => CosmosConfiguration?.SaveIdMode ?? IdSaveMode.Raw;
-
-    // Resolve the effective discriminator/partition value for a logical record type name
-    public static string GetEffectiveTypeValue(string logicalType)
-    {
-        if (!string.Equals(logicalType, "UserInfo", StringComparison.Ordinal))
-            return logicalType;
-
-        string? overrideValue = CosmosConfiguration?.UserInfoPartitionKeyValue;
-        return string.IsNullOrWhiteSpace(overrideValue) ? logicalType : overrideValue;
-    }
+    public static string GetEffectiveTypeValue(string logicalType) => logicalType;
 
     /// <summary>
     /// Formats the ID value for the lowercase 'id' field when saving.
     /// </summary>
-    public static string FormatIdForSave(Guid id, string type) => GetIdSaveMode() switch
-    {
-        IdSaveMode.TypePrefixed => $"{type}|{id}",
-        _ => id.ToString()
-    };
+    public static string FormatIdForSave(Guid id, string type) => id.ToString();
 
     /// <summary>
-    /// Extracts the GUID from a possibly type-prefixed ID string (reading scenario)
+    /// Parses the raw GUID id.
     /// </summary>
     public static Guid ParseId(string formattedId)
     {
         if (string.IsNullOrEmpty(formattedId))
             return Guid.Empty;
-
-        string separator = "|";
-        int separatorIndex = formattedId.IndexOf(separator, StringComparison.Ordinal);
-
-        if (separatorIndex > 0 && separatorIndex < formattedId.Length - 1)
-        {
-            string guidPart = formattedId[(separatorIndex + separator.Length)..];
-            if (Guid.TryParse(guidPart, out Guid guid))
-                return guid;
-        }
 
         if (Guid.TryParse(formattedId, out Guid directGuid))
             return directGuid;

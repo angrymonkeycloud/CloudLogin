@@ -36,6 +36,12 @@ public sealed record CloudLoginPasswordRegistrationRequest
     /// </summary>
     public required string DisplayName { get; init; }
 
+    /// <summary>Single-use proof that the email address or phone number was verified.</summary>
+    public string? VerificationToken { get; init; }
+
+    /// <summary>Whether the server-created session should persist beyond this browser session.</summary>
+    public bool KeepMeSignedIn { get; init; }
+
     /// <summary>
     /// Creates a new CloudLoginPasswordRegistrationRequest
     /// </summary>
@@ -46,7 +52,15 @@ public sealed record CloudLoginPasswordRegistrationRequest
     /// <param name="lastName">User's last name</param>
     /// <param name="displayName">User's display name (optional)</param>
     /// <returns>A new CloudLoginPasswordRegistrationRequest instance</returns>
-    public static CloudLoginPasswordRegistrationRequest Create(string input, CloudLoginInputFormat inputFormat, string? password, string firstName, string lastName, string? displayName = null)
+    public static CloudLoginPasswordRegistrationRequest Create(
+        string input,
+        CloudLoginInputFormat inputFormat,
+        string? password,
+        string firstName,
+        string lastName,
+        string? displayName = null,
+        string? verificationToken = null,
+        bool keepMeSignedIn = false)
         => new()
         {
             Input = input,
@@ -54,7 +68,9 @@ public sealed record CloudLoginPasswordRegistrationRequest
             Password = password,
             FirstName = firstName,
             LastName = lastName,
-            DisplayName = displayName ?? $"{firstName} {lastName}"
+            DisplayName = displayName ?? $"{firstName} {lastName}",
+            VerificationToken = verificationToken,
+            KeepMeSignedIn = keepMeSignedIn
         };
 
     /// <summary>
@@ -66,7 +82,14 @@ public sealed record CloudLoginPasswordRegistrationRequest
     /// <param name="lastName">User's last name</param>
     /// <param name="displayName">User's display name (optional)</param>
     /// <returns>A new CloudLoginPasswordRegistrationRequest instance</returns>
-    public static CloudLoginPasswordRegistrationRequest Create(string email, string? password, string firstName, string lastName, string? displayName = null)
+    public static CloudLoginPasswordRegistrationRequest Create(
+        string email,
+        string? password,
+        string firstName,
+        string lastName,
+        string? displayName = null,
+        string? verificationToken = null,
+        bool keepMeSignedIn = false)
         => new()
         {
             Input = email,
@@ -74,6 +97,8 @@ public sealed record CloudLoginPasswordRegistrationRequest
             Password = password,
             FirstName = firstName,
             LastName = lastName,
-            DisplayName = displayName ?? $"{firstName} {lastName}"
+            DisplayName = displayName ?? $"{firstName} {lastName}",
+            VerificationToken = verificationToken,
+            KeepMeSignedIn = keepMeSignedIn
         };
 }

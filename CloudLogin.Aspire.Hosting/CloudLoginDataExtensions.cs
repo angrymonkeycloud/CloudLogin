@@ -1,5 +1,4 @@
 using AngryMonkey.CloudLogin.Server.Core;
-using AngryMonkey.CloudLogin.Server.Versioning;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Azure;
@@ -37,12 +36,8 @@ public static class CloudLoginDataExtensions
     /// stay in step if CloudLogin's own configuration renames them afterwards.
     /// </remarks>
     /// <remarks>
-    /// What gets declared follows the CloudLogin resource's own database version, so the AppHost
-    /// and the running server always describe the same storage:
-    /// <list type="bullet">
-    /// <item>V3 (the default) declares the seven core containers in the core database.</item>
-    /// <item>V2 declares the legacy single container in the legacy database.</item>
-    /// </list>
+    /// Declares CloudLogin's core containers so the AppHost and running server describe the same
+    /// storage.
     /// Declaring them is belt-and-braces rather than required: CloudLogin creates its own database
     /// and containers at startup. It matters for a deployment whose runtime identity holds only
     /// Cosmos data-plane rights, where the control-plane creation has to come from the deploy
@@ -64,10 +59,7 @@ public static class CloudLoginDataExtensions
         CloudLoginServerAnnotation annotation =
             CloudLoginHostingExtensions.GetCloudLoginServer(builder, nameof(WithReference));
 
-        if (annotation.DatabaseVersion == CloudLoginDatabaseVersion.V3)
-            DeclareCoreDatabase(builder, cosmos, annotation);
-        else
-            DeclareLegacyDatabase(builder, cosmos, annotation);
+        DeclareCoreDatabase(builder, cosmos, annotation);
 
         builder.WithEnvironment(context =>
         {
@@ -77,17 +69,6 @@ public static class CloudLoginDataExtensions
             // string therefore reaches CloudLogin's key too, without this package knowing how.
             context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.ConnectionString] =
                 new ConnectionStringReference(cosmos.Resource, optional: false);
-
-            // The legacy database/container names belong to database version V2. V3 opens its own
-            // database with fixed container names and ignores these, so sending them would only
-            // describe storage the server never touches.
-            if (annotation.DatabaseVersion == CloudLoginDatabaseVersion.V2)
-            {
-                // Read now rather than captured above: CloudLogin's own configuration may rename
-                // either after this call, and the provisioned resources above follow it.
-                context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.DatabaseId] = annotation.DatabaseId;
-                context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.ContainerId] = annotation.ContainerId;
-            }
 
             // The Linux-based Cosmos emulator speaks Gateway mode only, and nothing but a local run
             // uses an emulator.
@@ -99,7 +80,7 @@ public static class CloudLoginDataExtensions
     }
 
     /// <summary>
-    /// Declares the V3 core database and its seven containers. The database name comes from the
+    /// Declares the core database and its containers. The database name comes from the
     /// server's own configuration (defaulting to the same
     /// <see cref="CloudLoginCoreContainers.DefaultDatabaseId"/> the runtime defaults to), and the
     /// container names and partition key paths are the fixed contract in
@@ -159,25 +140,6 @@ public static class CloudLoginDataExtensions
                     container.Resource.DefaultTtl = -1;
             }
         });
-    }
-
-    /// <summary>
-    /// Declares the V2 legacy database and its single mixed container, whose names stay in step
-    /// with the server's configuration through <see cref="CloudLoginServerAnnotation"/>.
-    /// </summary>
-    private static void DeclareLegacyDatabase<TBuilder>(
-        TBuilder builder,
-        IResourceBuilder<AzureCosmosDBResource> cosmos,
-        CloudLoginServerAnnotation annotation)
-        where TBuilder : ICloudLoginServerBuilder
-    {
-        IResourceBuilder<AzureCosmosDBDatabaseResource> database =
-            cosmos.AddCosmosDatabase($"{builder.Resource.Name}-database", annotation.DatabaseId);
-
-        IResourceBuilder<AzureCosmosDBContainerResource> container =
-            database.AddContainer($"{builder.Resource.Name}-container", "/pk", annotation.ContainerId);
-
-        annotation.AddCosmosResources(database.Resource, container.Resource);
     }
 
     /// <summary>
@@ -252,8 +214,6 @@ public static class CloudLoginDataExtensions
         builder.WithEnvironment(context =>
         {
             context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.AccountEndpoint] = accountEndpoint;
-            context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.DatabaseId] = annotation.DatabaseId;
-            context.EnvironmentVariables[CloudLoginConfigurationKeys.Cosmos.ContainerId] = annotation.ContainerId;
         });
 
         return builder;

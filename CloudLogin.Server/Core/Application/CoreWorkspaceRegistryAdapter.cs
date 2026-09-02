@@ -4,7 +4,7 @@ using AngryMonkey.CloudLogin.Server.Core.Domain;
 
 namespace AngryMonkey.CloudLogin.Server.Core.Application;
 
-/// <summary>V2 workspace contract projected over the shared multi-owner core.</summary>
+/// <summary>Workspace registry contract projected over the shared multi-owner core.</summary>
 public sealed class CoreWorkspaceRegistryAdapter(
     WorkspaceAccessService service,
     IWorkspaceRepository workspaces,

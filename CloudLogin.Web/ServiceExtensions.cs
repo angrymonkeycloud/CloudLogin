@@ -5,7 +5,6 @@ using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudLogin.Server.Core;
 using AngryMonkey.CloudLogin.Server.Serialization;
 using AngryMonkey.CloudLogin.Server.Storage;
-using AngryMonkey.CloudLogin.Server.Versioning.V1;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using AngryMonkey.CloudBlazor.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -65,22 +64,11 @@ public static class MvcServiceCollectionExtensions
 
         builder.Services.AddCloudLoginWeb(loginConfig);
 
-        // Modern storage core (database version V3, the default): every API version is served
-        // through compatibility adapters over the seven-container model instead of the legacy store.
+        // CloudLogin's single seven-container storage core.
         builder.Services.AddCloudLoginCore(loginConfig);
 
-        // CloudLogin owns its schema: it creates its database and containers itself, whichever
-        // database version is selected and whether or not an AppHost also declares them.
+        // CloudLogin owns its schema and creates its database and containers itself.
         builder.Services.AddCloudLoginStorageProvisioning();
-
-        // API façade configuration is validated at startup: a bad default or an enabled V1
-        // without its adapter must fail loudly, never serve half an API.
-        builder.Services.EnsureVersion1Implemented(loginConfig.ApiVersion);
-
-        // The latest enabled version also answers at unversioned routes (/api/... alongside
-        // /api/v3/...); older versions stay reachable only through their versioned paths.
-        builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options =>
-            options.Conventions.Add(new AngryMonkey.CloudLogin.Server.Versioning.SelectedApiVersionRouteConvention(loginConfig.ApiVersion)));
 
         IConfigurationSection tokenConfiguration = builder.Configuration.GetSection("CloudLoginTokens");
         if (!string.IsNullOrWhiteSpace(tokenConfiguration["Issuer"]))
@@ -134,21 +122,9 @@ public static class MvcServiceCollectionExtensions
         // choice, along with the custom serializer every client in this repository must carry.
         CosmosClient cosmosClient = loginConfig.Cosmos.CreateClient();
 
-        // Shared so the core, the legacy store and the provisioner all use one client rather than
+        // Shared so the core and provisioner use one client rather than
         // each building their own connection pool.
         builder.Services.TryAddSingleton(cosmosClient);
-
-        // The legacy single-container store belongs to database version V2 only. Under V3 it is
-        // not registered at all - no legacy container is opened, and Cosmos:DatabaseId need not
-        // even be configured.
-        if (!loginConfig.UsesCoreDatabase)
-        {
-            Container container = cosmosClient.GetContainer(loginConfig.Cosmos.DatabaseId, loginConfig.Cosmos.ContainerId);
-
-            builder.Services.AddSingleton(container);
-            builder.Services.AddScoped<CosmosMethods>();
-            builder.Services.AddScoped<ICloudLoginStore>(services => services.GetRequiredService<CosmosMethods>());
-        }
     }
 
     private static void ConfigureCloudWeb(IServiceCollection services, CloudLoginWebConfiguration loginConfig)

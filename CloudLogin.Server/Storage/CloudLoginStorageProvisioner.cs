@@ -1,6 +1,5 @@
 using System.Net;
 using AngryMonkey.CloudLogin.Server.Core.Azure;
-using AngryMonkey.CloudLogin.Server.Versioning;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,12 +15,7 @@ namespace AngryMonkey.CloudLogin.Server.Storage;
 /// <c>dotnet run</c> against a connection string, or published to App Service. An AppHost that
 /// also declares the same resources is harmless - every call here is create-if-not-exists.
 /// </para>
-/// <para>
-/// Which schema is created follows <see cref="CloudLoginWebConfiguration.DatabaseVersion"/>:
-/// V3 provisions the seven core containers with their TTL settings, V2 provisions the single
-/// legacy container. Runs before the first request is served so a cold start never races
-/// container creation.
-/// </para>
+/// Runs before the first request is served so a cold start never races container creation.
 /// </summary>
 public sealed class CloudLoginStorageProvisioner(
     CloudLoginWebConfiguration configuration,
@@ -39,10 +33,7 @@ public sealed class CloudLoginStorageProvisioner(
 
         try
         {
-            if (_configuration.UsesCoreDatabase)
-                await ProvisionCoreAsync(cancellationToken);
-            else
-                await ProvisionLegacyAsync(cancellationToken);
+            await ProvisionCoreAsync(cancellationToken);
         }
         catch (CosmosException exception) when (
             exception.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized)
@@ -54,9 +45,8 @@ public sealed class CloudLoginStorageProvisioner(
             // are missing, the first data call says so plainly.
             _logger?.LogInformation(
                 exception,
-                "CloudLogin could not create its {DatabaseVersion} storage (the running identity has no Cosmos " +
-                "control-plane permission). Continuing: the containers are expected to be provisioned already.",
-                _configuration.DatabaseVersion);
+                "CloudLogin could not create its storage (the running identity has no Cosmos " +
+                "control-plane permission). Continuing: the containers are expected to be provisioned already.");
         }
         catch (Exception exception)
         {
@@ -77,31 +67,8 @@ public sealed class CloudLoginStorageProvisioner(
 
         _logger?.LogInformation(
             "CloudLogin storage ready: database '{DatabaseId}' with the {ContainerCount} core containers.",
-            _configuration.Core!.DatabaseId,
+            _configuration.Core.DatabaseId,
             7);
-    }
-
-    private async Task ProvisionLegacyAsync(CancellationToken cancellationToken)
-    {
-        CosmosConfiguration cosmos = _configuration.Cosmos;
-
-        // Validation guarantees both are named under V2.
-        CosmosClient client = _services.GetService<CosmosClient>() ?? cosmos.CreateClient();
-
-        Database database = (await client.CreateDatabaseIfNotExistsAsync(
-            cosmos.DatabaseId, cancellationToken: cancellationToken)).Database;
-
-        // The legacy schema keys every document type by the same discriminator partition, whose
-        // path is itself configurable - so the container is created on whatever path this
-        // deployment's documents actually carry.
-        await database.CreateContainerIfNotExistsAsync(
-            new ContainerProperties(cosmos.ContainerId, cosmos.PartitionKeyName),
-            cancellationToken: cancellationToken);
-
-        _logger?.LogInformation(
-            "CloudLogin storage ready: legacy database '{DatabaseId}', container '{ContainerId}'.",
-            cosmos.DatabaseId,
-            cosmos.ContainerId);
     }
 }
 

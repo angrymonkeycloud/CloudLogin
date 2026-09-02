@@ -30,9 +30,9 @@ public interface ISessionRepository
     /// <summary>Cross-partition query: every non-revoked family of a user (session management UI).</summary>
     Task<List<SessionFamilyDocument>> GetFamiliesForUserAsync(Guid userId, CancellationToken cancellationToken = default);
 
-    // ── V2 token-surface support ──────────────────────────────────────────────
+    // ── Token-store support ───────────────────────────────────────────────────
     // The legacy refresh contract addresses tokens by hash alone and sessions by sid, without
-    // knowing the family. These lookups let the V2 compatibility adapter serve that contract
+    // knowing the family. These lookups let the token-store adapter serve that contract
     // from the same Sessions container the modern paths use.
 
     /// <summary>Cross-partition lookup of a token document by its id (the token hash).</summary>
@@ -42,7 +42,7 @@ public interface ISessionRepository
     Task<List<SessionFamilyDocument>> FindFamiliesBySessionIdAsync(string sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Plain upsert of a token document, used by the V2 compatibility path whose contract
+    /// Plain upsert of a token document, used by the token-store contract
     /// consumes and creates tokens in separate calls rather than one batch.
     /// </summary>
     Task UpsertTokenAsync(SessionTokenDocument token, CancellationToken cancellationToken = default);

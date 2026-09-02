@@ -23,12 +23,6 @@ public static class CloudLoginConfigurationKeys
         /// <summary>Account endpoint, reached with a credential rather than a key.</summary>
         public const string AccountEndpoint = "Cosmos:AccountEndpoint";
 
-        /// <summary>Database holding the user container.</summary>
-        public const string DatabaseId = "Cosmos:DatabaseId";
-
-        /// <summary>Container holding user records.</summary>
-        public const string ContainerId = "Cosmos:ContainerId";
-
         /// <summary>Forces Gateway connection mode, which local Cosmos emulators require.</summary>
         public const string GatewayMode = "Cosmos:GatewayMode";
     }
@@ -55,10 +49,10 @@ public static class CloudLoginConfigurationKeys
         public const string ContainerName = "Storage:ContainerName";
     }
 
-    /// <summary>The modern seven-container storage core (see docs/architecture-core.md).</summary>
+    /// <summary>The CloudLogin storage core (see docs/architecture-core.md).</summary>
     public static class Core
     {
-        /// <summary>The whole section; binding it at all activates the core storage model.</summary>
+        /// <summary>The whole storage configuration section.</summary>
         public const string Section = "CloudLogin:Core";
 
         /// <summary>The deployment realm isolating identity keys and audit partitions.</summary>
@@ -68,11 +62,8 @@ public static class CloudLoginConfigurationKeys
         public const string DatabaseId = "CloudLogin:Core:DatabaseId";
     }
 
-    /// <summary>Which API façade versions a deployment serves.</summary>
-    public const string ApiVersion = "CloudLogin:ApiVersion";
-
     /// <summary>
-    /// The secret keying the V3 identity index, in its logical configuration form.
+    /// The secret keying the identity index, in its logical configuration form.
     /// </summary>
     public const string IdentityHmacSecret = "CloudLogin:IdentityHmacSecret";
 

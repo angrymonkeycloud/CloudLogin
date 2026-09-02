@@ -8,8 +8,7 @@ namespace AngryMonkey.CloudLogin.Server.Core.Application;
 /// storage: profile from the <c>Users</c> container, hashes and subjects from the
 /// <c>Credentials</c> container, identity claims in the Table Storage index.
 /// <para>
-/// This is what lets every V2 code path keep its exact behavior while nothing sensitive lives in
-/// the user document anymore. Materialized hashes and subjects exist only server-side inside the
+/// Materialized hashes and subjects exist only server-side inside the
 /// composed object; the existing transport-security layer keeps stripping them before anything
 /// leaves the process, and <see cref="SaveAsync"/> never deletes a credential just because a
 /// round-tripped <see cref="CloudUser"/> arrived without hashes.

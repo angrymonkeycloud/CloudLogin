@@ -16,10 +16,6 @@ public static partial class CloudLoginConfigurationValidator
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(configuration.Security);
 
-        // Resolve version-implied defaults before anything reads them, so every host - standalone,
-        // embedded, and the Aspire hosting integration - sees the same state.
-        configuration.NormalizeVersions();
-
         PrepareMicrosoftProvider(configuration, isDevelopment);
 
 
@@ -108,62 +104,8 @@ public static partial class CloudLoginConfigurationValidator
         if (security.VerificationCodeLifetime <= TimeSpan.Zero)
             throw new InvalidOperationException("VerificationCodeLifetime must be greater than zero.");
 
-        ValidateApiVersion(configuration);
-        ValidateDatabaseVersion(configuration);
         ValidateSignInProfiles(configuration);
         ValidateCore(configuration);
-    }
-
-    private static void ValidateApiVersion(CloudLoginWebConfiguration configuration)
-    {
-        if (!Enum.IsDefined(configuration.ApiVersion))
-            throw new InvalidOperationException($"CloudLogin ApiVersion '{configuration.ApiVersion}' is invalid.");
-    }
-
-    private static void ValidateDatabaseVersion(CloudLoginWebConfiguration configuration)
-    {
-        if (!Enum.IsDefined(configuration.DatabaseVersion))
-            throw new InvalidOperationException($"CloudLogin DatabaseVersion '{configuration.DatabaseVersion}' is invalid.");
-
-        CosmosConfiguration cosmos = configuration.Cosmos;
-
-        if (configuration.DatabaseVersion == Versioning.CloudLoginDatabaseVersion.V2)
-        {
-            // V2 reads a database an earlier CloudLogin wrote, so it has to be named; there is no
-            // sensible default that would not risk pointing at the wrong existing data.
-            if (string.IsNullOrWhiteSpace(cosmos.DatabaseId) || string.IsNullOrWhiteSpace(cosmos.ContainerId))
-                throw new InvalidOperationException(
-                    "DatabaseVersion V2 reads an existing database, so Cosmos:DatabaseId and Cosmos:ContainerId must both name it. " +
-                    "Remove the DatabaseVersion setting to use V3 instead, which creates its own database.");
-
-            if (configuration.CoreExplicitlyConfigured)
-                throw new InvalidOperationException(
-                    "Core settings configure the V3 storage model but DatabaseVersion is V2. " +
-                    "Either remove the Core settings, or set DatabaseVersion to V3.");
-
-            return;
-        }
-
-        // V3 carries no legacy compatibility, so the legacy schema knobs would silently do
-        // nothing. Fail loudly rather than let a deployment believe they are in effect.
-        List<string> legacySettings = [];
-
-        if (cosmos.IncludeLegacySchema)
-            legacySettings.Add(nameof(cosmos.IncludeLegacySchema));
-
-        if (cosmos.SaveIdMode != IdSaveMode.Raw)
-            legacySettings.Add(nameof(cosmos.SaveIdMode));
-
-        if (!string.IsNullOrWhiteSpace(cosmos.UserInfoPartitionKeyValue))
-            legacySettings.Add(nameof(cosmos.UserInfoPartitionKeyValue));
-
-        if (cosmos.JsonCompatibilityMode != JsonCompatibilityMode.Standard)
-            legacySettings.Add(nameof(cosmos.JsonCompatibilityMode));
-
-        if (legacySettings.Count > 0)
-            throw new InvalidOperationException(
-                $"Cosmos legacy compatibility settings ({string.Join(", ", legacySettings)}) apply to DatabaseVersion V2 only; " +
-                "the V3 storage model has no legacy schema. Either remove them, or set DatabaseVersion to V2.");
     }
 
     private static void ValidateSignInProfiles(CloudLoginWebConfiguration configuration)
@@ -203,10 +145,7 @@ public static partial class CloudLoginConfigurationValidator
 
     private static void ValidateCore(CloudLoginWebConfiguration configuration)
     {
-        Core.CloudLoginCoreConfiguration? core = configuration.Core;
-
-        if (core is null)
-            return;
+        Core.CloudLoginCoreConfiguration core = configuration.Core;
 
         if (string.IsNullOrWhiteSpace(core.RealmId))
             throw new InvalidOperationException("Core.RealmId is required.");
@@ -221,16 +160,14 @@ public static partial class CloudLoginConfigurationValidator
 
         if (configuration.AzureStorage is null || !configuration.AzureStorage.IsValid())
             throw new InvalidOperationException(
-                "The CloudLogin core (database version V3) requires Azure Storage: the IdentityKeys table is the " +
-                "identity index every sign-in resolves through. Configure the Storage section, or select " +
-                "DatabaseVersion V2 to keep the legacy single-container store.");
+                "CloudLogin requires Azure Storage: the IdentityKeys table is the identity index every sign-in resolves through.");
 
-        ValidateRealmDatabaseIsolation(configuration, core);
+        ValidateRealmDatabaseIsolation(core);
 
         // Throws with an actionable message when the secret is missing, too short, malformed, or
         // visibly not random. Checked here rather than at first use so a misconfigured deployment
         // fails at startup instead of at the first sign-in, and only once Azure Storage is in play
-        // so V1/V2 and in-memory hosts never need the setting.
+        // so in-memory hosts never need the setting.
         Core.Domain.IdentityKeyHasher.FromConfiguredSecrets(
             configuration.IdentityHmacSecret,
             configuration.IdentityHmacFallbackSecrets);
@@ -257,7 +194,7 @@ public static partial class CloudLoginConfigurationValidator
     }
 
     /// <summary>
-    /// One Cosmos database per realm, and never the legacy database.
+    /// One Cosmos database per realm.
     /// <para>
     /// A realm is the isolation boundary between two authorities that happen to share Azure
     /// resources. Sharing one database across realms would put both realms' users in the same
@@ -266,12 +203,10 @@ public static partial class CloudLoginConfigurationValidator
     /// name is indistinguishable from the default realm, so a second realm has to name its own.
     /// </para>
     /// </summary>
-    private static void ValidateRealmDatabaseIsolation(
-        CloudLoginWebConfiguration configuration, Core.CloudLoginCoreConfiguration core)
+    private static void ValidateRealmDatabaseIsolation(Core.CloudLoginCoreConfiguration core)
     {
         // An unnamed database resolves from the realm, so it is correct by construction. Only an
-        // explicitly named one can be wrong, and there are exactly two ways: naming the database
-        // another realm would resolve to, or naming the legacy V2 database.
+        // explicitly named one can be wrong by naming the database another realm would resolve to.
         if (core.DatabaseIdExplicitlyConfigured)
         {
             string expected = Core.CloudLoginCoreContainers.DatabaseIdFor(core.RealmId);
@@ -289,16 +224,6 @@ public static partial class CloudLoginConfigurationValidator
                         $"with '{Core.CloudLoginCoreContainers.DefaultDatabaseId}'.");
             }
         }
-
-        // The legacy V2 container lives in its own database. Pointing the core at that same
-        // database would create the seven core containers alongside it and leave two models
-        // writing into one place.
-        if (!string.IsNullOrWhiteSpace(configuration.Cosmos.DatabaseId) &&
-            string.Equals(core.DatabaseId, configuration.Cosmos.DatabaseId, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException(
-                $"Core.DatabaseId and Cosmos:DatabaseId both name '{core.DatabaseId}'. The V3 core database is " +
-                "separate from the legacy V2 database by design; give the core its own name, or remove " +
-                "Cosmos:DatabaseId if this deployment has no legacy database to read.");
     }
 
     private static void PrepareMicrosoftProvider(

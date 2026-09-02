@@ -1,5 +1,6 @@
 using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
+using AngryMonkey.CloudLogin.Server.Tokens;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using CloudLogin.Demo;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,14 +30,13 @@ await demoStore.Create(new CloudUser
 
 builder.Services.AddSingleton(demoInbox);
 builder.Services.AddSingleton<ICloudLoginStore>(demoStore);
+builder.Services.AddSingleton<ICloudLoginTokenStore>(demoStore);
 builder.Services.AddCloudLoginAccountRegistry();
 builder.Services.AddSingleton(services => new DemoAccountRegistrySeed(services.GetRequiredService<IServiceScopeFactory>(), demoAdminUserId));
 
 builder.AddCloudLoginWeb(options =>
 {
     options.WebConfig = web => web.PageDefaults.SetTitle("CloudLogin Demo - Authority");
-
-    options.EnableLegacyClientManagedLogin = true;
 
     options.Providers =
     [
@@ -64,6 +64,19 @@ builder.AddCloudLoginWeb(options =>
 
     // Matches the fixed port used by demo/CloudLogin.Demo.Consumer.
     options.AllowWebsite("https://localhost:7200");
+});
+
+builder.Services.AddCloudLoginTokenIssuer(options =>
+{
+    const string consumer = "cloudlogin-demo-consumer";
+    options.Issuer = "https://localhost:7100";
+    options.AllowedAudiences.Add(consumer);
+    options.ServiceClients[consumer] = new CloudLoginServiceClient
+    {
+        ClientId = consumer,
+        ClientSecret = "local-demo-only-client-secret-32-chars",
+        AllowedAudiences = [consumer]
+    };
 });
 
 WebApplication app = builder.Build();

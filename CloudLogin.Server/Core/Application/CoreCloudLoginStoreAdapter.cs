@@ -4,11 +4,8 @@ using AngryMonkey.CloudLogin.Server.Core.Domain;
 namespace AngryMonkey.CloudLogin.Server.Core.Application;
 
 /// <summary>
-/// The V2 compatibility adapter: implements the legacy <see cref="ICloudLoginStore"/> surface —
-/// every route, status code, and JSON shape the current API produces — on top of the modern
-/// seven-container core. Wiring this in is what "V2 through compatibility adapters" means:
-/// <see cref="CloudLoginServer"/> keeps its exact behavior while persistence moves to the new
-/// model, and V1/V2/V3 all share one storage and security core.
+/// Implements the authority's <see cref="ICloudLoginStore"/> application contract over the
+/// seven-container storage core.
 /// </summary>
 public sealed class CoreCloudLoginStoreAdapter(
     CoreUserService userService,
@@ -18,7 +15,8 @@ public sealed class CoreCloudLoginStoreAdapter(
     IdentityNormalization normalization,
     ILoginRequestRepository loginRequests,
     CloudLoginCoreConfiguration configuration,
-    Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null) : ICloudLoginStore
+    Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null,
+    SessionService? sessions = null) : ICloudLoginStore
 {
     private readonly CoreUserService _userService = userService;
     private readonly IUserRepository _users = users;
@@ -219,6 +217,9 @@ public sealed class CoreCloudLoginStoreAdapter(
             try
             {
                 await _users.ReplaceAsync(user);
+                if (sessions is not null)
+                    await sessions.RevokeAllForUserAsync(
+                        userId, SessionRevocationReasons.SecurityStampChanged);
                 return;
             }
             catch (CoreConcurrencyException) when (attempt == 0)

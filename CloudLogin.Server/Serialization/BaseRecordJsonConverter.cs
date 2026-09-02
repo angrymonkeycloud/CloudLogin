@@ -50,7 +50,7 @@ public class BaseRecordJsonConverter : JsonConverter<CloudLoginBaseRecord>
         string partitionKeyPropertyName = CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName();
 
         // First, determine the document type
-        string? typeValue = GetPropertyValue(root, typePropertyName, "type", "$type", "Discriminator");
+        string? typeValue = GetPropertyValue(root, typePropertyName);
         if (string.IsNullOrEmpty(typeValue))
             throw new JsonException("Cannot determine document type - type property is missing");
 
@@ -106,8 +106,7 @@ public class BaseRecordJsonConverter : JsonConverter<CloudLoginBaseRecord>
 
     private static void SetIdFromJson(JsonElement root, CloudLoginBaseRecord instance)
     {
-        // Try to get ID from various possible property names
-        string? idValue = GetPropertyValue(root, "id", "ID");
+        string? idValue = GetPropertyValue(root, "id");
         if (!string.IsNullOrEmpty(idValue))
         {
             Guid parsedId = CloudLoginBaseRecord.ParseId(idValue);
@@ -142,8 +141,7 @@ public class BaseRecordJsonConverter : JsonConverter<CloudLoginBaseRecord>
 
         HashSet<string> excludedProperties = new(StringComparer.OrdinalIgnoreCase)
         {
-            "id", "ID", typePropertyName, partitionKeyPropertyName, 
-            "type", "$type", "Discriminator", "pk", "PartitionKey"
+            "id", typePropertyName, partitionKeyPropertyName
         };
 
         foreach (JsonProperty property in root.EnumerateObject())
@@ -169,32 +167,17 @@ public class BaseRecordJsonConverter : JsonConverter<CloudLoginBaseRecord>
     {
         writer.WriteStartObject();
 
-        JsonCompatibilityMode compatibilityMode = CloudLoginBaseRecord.GetJsonCompatibilityMode();
         string typePropertyName = CloudLoginBaseRecord.GetTypePropertyName();
         string partitionKeyPropertyName = CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName();
 
         // Write the lowercase 'id' field using the CloudLoginBaseRecord's getter
         writer.WriteString("id", value.id);
 
-        // Write uppercase 'ID' field only if legacy schema is enabled
-        if (CloudLoginBaseRecord.ShouldIncludeLegacySchema())
-            writer.WriteString("ID", value.GetId().ToString());
-
         // Write Type with configured property name
         writer.WriteString(typePropertyName, value.TypeValue);
 
         // Write PartitionKey with configured property name
         writer.WriteString(partitionKeyPropertyName, value.PartitionKeyValue);
-
-        // In Legacy mode, also write the old property names for backward compatibility
-        if (compatibilityMode == JsonCompatibilityMode.Legacy)
-        {
-            if (typePropertyName != "$type")
-                writer.WriteString("$type", value.TypeValue);
-            
-            if (partitionKeyPropertyName != "pk")
-                writer.WriteString("pk", value.PartitionKeyValue);
-        }
 
         // Write other properties
         IEnumerable<PropertyInfo> properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)

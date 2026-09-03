@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.2.0</Version>
+		<Version>2.2.1</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Aspire client integration for CloudLogin: binds the CloudLogin server's configuration from the host, including credential-based access to Cosmos and Azure Storage.</Description>

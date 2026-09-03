@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.2.0</Version>
+		<Version>2.2.1</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Shared models, provider definitions, and URL/routing contracts used by every CloudLogin package - the dependency-free layer that lets the server, client, and UI packages agree on the same types.</Description>

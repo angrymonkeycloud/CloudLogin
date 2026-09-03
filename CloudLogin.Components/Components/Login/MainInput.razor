@@ -7,12 +7,12 @@
 
 <div class="input @CssClass">
 
-    <label for="@ID" class="input-label">
+    <label for="@Id" class="input-label">
         @DisplayLabel
     </label>
 
     <div class="input-content">
-        <input type="@InputType" id="@ID" autocomplete="@AutoComplete" spellcheck="false" placeholder="@DisplayPlaceholder"
+        <input type="@InputType" id="@Id" autocomplete="@AutoComplete" spellcheck="false" placeholder="@DisplayPlaceholder"
                disabled="@Disabled" readonly="@ReadOnly"
                @bind-value="Value"
                @bind-value:event="oninput"
@@ -23,7 +23,7 @@
                @onpaste="HandlePaste"
                @bind-value:after="@(async () => await ValueChanged.InvokeAsync(Value))"
                aria-invalid="@(HasError ? "true" : "false")"
-               aria-describedby="@(HasError ? $"{ID}-error" : "")" />
+               aria-describedby="@(HasError ? $"{Id}-error" : "")" />
 
         @*        @if (HasValue && !ReadOnly && !Disabled)
         {
@@ -46,7 +46,7 @@
 
     @if (HasError && !string.IsNullOrEmpty(ErrorMessage))
     {
-        <div id="@($"{ID}-error")" class="input-errors" role="alert">
+        <div id="@($"{Id}-error")" class="input-errors" role="alert">
             @ErrorMessage
         </div>
     }
@@ -85,7 +85,7 @@
     [Parameter] public EventCallback<InputFormatChangedEventArgs> OnFormatChanged { get; set; }
     [Parameter] public EventCallback<ValidationChangedEventArgs> OnValidationChanged { get; set; }
 
-    private readonly string ID = Guid.NewGuid().ToString("N")[..8];
+    private readonly string Id = Guid.NewGuid().ToString("N")[..8];
     private bool IsFocused { get; set; }
     private bool HasError { get; set; }
     private bool IsValid { get; set; }

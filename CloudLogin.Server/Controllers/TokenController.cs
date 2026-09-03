@@ -45,7 +45,7 @@ public sealed class TokenController(
     {
         CloudUser? user = await _server.CurrentUser();
 
-        if (user is null || user.ID == Guid.Empty || user.IsLocked)
+        if (user is null || user.Id == Guid.Empty || user.IsLocked)
             return Unauthorized();
 
         try
@@ -117,7 +117,7 @@ public sealed class TokenController(
         // Consumes the request id: it is single use and short lived by design.
         CloudUser? user = await _server.GetUserByRequestId(requestId);
 
-        if (user is null || user.ID == Guid.Empty || user.IsLocked)
+        if (user is null || user.Id == Guid.Empty || user.IsLocked)
             return Unauthorized(new { error = "invalid_grant" });
 
         try

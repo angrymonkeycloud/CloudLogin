@@ -15,7 +15,7 @@ public class AccountRegistryTests
         Guid ownerId = Guid.NewGuid();
 
         CloudWorkspace workspace = await registry.CreateAsync("  Angry Monkey  ", ownerId);
-        IReadOnlyList<CloudWorkspaceMember> members = await registry.GetMembersAsync(workspace.ID);
+        IReadOnlyList<CloudWorkspaceMember> members = await registry.GetMembersAsync(workspace.Id);
 
         CloudWorkspaceMember owner = Assert.Single(members);
         Assert.Equal("Angry Monkey", workspace.Name);
@@ -40,7 +40,7 @@ public class AccountRegistryTests
         CloudWorkspace workspace = await registry.CreateAsync("Cedar Labs", ownerId);
         DateTimeOffset expiry = DateTimeOffset.UtcNow.AddDays(7);
 
-        CloudWorkspaceInvitation invitation = await registry.InviteAsync(workspace.ID, "  developer@example.invalid  ", ownerId, expiry, ["Developer"]);
+        CloudWorkspaceInvitation invitation = await registry.InviteAsync(workspace.Id, "  developer@example.invalid  ", ownerId, expiry, ["Developer"]);
 
         Assert.Equal("developer@example.invalid", invitation.Recipient);
         Assert.Equal(ownerId, invitation.InvitedByUserId);
@@ -55,7 +55,7 @@ public class AccountRegistryTests
         Guid ownerId = Guid.NewGuid();
         CloudWorkspace workspace = await registry.CreateAsync("Cedar Labs", ownerId);
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => registry.InviteAsync(workspace.ID, "developer@example.invalid", ownerId, DateTimeOffset.UtcNow.AddMinutes(-1)));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => registry.InviteAsync(workspace.Id, "developer@example.invalid", ownerId, DateTimeOffset.UtcNow.AddMinutes(-1)));
     }
 
     [Fact]
@@ -69,9 +69,9 @@ public class AccountRegistryTests
 
         CloudWorkspace workspace =
             await workspaces.CreateAsync("Acme", ownerId);
-        await workspaces.AddMemberAsync(workspace.ID, memberId);
+        await workspaces.AddMemberAsync(workspace.Id, memberId);
         await workspaces.InviteAsync(
-            workspace.ID,
+            workspace.Id,
             "member@example.invalid",
             ownerId,
             DateTimeOffset.UtcNow.AddDays(1));
@@ -93,7 +93,7 @@ public class AccountRegistryTests
             Assert.True(item.Timestamp <= DateTimeOffset.UtcNow);
         });
         Assert.Equal(
-            workspace.ID.ToString(),
+            workspace.Id.ToString(),
             publisher.Events[0].EntityId);
     }
 
@@ -146,17 +146,17 @@ public class AccountRegistryTests
         CloudWorkspace second = await registry.CreateAsync("Second", Guid.NewGuid());
         CloudWorkspace third = await registry.CreateAsync("Third", Guid.NewGuid());
 
-        await registry.AddMemberAsync(first.ID, joinerId);
-        await registry.AddMemberAsync(second.ID, joinerId);
+        await registry.AddMemberAsync(first.Id, joinerId);
+        await registry.AddMemberAsync(second.Id, joinerId);
 
         CloudWorkspaceLimitReachedException exception = await Assert.ThrowsAsync<CloudWorkspaceLimitReachedException>(
-            () => registry.AddMemberAsync(third.ID, joinerId));
+            () => registry.AddMemberAsync(third.Id, joinerId));
 
         Assert.Equal(CloudWorkspaceLimitKinds.Membership, exception.Kind);
         Assert.Equal(2, exception.Limit);
 
         // Updating an existing membership's roles isn't a new membership, so the cap doesn't apply.
-        CloudWorkspaceMember updated = await registry.AddMemberAsync(first.ID, joinerId, ["Developer"]);
+        CloudWorkspaceMember updated = await registry.AddMemberAsync(first.Id, joinerId, ["Developer"]);
         Assert.Equal(["Developer"], updated.Roles);
     }
 
@@ -202,7 +202,7 @@ public class AccountRegistryTests
         await Assert.ThrowsAsync<CloudWorkspaceLimitReachedException>(() => restricted.CreateAsync("Mine", userId));
 
         CloudWorkspace provisioned = await host.CreateAsync("Provisioned", Guid.NewGuid());
-        await restricted.AddMemberAsync(provisioned.ID, userId);
+        await restricted.AddMemberAsync(provisioned.Id, userId);
 
         CloudWorkspaceQuota quota = await restricted.GetQuotaAsync(userId);
         Assert.Equal(1, quota.Total);
@@ -223,18 +223,18 @@ public class AccountRegistryTests
         Guid memberId = Guid.NewGuid();
 
         CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", ownerId);
-        await workspaces.AddMemberAsync(workspace.ID, memberId, ["Developer"]);
-        await workspaces.InviteAsync(workspace.ID, "partner@example.invalid", ownerId, DateTimeOffset.UtcNow.AddDays(7));
+        await workspaces.AddMemberAsync(workspace.Id, memberId, ["Developer"]);
+        await workspaces.InviteAsync(workspace.Id, "partner@example.invalid", ownerId, DateTimeOffset.UtcNow.AddDays(7));
 
-        CloudWorkspaceDeletionReport report = await workspaces.GetDeletionReportAsync(workspace.ID, ownerId);
+        CloudWorkspaceDeletionReport report = await workspaces.GetDeletionReportAsync(workspace.Id, ownerId);
         Assert.True(report.CanDelete);
         Assert.Equal(1, report.OtherMemberCount);
 
-        await workspaces.DeleteAsync(workspace.ID, ownerId);
+        await workspaces.DeleteAsync(workspace.Id, ownerId);
 
-        Assert.Null(await store.GetWorkspaceAsync(workspace.ID));
-        Assert.Empty(await store.GetMembersAsync(workspace.ID));
-        Assert.Empty(await store.GetInvitationsAsync(workspace.ID));
+        Assert.Null(await store.GetWorkspaceAsync(workspace.Id));
+        Assert.Empty(await store.GetMembersAsync(workspace.Id));
+        Assert.Empty(await store.GetInvitationsAsync(workspace.Id));
         Assert.Empty(await store.GetWorkspacesForUserAsync(ownerId));
         Assert.Contains("Workspace.Deleted", publisher.Events.Select(item => item.EventType));
     }
@@ -248,13 +248,13 @@ public class AccountRegistryTests
         Guid memberId = Guid.NewGuid();
 
         CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", ownerId);
-        await workspaces.AddMemberAsync(workspace.ID, memberId, ["Admin"]);
+        await workspaces.AddMemberAsync(workspace.Id, memberId, ["Admin"]);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => workspaces.DeleteAsync(workspace.ID, memberId));
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => workspaces.GetDeletionReportAsync(workspace.ID, memberId));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => workspaces.DeleteAsync(workspace.Id, memberId));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => workspaces.GetDeletionReportAsync(workspace.Id, memberId));
 
-        await workspaces.DeleteAsync(workspace.ID, ownerId);
-        Assert.Null(await store.GetWorkspaceAsync(workspace.ID));
+        await workspaces.DeleteAsync(workspace.Id, ownerId);
+        Assert.Null(await store.GetWorkspaceAsync(workspace.Id));
     }
 
     [Fact]
@@ -267,7 +267,7 @@ public class AccountRegistryTests
         CloudWorkspace first = await workspaces.CreateAsync("First", ownerId);
         await Assert.ThrowsAsync<CloudWorkspaceLimitReachedException>(() => workspaces.CreateAsync("Second", ownerId));
 
-        await workspaces.DeleteAsync(first.ID, ownerId);
+        await workspaces.DeleteAsync(first.Id, ownerId);
 
         CloudWorkspace second = await workspaces.CreateAsync("Second", ownerId);
         Assert.Equal("Second", second.Name);

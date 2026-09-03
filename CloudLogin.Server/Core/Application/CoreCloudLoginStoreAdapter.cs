@@ -155,8 +155,8 @@ public sealed class CoreCloudLoginStoreAdapter(
 
     public async Task Create(CloudUser user)
     {
-        if (user.ID == Guid.Empty)
-            user.ID = Guid.NewGuid();
+        if (user.Id == Guid.Empty)
+            user.Id = Guid.NewGuid();
 
         // Legacy behavior: the first registered user becomes global admin. In the core this is
         // an atomic bootstrap reservation inside the registration saga, so races cannot mint two.
@@ -165,7 +165,7 @@ public sealed class CoreCloudLoginStoreAdapter(
 
     public async Task Update(CloudUser user)
     {
-        if (user.ID == Guid.Empty)
+        if (user.Id == Guid.Empty)
         {
             // Legacy tolerance: resolve by any available input before refusing.
             string? candidate = user.PrimaryEmailAddress?.Input
@@ -176,11 +176,11 @@ public sealed class CoreCloudLoginStoreAdapter(
             {
                 CloudUser? existing = await GetUserByInput(candidate);
                 if (existing is not null)
-                    user.ID = existing.ID;
+                    user.Id = existing.Id;
             }
 
-            if (user.ID == Guid.Empty)
-                throw new InvalidOperationException("Cannot update user with empty ID. Provide a valid ID or use Create.");
+            if (user.Id == Guid.Empty)
+                throw new InvalidOperationException("Cannot update user with empty Id. Provide a valid Id or use Create.");
         }
 
         await _userService.SaveAsync(user, isCreate: false);

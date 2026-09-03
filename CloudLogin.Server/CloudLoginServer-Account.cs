@@ -12,7 +12,7 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
         if (user == null)
             return [];
 
-        return [.. await _workspaceRegistry.GetWorkspacesForUserAsync(user.ID)];
+        return [.. await _workspaceRegistry.GetWorkspacesForUserAsync(user.Id)];
     }
 
     public async Task<CloudWorkspaceQuota> GetMyWorkspaceQuota()
@@ -34,7 +34,7 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
 
         CloudUser? user = await CurrentUser();
 
-        return user == null ? empty : await _workspaceRegistry.GetQuotaAsync(user.ID);
+        return user == null ? empty : await _workspaceRegistry.GetQuotaAsync(user.Id);
     }
 
     public async Task<CloudWorkspace> CreateWorkspace(string name)
@@ -44,7 +44,7 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
 
         CloudUser user = await CurrentUser() ?? throw new UnauthorizedAccessException("Sign-in is required.");
 
-        return await _workspaceRegistry.CreateAsync(name, user.ID);
+        return await _workspaceRegistry.CreateAsync(name, user.Id);
     }
 
     public async Task<CloudWorkspaceInvitation> InviteToWorkspace(Guid workspaceId, string recipient, IReadOnlyList<string>? roles = null)
@@ -54,9 +54,9 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
 
         CloudUser user = await CurrentUser() ?? throw new UnauthorizedAccessException("Sign-in is required.");
 
-        await RequireWorkspaceManagerAsync(workspaceId, user.ID);
+        await RequireWorkspaceManagerAsync(workspaceId, user.Id);
 
-        return await _workspaceRegistry.InviteAsync(workspaceId, recipient, user.ID, DateTimeOffset.UtcNow.AddDays(7), roles);
+        return await _workspaceRegistry.InviteAsync(workspaceId, recipient, user.Id, DateTimeOffset.UtcNow.AddDays(7), roles);
     }
 
     public async Task<CloudWorkspace> UpdateWorkspace(CloudWorkspace workspace)
@@ -66,7 +66,7 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
 
         CloudUser user = await CurrentUser() ?? throw new UnauthorizedAccessException("Sign-in is required.");
 
-        return await _workspaceRegistry.UpdateAsync(workspace, user.ID);
+        return await _workspaceRegistry.UpdateAsync(workspace, user.Id);
     }
 
     /// <summary>
@@ -109,7 +109,7 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
 
         CloudUser user = await CurrentUser() ?? throw new UnauthorizedAccessException("Sign-in is required.");
 
-        await _workspaceRegistry.DeleteAsync(workspaceId, user.ID);
+        await _workspaceRegistry.DeleteAsync(workspaceId, user.Id);
     }
 
     /// <summary>
@@ -134,9 +134,9 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
             return null;
 
         IReadOnlyList<CloudWorkspaceMember> members = await _workspaceRegistry.GetMembersAsync(workspaceId);
-        CloudWorkspaceMember? membership = members.FirstOrDefault(member => member.UserId == user.ID);
+        CloudWorkspaceMember? membership = members.FirstOrDefault(member => member.UserId == user.Id);
 
-        bool isOwner = workspace.OwnerUserId == user.ID
+        bool isOwner = workspace.OwnerUserId == user.Id
             || membership is { IsOwner: true }
             || HasRole(membership, "Owner");
 
@@ -146,7 +146,7 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
         bool canManage = isOwner || HasRole(membership, "Admin");
 
         CloudWorkspaceDeletionReport? deletion = isOwner
-            ? await _workspaceRegistry.GetDeletionReportAsync(workspaceId, user.ID)
+            ? await _workspaceRegistry.GetDeletionReportAsync(workspaceId, user.Id)
             : null;
 
         return new CloudWorkspaceDetail

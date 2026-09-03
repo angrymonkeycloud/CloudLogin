@@ -143,7 +143,7 @@ public class AuthController(
             // Create authentication claims
             List<Claim> claims =
             [
-                new(ClaimTypes.NameIdentifier, user.ID.ToString()),
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.DisplayName ?? user.FirstName ?? "User"),
                 new(ClaimTypes.Email, user.PrimaryEmailAddress?.Input ?? ""),
                 new("CloudLoginRequestId", parsedRequestId.ToString())

@@ -7,7 +7,7 @@
 		<Nullable>enable</Nullable>
 		<Authors>Angry Monkey</Authors>
 		<Company>Angry Monkey</Company>
-		<Version>2.1.0</Version>
+		<Version>2.2.0</Version>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
 		<PackageIcon>amc-logo.png</PackageIcon>

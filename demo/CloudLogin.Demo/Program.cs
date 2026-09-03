@@ -18,7 +18,7 @@ Guid demoAdminUserId = Guid.NewGuid();
 
 await demoStore.Create(new CloudUser
 {
-    ID = demoAdminUserId,
+    Id = demoAdminUserId,
     FirstName = "Demo",
     LastName = "Admin",
     DisplayName = "Demo Admin (Global Admin)",

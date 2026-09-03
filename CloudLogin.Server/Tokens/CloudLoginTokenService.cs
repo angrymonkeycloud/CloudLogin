@@ -45,7 +45,7 @@ public sealed class CloudLoginTokenService(
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        if (user.ID == Guid.Empty)
+        if (user.Id == Guid.Empty)
             throw new InvalidOperationException("Cannot issue a token for a user without an identifier.");
 
         if (user.IsLocked)
@@ -67,7 +67,7 @@ public sealed class CloudLoginTokenService(
 
         if (includeRefreshToken)
             refreshToken = await CreateRefreshTokenAsync(
-                user.ID,
+                user.Id,
                 familyId: NewOpaqueToken(16),
                 sessionId,
                 audience,
@@ -122,7 +122,7 @@ public sealed class CloudLoginTokenService(
 
         CloudUser? user = await userLookup(stored.UserId, cancellationToken);
 
-        if (user is null || user.IsLocked || user.ID == Guid.Empty)
+        if (user is null || user.IsLocked || user.Id == Guid.Empty)
             return null;
 
         string audience = stored.Audience ?? _options.AllowedAudiences.First();
@@ -131,7 +131,7 @@ public sealed class CloudLoginTokenService(
         if (_store is IAtomicCloudLoginTokenStore atomicStore)
         {
             (rotated, CloudLoginRefreshToken replacement) = CreateRefreshTokenRecord(
-                user.ID, stored.FamilyId, stored.SessionId, audience, stored.Scope, clientIp, userAgent);
+                user.Id, stored.FamilyId, stored.SessionId, audience, stored.Scope, clientIp, userAgent);
 
             CloudLoginRefreshRotationResult result = await atomicStore.RotateRefreshTokenAsync(
                 stored, replacement, cancellationToken);
@@ -150,7 +150,7 @@ public sealed class CloudLoginTokenService(
             stored.ConsumedOn = now;
             await _store.SaveRefreshTokenAsync(stored, cancellationToken);
             rotated = await CreateRefreshTokenAsync(
-                user.ID, stored.FamilyId, stored.SessionId, audience, stored.Scope,
+                user.Id, stored.FamilyId, stored.SessionId, audience, stored.Scope,
                 clientIp, userAgent, cancellationToken);
         }
 
@@ -304,7 +304,7 @@ public sealed class CloudLoginTokenService(
 
         Dictionary<string, object> claims = new(StringComparer.Ordinal)
         {
-            [CloudLoginClaims.Subject] = user.ID.ToString(),
+            [CloudLoginClaims.Subject] = user.Id.ToString(),
             [CloudLoginClaims.SessionId] = sessionId,
             [CloudLoginClaims.TokenId] = NewOpaqueToken(16),
             [CloudLoginClaims.IsGlobalAdmin] = user.IsGlobalAdmin

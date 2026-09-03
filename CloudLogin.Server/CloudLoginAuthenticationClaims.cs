@@ -60,7 +60,7 @@ public static class CloudLoginAuthenticationClaims
     {
         List<Claim> claims =
         [
-            new(ClaimTypes.NameIdentifier, user.ID.ToString()),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.DisplayName ?? $"{user.FirstName} {user.LastName}".Trim()),
             new(ClaimTypes.GivenName, user.FirstName ?? string.Empty),
             new(ClaimTypes.Surname, user.LastName ?? string.Empty),
@@ -74,7 +74,7 @@ public static class CloudLoginAuthenticationClaims
         if (!string.IsNullOrWhiteSpace(email))
             claims.Add(new Claim(ClaimTypes.Email, email));
 
-        string? stamp = store is null ? null : await store.GetSecurityStamp(user.ID);
+        string? stamp = store is null ? null : await store.GetSecurityStamp(user.Id);
         if (!string.IsNullOrWhiteSpace(stamp))
             claims.Add(new Claim(SecurityStamp, stamp));
 

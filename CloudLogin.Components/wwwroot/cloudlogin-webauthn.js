@@ -30,7 +30,7 @@ window.cloudLoginWebAuthn = (() => {
         /** True when this browser/context can do WebAuthn at all (needs a secure context). */
         isSupported: () => !!(window.PublicKeyCredential && navigator.credentials),
 
-        /** True when the device has a built-in authenticator (Touch ID, Windows Hello, Android biometrics). */
+        /** True when the device has a built-in authenticator (Touch Id, Windows Hello, Android biometrics). */
         hasPlatformAuthenticator: async () => {
             if (!window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) return false;
 

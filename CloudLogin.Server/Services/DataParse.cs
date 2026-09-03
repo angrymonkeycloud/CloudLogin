@@ -32,7 +32,7 @@ public class DataParse
             Locale = user.Locale
         };
 
-        userInformation.SetId(user.ID);
+        userInformation.SetId(user.Id);
 
         return userInformation;
     }
@@ -50,12 +50,12 @@ public class DataParse
         if (dbUser == null)
             return null;
 
-        // Ensure ID is properly parsed from the lowercase 'id' field
+        // Ensure Id is properly parsed from the lowercase 'id' field
         dbUser.ProcessExtensionData();
 
         return new()
         {
-            ID = dbUser.GetId(),
+            Id = dbUser.GetId(),
             DisplayName = dbUser.DisplayName,
             FirstName = dbUser.FirstName,
             IsLocked = dbUser.IsLocked,

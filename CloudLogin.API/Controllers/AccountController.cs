@@ -135,7 +135,7 @@ public class AccountController(CloudLoginWebConfiguration configuration, ICloudL
         if (Configuration.Workspace is null)
             return NotFound();
 
-        if (workspaceId != workspace.ID)
+        if (workspaceId != workspace.Id)
             return BadRequest("Route id and body id must match.");
 
         try

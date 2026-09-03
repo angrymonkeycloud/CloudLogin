@@ -109,7 +109,7 @@ public abstract record CloudLoginBaseRecord
     public static string GetEffectiveTypeValue(string logicalType) => logicalType;
 
     /// <summary>
-    /// Formats the ID value for the lowercase 'id' field when saving.
+    /// Formats the Id value for the lowercase 'id' field when saving.
     /// </summary>
     public static string FormatIdForSave(Guid id, string type) => id.ToString();
 
@@ -128,17 +128,17 @@ public abstract record CloudLoginBaseRecord
     }
 
     /// <summary>
-    /// Gets the formatted ID value for this record (reading scenario)
+    /// Gets the formatted Id value for this record (reading scenario)
     /// </summary>
     public string GetFormattedId() => FormatIdForSave(InternalId, TypeValue);
 
     /// <summary>
-    /// Gets the internal ID value as a Guid
+    /// Gets the internal Id value as a Guid
     /// </summary>
     public Guid GetId() => InternalId;
 
     /// <summary>
-    /// Sets the internal ID value
+    /// Sets the internal Id value
     /// </summary>
     public void SetId(Guid id) => InternalId = id;
 }

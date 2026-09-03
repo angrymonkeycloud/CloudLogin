@@ -33,7 +33,7 @@ public sealed class V3DevicesController(CloudLoginWebConfiguration configuration
         if (user is null)
             return Unauthorized();
 
-        List<SignedInDevice> devices = await sessions.GetDevicesAsync(user.ID, CurrentSessionId());
+        List<SignedInDevice> devices = await sessions.GetDevicesAsync(user.Id, CurrentSessionId());
 
         return Ok(devices.Select(ToResponse).ToList());
     }
@@ -54,7 +54,7 @@ public sealed class V3DevicesController(CloudLoginWebConfiguration configuration
 
         // Ownership is checked inside the service, which answers false rather than throwing for
         // an id belonging to someone else — indistinguishable here from one that never existed.
-        return await sessions.RevokeDeviceAsync(user.ID, deviceId) ? NoContent() : NotFound();
+        return await sessions.RevokeDeviceAsync(user.Id, deviceId) ? NoContent() : NotFound();
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ public sealed class V3DevicesController(CloudLoginWebConfiguration configuration
         if (user is null)
             return Unauthorized();
 
-        int revoked = await sessions.RevokeOtherDevicesAsync(user.ID, CurrentSessionId());
+        int revoked = await sessions.RevokeOtherDevicesAsync(user.Id, CurrentSessionId());
 
         return Ok(new V3RevokeOtherDevicesResponse { RevokedCount = revoked });
     }

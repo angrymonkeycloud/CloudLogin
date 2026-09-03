@@ -81,7 +81,7 @@ public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
     public Task Update(CloudUser user)
     {
         lock (_gate)
-            _users[user.ID] = user;
+            _users[user.Id] = user;
 
         return Task.CompletedTask;
     }
@@ -89,7 +89,7 @@ public sealed class DemoInMemoryCloudLoginStore : ICloudLoginStore
     public Task Create(CloudUser user)
     {
         lock (_gate)
-            _users[user.ID] = user;
+            _users[user.Id] = user;
 
         return Task.CompletedTask;
     }

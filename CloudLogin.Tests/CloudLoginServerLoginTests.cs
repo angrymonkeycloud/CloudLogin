@@ -26,7 +26,7 @@ public class CloudLoginServerLoginTests
         Assert.Equal(1, fixture.Authentication.SignInCount);
         Assert.Equal(1, fixture.Store.UpdateCount);
         Assert.NotNull(fixture.Authentication.SignedInPrincipal);
-        Assert.Equal(user.ID.ToString(), fixture.Authentication.SignedInPrincipal.FindFirstValue(ClaimTypes.NameIdentifier));
+        Assert.Equal(user.Id.ToString(), fixture.Authentication.SignedInPrincipal.FindFirstValue(ClaimTypes.NameIdentifier));
         Assert.Equal("person@example.com", fixture.Authentication.SignedInPrincipal.FindFirstValue(ClaimTypes.Email));
         Assert.True(fixture.Authentication.SignedInProperties!.IsPersistent);
         Assert.InRange(
@@ -113,11 +113,11 @@ public class CloudLoginServerLoginTests
         LoginTestFixture fixture = new(testModeEnabled: true);
         CloudUser testUser = await fixture.AddPasswordUserAsync(isTest: true);
 
-        bool result = await fixture.Server.TestLogin(testUser.ID, keepMeSignedIn: true);
+        bool result = await fixture.Server.TestLogin(testUser.Id, keepMeSignedIn: true);
 
         Assert.True(result);
         Assert.Equal("TestMode", fixture.Authentication.SignedInPrincipal!.Identity!.AuthenticationType);
-        Assert.Equal(testUser.ID.ToString(), fixture.Authentication.SignedInPrincipal.FindFirstValue(ClaimTypes.NameIdentifier));
+        Assert.Equal(testUser.Id.ToString(), fixture.Authentication.SignedInPrincipal.FindFirstValue(ClaimTypes.NameIdentifier));
         Assert.True(fixture.Authentication.SignedInProperties!.IsPersistent);
         Assert.Equal(1, fixture.Store.UpdateCount);
     }
@@ -128,7 +128,7 @@ public class CloudLoginServerLoginTests
         LoginTestFixture fixture = new();
         CloudUser testUser = await fixture.AddPasswordUserAsync(isTest: true);
 
-        Assert.False(await fixture.Server.TestLogin(testUser.ID));
+        Assert.False(await fixture.Server.TestLogin(testUser.Id));
         Assert.Equal(0, fixture.Authentication.SignInCount);
     }
 
@@ -168,7 +168,7 @@ public class CloudLoginServerLoginTests
         LoginTestFixture fixture = new(testModeEnabled: true);
         CloudUser regularUser = await fixture.AddPasswordUserAsync();
 
-        Assert.False(await fixture.Server.TestLogin(regularUser.ID));
+        Assert.False(await fixture.Server.TestLogin(regularUser.Id));
         Assert.False(await fixture.Server.TestLogin(Guid.NewGuid()));
         Assert.False(await fixture.Server.TestLogin(Guid.Empty));
         Assert.Equal(0, fixture.Authentication.SignInCount);
@@ -182,7 +182,7 @@ public class CloudLoginServerLoginTests
             allowedOrigins: ["https://portal.example:7443"]);
         CloudUser testUser = await fixture.AddPasswordUserAsync(isTest: true);
 
-        Assert.True(await fixture.Server.TestLogin(testUser.ID));
+        Assert.True(await fixture.Server.TestLogin(testUser.Id));
         fixture.AuthenticateAs(testUser);
 
         string redirect = await fixture.Server.CompleteLoginRedirect(
@@ -191,7 +191,7 @@ public class CloudLoginServerLoginTests
         Uri uri = new(redirect);
         string? requestId = HttpUtility.ParseQueryString(uri.Query)["requestId"];
         Assert.True(Guid.TryParse(requestId, out Guid parsedRequestId));
-        Assert.Equal(testUser.ID, fixture.Store.Requests[parsedRequestId]);
+        Assert.Equal(testUser.Id, fixture.Store.Requests[parsedRequestId]);
         Assert.Equal(1, fixture.Store.CreateRequestCount);
     }
 
@@ -497,7 +497,7 @@ public class CloudLoginServerLoginTests
         CloudUser testUser = await testFixture.Server.PasswordRegistration(request);
         Assert.True(testUser.IsTest);
         Assert.Empty(testUser.Inputs[0].Providers);
-        Assert.True(await testFixture.Server.TestLogin(testUser.ID));
+        Assert.True(await testFixture.Server.TestLogin(testUser.Id));
     }
 
     [Fact]
@@ -532,7 +532,7 @@ public class CloudLoginServerLoginTests
             PasswordHash = Convert.ToBase64String(salt.Concat(legacyHash).ToArray())
         };
         user.Inputs[0].Providers.Add(provider);
-        fixture.Store.Users[user.ID] = user;
+        fixture.Store.Users[user.Id] = user;
 
         Assert.True(await fixture.Server.PasswordLogin(
             CloudLoginPasswordLoginRequest.Create(user.PrimaryEmailAddress!.Input, password)));

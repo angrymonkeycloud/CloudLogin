@@ -282,7 +282,7 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
 
             CloudUser user = new()
             {
-                ID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 CreatedOn = DateTimeOffset.UtcNow
             };
 
@@ -311,7 +311,7 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
 
             await _server.CreateUser(user);
 
-            return Ok(await _server.GetUserById(user.ID) ?? user);
+            return Ok(await _server.GetUserById(user.Id) ?? user);
         }
         catch
         {

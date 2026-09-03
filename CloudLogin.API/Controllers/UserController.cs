@@ -56,10 +56,10 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
         try
         {
             CloudUser? currentUser = await _server.CurrentUser();
-            if (currentUser is null || (currentUser.ID != user.ID && !currentUser.IsGlobalAdmin))
+            if (currentUser is null || (currentUser.Id != user.Id && !currentUser.IsGlobalAdmin))
                 return Forbid();
 
-            CloudUser? storedUser = await _server.GetUserById(user.ID);
+            CloudUser? storedUser = await _server.GetUserById(user.Id);
             if (storedUser is null)
                 return NotFound();
 
@@ -494,7 +494,7 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
     private async Task<bool> CanAccessUserAsync(Guid userId)
     {
         CloudUser? currentUser = await _server.CurrentUser();
-        return currentUser is not null && (currentUser.ID == userId || currentUser.IsGlobalAdmin);
+        return currentUser is not null && (currentUser.Id == userId || currentUser.IsGlobalAdmin);
     }
 
     private CloudUser NormalizeUser(CloudUser user)

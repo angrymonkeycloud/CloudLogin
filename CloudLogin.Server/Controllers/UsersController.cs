@@ -31,14 +31,14 @@ public class UsersController(ILogger<UsersController> logger) : ControllerBase
 
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
-                _logger.LogWarning("Invalid or missing user ID in claims");
+                _logger.LogWarning("Invalid or missing user Id in claims");
                 return Ok((CloudUser?)null);
             }
 
             // Create User object from claims
             var user = new CloudUser
             {
-                ID = userId,
+                Id = userId,
                 DisplayName = displayName,
                 FirstName = firstName,
                 LastName = lastName,

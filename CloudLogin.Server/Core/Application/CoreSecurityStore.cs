@@ -145,7 +145,7 @@ public sealed class CoreSecurityStore(
     {
         AuditEventDocument audit = new()
         {
-            Id = entry.ID.ToString(),
+            Id = entry.Id.ToString(),
             Realm = configuration.RealmId,
             UserId = userId.ToString(),
             EventType = "Login.Succeeded",
@@ -188,7 +188,7 @@ public sealed class CoreSecurityStore(
             .Take(100)
             .Select(item => new CloudLoginHistoryEntry
             {
-                ID = Guid.TryParse(item.Id, out Guid id) ? id : Guid.NewGuid(),
+                Id = Guid.TryParse(item.Id, out Guid id) ? id : Guid.NewGuid(),
                 SignedInOn = item.OccurredOn,
                 Provider = Value(item, "Provider"),
                 Device = Value(item, "Device"),

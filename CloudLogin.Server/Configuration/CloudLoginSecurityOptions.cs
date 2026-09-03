@@ -83,7 +83,7 @@ public sealed class CloudLoginSecurityOptions
     public TimeSpan LoginHistoryRetention { get; set; } = TimeSpan.FromDays(180);
 
     /// <summary>
-    /// Relying Party ID for WebAuthn (passkeys). Must be the site's registrable domain —
+    /// Relying Party Id for WebAuthn (passkeys). Must be the site's registrable domain —
     /// e.g. "example.com" for https://login.example.com. Leave null to derive it from the
     /// request host, which is correct for single-host deployments.
     /// </summary>
@@ -94,7 +94,7 @@ public sealed class CloudLoginSecurityOptions
 
     /// <summary>
     /// Additional origins accepted during WebAuthn ceremonies. The request's own origin is
-    /// always accepted; add entries here only for extra hosts that share the RP ID.
+    /// always accepted; add entries here only for extra hosts that share the RP Id.
     /// </summary>
     public ISet<string> WebAuthnAllowedOrigins { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 }

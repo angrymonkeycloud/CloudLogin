@@ -46,7 +46,7 @@ public class CloudLoginControllerTests
         CloudUser user = await fixture.AddPasswordUserAsync(isTest: true);
         LoginController controller = CreateLoginController(fixture);
 
-        IActionResult result = await controller.TestSignIn(user.ID, keepMeSignedIn: true);
+        IActionResult result = await controller.TestSignIn(user.Id, keepMeSignedIn: true);
 
         Assert.IsType<OkResult>(result);
         Assert.Equal(1, fixture.Authentication.SignInCount);
@@ -183,11 +183,11 @@ public class CloudLoginControllerTests
         RequestController controller = CreateRequestController(fixture);
         Guid requestedId = Guid.NewGuid();
 
-        IActionResult result = await controller.CreateRequest(user.ID, requestedId);
+        IActionResult result = await controller.CreateRequest(user.Id, requestedId);
 
         OkObjectResult ok = Assert.IsType<OkObjectResult>(result);
         Assert.Equal(requestedId, Assert.IsType<Guid>(ok.Value));
-        Assert.Equal(user.ID, fixture.Store.Requests[requestedId]);
+        Assert.Equal(user.Id, fixture.Store.Requests[requestedId]);
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class CloudLoginControllerTests
         CloudUser user = await fixture.AddPasswordUserAsync();
         string originalHash = user.Inputs[0].Providers.Single().PasswordHash!;
         Guid requestId = Guid.NewGuid();
-        fixture.Store.Requests[requestId] = user.ID;
+        fixture.Store.Requests[requestId] = user.Id;
         RequestController controller = CreateRequestController(fixture);
 
         IActionResult result = await controller.GetUserByRequestId(requestId);

@@ -183,7 +183,7 @@
             }
 
             CloudUser? existingUser = await cloudLogin.GetUserByEmailAddress(normalized);
-            if (existingUser != null && existingUser.ID != CurrentUser.ID)
+            if (existingUser != null && existingUser.Id != CurrentUser.Id)
             {
                 SetStatus("This email address is already in use by another account.", false);
                 return;

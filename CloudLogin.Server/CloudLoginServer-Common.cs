@@ -148,10 +148,10 @@ public partial class CloudLoginServer : ICloudLogin
                 ? null
                 : JsonSerializer.Deserialize<CloudUser>(legacyPayload, CloudLoginSerialization.Options);
 
-            if (legacyUser is null || legacyUser.ID == Guid.Empty)
+            if (legacyUser is null || legacyUser.Id == Guid.Empty)
                 return null;
 
-            userId = legacyUser.ID;
+            userId = legacyUser.Id;
         }
 
         if (_cosmosMethods is null)
@@ -385,9 +385,9 @@ public partial class CloudLoginServer : ICloudLogin
             await _eventPublisher.PublishAsync(CloudLoginEvent.Create(
                 "User.Updated",
                 "User",
-                user.ID,
+                user.Id,
                 "Updated",
-                new { user.ID }));
+                new { user.Id }));
     }
 
     public async Task CreateUser(CloudUser user)
@@ -401,9 +401,9 @@ public partial class CloudLoginServer : ICloudLogin
             await _eventPublisher.PublishAsync(CloudLoginEvent.Create(
                 "User.Created",
                 "User",
-                user.ID,
+                user.Id,
                 "Created",
-                new { user.ID }));
+                new { user.Id }));
     }
 
     public async Task DeleteUser(Guid userId)
@@ -436,7 +436,7 @@ public partial class CloudLoginServer : ICloudLogin
                 "User",
                 userId,
                 "Deleted",
-                new { ID = userId }));
+                new { Id = userId }));
     }
 
     public async Task AddUserInput(Guid userId, CloudLoginInput input)
@@ -666,7 +666,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         string? userAgent = context.Request.Headers.UserAgent.ToString();
 
-        await RecordSignInForUser(user.ID, new CloudLoginHistoryEntry
+        await RecordSignInForUser(user.Id, new CloudLoginHistoryEntry
         {
             SignedInOn = DateTimeOffset.UtcNow,
             Provider = provider,
@@ -744,7 +744,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         CloudUser newUser = new()
         {
-            ID = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             FirstName = request.FirstName,
             LastName = request.LastName,
             DisplayName = request.DisplayName,
@@ -811,7 +811,7 @@ public partial class CloudLoginServer : ICloudLogin
 
         CloudUser newUser = new()
         {
-            ID = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             FirstName = request.FirstName,
             LastName = request.LastName,
             DisplayName = request.DisplayName,

@@ -57,7 +57,7 @@
                             <div class="rail-group">
                                 <AccountComponent_WorkspacePicker CurrentWorkspaceId="activeWorkspaceId"
                                                                     Workspaces="myWorkspaces"
-                                                                    CurrentUserId="CurrentUser.ID"
+                                                                      CurrentUserId="CurrentUser.Id"
                                                                     AccountLabel="@GetPrimaryEmail()"
                                                                     BasePath="@BasePath"
                                                                     WorkspaceLabel="@WorkspaceLabel"
@@ -321,7 +321,7 @@ else
     private string ActiveWorkspaceName => activeWorkspaceId is null
         ? "Personal account"
         : activeWorkspace?.Workspace.Name
-            ?? myWorkspaces.FirstOrDefault(workspace => workspace.ID == activeWorkspaceId)?.Name
+            ?? myWorkspaces.FirstOrDefault(workspace => workspace.Id == activeWorkspaceId)?.Name
             ?? WorkspaceLabel;
 
     /// <summary>
@@ -569,7 +569,7 @@ else
 
         try
         {
-            await cloudLogin.DeleteUser(CurrentUser.ID);
+            await cloudLogin.DeleteUser(CurrentUser.Id);
         }
         catch (Exception ex)
         {

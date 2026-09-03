@@ -555,7 +555,7 @@ public class CloudLoginClient : ICloudLogin
         {
             CloudUser? currentUser = await CurrentUser();
 
-            if (currentUser != null && currentUser.ID != Guid.Empty)
+            if (currentUser != null && currentUser.Id != Guid.Empty)
                 return true;
 
             return false;
@@ -751,7 +751,7 @@ public class CloudLoginClient : ICloudLogin
     public async Task<CloudWorkspace> UpdateWorkspace(CloudWorkspace workspace)
     {
         HttpContent content = JsonContent.Create(workspace, options: CloudLoginSerialization.Options);
-        HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Workspaces/{workspace.ID}", content);
+        HttpResponseMessage message = await HttpServer.PutAsync($"{AccountRoute}/Workspaces/{workspace.Id}", content);
 
         if (!message.IsSuccessStatusCode)
             throw await AccountFailure(message, "We couldn't save those changes.");

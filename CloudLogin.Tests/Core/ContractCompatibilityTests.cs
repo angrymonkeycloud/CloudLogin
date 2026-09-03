@@ -12,7 +12,7 @@ public class V2ContractSnapshotTests
 {
     private static readonly string[] ExpectedCloudUserProperties =
     [
-        "ID", "FirstName", "LastName", "DisplayName", "IsLocked", "IsTest", "IsGlobalAdmin",
+        "Id", "FirstName", "LastName", "DisplayName", "IsLocked", "IsTest", "IsGlobalAdmin",
         "Username", "DateOfBirth", "CreatedOn", "LastSignedIn", "Inputs",
         "ProfilePicture", "IsCustomProfilePicture", "ProviderProfilePicture", "Country", "Locale"
     ];
@@ -28,7 +28,7 @@ public class V2ContractSnapshotTests
     // the complete wire shape.
     private static CloudUser SampleUser() => new()
     {
-        ID = Guid.Parse("b6f1b2a0-2f43-4b3a-9e21-4a4b6f2c9a11"),
+        Id = Guid.Parse("b6f1b2a0-2f43-4b3a-9e21-4a4b6f2c9a11"),
         FirstName = "Ada",
         LastName = "Lovelace",
         DisplayName = "Ada Lovelace",

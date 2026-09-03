@@ -25,7 +25,7 @@ public class CloudLoginServerSecurityTests
         Assert.True(await fixture.Server.PasswordLogin(
             CloudLoginPasswordLoginRequest.Create("person@example.com", "Valid#123456")));
 
-        CloudLoginHistoryEntry entry = Assert.Single(fixture.SecurityStore.History[user.ID]);
+        CloudLoginHistoryEntry entry = Assert.Single(fixture.SecurityStore.History[user.Id]);
         Assert.Equal("Password", entry.Provider);
         Assert.Equal("Chrome on Windows", entry.Device);
         Assert.Equal(WindowsChrome, entry.UserAgent);
@@ -37,9 +37,9 @@ public class CloudLoginServerSecurityTests
         LoginTestFixture fixture = new(testModeEnabled: true);
         CloudUser user = await fixture.AddPasswordUserAsync(isTest: true);
 
-        Assert.True(await fixture.Server.TestLogin(user.ID));
+        Assert.True(await fixture.Server.TestLogin(user.Id));
 
-        Assert.Equal("TestMode", Assert.Single(fixture.SecurityStore.History[user.ID]).Provider);
+        Assert.Equal("TestMode", Assert.Single(fixture.SecurityStore.History[user.Id]).Provider);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class CloudLoginServerSecurityTests
     {
         LoginTestFixture fixture = new();
         CloudUser user = await fixture.AddPasswordUserAsync();
-        fixture.Store.SecurityStamps[user.ID] = "stamp-1";
+        fixture.Store.SecurityStamps[user.Id] = "stamp-1";
         fixture.AuthenticateAs(user);
         Assert.NotNull(await fixture.Server.CurrentUser());
 
@@ -59,11 +59,11 @@ public class CloudLoginServerSecurityTests
 
         // The stamp rotated - every other device is out - and this browser got a fresh ticket
         // carrying it, so it is still signed in.
-        string rotated = fixture.Store.SecurityStamps[user.ID];
+        string rotated = fixture.Store.SecurityStamps[user.Id];
         Assert.NotEqual("stamp-1", rotated);
         Assert.Equal(1, fixture.Authentication.SignInCount);
         Assert.Equal(rotated, fixture.Authentication.SignedInPrincipal!.FindFirstValue(CloudLoginAuthenticationClaims.SecurityStamp));
-        Assert.Equal(user.ID.ToString(), fixture.Authentication.SignedInPrincipal.FindFirstValue(ClaimTypes.NameIdentifier));
+        Assert.Equal(user.Id.ToString(), fixture.Authentication.SignedInPrincipal.FindFirstValue(ClaimTypes.NameIdentifier));
         Assert.NotNull(await fixture.Server.CurrentUser());
     }
 
@@ -72,11 +72,11 @@ public class CloudLoginServerSecurityTests
     {
         LoginTestFixture fixture = new();
         CloudUser user = await fixture.AddPasswordUserAsync();
-        fixture.Store.SecurityStamps[user.ID] = "stamp-1";
+        fixture.Store.SecurityStamps[user.Id] = "stamp-1";
         fixture.AuthenticateAs(user);
 
         // Rotated from somewhere else: an admin lock, a password change on another device.
-        await fixture.Store.RotateSecurityStamp(user.ID);
+        await fixture.Store.RotateSecurityStamp(user.Id);
 
         Assert.Null(await fixture.Server.CurrentUser());
     }
@@ -86,9 +86,9 @@ public class CloudLoginServerSecurityTests
     {
         LoginTestFixture fixture = new();
         CloudUser user = await fixture.AddPasswordUserAsync();
-        fixture.Store.SecurityStamps[user.ID] = "stamp-1";
+        fixture.Store.SecurityStamps[user.Id] = "stamp-1";
         fixture.AuthenticateAs(user);
-        await fixture.SecurityStore.UpdateCredentials(user.ID, document => document.Authenticator = new CloudLoginAuthenticatorApp
+        await fixture.SecurityStore.UpdateCredentials(user.Id, document => document.Authenticator = new CloudLoginAuthenticatorApp
         {
             SecretKey = "JBSWY3DPEHPK3PXP",
             EnrolledOn = DateTimeOffset.UtcNow,
@@ -97,7 +97,7 @@ public class CloudLoginServerSecurityTests
 
         await fixture.Server.DisableAuthenticator();
 
-        Assert.Null((await fixture.SecurityStore.GetCredentials(user.ID)).Authenticator);
+        Assert.Null((await fixture.SecurityStore.GetCredentials(user.Id)).Authenticator);
         Assert.Equal(1, fixture.Authentication.SignInCount);
         Assert.NotNull(await fixture.Server.CurrentUser());
     }
@@ -108,7 +108,7 @@ public class CloudLoginServerSecurityTests
     {
         LoginTestFixture fixture = new();
         CloudUser user = await fixture.AddPasswordUserAsync();
-        fixture.Store.SecurityStamps[user.ID] = "stamp-1";
+        fixture.Store.SecurityStamps[user.Id] = "stamp-1";
         fixture.AuthenticateAs(user);
         CloudLoginAuthenticationClaims.WithSession(fixture.HttpContext.User, "sess_1", "family_1");
 

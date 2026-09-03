@@ -14,7 +14,7 @@ public record CloudLoginPasskey
     /// </summary>
     public uint SignCount { get; set; }
 
-    /// <summary>Name the user gave this credential, e.g. "MacBook Touch ID".</summary>
+    /// <summary>Name the user gave this credential, e.g. "MacBook Touch Id".</summary>
     public string? Name { get; set; }
 
     public Guid AaGuid { get; set; }

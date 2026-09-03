@@ -12,7 +12,7 @@ namespace AngryMonkey.CloudLogin;
 /// </summary>
 public record CloudLoginHistoryEntry
 {
-    public Guid ID { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>When the sign-in completed (UTC).</summary>
     public DateTimeOffset SignedInOn { get; set; }

@@ -95,13 +95,13 @@ internal sealed class LoginTestFixture
     {
         List<Claim> claims =
         [
-            new Claim(ClaimTypes.NameIdentifier, user.ID.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.DisplayName ?? string.Empty),
             new Claim(ClaimTypes.UserData, System.Text.Json.JsonSerializer.Serialize(user, CloudLoginSerialization.Options))
         ];
 
         // A ticket issued while the store holds a stamp carries it, as a real cookie would.
-        if (Store.SecurityStamps.TryGetValue(user.ID, out string? stamp))
+        if (Store.SecurityStamps.TryGetValue(user.Id, out string? stamp))
             claims.Add(new Claim(CloudLoginAuthenticationClaims.SecurityStamp, stamp));
 
         ClaimsIdentity identity = new(claims, "UnitTest");
@@ -125,13 +125,13 @@ internal sealed class LoginTestFixture
             });
         }
 
-        Store.Users[user.ID] = user;
+        Store.Users[user.Id] = user;
         return user;
     }
 
     public static CloudUser CreateUser(string email = "person@example.com", bool isTest = false) => new()
     {
-        ID = Guid.NewGuid(),
+        Id = Guid.NewGuid(),
         FirstName = "Test",
         LastName = "Person",
         DisplayName = "Test Person",
@@ -294,14 +294,14 @@ internal sealed class InMemoryCloudLoginStore : ICloudLoginStore
 
     public Task Update(CloudUser user)
     {
-        Users[user.ID] = user;
+        Users[user.Id] = user;
         UpdateCount++;
         return Task.CompletedTask;
     }
 
     public Task Create(CloudUser user)
     {
-        Users[user.ID] = user;
+        Users[user.Id] = user;
         return Task.CompletedTask;
     }
 

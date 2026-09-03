@@ -113,7 +113,7 @@ public class TokenServiceTests
 
     private static CloudUser CreateUser(Guid? id = null, bool isLocked = false, bool isGlobalAdmin = false) => new()
     {
-        ID = id ?? Guid.NewGuid(),
+        Id = id ?? Guid.NewGuid(),
         DisplayName = "Ada Lovelace",
         IsLocked = isLocked,
         IsGlobalAdmin = isGlobalAdmin,
@@ -124,7 +124,7 @@ public class TokenServiceTests
     };
 
     private static Task<CloudUser?> Lookup(CloudUser user, Guid id, CancellationToken _) =>
-        Task.FromResult<CloudUser?>(id == user.ID ? user : null);
+        Task.FromResult<CloudUser?>(id == user.Id ? user : null);
 
     // ── Issuance ────────────────────────────────────────────────────────────
 
@@ -139,7 +139,7 @@ public class TokenServiceTests
         ClaimsPrincipal? principal = await service.ValidateAccessTokenAsync(response.AccessToken, PortalAudience);
 
         Assert.NotNull(principal);
-        Assert.Equal(user.ID.ToString(), principal.FindFirst(CloudLoginClaims.Subject)?.Value);
+        Assert.Equal(user.Id.ToString(), principal.FindFirst(CloudLoginClaims.Subject)?.Value);
         Assert.Equal("True", principal.FindFirst(CloudLoginClaims.IsGlobalAdmin)?.Value, ignoreCase: true);
         Assert.NotNull(response.RefreshToken);
     }
@@ -205,7 +205,7 @@ public class TokenServiceTests
 
         string[] parts = response.AccessToken.Split('.');
         string payload = Encoding.UTF8.GetString(Base64UrlEncoder.DecodeBytes(parts[1]));
-        string swapped = payload.Replace(user.ID.ToString(), victimId.ToString());
+        string swapped = payload.Replace(user.Id.ToString(), victimId.ToString());
         string forged = $"{parts[0]}.{Base64UrlEncoder.Encode(Encoding.UTF8.GetBytes(swapped))}.{parts[2]}";
 
         Assert.Null(await service.ValidateAccessTokenAsync(forged, PortalAudience));
@@ -231,7 +231,7 @@ public class TokenServiceTests
             Issuer = Authority,
             Audience = PortalAudience,
             Expires = DateTime.UtcNow.AddMinutes(10),
-            Claims = new Dictionary<string, object> { [CloudLoginClaims.Subject] = user.ID.ToString() },
+            Claims = new Dictionary<string, object> { [CloudLoginClaims.Subject] = user.Id.ToString() },
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(publicBytes) { KeyId = publicKey.KeyId },
                 SecurityAlgorithms.HmacSha256)
@@ -454,7 +454,7 @@ public class TokenServiceTests
         ClaimsPrincipal? principal = await service.ValidateAccessTokenAsync(delegated.AccessToken, CdmAudience);
 
         Assert.NotNull(principal);
-        Assert.Equal(user.ID.ToString(), principal.FindFirst(CloudLoginClaims.Subject)?.Value);
+        Assert.Equal(user.Id.ToString(), principal.FindFirst(CloudLoginClaims.Subject)?.Value);
         Assert.Contains("blusky-portal", principal.FindFirst(CloudLoginClaims.Actor)?.Value ?? string.Empty);
 
         // Delegation must not hand out a long-lived credential.

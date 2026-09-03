@@ -48,7 +48,7 @@ public class CloudLoginUserNotificationTests
 
         try
         {
-            CloudUser signedIn = new() { ID = Guid.NewGuid(), DisplayName = "Test User" };
+            CloudUser signedIn = new() { Id = Guid.NewGuid(), DisplayName = "Test User" };
 
             // The bootstrapper's instance confirms the session; the subscriber that renders
             // the account UI is attached to a different instance entirely.
@@ -74,7 +74,7 @@ public class CloudLoginUserNotificationTests
         instance.UserChanged += Handler;
         instance.UserChanged -= Handler;
 
-        instance.Publish(new CloudUser { ID = Guid.NewGuid() });
+        instance.Publish(new CloudUser { Id = Guid.NewGuid() });
 
         // App-wide delivery must not mean an undetachable subscription: a disposed
         // component would otherwise keep being called back forever.

@@ -30,7 +30,7 @@ public class ServiceControllerTests
         CloudWorkspace workspace = await registry.CreateAsync("Original Name", Guid.NewGuid());
         ServiceController controller = CreateController(workspaceRegistry: registry);
 
-        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.ID, Values(new
+        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.Id, Values(new
         {
             Name = "New Name",
             BillingContactName = "Dana Haddad",
@@ -51,13 +51,13 @@ public class ServiceControllerTests
         CloudWorkspace workspace = await registry.CreateAsync("Original Name", Guid.NewGuid());
         ServiceController controller = CreateController(workspaceRegistry: registry);
 
-        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.ID, Values(new
+        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.Id, Values(new
         {
             OwnerUserId = Guid.NewGuid()
         }));
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Original Name", (await registry.GetAsync(workspace.ID))!.Name);
+        Assert.Equal("Original Name", (await registry.GetAsync(workspace.Id))!.Name);
     }
 
     [Fact]
@@ -75,10 +75,10 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser user = LoginTestFixture.CreateUser();
-        users.Users[user.ID] = user;
+        users.Users[user.Id] = user;
         ServiceController controller = CreateController(cloudLoginStore: users);
 
-        ActionResult<CloudUser> result = await controller.UpdateUser(user.ID, Values(new
+        ActionResult<CloudUser> result = await controller.UpdateUser(user.Id, Values(new
         {
             FirstName = "Karim",
             LastName = "Nasr",
@@ -104,13 +104,13 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser user = LoginTestFixture.CreateUser();
-        users.Users[user.ID] = user;
+        users.Users[user.Id] = user;
         ServiceController controller = CreateController(cloudLoginStore: users);
 
-        ActionResult<CloudUser> result = await controller.UpdateUser(user.ID, Values(new { IsLocked = true }));
+        ActionResult<CloudUser> result = await controller.UpdateUser(user.Id, Values(new { IsLocked = true }));
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.False(users.Users[user.ID].IsLocked);
+        Assert.False(users.Users[user.Id].IsLocked);
     }
 
     /// <summary>
@@ -123,10 +123,10 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser user = LoginTestFixture.CreateUser();
-        users.Users[user.ID] = user;
+        users.Users[user.Id] = user;
         ServiceController controller = CreateController(cloudLoginStore: users);
 
-        ActionResult<CloudUser> result = await controller.UpdateUser(user.ID, Values(new { Username = "hijacked" }));
+        ActionResult<CloudUser> result = await controller.UpdateUser(user.Id, Values(new { Username = "hijacked" }));
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
@@ -153,13 +153,13 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser user = LoginTestFixture.CreateUser();
-        users.Users[user.ID] = user;
+        users.Users[user.Id] = user;
         ServiceController controller = CreateController(cloudLoginStore: users);
 
         ActionResult<List<CloudUser>> result = await controller.GetUsersByDisplayName(user.DisplayName!);
 
         List<CloudUser> found = Assert.IsType<List<CloudUser>>(Assert.IsType<OkObjectResult>(result.Result).Value);
-        Assert.Equal(user.ID, Assert.Single(found).ID);
+        Assert.Equal(user.Id, Assert.Single(found).Id);
     }
 
     [Fact]
@@ -177,12 +177,12 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser user = LoginTestFixture.CreateUser(email: "dana@example.com");
-        users.Users[user.ID] = user;
+        users.Users[user.Id] = user;
         ServiceController controller = CreateController(cloudLoginStore: users);
 
         ActionResult<CloudUser> result = await controller.GetUserByEmail("dana@example.com");
 
-        Assert.Equal(user.ID, Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value).ID);
+        Assert.Equal(user.Id, Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value).Id);
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class ServiceControllerTests
         CloudWorkspace workspace = await registry.CreateAsync("ACME", Guid.NewGuid());
         ServiceController controller = CreateController(workspaceRegistry: registry);
 
-        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.ID, Values(new
+        ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.Id, Values(new
         {
             LegalName = "ACME Holdings SAL",
             Website = "https://acme.test",
@@ -249,24 +249,24 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser owner = LoginTestFixture.CreateUser();
-        users.Users[owner.ID] = owner;
+        users.Users[owner.Id] = owner;
         WorkspaceRegistry registry = new(new InMemoryCloudLoginAccountStore());
         ServiceController controller = CreateController(cloudLoginStore: users, workspaceRegistry: registry);
 
         ActionResult<CloudWorkspace> result = await controller.CreateWorkspace(Values(new
         {
             Name = "ACME",
-            OwnerUserId = owner.ID,
+            OwnerUserId = owner.Id,
             BillingEmail = "billing@acme.test",
             BillingAddress = new { City = "Beirut", Country = "LB" }
         }));
 
         CloudWorkspace created = Assert.IsType<CloudWorkspace>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal("ACME", created.Name);
-        Assert.Equal(owner.ID, created.OwnerUserId);
+        Assert.Equal(owner.Id, created.OwnerUserId);
         Assert.Equal("billing@acme.test", created.BillingEmail);
         Assert.Equal("Beirut", created.BillingAddress.City);
-        Assert.Equal(created.ID, Assert.Single(await registry.GetAllAsync()).ID);
+        Assert.Equal(created.Id, Assert.Single(await registry.GetAllAsync()).Id);
     }
 
     /// <summary>A rejected field must not leave a half-made workspace behind.</summary>
@@ -275,14 +275,14 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser owner = LoginTestFixture.CreateUser();
-        users.Users[owner.ID] = owner;
+        users.Users[owner.Id] = owner;
         WorkspaceRegistry registry = new(new InMemoryCloudLoginAccountStore());
         ServiceController controller = CreateController(cloudLoginStore: users, workspaceRegistry: registry);
 
         ActionResult<CloudWorkspace> result = await controller.CreateWorkspace(Values(new
         {
             Name = "ACME",
-            OwnerUserId = owner.ID,
+            OwnerUserId = owner.Id,
             Metadata = "not a profile field"
         }));
 
@@ -335,7 +335,7 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser existing = LoginTestFixture.CreateUser(email: "dana@acme.test");
-        users.Users[existing.ID] = existing;
+        users.Users[existing.Id] = existing;
         ServiceController controller = CreateController(cloudLoginStore: users);
 
         ActionResult<CloudUser> result = await controller.CreateUser(Values(new { PrimaryEmail = "dana@acme.test" }));
@@ -349,10 +349,10 @@ public class ServiceControllerTests
     {
         InMemoryCloudLoginStore users = new();
         CloudUser user = LoginTestFixture.CreateUser();
-        users.Users[user.ID] = user;
+        users.Users[user.Id] = user;
         ServiceController controller = CreateController(cloudLoginStore: users);
 
-        ActionResult<CloudUser> result = await controller.UpdateUser(user.ID, Values(new { DateOfBirth = "1990-05-17" }));
+        ActionResult<CloudUser> result = await controller.UpdateUser(user.Id, Values(new { DateOfBirth = "1990-05-17" }));
 
         CloudUser updated = Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal(new DateOnly(1990, 5, 17), updated.DateOfBirth);

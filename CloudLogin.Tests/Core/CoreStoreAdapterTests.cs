@@ -51,7 +51,7 @@ public class CoreStoreAdapterTests
 
         return new CloudUser
         {
-            ID = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             FirstName = "Ada",
             LastName = "Lovelace",
             DisplayName = "Ada Lovelace",
@@ -89,7 +89,7 @@ public class CoreStoreAdapterTests
         CloudUser user = BuildUser();
         await _adapter.Create(user);
 
-        CloudUser? loaded = await _adapter.GetUserById(user.ID);
+        CloudUser? loaded = await _adapter.GetUserById(user.Id);
 
         // Password login logic reads the hash from the server-side composed user.
         Assert.NotNull(loaded);
@@ -105,7 +105,7 @@ public class CoreStoreAdapterTests
         CloudUser? found = await _adapter.GetUserByEmailAddress("ADA@EXAMPLE.COM");
 
         Assert.NotNull(found);
-        Assert.Equal(user.ID, found!.ID);
+        Assert.Equal(user.Id, found!.Id);
     }
 
     [Fact]
@@ -115,11 +115,11 @@ public class CoreStoreAdapterTests
         await _adapter.Create(user);
 
         // The account page round-trips a stripped user (hash removed by transport security).
-        CloudUser stripped = CloudLoginTransportSecurity.ForTransport(await _adapter.GetUserById(user.ID))!;
+        CloudUser stripped = CloudLoginTransportSecurity.ForTransport(await _adapter.GetUserById(user.Id))!;
         stripped.FirstName = "Augusta";
         await _adapter.Update(stripped);
 
-        CloudUser? reloaded = await _adapter.GetUserById(user.ID);
+        CloudUser? reloaded = await _adapter.GetUserById(user.Id);
         Assert.Equal("Augusta", reloaded!.FirstName);
         Assert.Equal("PBKDF2$hash", reloaded.Inputs[0].Providers.Single(provider => provider.Code == "Password").PasswordHash);
     }
@@ -133,8 +133,8 @@ public class CoreStoreAdapterTests
         await _adapter.Create(first);
         await _adapter.Create(second);
 
-        Assert.True((await _adapter.GetUserById(first.ID))!.IsGlobalAdmin);
-        Assert.False((await _adapter.GetUserById(second.ID))!.IsGlobalAdmin);
+        Assert.True((await _adapter.GetUserById(first.Id))!.IsGlobalAdmin);
+        Assert.False((await _adapter.GetUserById(second.Id))!.IsGlobalAdmin);
     }
 
     [Fact]
@@ -143,14 +143,14 @@ public class CoreStoreAdapterTests
         CloudUser user = BuildUser();
         await _adapter.Create(user);
 
-        await _adapter.AddInput(user.ID, new CloudLoginInput
+        await _adapter.AddInput(user.Id, new CloudLoginInput
         {
             Input = "second@example.com",
             Format = CloudLoginInputFormat.EmailAddress
         });
 
-        Assert.Equal(user.ID, (await _identityKeys.ResolveAsync("default", IdentityKey.CanonicalEmail("second@example.com")))!.UserId);
-        Assert.Equal(2, (await _adapter.GetUserById(user.ID))!.Inputs.Count);
+        Assert.Equal(user.Id, (await _identityKeys.ResolveAsync("default", IdentityKey.CanonicalEmail("second@example.com")))!.UserId);
+        Assert.Equal(2, (await _adapter.GetUserById(user.Id))!.Inputs.Count);
     }
 
     [Fact]
@@ -159,9 +159,9 @@ public class CoreStoreAdapterTests
         CloudUser user = BuildUser(googleSubject: "google-sub-2");
         await _adapter.Create(user);
 
-        await _adapter.DeleteUser(user.ID);
+        await _adapter.DeleteUser(user.Id);
 
-        Assert.Null(await _adapter.GetUserById(user.ID));
+        Assert.Null(await _adapter.GetUserById(user.Id));
         Assert.Null(await _identityKeys.ResolveAsync("default", IdentityKey.CanonicalEmail("ada@example.com")));
         Assert.Null(await _identityKeys.ResolveAsync("default",
             IdentityKey.CanonicalExternal("https://accounts.google.com", "google-sub-2")));
@@ -186,13 +186,13 @@ public class CoreStoreAdapterTests
         await _adapter.Create(user);
 
         Guid requestId = Guid.NewGuid();
-        await _adapter.CreateRequest(user.ID, requestId);
+        await _adapter.CreateRequest(user.Id, requestId);
 
         CloudUser? first = await _adapter.GetUserByRequestId(requestId);
         CloudUser? second = await _adapter.GetUserByRequestId(requestId);
 
         Assert.NotNull(first);
-        Assert.Equal(user.ID, first!.ID);
+        Assert.Equal(user.Id, first!.Id);
         Assert.Null(second);
     }
 
@@ -210,7 +210,7 @@ public class CoreStoreAdapterTests
             "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Version/17.0 Mobile/15E148 Safari/604.1";
 
         Guid requestId = Guid.NewGuid();
-        await _adapter.CreateRequest(user.ID, requestId);
+        await _adapter.CreateRequest(user.Id, requestId);
 
         CloudLoginRequestOrigin? origin = await _adapter.GetRequestOrigin(requestId);
 
@@ -236,7 +236,7 @@ public class CoreStoreAdapterTests
 
         _configuration.LoginRequestLifetime = TimeSpan.FromMilliseconds(-1);
         Guid requestId = Guid.NewGuid();
-        await _adapter.CreateRequest(user.ID, requestId);
+        await _adapter.CreateRequest(user.Id, requestId);
 
         LoginRequestDocument stored = _loginRequests.Documents.Values.Single();
         Assert.NotNull(stored.Ttl);

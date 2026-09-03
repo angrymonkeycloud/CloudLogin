@@ -321,7 +321,7 @@ CloudLogin provider configurations are defined in `AngryMonkey.CloudLogin.Sever.
 | --- | --- | --- | --- | --- |
 | Password | `PasswordProviderConfiguration` | No | Email/password | Primary username+password sign-in |
 | Code (OTP) | `CodeProviderConfiguration` | No | Email verification code | Passwordless/verification-code flow |
-| Microsoft | `MicrosoftProviderConfiguration` | Yes | OAuth/OIDC + email claims | Microsoft Entra ID / Microsoft account sign-in |
+| Microsoft | `MicrosoftProviderConfiguration` | Yes | OAuth/OIDC + email claims | Microsoft Entra Id / Microsoft account sign-in |
 | Google | `GoogleProviderConfiguration` | Yes | OAuth + profile claims | Google account sign-in |
 | Facebook | `FacebookProviderConfiguration` | Yes | OAuth + profile claims | Facebook account sign-in |
 | Twitter | `TwitterProviderConfiguration` | Yes | OAuth | X/Twitter account sign-in |

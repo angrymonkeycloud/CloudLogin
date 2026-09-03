@@ -108,7 +108,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
             string? userAgent = context.Request.Headers.UserAgent.ToString();
 
-            await server.RecordSignInForUser(user.ID, new CloudLoginHistoryEntry
+            await server.RecordSignInForUser(user.Id, new CloudLoginHistoryEntry
             {
                 SignedInOn = signedInOn,
                 Provider = provider,
@@ -364,7 +364,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
         user.LastSignedIn = currentDateTime;
         await store.Update(user);
-        await PublishUserEvent("User.Updated", "Updated", user.ID);
+        await PublishUserEvent("User.Updated", "Updated", user.Id);
         return user;
     }
 
@@ -395,7 +395,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
         CloudUser user = new()
         {
-            ID = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             FirstName = firstName,
             LastName = lastName,
             DisplayName = displayName.Trim(),
@@ -425,7 +425,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         };
 
         await store.Create(user);
-        await PublishUserEvent("User.Created", "Created", user.ID);
+        await PublishUserEvent("User.Created", "Created", user.Id);
         return user;
     }
 
@@ -442,7 +442,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
                 "User",
                 userId,
                 operation,
-                new { ID = userId }));
+                new { Id = userId }));
     }
     private async Task<(string? countryCode, string? callingCode, string input)> ProcessPhoneNumber(CloudLoginInputFormat formatValue, string input)
     {

@@ -322,7 +322,7 @@ namespace AngryMonkey.CloudLogin.Services
         {
             CloudUser? user = await _cloudLogin.GetUserByEmailAddress(email);
 
-            return user?.ID != Guid.Empty;
+            return user?.Id != Guid.Empty;
         }
 
         private void NotifyStateChanged() => OnStateChanged?.Invoke();

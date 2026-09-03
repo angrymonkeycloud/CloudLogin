@@ -69,7 +69,7 @@ public partial class CloudLoginServer
             ?? identity?.AuthenticationType
             ?? "CloudLogin";
 
-        CloudUser current = await _cosmosMethods.GetUserById(user.ID) ?? user;
+        CloudUser current = await _cosmosMethods.GetUserById(user.Id) ?? user;
         ClaimsPrincipal refreshed = await CloudLoginAuthenticationClaims.CreateAsync(current, method, _cosmosMethods);
         CloudLoginAuthenticationClaims.CarrySession(context.User, refreshed);
 
@@ -92,8 +92,8 @@ public partial class CloudLoginServer
         CloudUser user = await RequireCurrentUser();
 
         CloudLoginUserSecurityDocument credentials = _configuration.AzureStorage is null && _injectedSecurityStore is null
-            ? new CloudLoginUserSecurityDocument { UserId = user.ID }
-            : await SecurityStore.GetCredentials(user.ID);
+            ? new CloudLoginUserSecurityDocument { UserId = user.Id }
+            : await SecurityStore.GetCredentials(user.Id);
 
         List<CloudLoginProviderDefinition> configured = await GetProviders();
 
@@ -143,7 +143,7 @@ public partial class CloudLoginServer
         if (_configuration.AzureStorage is null && _injectedSecurityStore is null)
             return [];
 
-        return await SecurityStore.GetLoginHistory(user.ID);
+        return await SecurityStore.GetLoginHistory(user.Id);
     }
 
     // ── Signed-in devices ────────────────────────────────────────────────────
@@ -165,7 +165,7 @@ public partial class CloudLoginServer
         // so the "This device" marker cannot be spoofed by a query parameter.
         string? currentSessionId = _accessor.HttpContext?.User?.FindFirst(CloudLoginClaims.SessionId)?.Value;
 
-        List<Core.Application.SignedInDevice> devices = await sessions.GetDevicesAsync(user.ID, currentSessionId);
+        List<Core.Application.SignedInDevice> devices = await sessions.GetDevicesAsync(user.Id, currentSessionId);
 
         return [.. devices.Select(device => new CloudLoginSignedInDevice
         {
@@ -200,7 +200,7 @@ public partial class CloudLoginServer
         if (sessions is null)
             return false;
 
-        return await sessions.RevokeDeviceAsync(user.ID, deviceId);
+        return await sessions.RevokeDeviceAsync(user.Id, deviceId);
     }
 
     /// <summary>
@@ -218,7 +218,7 @@ public partial class CloudLoginServer
 
         string? currentSessionId = _accessor.HttpContext?.User?.FindFirst(CloudLoginClaims.SessionId)?.Value;
 
-        return await sessions.RevokeOtherDevicesAsync(user.ID, currentSessionId);
+        return await sessions.RevokeOtherDevicesAsync(user.Id, currentSessionId);
     }
 
     /// <summary>
@@ -287,7 +287,7 @@ public partial class CloudLoginServer
         }
 
         await UpdateUser(user);
-        await _cosmosMethods!.RotateSecurityStamp(user.ID);
+        await _cosmosMethods!.RotateSecurityStamp(user.Id);
         await RefreshOwnTicketAsync(user);
     }
 
@@ -315,7 +315,7 @@ public partial class CloudLoginServer
         if (targetInput is null || provider is null)
             throw new InvalidOperationException("That provider isn't linked to your account.");
 
-        await _cosmosMethods!.RemoveLoginProvider(user.ID, provider.Code, targetInput.Input, provider.Identifier);
+        await _cosmosMethods!.RemoveLoginProvider(user.Id, provider.Code, targetInput.Input, provider.Identifier);
         targetInput.Providers.Remove(provider);
         await UpdateUser(user);
         await RefreshOwnTicketAsync(user);
@@ -334,7 +334,7 @@ public partial class CloudLoginServer
 
         string secret = TotpAuthenticator.CreateSecret();
 
-        await SecurityStore.UpdateCredentials(user.ID, document => document.Authenticator = new CloudLoginAuthenticatorApp
+        await SecurityStore.UpdateCredentials(user.Id, document => document.Authenticator = new CloudLoginAuthenticatorApp
         {
             SecretKey = secret,
             EnrolledOn = DateTimeOffset.UtcNow,
@@ -343,7 +343,7 @@ public partial class CloudLoginServer
 
         string accountName = (user.PrimaryEmailAddress ?? user.EmailAddresses.FirstOrDefault())?.Input
             ?? user.DisplayName
-            ?? user.ID.ToString();
+            ?? user.Id.ToString();
 
         return new CloudLoginAuthenticatorEnrollment
         {
@@ -357,7 +357,7 @@ public partial class CloudLoginServer
     {
         CloudUser user = await RequireCurrentUser();
 
-        CloudLoginUserSecurityDocument credentials = await SecurityStore.GetCredentials(user.ID);
+        CloudLoginUserSecurityDocument credentials = await SecurityStore.GetCredentials(user.Id);
 
         if (credentials.Authenticator is null)
             return false;
@@ -365,7 +365,7 @@ public partial class CloudLoginServer
         if (!TotpAuthenticator.VerifyCode(credentials.Authenticator.SecretKey, code))
             return false;
 
-        await SecurityStore.UpdateCredentials(user.ID, document =>
+        await SecurityStore.UpdateCredentials(user.Id, document =>
         {
             if (document.Authenticator is not null)
                 document.Authenticator.IsConfirmed = true;
@@ -380,7 +380,7 @@ public partial class CloudLoginServer
     public async Task DisableAuthenticator()
     {
         CloudUser user = await RequireCurrentUser();
-        await SecurityStore.UpdateCredentials(user.ID, document => document.Authenticator = null);
+        await SecurityStore.UpdateCredentials(user.Id, document => document.Authenticator = null);
         await RefreshOwnTicketAsync(user);
     }
 
@@ -389,7 +389,7 @@ public partial class CloudLoginServer
     {
         CloudUser user = await RequireCurrentUser();
 
-        CloudLoginUserSecurityDocument credentials = await SecurityStore.GetCredentials(user.ID);
+        CloudLoginUserSecurityDocument credentials = await SecurityStore.GetCredentials(user.Id);
 
         return credentials.Authenticator is { IsConfirmed: true }
             && TotpAuthenticator.VerifyCode(credentials.Authenticator.SecretKey, code);
@@ -431,7 +431,7 @@ public partial class CloudLoginServer
     public async Task<string> BeginPasskeyAssertion()
     {
         CloudUser user = await RequireCurrentUser();
-        AssertionOptions options = await WebAuthn.BeginAssertion(user.ID, RequestOrigin());
+        AssertionOptions options = await WebAuthn.BeginAssertion(user.Id, RequestOrigin());
 
         return JsonSerializer.Serialize(options, WebAuthnJsonOptions);
     }
@@ -447,20 +447,20 @@ public partial class CloudLoginServer
         AuthenticatorAssertionRawResponse assertion = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(assertionJson, WebAuthnJsonOptions)
             ?? throw new ArgumentException("Invalid assertion response.", nameof(assertionJson));
 
-        return await WebAuthn.CompleteAssertion(user.ID, RequestOrigin(), options, assertion);
+        return await WebAuthn.CompleteAssertion(user.Id, RequestOrigin(), options, assertion);
     }
 
     public async Task RemovePasskey(string credentialId)
     {
         CloudUser user = await RequireCurrentUser();
-        await WebAuthn.RemovePasskey(user.ID, credentialId);
+        await WebAuthn.RemovePasskey(user.Id, credentialId);
         await RefreshOwnTicketAsync(user);
     }
 
     public async Task RenamePasskey(string credentialId, string name)
     {
         CloudUser user = await RequireCurrentUser();
-        await WebAuthn.RenamePasskey(user.ID, credentialId, name);
+        await WebAuthn.RenamePasskey(user.Id, credentialId, name);
     }
 
     /// <summary>

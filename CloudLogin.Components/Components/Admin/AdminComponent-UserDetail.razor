@@ -187,7 +187,7 @@
     {
         await RunAction("lock", async () =>
         {
-            await cloudLogin.SetUserLocked(User.ID, !User.IsLocked);
+            await cloudLogin.SetUserLocked(User.Id, !User.IsLocked);
             User.IsLocked = !User.IsLocked;
             ShowMessage(User.IsLocked ? "Account has been locked." : "Account has been unlocked.", false);
         });
@@ -197,7 +197,7 @@
     {
         await RunAction("admin", async () =>
         {
-            await cloudLogin.SetGlobalAdmin(User.ID, !User.IsGlobalAdmin);
+            await cloudLogin.SetGlobalAdmin(User.Id, !User.IsGlobalAdmin);
             User.IsGlobalAdmin = !User.IsGlobalAdmin;
             ShowMessage(User.IsGlobalAdmin ? "Global Admin role granted." : "Global Admin role removed.", false);
         });
@@ -217,7 +217,7 @@
         }
         await RunAction("password", async () =>
         {
-            await cloudLogin.AdminResetPassword(User.ID, _newPassword);
+            await cloudLogin.AdminResetPassword(User.Id, _newPassword);
             _newPassword = string.Empty;
             _confirmPassword = string.Empty;
             ShowMessage("Password has been reset successfully.", false);
@@ -228,7 +228,7 @@
     {
         await RunAction("delete", async () =>
         {
-            await cloudLogin.DeleteUser(User.ID);
+            await cloudLogin.DeleteUser(User.Id);
             await OnUserUpdated.InvokeAsync();
         });
     }

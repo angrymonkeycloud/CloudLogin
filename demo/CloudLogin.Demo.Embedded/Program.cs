@@ -18,7 +18,7 @@ DemoInMemoryCloudLoginStore demoStore = new();
 
 await demoStore.Create(new CloudUser
 {
-    ID = Guid.NewGuid(),
+    Id = Guid.NewGuid(),
     FirstName = "Demo",
     LastName = "Admin",
     DisplayName = "Demo Admin (Global Admin)",

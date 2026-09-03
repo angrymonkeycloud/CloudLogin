@@ -401,7 +401,7 @@
             byte[] content = ms.ToArray();
 
             string contentType = string.IsNullOrWhiteSpace(file.ContentType) ? "image/jpeg" : file.ContentType;
-            string url = await cloudLogin.UploadProfilePicture(CurrentUser.ID, content, contentType);
+            string url = await cloudLogin.UploadProfilePicture(CurrentUser.Id, content, contentType);
 
             CurrentUser.ProfilePicture = url;
             CurrentUser.IsCustomProfilePicture = true;

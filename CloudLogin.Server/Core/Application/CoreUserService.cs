@@ -45,7 +45,7 @@ public sealed class CoreUserService(
     {
         CloudUser cloudUser = new()
         {
-            ID = Guid.Parse(user.Id),
+            Id = Guid.Parse(user.Id),
             FirstName = user.FirstName,
             LastName = user.LastName,
             DisplayName = user.DisplayName,
@@ -112,8 +112,8 @@ public sealed class CoreUserService(
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        UserDocument? existing = isCreate ? null : await _users.GetAsync(cloudUser.ID, cancellationToken);
-        UserDocument user = existing ?? new UserDocument { Id = cloudUser.ID.ToString(), CreatedOn = cloudUser.CreatedOn == DateTimeOffset.MinValue ? now : cloudUser.CreatedOn };
+        UserDocument? existing = isCreate ? null : await _users.GetAsync(cloudUser.Id, cancellationToken);
+        UserDocument user = existing ?? new UserDocument { Id = cloudUser.Id.ToString(), CreatedOn = cloudUser.CreatedOn == DateTimeOffset.MinValue ? now : cloudUser.CreatedOn };
 
         user.FirstName = cloudUser.FirstName;
         user.LastName = cloudUser.LastName;
@@ -217,7 +217,7 @@ public sealed class CoreUserService(
         try
         {
             foreach (IdentityReservation reservation in DistinctIdentities(added))
-                if (await _identityLinking.ClaimIdentityAsync(reservation, cloudUser.ID, cancellationToken))
+                if (await _identityLinking.ClaimIdentityAsync(reservation, cloudUser.Id, cancellationToken))
                     newlyClaimed.Add(reservation.CanonicalValue);
 
             await _users.ReplaceAsync(user, cancellationToken);
@@ -226,7 +226,7 @@ public sealed class CoreUserService(
         {
             foreach (string canonical in newlyClaimed)
             {
-                try { await _identityLinking.ReleaseIdentityAsync(cloudUser.ID, canonical, cancellationToken); }
+                try { await _identityLinking.ReleaseIdentityAsync(cloudUser.Id, canonical, cancellationToken); }
                 catch { }
             }
             throw;
@@ -237,8 +237,8 @@ public sealed class CoreUserService(
 
         foreach (UserContact contact in removed)
         {
-            await _identityLinking.ReleaseIdentityAsync(cloudUser.ID, ContactIdentity(contact).CanonicalValue, cancellationToken);
-            await _credentials.DeleteAsync(cloudUser.ID, CredentialDocument.PasswordId(contact.ContactId), cancellationToken);
+            await _identityLinking.ReleaseIdentityAsync(cloudUser.Id, ContactIdentity(contact).CanonicalValue, cancellationToken);
+            await _credentials.DeleteAsync(cloudUser.Id, CredentialDocument.PasswordId(contact.ContactId), cancellationToken);
         }
     }
 

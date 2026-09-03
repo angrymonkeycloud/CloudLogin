@@ -132,7 +132,7 @@ public static class CloudLoginConfigurationExtensions
     /// <summary>
     /// Gives a Microsoft provider declared without credentials the ones CoconutSharp's Entra
     /// reference wrote. An AppHost adds <c>new MicrosoftProviderConfiguration()</c> and references
-    /// the Entra registration from the login project; the client ID, tenant and the certificate (or
+    /// the Entra registration from the login project; the client Id, tenant and the certificate (or
     /// the local run's secret) then arrive under <c>Entra:*</c> rather than being restated under
     /// <c>Microsoft:*</c>. Explicit <c>Microsoft:*</c> values still win.
     /// </summary>

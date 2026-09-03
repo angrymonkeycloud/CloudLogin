@@ -187,7 +187,7 @@
             }
 
             CloudUser? existingUser = await cloudLogin.GetUserByPhoneNumber(normalized);
-            if (existingUser != null && existingUser.ID != CurrentUser.ID)
+            if (existingUser != null && existingUser.Id != CurrentUser.Id)
             {
                 SetStatus("This phone number is already in use by another account.", false);
                 return;

@@ -312,7 +312,7 @@ public sealed class V3WorkspacesController(CloudLoginWebConfiguration configurat
         IWorkspaceAccessRepository? accessRepository = CoreService<IWorkspaceAccessRepository>();
         CloudUser? user = await CurrentUserAsync();
 
-        return (workspaces, accessRepository, user?.ID);
+        return (workspaces, accessRepository, user?.Id);
     }
 
     private static V3WorkspaceResponse ToResponse(WorkspaceDocument workspace, WorkspaceAccessDocument membership) => new()

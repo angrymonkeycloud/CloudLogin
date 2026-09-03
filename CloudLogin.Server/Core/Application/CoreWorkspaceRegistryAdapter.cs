@@ -109,7 +109,7 @@ public sealed class CoreWorkspaceRegistryAdapter(
 
         return new CloudWorkspaceInvitation
         {
-            ID = ParseInvitationId(invitation.Id),
+            Id = ParseInvitationId(invitation.Id),
             WorkspaceId = workspaceId,
             Recipient = invitation.RecipientDisplay ?? recipient,
             Roles = invitation.Roles,
@@ -122,8 +122,8 @@ public sealed class CoreWorkspaceRegistryAdapter(
     public async Task<CloudWorkspace> UpdateAsync(
         CloudWorkspace workspace, Guid callerUserId, CancellationToken cancellationToken = default)
     {
-        WorkspaceDocument current = await workspaces.GetAsync(workspace.ID, cancellationToken)
-            ?? throw new KeyNotFoundException($"Workspace '{workspace.ID}' was not found.");
+        WorkspaceDocument current = await workspaces.GetAsync(workspace.Id, cancellationToken)
+            ?? throw new KeyNotFoundException($"Workspace '{workspace.Id}' was not found.");
         current.Name = workspace.Name;
         current.LegalName = workspace.LegalName;
         current.Website = workspace.Website;
@@ -132,7 +132,7 @@ public sealed class CoreWorkspaceRegistryAdapter(
         current.BillingContactEmail = workspace.BillingEmail;
         current.BillingContactPhone = workspace.Phone;
         WorkspaceDocument updated = await service.UpdateWorkspaceAsync(
-            workspace.ID, current, callerUserId, cancellationToken);
+            workspace.Id, current, callerUserId, cancellationToken);
         return await ToLegacyAsync(updated, cancellationToken);
     }
 
@@ -145,7 +145,7 @@ public sealed class CoreWorkspaceRegistryAdapter(
         int ownerCount = 0;
         foreach (CloudWorkspace workspace in mine)
         {
-            owned = await GetMembersAsync(workspace.ID, cancellationToken);
+            owned = await GetMembersAsync(workspace.Id, cancellationToken);
             if (owned.Any(member => member.UserId == userId && member.IsOwner))
                 ownerCount++;
         }
@@ -195,7 +195,7 @@ public sealed class CoreWorkspaceRegistryAdapter(
 
         return new CloudWorkspace
         {
-            ID = Guid.Parse(workspace.Id),
+            Id = Guid.Parse(workspace.Id),
             Name = workspace.Name,
             OwnerUserId = Guid.TryParse(primaryOwner?.UserId, out Guid ownerId) ? ownerId : Guid.Empty,
             CreatedOn = workspace.CreatedOn,

@@ -6,7 +6,7 @@ namespace AngryMonkey.CloudLogin.Server;
 
 /// <summary>
 /// WebAuthn (passkey) registration and assertion, covering platform authenticators such as
-/// Windows Hello, Touch ID, and Android biometrics as well as roaming security keys.
+/// Windows Hello, Touch Id, and Android biometrics as well as roaming security keys.
 /// <para>
 /// All cryptographic work — attestation parsing, COSE key handling, signature and origin
 /// verification — is delegated to Fido2NetLib. This class only supplies configuration,
@@ -19,7 +19,7 @@ public sealed class CloudLoginWebAuthnService(ICloudLoginSecurityStore store, Cl
     private readonly CloudLoginSecurityOptions _security = security;
 
     /// <summary>
-    /// Builds a Fido2 instance bound to the caller's origin. The RP ID defaults to the request
+    /// Builds a Fido2 instance bound to the caller's origin. The RP Id defaults to the request
     /// host, which is right for a single-host deployment; a deployment spanning subdomains sets
     /// <see cref="CloudLoginSecurityOptions.WebAuthnRelyingPartyId"/> to the registrable domain.
     /// </summary>
@@ -44,11 +44,11 @@ public sealed class CloudLoginWebAuthnService(ICloudLoginSecurityStore store, Cl
     /// </summary>
     public async Task<CredentialCreateOptions> BeginRegistration(CloudUser user, Uri origin)
     {
-        CloudLoginUserSecurityDocument credentials = await _store.GetCredentials(user.ID);
+        CloudLoginUserSecurityDocument credentials = await _store.GetCredentials(user.Id);
 
         Fido2User fidoUser = new()
         {
-            Id = user.ID.ToByteArray(),
+            Id = user.Id.ToByteArray(),
             Name = GetAccountName(user),
             DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? GetAccountName(user) : user.DisplayName!
         };
@@ -91,7 +91,7 @@ public sealed class CloudLoginWebAuthnService(ICloudLoginSecurityStore store, Cl
                 // The credential must not already be registered to this account. A global check
                 // isn't possible here because credentials are stored per user, and isn't needed:
                 // passkeys are used as a second factor once the user is already identified.
-                CloudLoginUserSecurityDocument existing = await _store.GetCredentials(user.ID);
+                CloudLoginUserSecurityDocument existing = await _store.GetCredentials(user.Id);
                 string candidate = Base64Url.EncodeToString(args.CredentialId);
 
                 return !existing.Passkeys.Any(p => p.CredentialId == candidate);
@@ -110,7 +110,7 @@ public sealed class CloudLoginWebAuthnService(ICloudLoginSecurityStore store, Cl
             CreatedOn = DateTimeOffset.UtcNow
         };
 
-        await _store.UpdateCredentials(user.ID, document =>
+        await _store.UpdateCredentials(user.Id, document =>
         {
             document.Passkeys.RemoveAll(p => p.CredentialId == passkey.CredentialId);
             document.Passkeys.Add(passkey);
@@ -220,5 +220,5 @@ public sealed class CloudLoginWebAuthnService(ICloudLoginSecurityStore store, Cl
     private static string GetAccountName(CloudUser user)
         => (user.PrimaryEmailAddress ?? user.EmailAddresses.FirstOrDefault())?.Input
             ?? (user.PrimaryPhoneNumber ?? user.PhoneNumbers.FirstOrDefault())?.Input
-            ?? user.ID.ToString();
+            ?? user.Id.ToString();
 }

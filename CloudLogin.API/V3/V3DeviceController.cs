@@ -144,7 +144,7 @@ public sealed class V3DeviceController(CloudLoginWebConfiguration configuration,
         // enough to approve — the TV's profile governs the whole flow, not just the TV's screen.
         string? approvingMethod = User.FindFirst(CloudLoginAuthenticationClaims.AuthenticationMethod)?.Value;
 
-        bool approved = await devices.ApproveAsync(request.UserCode, user.ID, approvingMethod);
+        bool approved = await devices.ApproveAsync(request.UserCode, user.Id, approvingMethod);
         return approved ? NoContent() : NotFound();
     }
 
@@ -163,7 +163,7 @@ public sealed class V3DeviceController(CloudLoginWebConfiguration configuration,
         if (user is null)
             return Unauthorized();
 
-        bool denied = await devices.DenyAsync(request.UserCode, user.ID);
+        bool denied = await devices.DenyAsync(request.UserCode, user.Id);
         return denied ? NoContent() : NotFound();
     }
 }

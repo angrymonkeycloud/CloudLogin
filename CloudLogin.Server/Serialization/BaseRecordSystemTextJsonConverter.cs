@@ -135,7 +135,7 @@ public class BaseRecordSystemTextJsonConverter<T> : JsonConverter<T> where T : C
                propertyName == "pk" ||
                propertyName == CloudLoginBaseRecord.GetTypePropertyName() ||
                propertyName == CloudLoginBaseRecord.GetPartitionKeyJsonPropertyName() ||
-               propertyName == "ID" ||
+               propertyName == "Id" ||
                propertyName == "PartitionKey" ||
                propertyName == "Discriminator";
     }

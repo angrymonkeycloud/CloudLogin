@@ -33,7 +33,7 @@ public static class MobileAuthCallback
     }
 
     /// <summary>
-    /// Consumes any buffered request ID that arrived before a subscriber was attached.
+    /// Consumes any buffered request Id that arrived before a subscriber was attached.
     /// Returns null if nothing was buffered.
     /// </summary>
     public static string? ConsumePending()
@@ -141,7 +141,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     {
         try
         {
-            // Get user ID from secure storage
+            // Get user Id from secure storage
             string? userIdStr = await SecureStorage.Default.GetAsync(SecureUserIdKey);
 
             if (string.IsNullOrWhiteSpace(userIdStr))
@@ -152,7 +152,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 
             if (!Guid.TryParse(userIdStr, out Guid userId))
             {
-                Debug.WriteLine("[AccountService] Invalid stored user ID");
+                Debug.WriteLine("[AccountService] Invalid stored user Id");
                 await ClearStoredSessionAsync();
                 return;
             }
@@ -182,14 +182,14 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 
                     if (User != null)
                     {
-                        Debug.WriteLine($"[AccountService] Restored session: {User.DisplayName} ({User.ID})");
+                        Debug.WriteLine($"[AccountService] Restored session: {User.DisplayName} ({User.Id})");
 
                         return;
                     }
                 }
             }
 
-            // Try to restore from server if we have request ID
+            // Try to restore from server if we have request Id
             string? storedRequestId = await SecureStorage.Default.GetAsync(SecureRequestIdKey);
 
             if (!string.IsNullOrWhiteSpace(storedRequestId))
@@ -200,7 +200,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
             }
             else
             {
-                Debug.WriteLine("[AccountService] No request ID, clearing stale session");
+                Debug.WriteLine("[AccountService] No request Id, clearing stale session");
                 await ClearStoredSessionAsync();
             }
         }
@@ -223,7 +223,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     {
         try
         {
-            await SecureStorage.Default.SetAsync(SecureUserIdKey, user.ID.ToString());
+            await SecureStorage.Default.SetAsync(SecureUserIdKey, user.Id.ToString());
 
             if (!string.IsNullOrWhiteSpace(RequestId))
             {
@@ -234,7 +234,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
             Preferences.Default.Set(UserDataKey, json);
             Preferences.Default.Set(LastLoginTimestampKey, DateTime.UtcNow.ToBinary());
 
-            Debug.WriteLine($"[AccountService] Persisted session: {user.DisplayName} ({user.ID})");
+            Debug.WriteLine($"[AccountService] Persisted session: {user.DisplayName} ({user.Id})");
         }
         catch (Exception ex)
         {

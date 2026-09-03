@@ -7,12 +7,12 @@ public class CloudLoginServerWebhookEventTests
     {
         RecordingPublisher publisher = new();
         LoginTestFixture fixture = new(eventPublisher: publisher);
-        CloudUser user = new() { ID = Guid.NewGuid(), DisplayName = "Webhook User" };
+        CloudUser user = new() { Id = Guid.NewGuid(), DisplayName = "Webhook User" };
 
         await fixture.Server.CreateUser(user);
         user.DisplayName = "Updated User";
         await fixture.Server.UpdateUser(user);
-        await fixture.Server.DeleteUser(user.ID);
+        await fixture.Server.DeleteUser(user.Id);
 
         Assert.Equal(
             ["User.Created", "User.Updated", "User.Deleted"],
@@ -20,9 +20,9 @@ public class CloudLoginServerWebhookEventTests
         Assert.All(publisher.Events, cloudEvent =>
         {
             Assert.Equal("User", cloudEvent.EntityType);
-            Assert.Equal(user.ID.ToString(), cloudEvent.EntityId);
+            Assert.Equal(user.Id.ToString(), cloudEvent.EntityId);
             Assert.Equal(1, cloudEvent.Version);
-            Assert.True(cloudEvent.Payload.TryGetProperty("ID", out _));
+            Assert.True(cloudEvent.Payload.TryGetProperty("Id", out _));
         });
     }
 

@@ -30,7 +30,7 @@ public sealed class V3UsersController(CloudLoginWebConfiguration configuration, 
         if (user is null)
             return Unauthorized();
 
-        CloudUser? stored = await Server.GetUserById(user.ID);
+        CloudUser? stored = await Server.GetUserById(user.Id);
         if (stored is null)
             return NotFound();
 
@@ -45,7 +45,7 @@ public sealed class V3UsersController(CloudLoginWebConfiguration configuration, 
 
         await Server.UpdateUser(stored);
 
-        CloudUser? updated = await Server.GetUserById(user.ID);
+        CloudUser? updated = await Server.GetUserById(user.Id);
         return Ok(ToSelfProfile(updated!));
     }
 

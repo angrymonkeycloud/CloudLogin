@@ -61,12 +61,12 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, G
 
             Workspaces = [cedarLabs, northstarClinic];
 
-            await AddMemberAsync(accounts, workspaces, cedarLabs.ID, ["BillingAdmin", "Developer"], ["billing.manage", "members.read"]);
-            await AddMemberAsync(accounts, workspaces, cedarLabs.ID, ["Support"], ["members.read", "invitations.create"]);
-            await AddMemberAsync(accounts, workspaces, northstarClinic.ID, ["Scheduler"], ["appointments.manage", "members.read"]);
+            await AddMemberAsync(accounts, workspaces, cedarLabs.Id, ["BillingAdmin", "Developer"], ["billing.manage", "members.read"]);
+            await AddMemberAsync(accounts, workspaces, cedarLabs.Id, ["Support"], ["members.read", "invitations.create"]);
+            await AddMemberAsync(accounts, workspaces, northstarClinic.Id, ["Scheduler"], ["appointments.manage", "members.read"]);
 
-            CloudWorkspaceInvitation cedarInvitation = await workspaces.InviteAsync(cedarLabs.ID, "partner@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(7), ["Developer"]);
-            CloudWorkspaceInvitation clinicInvitation = await workspaces.InviteAsync(northstarClinic.ID, "doctor@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(3), ["Practitioner"]);
+            CloudWorkspaceInvitation cedarInvitation = await workspaces.InviteAsync(cedarLabs.Id, "partner@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(7), ["Developer"]);
+            CloudWorkspaceInvitation clinicInvitation = await workspaces.InviteAsync(northstarClinic.Id, "doctor@example.invalid", OwnerUserId, DateTimeOffset.UtcNow.AddDays(3), ["Practitioner"]);
             Invitations = [cedarInvitation, clinicInvitation];
 
             // Expired and under the default policy, so the account page offers to remove it.

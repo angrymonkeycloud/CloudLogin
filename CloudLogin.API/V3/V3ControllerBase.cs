@@ -40,7 +40,7 @@ public abstract class V3ControllerBase(CloudLoginWebConfiguration configuration,
 
     protected static V3SelfProfileResponse ToSelfProfile(CloudUser user) => new()
     {
-        UserId = user.ID,
+        UserId = user.Id,
         FirstName = user.FirstName,
         LastName = user.LastName,
         DisplayName = user.DisplayName,
@@ -56,14 +56,14 @@ public abstract class V3ControllerBase(CloudLoginWebConfiguration configuration,
 
     protected static V3PublicUserSummaryResponse ToPublicSummary(CloudUser user) => new()
     {
-        UserId = user.ID,
+        UserId = user.Id,
         DisplayName = user.DisplayName,
         ProfilePictureUrl = user.ProfilePicture
     };
 
     protected static V3AdminUserResponse ToAdminView(CloudUser user) => new()
     {
-        UserId = user.ID,
+        UserId = user.Id,
         FirstName = user.FirstName,
         LastName = user.LastName,
         DisplayName = user.DisplayName,
@@ -80,7 +80,7 @@ public abstract class V3ControllerBase(CloudLoginWebConfiguration configuration,
 
     protected static V3ServiceUserResponse ToServiceView(CloudUser user) => new()
     {
-        UserId = user.ID,
+        UserId = user.Id,
         DisplayName = user.DisplayName,
         PrimaryEmail = user.PrimaryEmailAddress?.Input ?? user.EmailAddresses.FirstOrDefault()?.Input,
         Country = user.Country,

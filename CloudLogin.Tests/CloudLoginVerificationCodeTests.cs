@@ -22,7 +22,7 @@ public class CloudLoginVerificationCodeTests
         Assert.Equal(CloudLoginVerificationStatuses.Verified, result.Status);
         Assert.Equal(1, fixture.Authentication.SignInCount);
         Assert.Equal(
-            user.ID.ToString(),
+            user.Id.ToString(),
             fixture.Authentication.SignedInPrincipal!.FindFirstValue(ClaimTypes.NameIdentifier));
         Assert.True(fixture.Authentication.SignedInProperties!.IsPersistent);
     }

@@ -2,7 +2,7 @@ namespace AngryMonkey.CloudLogin.Models;
 
 public class CloudUserModel
 {
-    public Guid ID { get; set; }
+    public Guid Id { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? DisplayName { get; set; }
@@ -31,7 +31,7 @@ public static class CloudUserModelExtensions
 {
     public static CloudUserModel ToModel(this CloudUser source) => new()
     {
-        ID = source.ID,
+        Id = source.Id,
         FirstName = source.FirstName,
         LastName = source.LastName,
         DisplayName = source.DisplayName,
@@ -55,7 +55,7 @@ public static class CloudUserModelExtensions
 
     public static CloudUser ToContract(this CloudUserModel model, CloudUser original) => original with
     {
-        ID = model.ID,
+        Id = model.Id,
         FirstName = model.FirstName,
         LastName = model.LastName,
         DisplayName = model.DisplayName,

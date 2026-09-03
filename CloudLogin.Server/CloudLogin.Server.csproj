@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.1.0</Version>
+		<Version>2.2.0</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Authentication orchestration for CloudLogin: provider wiring (Microsoft, Google, Facebook, Twitter, FIDO2/passkeys, magic links), account/user/request endpoints, and security enforcement - either as the standalone authority or embedded in an existing ASP.NET Core host.</Description>

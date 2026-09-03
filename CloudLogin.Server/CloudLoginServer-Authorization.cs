@@ -70,10 +70,10 @@ public partial class CloudLoginServer
             throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
 
         CloudUser? currentUser = await CurrentUser();
-        if (currentUser is null || currentUser.ID == Guid.Empty || currentUser.IsLocked)
+        if (currentUser is null || currentUser.Id == Guid.Empty || currentUser.IsLocked)
             throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
 
-        return await BuildCompletedLoginRedirect(currentUser.ID, referer, isMobileApp);
+        return await BuildCompletedLoginRedirect(currentUser.Id, referer, isMobileApp);
     }
 
     /// <summary>
@@ -179,9 +179,9 @@ public partial class CloudLoginServer
 
             CloudUser? currentUser = await CurrentUser();
 
-            if (currentUser is not null && currentUser.ID != Guid.Empty && !currentUser.IsLocked)
+            if (currentUser is not null && currentUser.Id != Guid.Empty && !currentUser.IsLocked)
             {
-                Guid requestId = await CreateLoginRequest(currentUser.ID);
+                Guid requestId = await CreateLoginRequest(currentUser.Id);
                 referer = AppendQuery(referer, "requestId", requestId.ToString());
                 return new RedirectResult(referer);
             }
@@ -312,7 +312,7 @@ public partial class CloudLoginServer
             // an external provider is the only step this flow has - there is no registration form
             // behind it to collect anything else.
             //
-            // Persisting it is the part that matters. An unsaved user keeps ID = Guid.Empty, which
+            // Persisting it is the part that matters. An unsaved user keeps Id = Guid.Empty, which
             // silently skips the CreateLoginRequest below, so the relying party is handed a request
             // id that resolves to nothing and reports the person as not found. That is invisible on
             // any database that already holds the account, and breaks every sign-in on one that
@@ -330,7 +330,7 @@ public partial class CloudLoginServer
                 DisplayName = displayName,
                 FirstName = firstName,
                 LastName = lastName,
-                ID = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 CreatedOn = DateTimeOffset.UtcNow,
                 LastSignedIn = DateTimeOffset.UtcNow,
                 Inputs =
@@ -358,10 +358,10 @@ public partial class CloudLoginServer
             return new ForbidResult();
         }
 
-        // Create request ID for the external website
+        // Create request Id for the external website
         Guid requestId = Guid.NewGuid();
-        if (_configuration.Cosmos != null && user.ID != Guid.Empty)
-            requestId = await CreateLoginRequest(user.ID);
+        if (_configuration.Cosmos != null && user.Id != Guid.Empty)
+            requestId = await CreateLoginRequest(user.Id);
 
         ClaimsPrincipal claimsPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
             user, "CloudLogin", _cosmosMethods);
@@ -374,7 +374,7 @@ public partial class CloudLoginServer
         await _request.HttpContext.SignInAsync(claimsPrincipal, properties);
 
 
-        // If no valid external referer, redirect to account page directly without request ID
+        // If no valid external referer, redirect to account page directly without request Id
         // Consider "/" or base URL as "no external referer"
         if (string.IsNullOrEmpty(referer) || referer == "/" || referer == baseUrl || referer == $"{baseUrl}/")
         {

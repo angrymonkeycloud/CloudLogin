@@ -9,9 +9,9 @@
 <div class="authority-workspace-grid">
     @foreach (CloudWorkspace workspace in Seed.Workspaces)
     {
-        IReadOnlyList<CloudWorkspaceMember> members = _members.GetValueOrDefault(workspace.ID, []);
+        IReadOnlyList<CloudWorkspaceMember> members = _members.GetValueOrDefault(workspace.Id, []);
         <article>
-            <header><span>@Initials(workspace.Name)</span><div><small>Business account</small><h2>@workspace.Name</h2><code>@workspace.ID</code></div></header>
+            <header><span>@Initials(workspace.Name)</span><div><small>Business account</small><h2>@workspace.Name</h2><code>@workspace.Id</code></div></header>
             <dl><div><dt>Owner</dt><dd>@ShortId(workspace.OwnerUserId)</dd></div><div><dt>Members</dt><dd>@members.Count</dd></div><div><dt>Created</dt><dd>@workspace.CreatedOn.ToString("dd MMM yyyy")</dd></div></dl>
             <h3>Team directory</h3>
             <ul class="authority-people">
@@ -21,7 +21,7 @@
                 }
             </ul>
             <h3>Pending invitations</h3>
-        @foreach (CloudWorkspaceInvitation invitation in Seed.Invitations.Where(item => item.WorkspaceId == workspace.ID))
+        @foreach (CloudWorkspaceInvitation invitation in Seed.Invitations.Where(item => item.WorkspaceId == workspace.Id))
             {
             <div class="authority-invitation"><div><strong>@invitation.Recipient</strong><small>@string.Join(", ", invitation.Roles)</small></div><time>Expires @invitation.ExpiresOn.ToString("dd MMM, HH:mm")</time></div>
             }
@@ -38,7 +38,7 @@
     {
         await Seed.InitializeAsync();
         foreach (CloudWorkspace workspace in Seed.Workspaces)
-            _members[workspace.ID] = await WorkspaceRegistry.GetMembersAsync(workspace.ID);
+            _members[workspace.Id] = await WorkspaceRegistry.GetMembersAsync(workspace.Id);
     }
 
     private static string Initials(string value) => string.Concat(value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));

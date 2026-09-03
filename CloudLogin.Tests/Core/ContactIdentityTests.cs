@@ -30,7 +30,7 @@ public class ContactIdentityTests
 
     private static CloudUser BuildUser(string email = "ada@example.com", string passwordHash = "PBKDF2$hash") => new()
     {
-        ID = Guid.NewGuid(),
+        Id = Guid.NewGuid(),
         FirstName = "Ada",
         LastName = "Lovelace",
         DisplayName = "Ada Lovelace",
@@ -55,7 +55,7 @@ public class ContactIdentityTests
         CloudUser user = BuildUser();
         await _service.SaveAsync(user, isCreate: true);
 
-        UserContact contact = Assert.Single((await _users.GetAsync(user.ID))!.Contacts);
+        UserContact contact = Assert.Single((await _users.GetAsync(user.Id))!.Contacts);
         Assert.NotEqual(Guid.Empty, contact.ContactId);
     }
 
@@ -64,13 +64,13 @@ public class ContactIdentityTests
     {
         CloudUser user = BuildUser();
         await _service.SaveAsync(user, isCreate: true);
-        Guid original = (await _users.GetAsync(user.ID))!.Contacts[0].ContactId;
+        Guid original = (await _users.GetAsync(user.Id))!.Contacts[0].ContactId;
 
-        CloudUser reloaded = (await _service.LoadAsync(user.ID))!;
+        CloudUser reloaded = (await _service.LoadAsync(user.Id))!;
         reloaded.FirstName = "Augusta";
         await _service.SaveAsync(reloaded, isCreate: false);
 
-        Assert.Equal(original, (await _users.GetAsync(user.ID))!.Contacts[0].ContactId);
+        Assert.Equal(original, (await _users.GetAsync(user.Id))!.Contacts[0].ContactId);
     }
 
     [Fact]
@@ -80,17 +80,17 @@ public class ContactIdentityTests
         // document is named after it.
         CloudUser user = BuildUser("ada@example.com");
         await _service.SaveAsync(user, isCreate: true);
-        Guid original = (await _users.GetAsync(user.ID))!.Contacts[0].ContactId;
+        Guid original = (await _users.GetAsync(user.Id))!.Contacts[0].ContactId;
 
-        CloudUser reloaded = (await _service.LoadAsync(user.ID))!;
+        CloudUser reloaded = (await _service.LoadAsync(user.Id))!;
         reloaded.Inputs[0].Input = "Ada@Example.COM";
         await _service.SaveAsync(reloaded, isCreate: false);
 
-        Assert.Equal(original, (await _users.GetAsync(user.ID))!.Contacts[0].ContactId);
+        Assert.Equal(original, (await _users.GetAsync(user.Id))!.Contacts[0].ContactId);
 
         // And the password still resolves through that contact.
         Assert.Equal("PBKDF2$hash",
-            (await _service.LoadAsync(user.ID))!.Inputs[0].Providers
+            (await _service.LoadAsync(user.Id))!.Inputs[0].Providers
                 .Single(provider => provider.Code == "Password").PasswordHash);
     }
 
@@ -106,7 +106,7 @@ public class ContactIdentityTests
 
         await _service.SaveAsync(user, isCreate: true);
 
-        List<UserContact> contacts = (await _users.GetAsync(user.ID))!.Contacts;
+        List<UserContact> contacts = (await _users.GetAsync(user.Id))!.Contacts;
         Assert.Equal(2, contacts.Count);
         Assert.NotEqual(contacts[0].ContactId, contacts[1].ContactId);
     }
@@ -119,14 +119,14 @@ public class ContactIdentityTests
         CloudUser user = BuildUser();
         await _service.SaveAsync(user, isCreate: true);
 
-        Guid contactId = (await _users.GetAsync(user.ID))!.Contacts[0].ContactId;
+        Guid contactId = (await _users.GetAsync(user.Id))!.Contacts[0].ContactId;
         CredentialDocument password = Assert.Single(
-            await _credentials.GetAllForUserAsync(user.ID),
+            await _credentials.GetAllForUserAsync(user.Id),
             credential => credential.Kind == CredentialKinds.Password);
 
         Assert.Equal($"password|{contactId}", password.Id);
         Assert.Equal(contactId, password.ContactId);
-        Assert.Equal(user.ID.ToString(), password.UserId);
+        Assert.Equal(user.Id.ToString(), password.UserId);
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public class ContactIdentityTests
 
         await _service.SaveAsync(user, isCreate: true);
 
-        foreach (CredentialDocument credential in await _credentials.GetAllForUserAsync(user.ID))
+        foreach (CredentialDocument credential in await _credentials.GetAllForUserAsync(user.Id))
         {
             // The id and the reference columns are the keys. ProviderEmail is display-only and is
             // allowed to hold the address; nothing routes on it.
@@ -157,9 +157,9 @@ public class ContactIdentityTests
 
         await _service.SaveAsync(user, isCreate: true);
 
-        Guid contactId = (await _users.GetAsync(user.ID))!.Contacts[0].ContactId;
+        Guid contactId = (await _users.GetAsync(user.Id))!.Contacts[0].ContactId;
         CredentialDocument external = Assert.Single(
-            await _credentials.GetAllForUserAsync(user.ID),
+            await _credentials.GetAllForUserAsync(user.Id),
             credential => credential.Kind == CredentialKinds.ExternalIdentity);
 
         Assert.Equal(contactId, external.LinkedContactId);
@@ -176,10 +176,10 @@ public class ContactIdentityTests
         CloudUser user = BuildUser();
         await _service.SaveAsync(user, isCreate: true);
 
-        Guid contactId = (await _users.GetAsync(user.ID))!.Contacts[0].ContactId;
+        Guid contactId = (await _users.GetAsync(user.Id))!.Contacts[0].ContactId;
         IdentityKey key = (await _identityKeys.ResolveAsync("default", IdentityKey.CanonicalEmail("ada@example.com")))!;
 
-        Assert.Equal(user.ID, key.UserId);
+        Assert.Equal(user.Id, key.UserId);
         Assert.Equal(contactId, key.ContactId);
     }
 
@@ -195,15 +195,15 @@ public class ContactIdentityTests
         });
         await _service.SaveAsync(user, isCreate: true);
 
-        Guid removedContactId = (await _users.GetAsync(user.ID))!.Contacts
+        Guid removedContactId = (await _users.GetAsync(user.Id))!.Contacts
             .Single(contact => contact.NormalizedValue == "second@example.com").ContactId;
 
-        CloudUser reloaded = (await _service.LoadAsync(user.ID))!;
+        CloudUser reloaded = (await _service.LoadAsync(user.Id))!;
         reloaded.Inputs.RemoveAll(input => input.Input == "second@example.com");
         await _service.SaveAsync(reloaded, isCreate: false);
 
         Assert.Null(await _identityKeys.ResolveAsync("default", IdentityKey.CanonicalEmail("second@example.com")));
-        Assert.DoesNotContain(await _credentials.GetAllForUserAsync(user.ID),
+        Assert.DoesNotContain(await _credentials.GetAllForUserAsync(user.Id),
             credential => credential.ContactId == removedContactId);
 
         // The contact that stayed is untouched.

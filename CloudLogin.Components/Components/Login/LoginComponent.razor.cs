@@ -440,7 +440,7 @@ public partial class LoginComponent : IDisposable
 
         try
         {
-            if (await cloudLogin.TestLogin(user.ID, KeepMeSignedIn))
+            if (await cloudLogin.TestLogin(user.Id, KeepMeSignedIn))
             {
                 await NavigateToRefererAsync();
                 return;
@@ -628,7 +628,7 @@ public partial class LoginComponent : IDisposable
 
         CloudUser? checkUser = await cloudLogin.GetUserByEmailAddress(InputValue);
 
-        if (checkUser == null || checkUser.ID == Guid.Empty)
+        if (checkUser == null || checkUser.Id == Guid.Empty)
         {
             Auth.Errors.Add("Error To update Password, Please Try Again Later");
             EndLoading();
@@ -659,7 +659,7 @@ public partial class LoginComponent : IDisposable
 
         CloudUser userValues = new()
         {
-            ID = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
             FirstName = FirstName,
             LastName = LastName,
             DisplayName = DisplayName
@@ -839,7 +839,7 @@ public partial class LoginComponent : IDisposable
         {
             try
             {
-                await cloudLogin.CreateLoginRequest(user.ID, RequestId);
+                await cloudLogin.CreateLoginRequest(user.Id, RequestId);
                 navigationManager.NavigateTo($"/Request/{RequestId}", true);
             }
             catch
@@ -862,7 +862,7 @@ public partial class LoginComponent : IDisposable
                         CloudLoginShared.IsSameOrigin(referer, cloudLogin.LoginUrl);
 
         return $"{cloudLogin.LoginUrl.TrimEnd('/')}/CloudLogin/Login/CustomLogin"
-             + $"?userId={Uri.EscapeDataString(user.ID.ToString())}"
+             + $"?userId={Uri.EscapeDataString(user.Id.ToString())}"
              + $"&keepMeSignedIn={KeepMeSignedIn.ToString().ToLowerInvariant()}"
              + $"&referer={Uri.EscapeDataString(referer)}"
              + $"&sameSite={sameSite.ToString().ToLowerInvariant()}";

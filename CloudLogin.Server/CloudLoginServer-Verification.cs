@@ -103,7 +103,7 @@ public partial class CloudLoginServer
         // creating the account, replacing a password, adding the address to one.
         bool signingIn = user is not null && challenge.Purpose == CloudLoginVerificationPurposes.SignIn;
         challenge.State = signingIn ? VerificationChallengeStates.Consumed : VerificationChallengeStates.Verified;
-        challenge.UserId = user?.ID.ToString();
+        challenge.UserId = user?.Id.ToString();
 
         // The one place a correct code is spent. Whoever loses this race gets nothing, which is
         // what stops the same code being redeemed twice.

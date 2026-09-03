@@ -8,7 +8,7 @@ namespace AngryMonkey.CloudLogin;
 /// </summary>
 public static class CloudLoginClaims
 {
-    /// <summary>Subject &mdash; the authenticated user's <see cref="CloudUser.ID"/>.</summary>
+    /// <summary>Subject &mdash; the authenticated user's <see cref="CloudUser.Id"/>.</summary>
     public const string Subject = "sub";
 
     /// <summary>Session identifier, shared by every token minted for one sign-in.</summary>

@@ -134,11 +134,20 @@ public sealed class WorkspaceAccessService(
         ArgumentException.ThrowIfNullOrWhiteSpace(changes.Name);
         workspace.Name = changes.Name.Trim();
         workspace.LegalName = Clean(changes.LegalName);
+        workspace.AdditionalBillingInformation = Clean(changes.AdditionalBillingInformation);
+        workspace.BillingEmail = Clean(changes.BillingEmail);
+        workspace.BillingPhone = Clean(changes.BillingPhone);
         workspace.Website = Clean(changes.Website);
-        workspace.TaxId = Clean(changes.TaxId);
-        workspace.BillingContactName = Clean(changes.BillingContactName);
-        workspace.BillingContactEmail = Clean(changes.BillingContactEmail);
-        workspace.BillingContactPhone = Clean(changes.BillingContactPhone);
+        workspace.TaxNumber = Clean(changes.TaxNumber);
+        workspace.BillingAddress = new WorkspaceAddress
+        {
+            Line1 = Clean(changes.BillingAddress?.Line1),
+            Line2 = Clean(changes.BillingAddress?.Line2),
+            City = Clean(changes.BillingAddress?.City),
+            State = Clean(changes.BillingAddress?.State),
+            PostalCode = Clean(changes.BillingAddress?.PostalCode),
+            Country = Clean(changes.BillingAddress?.Country)
+        };
         workspace.UpdatedOn = DateTimeOffset.UtcNow;
         await _workspaces.ReplaceAsync(workspace, cancellationToken);
         return workspace;

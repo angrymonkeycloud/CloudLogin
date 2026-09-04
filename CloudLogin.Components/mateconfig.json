@@ -16,11 +16,6 @@
       "minify": false
     },
     {
-      "input": "Components/Account/AccountComponent-Subscriptions.razor.less",
-      "output": "Components/Account/AccountComponent-Subscriptions.razor.css",
-      "minify": false
-    },
-    {
       "input": "Components/Account/AccountComponent-Workspace.razor.less",
       "output": "Components/Account/AccountComponent-Workspace.razor.css",
       "minify": false
@@ -28,11 +23,6 @@
     {
       "input": "Components/Account/AccountComponent-WorkspacePicker.razor.less",
       "output": "Components/Account/AccountComponent-WorkspacePicker.razor.css",
-      "minify": false
-    },
-    {
-      "input": "Components/Account/AccountComponent-PaymentMethods.razor.less",
-      "output": "Components/Account/AccountComponent-PaymentMethods.razor.css",
       "minify": false
     },
     {

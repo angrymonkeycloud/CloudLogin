@@ -80,10 +80,6 @@
                         <label class="field-label" for="org-website">Website</label>
                         <input id="org-website" class="form-input" @bind="_website" placeholder="https://example.com" disabled="@_busy" />
                     </div>
-                    <div class="field">
-                        <label class="field-label" for="org-phone">Phone</label>
-                        <input id="org-phone" class="form-input" @bind="_phone" placeholder="+1 555 0100" disabled="@_busy" />
-                    </div>
                 </div>
                 <div class="row-actions">
                     <button class="btn btn-primary" @onclick="SaveProfile" disabled="@(_busy || string.IsNullOrWhiteSpace(_name))">Save changes</button>
@@ -105,10 +101,6 @@
                 <div class="detail-row">
                     <dt>Website</dt>
                     <dd class="@Muted(WorkspaceEntity.Website)">@Or(WorkspaceEntity.Website)</dd>
-                </div>
-                <div class="detail-row">
-                    <dt>Phone</dt>
-                    <dd class="@Muted(WorkspaceEntity.Phone)">@Or(WorkspaceEntity.Phone)</dd>
                 </div>
                 <div class="detail-row">
                     <dt>@WorkspaceLabel Id</dt>
@@ -134,17 +126,22 @@
             {
                 <div class="stack">
                     <div class="field-grid">
+                        <div class="field _wide">
+                            <label class="field-label" for="org-billing-additional">Additional billing information</label>
+                            <textarea id="org-billing-additional" class="form-input" rows="3" @bind="_additionalBillingInformation"
+                                      placeholder="Billing contact, department, PO reference - anything that should appear under the legal name" disabled="@_busy"></textarea>
+                        </div>
                         <div class="field">
                             <label class="field-label" for="org-billing-email">Billing email</label>
                             <input id="org-billing-email" class="form-input" @bind="_billingEmail" placeholder="billing@company.com" disabled="@_busy" />
                         </div>
                         <div class="field">
-                            <label class="field-label" for="org-billing-contact">Billing contact</label>
-                            <input id="org-billing-contact" class="form-input" @bind="_billingContactName" placeholder="Contact name" disabled="@_busy" />
+                            <label class="field-label" for="org-billing-phone">Billing phone</label>
+                            <input id="org-billing-phone" class="form-input" @bind="_billingPhone" placeholder="+1 555 0100" disabled="@_busy" />
                         </div>
                         <div class="field">
                             <label class="field-label" for="org-tax">Tax / VAT number</label>
-                            <input id="org-tax" class="form-input" @bind="_taxId" disabled="@_busy" />
+                            <input id="org-tax" class="form-input" @bind="_taxNumber" disabled="@_busy" />
                         </div>
                     </div>
 
@@ -188,16 +185,20 @@
             {
                 <dl class="detail-list">
                     <div class="detail-row">
+                        <dt>Additional billing information</dt>
+                        <dd class="@Muted(WorkspaceEntity.AdditionalBillingInformation)">@Or(WorkspaceEntity.AdditionalBillingInformation)</dd>
+                    </div>
+                    <div class="detail-row">
                         <dt>Billing email</dt>
                         <dd class="@Muted(WorkspaceEntity.BillingEmail)">@Or(WorkspaceEntity.BillingEmail)</dd>
                     </div>
                     <div class="detail-row">
-                        <dt>Billing contact</dt>
-                        <dd class="@Muted(WorkspaceEntity.BillingContactName)">@Or(WorkspaceEntity.BillingContactName)</dd>
+                        <dt>Billing phone</dt>
+                        <dd class="@Muted(WorkspaceEntity.BillingPhone)">@Or(WorkspaceEntity.BillingPhone)</dd>
                     </div>
                     <div class="detail-row">
                         <dt>Tax / VAT number</dt>
-                        <dd class="@Muted(WorkspaceEntity.TaxId)">@Or(WorkspaceEntity.TaxId)</dd>
+                        <dd class="@Muted(WorkspaceEntity.TaxNumber)">@Or(WorkspaceEntity.TaxNumber)</dd>
                     </div>
                     <div class="detail-row">
                         <dt>Billing address</dt>
@@ -389,12 +390,12 @@
     private string _name = string.Empty;
     private string _legalName = string.Empty;
     private string _website = string.Empty;
-    private string _phone = string.Empty;
 
     private bool _editingBilling;
+    private string _additionalBillingInformation = string.Empty;
     private string _billingEmail = string.Empty;
-    private string _billingContactName = string.Empty;
-    private string _taxId = string.Empty;
+    private string _billingPhone = string.Empty;
+    private string _taxNumber = string.Empty;
     private string _line1 = string.Empty;
     private string _line2 = string.Empty;
     private string _city = string.Empty;
@@ -417,16 +418,16 @@
         _name = WorkspaceEntity.Name;
         _legalName = WorkspaceEntity.LegalName ?? string.Empty;
         _website = WorkspaceEntity.Website ?? string.Empty;
-        _phone = WorkspaceEntity.Phone ?? string.Empty;
     }
 
     private void StartBillingEdit()
     {
         _editingBilling = true;
         _message = string.Empty;
+        _additionalBillingInformation = WorkspaceEntity.AdditionalBillingInformation ?? string.Empty;
         _billingEmail = WorkspaceEntity.BillingEmail ?? string.Empty;
-        _billingContactName = WorkspaceEntity.BillingContactName ?? string.Empty;
-        _taxId = WorkspaceEntity.TaxId ?? string.Empty;
+        _billingPhone = WorkspaceEntity.BillingPhone ?? string.Empty;
+        _taxNumber = WorkspaceEntity.TaxNumber ?? string.Empty;
         _line1 = WorkspaceEntity.BillingAddress.Line1 ?? string.Empty;
         _line2 = WorkspaceEntity.BillingAddress.Line2 ?? string.Empty;
         _city = WorkspaceEntity.BillingAddress.City ?? string.Empty;
@@ -459,7 +460,6 @@
             WorkspaceEntity.Name = _name.Trim();
             WorkspaceEntity.LegalName = _legalName;
             WorkspaceEntity.Website = _website;
-            WorkspaceEntity.Phone = _phone;
 
             await cloudLogin.UpdateWorkspace(WorkspaceEntity.ToContract(OriginalContract()));
             _editingProfile = false;
@@ -469,9 +469,10 @@
     private async Task SaveBilling()
         => await Submit("Billing information saved.", async () =>
         {
+            WorkspaceEntity.AdditionalBillingInformation = _additionalBillingInformation;
             WorkspaceEntity.BillingEmail = _billingEmail;
-            WorkspaceEntity.BillingContactName = _billingContactName;
-            WorkspaceEntity.TaxId = _taxId;
+            WorkspaceEntity.BillingPhone = _billingPhone;
+            WorkspaceEntity.TaxNumber = _taxNumber;
             WorkspaceEntity.BillingAddress = new CloudWorkspaceAddressModel
             {
                 Line1 = _line1,

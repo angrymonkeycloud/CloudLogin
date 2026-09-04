@@ -16,6 +16,15 @@ public class CloudWorkspaceAddressModel
         && string.IsNullOrWhiteSpace(State)
         && string.IsNullOrWhiteSpace(PostalCode)
         && string.IsNullOrWhiteSpace(Country);
+
+    /// <summary>
+    /// The populated parts, in postal order, joined for display on a single line - the same shape
+    /// <see cref="CloudWorkspaceAddress.ToString"/> produces, because the account page renders
+    /// whichever of the two it is holding.
+    /// </summary>
+    public override string ToString() =>
+        string.Join(", ", new[] { Line1, Line2, City, State, PostalCode, Country }
+            .Where(part => !string.IsNullOrWhiteSpace(part)));
 }
 
 public static class CloudWorkspaceAddressModelExtensions

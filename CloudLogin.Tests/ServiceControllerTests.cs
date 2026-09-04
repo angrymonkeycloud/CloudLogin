@@ -33,13 +33,13 @@ public class ServiceControllerTests
         ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.Id, Values(new
         {
             Name = "New Name",
-            BillingContactName = "Dana Haddad",
+            AdditionalBillingInformation = "Attn: Dana Haddad",
             BillingEmail = "billing@acme.test"
         }));
 
         CloudWorkspace updated = Assert.IsType<CloudWorkspace>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal("New Name", updated.Name);
-        Assert.Equal("Dana Haddad", updated.BillingContactName);
+        Assert.Equal("Attn: Dana Haddad", updated.AdditionalBillingInformation);
         Assert.Equal("billing@acme.test", updated.BillingEmail);
     }
 
@@ -213,17 +213,19 @@ public class ServiceControllerTests
         ActionResult<CloudWorkspace> result = await controller.UpdateWorkspace(workspace.Id, Values(new
         {
             LegalName = "ACME Holdings SAL",
+            AdditionalBillingInformation = "Attn: Accounts Payable",
+            BillingPhone = "+961 1 234567",
             Website = "https://acme.test",
-            Phone = "+961 1 234567",
-            TaxId = "LB-123",
+            TaxNumber = "LB-123",
             BillingAddress = new { Line1 = "1 Main St", City = "Beirut", State = "Beirut", PostalCode = "1100", Country = "LB" }
         }));
 
         CloudWorkspace updated = Assert.IsType<CloudWorkspace>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal("ACME Holdings SAL", updated.LegalName);
+        Assert.Equal("Attn: Accounts Payable", updated.AdditionalBillingInformation);
+        Assert.Equal("+961 1 234567", updated.BillingPhone);
         Assert.Equal("https://acme.test", updated.Website);
-        Assert.Equal("+961 1 234567", updated.Phone);
-        Assert.Equal("LB-123", updated.TaxId);
+        Assert.Equal("LB-123", updated.TaxNumber);
         Assert.Equal("1 Main St", updated.BillingAddress.Line1);
         Assert.Equal("Beirut", updated.BillingAddress.State);
         Assert.Equal("LB", updated.BillingAddress.Country);

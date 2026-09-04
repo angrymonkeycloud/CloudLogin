@@ -39,11 +39,11 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, G
             // Filled in so the workspace workspace has real information and billing details
             // to show, the way a set-up workspace would.
             cedarLabs.LegalName = "Cedar Labs SARL";
-            cedarLabs.Website = "https://cedarlabs.example";
-            cedarLabs.Phone = "+961 1 000 000";
+            cedarLabs.AdditionalBillingInformation = "Attn: Rita Haddad, Finance";
             cedarLabs.BillingEmail = "billing@cedarlabs.example";
-            cedarLabs.BillingContactName = "Rita Haddad";
-            cedarLabs.TaxId = "LB-1234567";
+            cedarLabs.BillingPhone = "+961 1 000 000";
+            cedarLabs.Website = "https://cedarlabs.example";
+            cedarLabs.TaxNumber = "LB-1234567";
             cedarLabs.BillingAddress = new CloudWorkspaceAddress
             {
                 Line1 = "12 Cedar Street",
@@ -55,7 +55,7 @@ public sealed class DemoAccountRegistrySeed(IServiceScopeFactory scopeFactory, G
             cedarLabs = await workspaces.UpdateAsync(cedarLabs, OwnerUserId);
 
             northstarClinic.BillingEmail = "accounts@northstar.example";
-            northstarClinic.BillingContactName = "Dr. Karim Nasr";
+            northstarClinic.AdditionalBillingInformation = "Attn: Dr. Karim Nasr";
             northstarClinic.BillingAddress = new CloudWorkspaceAddress { Line1 = "88 West Bay", City = "Doha", Country = "Qatar" };
             northstarClinic = await workspaces.UpdateAsync(northstarClinic, OwnerUserId);
 

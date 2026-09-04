@@ -126,11 +126,12 @@ public sealed class CoreWorkspaceRegistryAdapter(
             ?? throw new KeyNotFoundException($"Workspace '{workspace.Id}' was not found.");
         current.Name = workspace.Name;
         current.LegalName = workspace.LegalName;
+        current.AdditionalBillingInformation = workspace.AdditionalBillingInformation;
+        current.BillingEmail = workspace.BillingEmail;
+        current.BillingPhone = workspace.BillingPhone;
         current.Website = workspace.Website;
-        current.TaxId = workspace.TaxId;
-        current.BillingContactName = workspace.BillingContactName;
-        current.BillingContactEmail = workspace.BillingEmail;
-        current.BillingContactPhone = workspace.Phone;
+        current.TaxNumber = workspace.TaxNumber;
+        current.BillingAddress = ToDocument(workspace.BillingAddress);
         WorkspaceDocument updated = await service.UpdateWorkspaceAsync(
             workspace.Id, current, callerUserId, cancellationToken);
         return await ToLegacyAsync(updated, cancellationToken);
@@ -201,13 +202,34 @@ public sealed class CoreWorkspaceRegistryAdapter(
             CreatedOn = workspace.CreatedOn,
             UpdatedOn = workspace.UpdatedOn,
             LegalName = workspace.LegalName,
+            AdditionalBillingInformation = workspace.AdditionalBillingInformation,
+            BillingEmail = workspace.BillingEmail,
+            BillingPhone = workspace.BillingPhone,
             Website = workspace.Website,
-            TaxId = workspace.TaxId,
-            BillingContactName = workspace.BillingContactName,
-            BillingEmail = workspace.BillingContactEmail,
-            Phone = workspace.BillingContactPhone
+            TaxNumber = workspace.TaxNumber,
+            BillingAddress = ToContract(workspace.BillingAddress)
         };
     }
+
+    private static CloudWorkspaceAddress ToContract(WorkspaceAddress? address) => new()
+    {
+        Line1 = address?.Line1,
+        Line2 = address?.Line2,
+        City = address?.City,
+        State = address?.State,
+        PostalCode = address?.PostalCode,
+        Country = address?.Country
+    };
+
+    private static WorkspaceAddress ToDocument(CloudWorkspaceAddress? address) => new()
+    {
+        Line1 = address?.Line1,
+        Line2 = address?.Line2,
+        City = address?.City,
+        State = address?.State,
+        PostalCode = address?.PostalCode,
+        Country = address?.Country
+    };
 
     private static CloudWorkspaceMember ToLegacy(WorkspaceAccessDocument membership) => new()
     {

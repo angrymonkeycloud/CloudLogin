@@ -142,11 +142,11 @@ public sealed class WorkspaceRegistry(
         ArgumentException.ThrowIfNullOrWhiteSpace(workspace.Name);
         existing.Name = workspace.Name.Trim();
         existing.LegalName = Clean(workspace.LegalName);
-        existing.Website = Clean(workspace.Website);
-        existing.Phone = Clean(workspace.Phone);
+        existing.AdditionalBillingInformation = Clean(workspace.AdditionalBillingInformation);
         existing.BillingEmail = Clean(workspace.BillingEmail);
-        existing.BillingContactName = Clean(workspace.BillingContactName);
-        existing.TaxId = Clean(workspace.TaxId);
+        existing.BillingPhone = Clean(workspace.BillingPhone);
+        existing.Website = Clean(workspace.Website);
+        existing.TaxNumber = Clean(workspace.TaxNumber);
         existing.BillingAddress = new CloudWorkspaceAddress
         {
             Line1 = Clean(workspace.BillingAddress?.Line1),

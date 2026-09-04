@@ -332,11 +332,11 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
             {
                 case nameof(CloudWorkspace.Name): workspace.Name = Text(value) is { Length: > 0 } name ? name : workspace.Name; break;
                 case nameof(CloudWorkspace.LegalName): workspace.LegalName = Text(value); break;
-                case nameof(CloudWorkspace.Website): workspace.Website = Text(value); break;
-                case nameof(CloudWorkspace.Phone): workspace.Phone = Text(value); break;
+                case nameof(CloudWorkspace.AdditionalBillingInformation): workspace.AdditionalBillingInformation = Text(value); break;
                 case nameof(CloudWorkspace.BillingEmail): workspace.BillingEmail = Text(value); break;
-                case nameof(CloudWorkspace.BillingContactName): workspace.BillingContactName = Text(value); break;
-                case nameof(CloudWorkspace.TaxId): workspace.TaxId = Text(value); break;
+                case nameof(CloudWorkspace.BillingPhone): workspace.BillingPhone = Text(value); break;
+                case nameof(CloudWorkspace.Website): workspace.Website = Text(value); break;
+                case nameof(CloudWorkspace.TaxNumber): workspace.TaxNumber = Text(value); break;
                 case nameof(CloudWorkspace.BillingAddress): workspace.BillingAddress = Address(value); break;
                 default: return $"Field '{key}' cannot be updated through the service endpoint.";
             }

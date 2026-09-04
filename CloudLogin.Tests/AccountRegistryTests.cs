@@ -282,14 +282,14 @@ public class AccountRegistryTests
 
         CloudWorkspace workspace = await workspaces.CreateAsync("Cedar Labs", ownerId);
         workspace.LegalName = "  Cedar Labs SARL  ";
-        workspace.TaxId = "   ";
+        workspace.TaxNumber = "   ";
         workspace.Website = " https://cedar.example ";
         workspace.BillingAddress = new CloudWorkspaceAddress { Line1 = "  1 Cedar Street ", City = " Beirut ", Country = "  " };
 
         CloudWorkspace saved = await workspaces.UpdateAsync(workspace, ownerId);
 
         Assert.Equal("Cedar Labs SARL", saved.LegalName);
-        Assert.Null(saved.TaxId);
+        Assert.Null(saved.TaxNumber);
         Assert.Equal("https://cedar.example", saved.Website);
         Assert.Equal("1 Cedar Street", saved.BillingAddress.Line1);
         Assert.Equal("Beirut", saved.BillingAddress.City);

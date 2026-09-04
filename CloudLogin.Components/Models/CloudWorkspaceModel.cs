@@ -11,11 +11,11 @@ public class CloudWorkspaceModel
     public DateTimeOffset? UpdatedOn { get; set; }
     public Dictionary<string, JsonElement> Metadata { get; set; } = [];
     public string? LegalName { get; set; }
-    public string? Website { get; set; }
-    public string? Phone { get; set; }
+    public string? AdditionalBillingInformation { get; set; }
     public string? BillingEmail { get; set; }
-    public string? BillingContactName { get; set; }
-    public string? TaxId { get; set; }
+    public string? BillingPhone { get; set; }
+    public string? Website { get; set; }
+    public string? TaxNumber { get; set; }
     public CloudWorkspaceAddressModel BillingAddress { get; set; } = new();
 }
 
@@ -30,11 +30,11 @@ public static class CloudWorkspaceModelExtensions
         UpdatedOn = source.UpdatedOn,
         Metadata = new Dictionary<string, JsonElement>(source.Metadata),
         LegalName = source.LegalName,
-        Website = source.Website,
-        Phone = source.Phone,
+        AdditionalBillingInformation = source.AdditionalBillingInformation,
         BillingEmail = source.BillingEmail,
-        BillingContactName = source.BillingContactName,
-        TaxId = source.TaxId,
+        BillingPhone = source.BillingPhone,
+        Website = source.Website,
+        TaxNumber = source.TaxNumber,
         BillingAddress = source.BillingAddress.ToModel()
     };
 
@@ -47,11 +47,11 @@ public static class CloudWorkspaceModelExtensions
         UpdatedOn = model.UpdatedOn,
         Metadata = new Dictionary<string, JsonElement>(model.Metadata),
         LegalName = model.LegalName,
-        Website = model.Website,
-        Phone = model.Phone,
+        AdditionalBillingInformation = model.AdditionalBillingInformation,
         BillingEmail = model.BillingEmail,
-        BillingContactName = model.BillingContactName,
-        TaxId = model.TaxId,
+        BillingPhone = model.BillingPhone,
+        Website = model.Website,
+        TaxNumber = model.TaxNumber,
         BillingAddress = model.BillingAddress.ToContract()
     };
 }

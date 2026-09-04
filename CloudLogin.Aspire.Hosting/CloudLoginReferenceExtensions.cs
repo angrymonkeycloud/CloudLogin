@@ -135,6 +135,12 @@ public static class CloudLoginReferenceExtensions
 
         EndpointReference authority = CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin, endpointName);
 
+        // Not persisted. This key authenticates a live channel whose two ends are both configured
+        // from this one parameter - the caller presents it, the authority accepts it - so a restart
+        // re-keys both at once and nothing written under the old value stops resolving. Persisting
+        // would buy nothing and leave a working credential sitting in a developer's user secrets.
+        // Deployed environments are unaffected: their value is resolved once per environment and
+        // kept in deployment state, so redeploys reuse it.
         IResourceBuilder<ParameterResource> serviceKey = builder.ApplicationBuilder.AddParameter(
             Sanitize($"{cloudLogin.Resource.Name}-{builder.Resource.Name}-service-key"),
             new GenerateParameterDefault
@@ -149,7 +155,7 @@ public static class CloudLoginReferenceExtensions
                 MinNumeric = 8
             },
             secret: true,
-            persist: true);
+            persist: false);
 
         consumer
             .WithEnvironment(CloudLoginConfigurationKeys.Service.BaseUrl, authority)
@@ -245,6 +251,11 @@ public static class CloudLoginReferenceExtensions
             builder.ApplicationBuilder.CreateResourceBuilder((IResourceWithEndpoints)builder.Resource));
         string parameterName = Sanitize($"{cloudLogin.Resource.Name}-{audience}-client-secret");
 
+        // Not persisted, for the same reason as the service key above: this secret is written to
+        // both ends from this one parameter - the consumer reads it as its client secret, the
+        // authority as that client's expected one - so the pair can only ever agree, and no stored
+        // row was hashed or encrypted under it. A local run generating a fresh one costs nothing;
+        // keeping a long-lived copy on disk costs whatever it would take to read that file.
         IResourceBuilder<ParameterResource> clientSecret = builder.ApplicationBuilder.AddParameter(
             parameterName,
             new GenerateParameterDefault
@@ -259,7 +270,7 @@ public static class CloudLoginReferenceExtensions
                 MinNumeric = 8
             },
             secret: true,
-            persist: true);
+            persist: false);
 
         builder
             .WithEnvironment(configurationKey, authority)

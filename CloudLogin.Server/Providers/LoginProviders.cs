@@ -1,4 +1,4 @@
-﻿using Azure.Identity;
+using Azure.Identity;
 using Azure.Security.KeyVault.Certificates;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography.X509Certificates;
@@ -56,7 +56,7 @@ public class LoginProviders
         public string? CertificateName { get; set; }
         public MicrosoftProviderAudience Audience { get; set; } = MicrosoftProviderAudience.All;
 
-        private X509Certificate2? _certificate;
+
 
         public MicrosoftProviderConfiguration(string label = "Microsoft")
         {
@@ -66,8 +66,6 @@ public class LoginProviders
 
         internal async Task<X509Certificate2> GetCertificate(CancellationToken cancellationToken = default)
         {
-            if (_certificate is not null)
-                return _certificate;
 
             if (VaultEndpoint is null)
                 throw new InvalidOperationException(
@@ -82,8 +80,7 @@ public class LoginProviders
                 CertificateName,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            _certificate = response.Value;
-            return _certificate;
+            return response.Value;
         }
 
 

@@ -19,7 +19,10 @@ namespace AngryMonkey.CloudLogin.Tests;
 public class MicrosoftIssuerValidationTests
 {
     private static readonly SecurityToken Token = new JsonWebToken("{}", "{}");
-    private static readonly TokenValidationParameters Parameters = new();
+    private static readonly TokenValidationParameters Parameters = new()
+    {
+        ValidIssuers = ["https://login.microsoftonline.com/{tenantid}/v2.0", "https://login.microsoftonline.com/{tenantid}/v2.0/", "https://login.windows.net/{tenantid}/v2.0"]
+    };
 
     [Theory]
     [InlineData("https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/v2.0")]
@@ -27,7 +30,9 @@ public class MicrosoftIssuerValidationTests
     [InlineData("https://login.windows.net/72f988bf-86f1-41af-91ab-2d7cd011db47/v2.0")]
     public void ValidateMicrosoftIssuer_AcceptsConcreteTenantIssuer(string issuer)
     {
-        string result = ProviderConfigurationService.ValidateMicrosoftIssuer(issuer, Token, Parameters);
+        string tenant = new Uri(issuer).Segments[1].TrimEnd('/');
+        SecurityToken token = new JsonWebToken("{}", System.Text.Json.JsonSerializer.Serialize(new { tid = tenant }));
+        string result = ProviderConfigurationService.ValidateMicrosoftIssuer(issuer, token, Parameters);
 
         Assert.Equal(issuer, result);
     }
@@ -41,5 +46,12 @@ public class MicrosoftIssuerValidationTests
     {
         Assert.Throws<SecurityTokenInvalidIssuerException>(() =>
             ProviderConfigurationService.ValidateMicrosoftIssuer(issuer, Token, Parameters));
+    }
+    [Fact]
+    public void MicrosoftIssuer_RejectsTokensFromADifferentTenant()
+    {
+        SecurityToken token = new JsonWebToken("{}", "{\"tid\":\"9188040d-6c67-4c5b-b112-36a304b66dad\"}");
+        Assert.Throws<SecurityTokenInvalidIssuerException>(() => ProviderConfigurationService.ValidateMicrosoftIssuer(
+            "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/v2.0", token, Parameters));
     }
 }

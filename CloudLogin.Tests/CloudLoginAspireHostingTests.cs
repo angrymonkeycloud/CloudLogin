@@ -10,6 +10,24 @@ namespace AngryMonkey.CloudLogin.Tests;
 public sealed class CloudLoginAspireHostingTests
 {
     [Fact]
+    public async Task ExternalProviderCredentials_AreSecretParametersInPublishedConfiguration()
+    {
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
+        {
+            Args = ["--operation", "publish"], DisableDashboard = true
+        });
+        ICloudLoginServerBuilder login = builder.AddCloudLogin("login", configuration =>
+            configuration.Providers = [new AngryMonkey.CloudLogin.Sever.Providers.LoginProviders.GoogleProviderConfiguration(builder.Configuration.GetSection("Google"))
+            {
+                ClientId = "test-client", ClientSecret = "test-provider-credential"
+            }]);
+        Dictionary<string, object> environment = await ReadEnvironmentAsync(login.Resource);
+        ParameterResource secret = Assert.IsType<ParameterResource>(environment["Google:ClientSecret"]);
+        Assert.True(secret.Secret);
+        Assert.Equal("test-provider-credential", await secret.GetValueAsync(default));
+        Assert.DoesNotContain("test-provider-credential", secret.ValueExpression);
+    }
+    [Fact]
     public async Task ProjectlessCloudLogin_WiresAConsumerWithoutManualConfiguration()
     {
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
@@ -434,7 +452,7 @@ public sealed class CloudLoginAspireHostingTests
     }
 
     [Fact]
-    public void TheGeneratedSecret_IsDifferentEveryTimeOneIsMinted()
+    public void TheGeneratedSecret_IsStableAcrossAppHostRestarts()
     {
         // Two AppHosts are two deployments with two identity indexes; sharing a key would let one
         // read the other's rows.
@@ -444,7 +462,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder second = NewBuilder();
         second.AddCloudLogin();
 
-        Assert.NotEqual(IdentitySecretParameter(first).Value, IdentitySecretParameter(second).Value);
+        Assert.Equal(IdentitySecretParameter(first).Value, IdentitySecretParameter(second).Value);
     }
 
     [Fact]

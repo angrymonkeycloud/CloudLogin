@@ -142,7 +142,7 @@ public static class CloudLoginConfigurationExtensions
             .OfType<LoginProviders.MicrosoftProviderConfiguration>()
             .FirstOrDefault();
 
-        if (microsoft is null || !string.IsNullOrWhiteSpace(microsoft.ClientId))
+        if (microsoft is not null && !string.IsNullOrWhiteSpace(microsoft.ClientId))
             return;
 
         IConfigurationSection entra = configuration.GetSection("Entra");
@@ -150,6 +150,11 @@ public static class CloudLoginConfigurationExtensions
         if (string.IsNullOrWhiteSpace(entra["ClientId"]))
             return;
 
+        if (microsoft is null)
+        {
+            microsoft = new LoginProviders.MicrosoftProviderConfiguration();
+            providers.Add(microsoft);
+        }
         microsoft.ClientId = entra["ClientId"]!;
         microsoft.TenantId ??= entra["TenantId"];
         microsoft.ClientSecret ??= entra["ClientSecret"];

@@ -54,7 +54,8 @@ public static class CloudLoginHostingExtensions
 
         IResourceBuilder<ProjectResource> project = builder.AddProject<TProject>(name)
             .WithExternalHttpEndpoints()
-            .WithAnnotation(annotation);
+            .WithAnnotation(annotation)
+            .WithAnnotation(new CoconutSharp.Aspire.Hosting.CoconutEntraSignInAnnotation("/signin-microsoft"));
 
         project.ApplyCloudLoginDefaults();
 
@@ -98,7 +99,8 @@ public static class CloudLoginHostingExtensions
             .AddProject(name, CloudLoginStandaloneProject.Extract())
             .WithHttpEndpoint(name: "http")
             .WithExternalHttpEndpoints()
-            .WithAnnotation(annotation);
+            .WithAnnotation(annotation)
+            .WithAnnotation(new CoconutSharp.Aspire.Hosting.CoconutEntraSignInAnnotation("/signin-microsoft"));
 
         project.ApplyCloudLoginDefaults();
 

@@ -1,4 +1,4 @@
-﻿// CloudLoginServer/Services/ProviderConfigurationService.cs
+// CloudLoginServer/Services/ProviderConfigurationService.cs
 using AngryMonkey.CloudLogin.Sever.Providers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Facebook;
@@ -8,10 +8,10 @@ using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Specialized;
-using System.IdentityModel.Tokens.Jwt;
+
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.RegularExpressions;
+using Microsoft.IdentityModel.Validators;
 using System.Web;
 
 namespace AngryMonkey.CloudLogin.Server;
@@ -107,34 +107,17 @@ public class ProviderConfigurationService
         ConfigureMicrosoftOpenIdEvents(options, provider);
     }
 
-    // login.microsoftonline.com's shared /common, /organizations, and /consumers endpoints all
-    // serve the SAME OpenID discovery document, whose "issuer" field is the literal, unresolved
-    // "{tenantid}" template rather than a real value - the default validator compares that
-    // template against the signed-in user's concrete tenant issuer and rejects every sign-in.
-    // A single-tenant authority is not affected: its discovery document already names the one
-    // real tenant. Accepting sign-in from any tenant/personal account here is not a relaxation -
-    // it is exactly what this app registration (sign-in audience
-    // AzureADandPersonalMicrosoftAccount) already grants; only the URL shape is checked.
-    /// <summary>Matches a concrete per-tenant Microsoft identity platform v2.0 issuer URL.</summary>
-    public static readonly Regex MicrosoftIssuerPattern =
-        new(@"^https://(login\.microsoftonline\.com|login\.windows\.net)/[0-9a-fA-F-]{36}/v2\.0/?$", RegexOptions.Compiled);
-
     private static void ConfigureMicrosoftOpenIdIssuerValidation(OpenIdConnectOptions options, MicrosoftProviderAudience audience)
     {
-        if (audience is MicrosoftProviderAudience.SingleTenant)
-            return;
-
-        options.TokenValidationParameters.IssuerValidator = ValidateMicrosoftIssuer;
+        options.TokenValidationParameters.IssuerValidator = AadIssuerValidator.GetAadIssuerValidator(options.Authority).Validate;
+        options.TokenValidationParameters.EnableAadSigningKeyIssuerValidation();
     }
 
-    /// <summary>
-    /// The issuer validator installed for every multi-tenant/personal Microsoft audience. Exposed
-    /// so tests can assert its behavior directly against <see cref="MicrosoftIssuerPattern"/>.
-    /// </summary>
+    /// <summary>Validates a Microsoft issuer against the token's tenant and trusted issuer metadata.</summary>
     public static string ValidateMicrosoftIssuer(string? issuer, SecurityToken token, TokenValidationParameters parameters) =>
-        issuer is not null && MicrosoftIssuerPattern.IsMatch(issuer)
-            ? issuer
-            : throw new SecurityTokenInvalidIssuerException($"'{issuer}' is not a recognized Microsoft identity platform issuer.") { InvalidIssuer = issuer };
+        string.IsNullOrWhiteSpace(issuer)
+            ? throw new SecurityTokenInvalidIssuerException("A Microsoft token must contain an issuer.")
+            : AadIssuerValidator.GetAadIssuerValidator("https://login.microsoftonline.com/common/v2.0").Validate(issuer, token, parameters);
 
     private void ConfigureMicrosoftOpenIdScopes(OpenIdConnectOptions options)
     {
@@ -161,7 +144,7 @@ public class ProviderConfigurationService
         options.TokenValidationParameters.NameClaimType = ClaimTypes.Name;
         options.Events.OnAuthorizationCodeReceived = async context =>
         {
-            X509Certificate2 certificate = await provider.GetCertificate(context.HttpContext.RequestAborted);
+            using X509Certificate2 certificate = await provider.GetCertificate(context.HttpContext.RequestAborted);
             await HandleMicrosoftAuthorizationCode(context, certificate, options);
         };
         options.Events.OnRemoteFailure = HandleRemoteFailure;
@@ -256,41 +239,8 @@ public class ProviderConfigurationService
         .WithCertificate(certificate)
         .WithAuthority(new Uri(options.Authority))
         .Build();
-        AuthenticationResult result = await confidentialClient.AcquireTokenByAuthorizationCode(["User.Read"], context.ProtocolMessage.Code).WithPkceCodeVerifier(codeVerifier).ExecuteAsync();
-        await ProcessMicrosoftTokens(context, result);
-    }
-
-    private static async Task ProcessMicrosoftTokens(AuthorizationCodeReceivedContext context, AuthenticationResult result)
-    {
-        JwtSecurityTokenHandler handler = new();
-        JwtSecurityToken? accessToken = handler.ReadToken(result.AccessToken) as JwtSecurityToken;
-        JwtSecurityToken? idToken = handler.ReadToken(result.IdToken) as JwtSecurityToken;
-        ClaimsIdentity claimsIdentity = new("Microsoft");
-        AddMicrosoftClaims(claimsIdentity, accessToken, idToken);
-        ClaimsPrincipal claimsPrincipal = new(claimsIdentity);
-        await context.HttpContext.SignInAsync("Cookies", claimsPrincipal);
+        AuthenticationResult result = await confidentialClient.AcquireTokenByAuthorizationCode(["User.Read"], context.ProtocolMessage.Code).WithPkceCodeVerifier(codeVerifier).ExecuteAsync(context.HttpContext.RequestAborted);
         context.HandleCodeRedemption(result.AccessToken, result.IdToken);
     }
 
-    private static void AddMicrosoftClaims(ClaimsIdentity identity, JwtSecurityToken? accessToken, JwtSecurityToken? idToken)
-    {
-        if (accessToken == null) return;
-        string? givenName = accessToken.Claims.FirstOrDefault(c => c.Type == "given_name")?.Value;
-        string? surname = accessToken.Claims.FirstOrDefault(c => c.Type == "family_name")?.Value;
-        string? email = accessToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? accessToken.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value;
-        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, accessToken.Claims.FirstOrDefault(c => c.Type == "oid")?.Value ?? string.Empty));
-        if (!string.IsNullOrEmpty(email)) identity.AddClaim(new Claim(ClaimTypes.Email, email));
-        if (!string.IsNullOrEmpty(givenName)) identity.AddClaim(new Claim(ClaimTypes.GivenName, givenName));
-        if (!string.IsNullOrEmpty(surname)) identity.AddClaim(new Claim(ClaimTypes.Surname, surname));
-        AddAdditionalClaims(identity, accessToken, idToken);
-    }
-
-    private static void AddAdditionalClaims(ClaimsIdentity identity, JwtSecurityToken accessToken, JwtSecurityToken? idToken)
-    {
-        IEnumerable<Claim> allClaims = accessToken.Claims.Concat(idToken?.Claims ?? Enumerable.Empty<Claim>());
-
-        foreach (Claim? claim in allClaims)
-            if (!identity.HasClaim(claim.Type, claim.Value))
-                identity.AddClaim(claim);
-    }
 }

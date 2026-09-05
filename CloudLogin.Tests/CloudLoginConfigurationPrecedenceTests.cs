@@ -94,6 +94,25 @@ public sealed class CloudLoginConfigurationPrecedenceTests
         Assert.Equal("project-google", google.ClientId);
     }
 
+    [Fact]
+    public void EntraReference_EnablesMicrosoftWithoutExplicitProviderConfiguration()
+    {
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Entra:ClientId"] = "managed-client",
+            ["Entra:TenantId"] = "managed-tenant",
+            ["Entra:CertificateName"] = "login-certificate",
+            ["Entra:VaultEndpoint"] = "https://login.vault.azure.net/"
+        });
+        CloudLoginWebConfiguration configuration = builder.ReadCloudLoginConfiguration();
+        LoginProviders.MicrosoftProviderConfiguration provider = Assert.Single(configuration.Providers.OfType<LoginProviders.MicrosoftProviderConfiguration>());
+        Assert.Equal("managed-client", provider.ClientId);
+        Assert.Equal("managed-tenant", provider.TenantId);
+        Assert.Equal("login-certificate", provider.CertificateName);
+        Assert.Null(provider.ClientSecret);
+    }
+
     private sealed class StubCredential : TokenCredential
     {
         public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken) =>

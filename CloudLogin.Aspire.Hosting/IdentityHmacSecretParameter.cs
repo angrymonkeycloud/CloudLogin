@@ -52,9 +52,9 @@ internal static class IdentityHmacSecretParameter
 
         return existing ?? builder.AddParameter(
             parameterName,
-            new IdentityHmacSecretDefault(),
+            new IdentityHmacSecretDefault(builder.ExecutionContext.IsRunMode ? builder.AppHostDirectory : null, parameterName),
             secret: true,
-            persist: true);
+            persist: false);
     }
 }
 
@@ -78,7 +78,7 @@ internal static class IdentityHmacSecretParameter
 /// the ones that need escaping in an App Service setting.
 /// </para>
 /// </remarks>
-internal sealed class IdentityHmacSecretDefault : ParameterDefault
+internal sealed class IdentityHmacSecretDefault(string? appHostDirectory = null, string name = "identity-hmac") : ParameterDefault
 {
     /// <summary>Base64 of 32 bytes is 44 characters; asking for 44 keeps both forms the same length.</summary>
     private const int Base64LengthOf32Bytes = 44;
@@ -100,7 +100,11 @@ internal sealed class IdentityHmacSecretDefault : ParameterDefault
     /// The byte count is the server's own <c>MinimumSecretBytes</c>, so the generator and the
     /// validator that will reject its output cannot drift apart.
     /// </remarks>
-    public override string GetDefaultValue() =>
+    public override string GetDefaultValue() => appHostDirectory is null
+        ? Generate()
+        : CoconutSharp.Aspire.Hosting.CoconutLocalSecretStore.GetOrCreate(appHostDirectory, name, Generate);
+
+    private static string Generate() =>
         Convert.ToBase64String(RandomNumberGenerator.GetBytes(
             AngryMonkey.CloudLogin.Server.Core.Domain.IdentityKeyHasher.MinimumSecretBytes));
 

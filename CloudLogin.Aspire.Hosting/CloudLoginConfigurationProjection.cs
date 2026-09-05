@@ -80,7 +80,16 @@ internal static class CloudLoginConfigurationProjection
             if (TryFormat(value, out string? formatted))
             {
                 if (!Equals(value, defaultValue))
-                    resource.WithEnvironment(key, formatted);
+                {
+                    if (property.Name is "ClientSecret" or "Secret" or "Password" or "Authorization" or "ConnectionString" or "CertificatePassword" or "CertificateBase64")
+                    {
+                        string name = System.Text.RegularExpressions.Regex.Replace($"{resource.Resource.Name}-{key}".ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+                        IResourceBuilder<ParameterResource> parameter = resource.ApplicationBuilder.AddParameter(name, () => formatted!, secret: true);
+                        resource.WithEnvironment(key, parameter);
+                    }
+                    else
+                        resource.WithEnvironment(key, formatted);
+                }
                 continue;
             }
 

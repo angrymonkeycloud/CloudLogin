@@ -22,6 +22,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\CloudLogin\CloudLogin.csproj" />
+        <ProjectReference Include="..\CloudLogin.Components\CloudLogin.Components.csproj" />
 		<ProjectReference Include="..\CloudLogin.Client\CloudLogin.Client.csproj" />
 		<ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
 		<ProjectReference Include="..\CloudLogin.Server\CloudLogin.Server.csproj" />

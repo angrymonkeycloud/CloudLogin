@@ -72,6 +72,7 @@ public sealed class SessionFamilyDocument : CloudLoginCoreDocument, IExpiringDoc
     /// <summary>Broad category: Desktop, Mobile, Tablet, or Unknown.</summary>
     public DeviceTypes DeviceType { get; set; } = DeviceTypes.Unknown;
 
+    public string? BrowserDeviceId { get; set; }
     public string? DeviceBrowser { get; set; }
     public string? DeviceOperatingSystem { get; set; }
 

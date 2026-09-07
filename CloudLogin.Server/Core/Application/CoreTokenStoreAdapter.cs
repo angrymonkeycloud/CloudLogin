@@ -102,6 +102,8 @@ public sealed class CoreTokenStoreAdapter(
             // every application sign-in would show up in the account page's device list as an
             // unnamed "Unknown device".
             DeviceDescription device = DeviceDescription.Parse(token.UserAgent);
+            SessionFamilyDocument? browser = (await _sessions.FindFamiliesBySessionIdAsync(token.SessionId, cancellationToken))
+                .FirstOrDefault(member => member.UserId == token.UserId.ToString() && !string.IsNullOrEmpty(member.BrowserDeviceId));
 
             SessionFamilyDocument newFamily = new()
             {
@@ -115,10 +117,11 @@ public sealed class CoreTokenStoreAdapter(
                 CreatedOn = token.CreatedOn,
                 CreatedByIp = token.CreatedByIp,
                 UserAgent = token.UserAgent,
-                DeviceName = device.Name,
-                DeviceType = device.Type,
-                DeviceBrowser = device.Browser,
-                DeviceOperatingSystem = device.OperatingSystem,
+                BrowserDeviceId = browser?.BrowserDeviceId,
+                DeviceName = browser?.DeviceName ?? device.Name,
+                DeviceType = browser?.DeviceType ?? device.Type,
+                DeviceBrowser = browser?.DeviceBrowser ?? device.Browser,
+                DeviceOperatingSystem = browser?.DeviceOperatingSystem ?? device.OperatingSystem,
                 LastSeenOn = token.CreatedOn,
                 LastSeenIp = token.CreatedByIp,
                 IsRevoked = token.IsRevoked,

@@ -297,6 +297,11 @@ Aspire too. **[CoconutSharp](https://github.com/CoconutSharp/CoconutSharpAspire)
 package for environment-aware publishing (naming, identity, App Service targets per Dev/Staging/
 Production) without changing how CloudLogin itself is configured.
 
+## Activity maps and devices
+
+A host using CloudLogin.Aspire can reference CoconutSharp Azure Maps to supply Maps:AzureSubscriptionKey. Hosts configuring CloudLogin directly can set CloudLoginWebConfiguration.MapsSubscriptionKey. Sign-in history then offers authenticated static map previews. The key stays on the server; valid coordinates always link to Google Maps, including when a preview fails.
+
+Security initially shows three devices and three sign-in activities. View more expands activity history or opens the Devices section. Device rows include platform SVGs and group repeated sign-ins using a protected, persistent browser-profile cookie. Application sessions inherit that identity and are revoked together when a device is signed out. Older sessions without this identifier remain separate; different browser profiles and cleared cookies also create separate entries.
 ## Feature overview
 
 CloudLogin includes:

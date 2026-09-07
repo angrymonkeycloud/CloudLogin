@@ -1,4 +1,4 @@
-﻿// CloudLoginServer/Services/CloudLoginAuthenticationService.cs
+// CloudLoginServer/Services/CloudLoginAuthenticationService.cs
 using AngryMonkey.Cloud;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -79,7 +79,7 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
                 userId,
                 audience: Core.Application.SessionService.BrowserAudience,
                 createdByIp: context.Connection.RemoteIpAddress?.ToString(),
-                userAgent: string.IsNullOrWhiteSpace(userAgent) ? null : userAgent);
+                userAgent: string.IsNullOrWhiteSpace(userAgent) ? null : userAgent, browserDeviceId: BrowserDeviceIdentity.GetOrCreate(context));
 
             return CloudLoginAuthenticationClaims.WithSession(principal, session.SessionId, session.FamilyId);
         }

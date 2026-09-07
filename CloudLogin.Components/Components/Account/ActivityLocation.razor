@@ -1,0 +1,30 @@
+@namespace AngryMonkey.CloudLogin
+@using AngryMonkey.CloudLogin.Models
+@using System.Globalization
+
+@if (Entry.HasCoordinates)
+{
+    <a class="activity-location" href="@GoogleMapsUrl" target="_blank" rel="noopener noreferrer" aria-label="View sign-in location on Google Maps">
+        @if (!string.IsNullOrWhiteSpace(Entry.MapImageUrl) && !_imageFailed)
+        {
+            <img src="@Entry.MapImageUrl" width="320" height="180" loading="lazy" alt="Map of this sign-in location" @onerror="() => _imageFailed = true" />
+        }
+        <span>@Coordinates</span>
+        <span>View on Map</span>
+    </a>
+}
+
+@code {
+    [Parameter, EditorRequired] public required CloudLoginHistoryEntryModel Entry { get; set; }
+    private bool _imageFailed;
+    private Guid _entryId;
+    public string Coordinates => FormattableString.Invariant($"{Entry.Latitude:0.#####}, {Entry.Longitude:0.#####}");
+    public string GoogleMapsUrl => "https://www.google.com/maps/search/?api=1&query=" + Uri.EscapeDataString(FormattableString.Invariant($"{Entry.Latitude},{Entry.Longitude}"));
+
+    protected override void OnParametersSet()
+    {
+        if (_entryId != Entry.Id)
+            _imageFailed = false;
+        _entryId = Entry.Id;
+    }
+}

@@ -31,6 +31,7 @@ public static class CloudLoginConfigurationExtensions
         configure?.Invoke(configuration);
 
         builder.Configuration.GetSection("CloudLogin").Bind(configuration);
+        configuration.MapsSubscriptionKey ??= builder.Configuration["Maps:AzureSubscriptionKey"];
 
         // App Service and container settings are scalar values. Keep rotation fallbacks in one
         // secret setting by accepting a JSON array instead of requiring __0, __1, ... variables.

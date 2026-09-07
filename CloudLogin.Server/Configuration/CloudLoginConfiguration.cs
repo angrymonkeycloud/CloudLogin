@@ -1,4 +1,4 @@
-﻿using AngryMonkey.CloudBlazor.Web;
+using AngryMonkey.CloudBlazor.Web;
 using AngryMonkey.CloudLogin.Server.Core;
 using AngryMonkey.CloudLogin.Server.Core.Application;
 using AngryMonkey.CloudLogin.Sever.Providers;
@@ -12,6 +12,7 @@ public class CloudLoginWebConfiguration
     /// model and creates it on startup; leaving this untouched uses secure defaults.
     /// </summary>
     public CloudLoginCoreConfiguration Core { get; set; } = new();
+    public string? MapsSubscriptionKey { get; set; }
 
     /// <summary>
     /// The primary secret keying the identity index: at least 32 cryptographically random bytes,

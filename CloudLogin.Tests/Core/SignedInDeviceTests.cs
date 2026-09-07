@@ -62,6 +62,71 @@ public class SignedInDeviceTests
     private const string Windows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0 Safari/537.36";
     private const string IPhone = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Version/17.0 Mobile/15E148 Safari/604.1";
 
+    [Fact]
+    public async Task RepeatedBrowserSignIns_AreOneDevice_AndRevokeTogether()
+    {
+        Guid userId = Guid.NewGuid();
+        SessionIssueResult first = await _service.IssueFamilyAsync(userId, userAgent: Windows, browserDeviceId: "browser-a");
+        SessionIssueResult second = await _service.IssueFamilyAsync(userId, userAgent: Windows, browserDeviceId: "browser-a");
+        SignedInDevice device = Assert.Single(await _service.GetDevicesAsync(userId, second.SessionId));
+        Assert.True(device.IsCurrent);
+        Assert.True(await _service.RevokeDeviceAsync(userId, device.DeviceId));
+        Assert.False(await _service.IsFamilyActiveAsync(first.FamilyId));
+        Assert.False(await _service.IsFamilyActiveAsync(second.FamilyId));
+    }
+
+    [Fact]
+    public async Task IdenticalPlatformsOnDifferentDevices_RemainSeparate()
+    {
+        Guid userId = Guid.NewGuid();
+        await _service.IssueFamilyAsync(userId, userAgent: Windows, browserDeviceId: "browser-a");
+        await _service.IssueFamilyAsync(userId, userAgent: Windows, browserDeviceId: "browser-b");
+        Assert.Equal(2, (await _service.GetDevicesAsync(userId)).Count);
+    }
+
+    [Fact]
+    public async Task SignOutOthers_PreservesEverySessionOnCurrentDevice()
+    {
+        Guid userId = Guid.NewGuid();
+        SessionIssueResult first = await _service.IssueFamilyAsync(userId, browserDeviceId: "browser-a");
+        SessionIssueResult current = await _service.IssueFamilyAsync(userId, browserDeviceId: "browser-a");
+        SessionIssueResult other = await _service.IssueFamilyAsync(userId, browserDeviceId: "browser-b");
+        await _service.RevokeOtherDevicesAsync(userId, current.SessionId);
+        Assert.True(await _service.IsFamilyActiveAsync(first.FamilyId));
+        Assert.True(await _service.IsFamilyActiveAsync(current.FamilyId));
+        Assert.False(await _service.IsFamilyActiveAsync(other.FamilyId));
+    }
+
+    [Fact]
+    public async Task BrowserIdentity_NeverGroupsDifferentAccounts()
+    {
+        Guid userId = Guid.NewGuid();
+        SessionIssueResult own = await _service.IssueFamilyAsync(userId, browserDeviceId: "shared-browser");
+        SessionIssueResult other = await _service.IssueFamilyAsync(Guid.NewGuid(), browserDeviceId: "shared-browser");
+        Assert.Single(await _service.GetDevicesAsync(userId));
+        await _service.RevokeDeviceAsync(userId, own.FamilyId);
+        Assert.True(await _service.IsFamilyActiveAsync(other.FamilyId));
+    }
+    [Fact]
+    public async Task ApplicationFamiliesInheritDeviceIdentity_AndSignOutTogether()
+    {
+        Guid userId = Guid.NewGuid();
+        SessionIssueResult first = await _service.IssueFamilyAsync(userId, audience: SessionService.BrowserAudience, userAgent: Windows, browserDeviceId: "browser-a");
+        SessionIssueResult second = await _service.IssueFamilyAsync(userId, audience: SessionService.BrowserAudience, userAgent: Windows, browserDeviceId: "browser-a");
+        CoreTokenStoreAdapter adapter = new(_repository, null!, _configuration);
+        await adapter.SaveRefreshTokenAsync(new Server.CloudLoginRefreshToken
+        {
+            FamilyId = "application-family", SessionId = first.SessionId, UserId = userId,
+            TokenHash = "test-token-hash", Audience = "agency", CreatedOn = DateTimeOffset.UtcNow, ExpiresOn = DateTimeOffset.UtcNow.AddDays(1)
+        });
+        SessionFamilyDocument application = (await _repository.GetFamilyAsync("application-family"))!;
+        Assert.Equal("browser-a", application.BrowserDeviceId);
+        Assert.Equal("Windows", application.DeviceOperatingSystem);
+        SignedInDevice device = Assert.Single(await _service.GetDevicesAsync(userId, second.SessionId));
+        Assert.Contains("agency", device.Audiences);
+        await _service.RevokeDeviceAsync(userId, device.DeviceId);
+        Assert.False(await _service.IsFamilyActiveAsync("application-family"));
+    }
     public SignedInDeviceTests() =>
         _service = new SessionService(_repository, _configuration, new AuditLogger(_audit, _configuration));
 

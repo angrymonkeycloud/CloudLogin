@@ -18,7 +18,7 @@ internal static class CloudLoginConfigurationProjection
         // into the resource's environment and the published manifest. They get their own
         // parameter-based path instead - see WithIdentityHmacSecret and
         // WithIdentityHmacFallbackSecrets.
-        "IdentityHmacSecret", "IdentityHmacFallbackSecrets"
+        "IdentityHmacSecret", "IdentityHmacFallbackSecrets", "MapsSubscriptionKey"
     ];
 
     public static void Apply(

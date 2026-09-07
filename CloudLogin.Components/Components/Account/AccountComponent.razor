@@ -165,9 +165,9 @@
                         {
                             <AccountComponent_Profile @key="RouteKey" CurrentUser="CurrentUser" />
                         }
-                        else if (activeTab == "Security")
+                        else if (activeTab is "Security" or "Devices")
                         {
-                            <AccountComponent_Security @key="RouteKey" CurrentUser="CurrentUser" />
+                            <AccountComponent_Security @key="RouteKey" CurrentUser="CurrentUser" DevicesOnly="@(activeTab == "Devices")" DevicesUrl="@BuildTabUrl("Devices")" />
                         }
                         else if (activeTab == "Admin" && CurrentUser.IsGlobalAdmin)
                         {
@@ -351,6 +351,7 @@ else
             yield return new() { Name = "Overview", DisplayName = "Overview" };
             yield return new() { Name = "Profile", DisplayName = "Profile" };
             yield return new() { Name = "Security", DisplayName = "Security" };
+            yield return new() { Name = "Devices", DisplayName = "Devices" };
 
         }
     }
@@ -429,6 +430,7 @@ else
     {
         var s when s.Equals("Profile", StringComparison.OrdinalIgnoreCase) => "Profile",
         var s when s.Equals("Security", StringComparison.OrdinalIgnoreCase) => "Security",
+        var s when s.Equals("Devices", StringComparison.OrdinalIgnoreCase) => "Devices",
         var s when s.Equals("Admin", StringComparison.OrdinalIgnoreCase) => "Admin",
         _ => "Overview"
     };
@@ -470,7 +472,7 @@ else
         if (InitialSection.Equals("Workspaces", StringComparison.OrdinalIgnoreCase))
             return TargetEntityId is Guid legacyWorkspaceId ? BuildWorkspaceUrl(legacyWorkspaceId, "Workspace") : null;
 
-        string[] known = ["Profile", "Security", "Admin"];
+        string[] known = ["Profile", "Security", "Devices", "Admin"];
         string? match = known.FirstOrDefault(name => name.Equals(InitialSection, StringComparison.OrdinalIgnoreCase));
 
         return match is null ? null : BuildTabUrl(match, TargetEntityId);
@@ -525,6 +527,7 @@ else
         "Overview" => @<GridIcon />,
         "Profile" => @<PersonIcon />,
         "Security" => @<ShieldCheckIcon />,
+        "Devices" => @<DevicePlatformIcon />,
         "Workspace" => @<BuildingIcon />,
         "Admin" => @<ShieldCheckIcon />,
         _ => @<GridIcon />

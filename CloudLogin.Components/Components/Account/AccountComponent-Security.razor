@@ -10,8 +10,8 @@
 
 <div class="account-section security-page">
     <div class="section-header">
-        <h3>Security</h3>
-        <p class="section-description">Manage how you sign in, add extra verification, and review recent activity on your account.</p>
+        <h3>@(DevicesOnly ? "Devices" : "Security")</h3>
+        <p class="section-description">@(DevicesOnly ? "Review your devices and the applications signed in on each one." : "Manage how you sign in, add extra verification, and review recent activity on your account.")</p>
     </div>
 
     @if (_loading)
@@ -20,6 +20,8 @@
     }
     else
     {
+        @if (!DevicesOnly)
+        {
         @* ── Password ─────────────────────────────────────────── *@
         @if (_overview.PasswordProviderConfigured)
         {
@@ -223,10 +225,15 @@
             }
         </div>
 
+        }
         @* ── Signed-in devices ────────────────────────────────── *@
         <div class="card">
             <div class="card-header">
                 <h4>Your devices</h4>
+                @if (!DevicesOnly && _devices.Count > 3)
+                {
+                    <a class="link-action" href="@DevicesUrl">View more (@_devices.Count)</a>
+                }
                 <p class="card-description">Where your account is signed in. Sign out anything you don't recognise.</p>
                 @if (_otherActiveDeviceCount > 0 && !_confirmingSignOutOthers)
                 {
@@ -264,10 +271,10 @@
             else
             {
                 <div class="entry-list">
-                    @foreach (CloudLoginSignedInDevice device in _devices)
+                    @foreach (CloudLoginSignedInDevice device in _devices.Take(DevicesOnly ? int.MaxValue : 3))
                     {
                         <div class="entry-row">
-                            <span class="entry-icon" aria-hidden="true"><ClockIcon /></span>
+                            <span class="entry-icon" aria-hidden="true"><DevicePlatformIcon OperatingSystem="@device.OperatingSystem" /></span>
                             <div class="entry-copy">
                                 <span class="entry-title">
                                     @device.Name
@@ -316,10 +323,18 @@
             }
         </div>
 
+        @if (!DevicesOnly)
+        {
         @* ── Login history ────────────────────────────────────── *@
         <div class="card">
             <div class="card-header">
                 <h4>Recent sign-ins</h4>
+                @if (_history.Count > 3)
+                {
+                    <button class="link-action" aria-expanded="@_showAllHistory" @onclick="() => _showAllHistory = !_showAllHistory">
+                        @(_showAllHistory ? "Show less" : $"View more ({_history.Count})")
+                    </button>
+                }
             </div>
 
             @if (_history.Count == 0)
@@ -329,7 +344,7 @@
             else
             {
                 <div class="entry-list">
-                    @foreach (CloudLoginHistoryEntryModel entry in _history)
+                    @foreach (CloudLoginHistoryEntryModel entry in _history.Take(_showAllHistory ? int.MaxValue : 3))
                     {
                         <div class="entry-row">
                             <span class="entry-icon" aria-hidden="true"><ClockIcon /></span>
@@ -353,17 +368,14 @@
                             </div>
                             @if (entry.HasCoordinates)
                             {
-                                <button class="btn btn-outline btn-sm"
-                                        title="@($"{entry.Latitude}, {entry.Longitude}")"
-                                        @onclick="() => OpenMap(entry)">
-                                    View on map
-                                </button>
+                                <ActivityLocation Entry="entry" />
                             }
                         </div>
                     }
                 </div>
             }
         </div>
+        }
     }
 
     @if (!string.IsNullOrEmpty(_message))
@@ -374,6 +386,9 @@
 
 @code {
     [Parameter] public required CloudUserModel CurrentUser { get; set; }
+    [Parameter] public bool DevicesOnly { get; set; }
+    [Parameter] public string DevicesUrl { get; set; } = "/Account/Devices";
+    private bool _showAllHistory;
 
     [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
 
@@ -437,8 +452,11 @@
 
         try
         {
-            _overview = (await cloudLogin.GetSecurityOverview()).ToModel();
-            _history = [.. (await cloudLogin.GetMyLoginHistory()).Select(entry => entry.ToModel())];
+            if (!DevicesOnly)
+            {
+                _overview = (await cloudLogin.GetSecurityOverview()).ToModel();
+            _history = [.. (await cloudLogin.GetMyLoginHistory()).OrderByDescending(entry => entry.SignedInOn).Select(entry => entry.ToModel())];
+            }
             _devices = await cloudLogin.GetMyDevices();
         }
         catch (UnauthorizedAccessException)
@@ -689,14 +707,6 @@
     };
 
     // ── History ──────────────────────────────────────────────────────────────
-
-    private async Task OpenMap(CloudLoginHistoryEntryModel entry)
-    {
-        if (!entry.HasCoordinates)
-            return;
-
-        await js.InvokeVoidAsync("cloudLoginWebAuthn.openMap", entry.Latitude, entry.Longitude);
-    }
 
     // ── Shared helpers ───────────────────────────────────────────────────────
 

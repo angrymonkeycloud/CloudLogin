@@ -1,0 +1,24 @@
+.activity-location {
+  display: grid;
+  gap: 0.25rem;
+  flex: 0 1 12rem;
+  font-size: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+.activity-location img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.activity-location span:last-child {
+  text-decoration: underline;
+  font-weight: 600;
+}
+.activity-location:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}

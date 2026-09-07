@@ -12,8 +12,8 @@ public sealed class SessionTokenRejectedException(string reason) : InvalidOperat
 }
 
 /// <summary>
-/// One device the account is (or was) signed in on. A device is a refresh-token family: signing
-/// in creates one, and revoking it signs that device out without touching the others.
+/// One browser profile the account is (or was) signed in on. Its protected identifier groups repeated sign-ins. Signing
+/// out revokes its associated session families without touching other devices.
 /// </summary>
 public sealed record SignedInDevice
 {
@@ -91,7 +91,7 @@ public sealed class SessionService(
     public async Task<SessionIssueResult> IssueFamilyAsync(
         Guid userId, string? audience = null, string? scope = null,
         string? createdByIp = null, string? userAgent = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, string? browserDeviceId = null)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
         string familyId = Guid.NewGuid().ToString("N");
@@ -115,6 +115,7 @@ public sealed class SessionService(
             CreatedOn = now,
             CreatedByIp = createdByIp,
             UserAgent = userAgent,
+            BrowserDeviceId = browserDeviceId,
             DeviceName = device.Name,
             DeviceType = device.Type,
             DeviceBrowser = device.Browser,
@@ -250,11 +251,9 @@ public sealed class SessionService(
     /// The devices this account is signed in on, newest first, with the inactive ones included so
     /// someone can see a device that was signed in and why it stopped.
     /// <para>
-    /// A device is a sign-in session, not a token family. One sign-in in a browser produces the
-    /// browser's own family plus a family for every application signed in to from it, all sharing
-    /// one session id - shown as a single row, or the same laptop would appear once per
-    /// application and again on every sign-in. A family with no session id (an older record, a
-    /// native flow) is a device of its own.
+    /// Protected browser identifiers group repeated sign-ins and their application families.
+    /// Older records without an identifier retain their session grouping; matching platforms or IPs
+    /// cannot establish that two sessions belong to the same physical device.
     /// </para>
     /// </summary>
     /// <param name="currentSessionId">
@@ -270,8 +269,8 @@ public sealed class SessionService(
         return
         [
             .. families
-                .GroupBy(SessionKey, StringComparer.Ordinal)
-                .Select(session => ToDevice(session.Key, [.. session], currentSessionId, now))
+                .GroupBy(family => DeviceKey(family, families), StringComparer.Ordinal)
+                .Select(session => ToDevice([.. session], currentSessionId, now))
                 // Active devices first, then most recently seen: the list answers "where am I
                 // signed in right now?" before "what used to be signed in?".
                 .OrderByDescending(device => device.IsActive)
@@ -348,9 +347,16 @@ public sealed class SessionService(
         if (string.IsNullOrWhiteSpace(family.SessionId))
             return [family];
 
-        List<SessionFamilyDocument> members = await _repository.FindFamiliesBySessionIdAsync(family.SessionId, cancellationToken);
+        List<SessionFamilyDocument> families = await _repository.GetFamiliesForUserAsync(Guid.Parse(family.UserId), cancellationToken);
+        string key = DeviceKey(family, families);
+        return [.. families.Where(member => DeviceKey(member, families) == key)];
+    }
 
-        return members.Count == 0 ? [family] : members;
+    private static string DeviceKey(SessionFamilyDocument family, List<SessionFamilyDocument> families)
+    {
+        string? deviceId = family.BrowserDeviceId ?? families
+            .FirstOrDefault(member => member.SessionId == family.SessionId && !string.IsNullOrEmpty(member.BrowserDeviceId))?.BrowserDeviceId;
+        return string.IsNullOrEmpty(deviceId) ? SessionKey(family) : $"device:{deviceId}";
     }
 
     private static string SessionKey(SessionFamilyDocument family) =>
@@ -375,14 +381,15 @@ public sealed class SessionService(
         DateTimeOffset now = DateTimeOffset.UtcNow;
         List<SessionFamilyDocument> families = await _repository.GetFamiliesForUserAsync(userId, cancellationToken);
         int revoked = 0;
+        SessionFamilyDocument? current = families.FirstOrDefault(family => family.SessionId == currentSessionId);
+        string? currentDevice = current is null ? null : DeviceKey(current, families);
 
         foreach (SessionFamilyDocument family in families)
         {
             if (family.IsRevoked || DocumentExpiry.IsExpired(family, now))
                 continue;
 
-            if (currentSessionId is not null &&
-                string.Equals(family.SessionId, currentSessionId, StringComparison.Ordinal))
+            if (currentDevice is not null && DeviceKey(family, families) == currentDevice)
                 continue;
 
             await RevokeFamilyCoreAsync(family, SessionRevocationReasons.UserSignedOut, now, cancellationToken);
@@ -401,7 +408,7 @@ public sealed class SessionService(
     /// device when there is one (it saw the real browser; an application family redeemed over a
     /// back channel may only know the relying party's server), otherwise the oldest family does.
     /// </summary>
-    private static SignedInDevice ToDevice(string sessionKey, List<SessionFamilyDocument> members, string? currentSessionId, DateTimeOffset now)
+    private static SignedInDevice ToDevice(List<SessionFamilyDocument> members, string? currentSessionId, DateTimeOffset now)
     {
         SessionFamilyDocument head = members
             .OrderByDescending(member => string.Equals(member.Audience, BrowserAudience, StringComparison.OrdinalIgnoreCase))
@@ -433,7 +440,7 @@ public sealed class SessionService(
                 : lastRevoked?.RevocationReason ?? SessionRevocationReasons.Expired,
             RevokedOn = active.Count > 0 ? null : lastRevoked?.RevokedOn,
             IsCurrent = currentSessionId is not null
-                && string.Equals(sessionKey, currentSessionId, StringComparison.Ordinal),
+                && members.Any(member => string.Equals(member.SessionId, currentSessionId, StringComparison.Ordinal)),
             Audiences = [.. members
                 .Select(member => member.Audience)
                 .Where(audience => !string.IsNullOrWhiteSpace(audience)

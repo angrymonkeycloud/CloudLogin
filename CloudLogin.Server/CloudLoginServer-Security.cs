@@ -143,7 +143,11 @@ public partial class CloudLoginServer
         if (_configuration.AzureStorage is null && _injectedSecurityStore is null)
             return [];
 
-        return await SecurityStore.GetLoginHistory(user.Id);
+        List<CloudLoginHistoryEntry> history = await SecurityStore.GetLoginHistory(user.Id);
+        foreach (CloudLoginHistoryEntry entry in history)
+            entry.MapImageUrl = entry.HasCoordinates && !string.IsNullOrWhiteSpace(_configuration.MapsSubscriptionKey)
+                ? $"/api/v3/activity/{entry.Id}/map" : null;
+        return history;
     }
 
     // ── Signed-in devices ────────────────────────────────────────────────────

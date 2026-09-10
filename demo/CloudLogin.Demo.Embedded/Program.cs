@@ -21,7 +21,6 @@ await demoStore.Create(new CloudUser
     Id = Guid.NewGuid(),
     FirstName = "Demo",
     LastName = "Admin",
-    DisplayName = "Demo Admin (Global Admin)",
     IsTest = true,
     IsGlobalAdmin = true,
     CreatedOn = DateTimeOffset.UtcNow,

@@ -126,7 +126,14 @@ public partial class LoginComponent : IDisposable
     #region Registration Data
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// What the account will be shown as, composed from the two names above rather than asked
+    /// for. The registration form used to collect it as a third field, pre-filled from the
+    /// other two, which only gave people a way to end up with a display name that no longer
+    /// matched their own name.
+    /// </summary>
+    public string DisplayName => CloudLoginDisplayName.Compose(FirstName, LastName) ?? string.Empty;
     public List<CloudLoginProviderDefinitionModel> NonExternalProviders => [.. Providers.Where(key => !key.IsExternal)];
     public List<CloudLoginProviderDefinitionModel> AvailableRegistrationProviders => [.. NonExternalProviders.Where(p =>
         p.Code.Equals("code", StringComparison.OrdinalIgnoreCase) ||
@@ -284,7 +291,7 @@ public partial class LoginComponent : IDisposable
     {
         Auth.Errors.Clear();
 
-        if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName))
+        if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName))
         {
             Auth.Errors.Add("Please fill in all required fields.");
             return;
@@ -381,8 +388,7 @@ public partial class LoginComponent : IDisposable
                 CloudLoginInputFormat.EmailAddress,
                 password: null,
                 FirstName,
-                LastName,
-                DisplayName);
+                LastName);
 
             CloudUser newUser = await cloudLogin.PasswordRegistration(request);
             await OnTestModeSignInAsync(newUser.ToModel());
@@ -428,7 +434,6 @@ public partial class LoginComponent : IDisposable
         TestUsers = [.. (await cloudLogin.GetTestUsers()).Select(user => user.ToModel())];
         FirstName = string.Empty;
         LastName = string.Empty;
-        DisplayName = string.Empty;
         await Auth.SwitchStep(ProcessStep.TestMode);
         Auth.EndLoading();
     }
@@ -460,7 +465,6 @@ public partial class LoginComponent : IDisposable
     {
         FirstName = string.Empty;
         LastName = string.Empty;
-        DisplayName = string.Empty;
         await Auth.SwitchStep(ProcessStep.TestModeCreate);
     }
 
@@ -468,7 +472,7 @@ public partial class LoginComponent : IDisposable
     {
         Auth.Errors.Clear();
 
-        if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName) || string.IsNullOrWhiteSpace(DisplayName))
+        if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
         {
             Auth.Errors.Add("Please fill in all required fields.");
             return;
@@ -505,7 +509,6 @@ public partial class LoginComponent : IDisposable
                 InputValueFormat,
                 FirstName,
                 LastName,
-                DisplayName,
                 VerificationToken,
                 KeepMeSignedIn);
 
@@ -556,7 +559,6 @@ public partial class LoginComponent : IDisposable
                 Password,
                 FirstName,
                 LastName,
-                DisplayName,
                 VerificationToken,
                 KeepMeSignedIn);
 
@@ -649,7 +651,7 @@ public partial class LoginComponent : IDisposable
             return Task.CompletedTask;
         }
 
-        if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName) || string.IsNullOrEmpty(DisplayName))
+        if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName))
         {
             Auth.Errors.Add("Unable to log you in. Please check that your first name, last name and your display name are correct.");
             return Task.CompletedTask;
@@ -661,8 +663,7 @@ public partial class LoginComponent : IDisposable
         {
             Id = Guid.NewGuid(),
             FirstName = FirstName,
-            LastName = LastName,
-            DisplayName = DisplayName
+            LastName = LastName
         };
 
         return CustomSignInChallengeAsync(userValues);
@@ -688,7 +689,7 @@ public partial class LoginComponent : IDisposable
                         await OnRegistrationInputNextClicked();
 
                 if (Auth.CurrentStep == ProcessStep.RegistrationDetails)
-                    if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))
+                    if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName))
                         await OnRegistrationDetailsNextClicked();
 
                 if (Auth.CurrentStep == ProcessStep.CodeVerification)
@@ -701,7 +702,7 @@ public partial class LoginComponent : IDisposable
                     await OnRegistrationPasswordVerifyClicked();
 
                 if (Auth.CurrentStep == ProcessStep.Registration)
-                    if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName))
+                    if (!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName))
                         await OnRegisterClicked();
 
                 break;
@@ -738,7 +739,6 @@ public partial class LoginComponent : IDisposable
             case ProcessStep.RegistrationDetails:
                 FirstName = string.Empty;
                 LastName = string.Empty;
-                DisplayName = string.Empty;
                 break;
         }
     }
@@ -1108,14 +1108,6 @@ public partial class LoginComponent : IDisposable
     private void EndLoading()
     {
         Auth.EndLoading();
-    }
-
-    protected void OnDisplayNameFocus()
-    {
-        if (!string.IsNullOrEmpty(DisplayName) || string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
-            return;
-
-        DisplayName = $"{FirstName} {LastName}";
     }
 
     public string InputLabel

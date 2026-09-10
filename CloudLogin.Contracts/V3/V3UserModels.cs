@@ -92,7 +92,9 @@ public sealed record V3UpdateProfileRequest
 {
     public string? FirstName { get; init; }
     public string? LastName { get; init; }
-    public string? DisplayName { get; init; }
+
+    // No DisplayName: it is composed from the two names above, so there is nothing to update.
+
     public string? Username { get; init; }
     public DateOnly? DateOfBirth { get; init; }
     public string? Country { get; init; }

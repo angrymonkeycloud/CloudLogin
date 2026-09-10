@@ -125,10 +125,22 @@ public sealed class CosmosUserRepository(CosmosCoreDatabase database) : IUserRep
         return await CosmosCoreOperations.QueryAsync<UserDocument>(container, query, null, cancellationToken);
     }
 
+    /// <summary>
+    /// Finds users whose composed display name matches, by composing it in the query rather than
+    /// reading a stored column - there is no longer one to read.
+    /// </summary>
+    /// <remarks>
+    /// The expression has to reproduce <see cref="CloudLoginDisplayName.Compose"/> exactly, or a
+    /// name the UI shows would not be findable by that same name. Each part coalesces to an empty
+    /// string so a missing first or last name still matches on the other (<c>CONCAT</c> yields
+    /// undefined if any argument is), and the result is trimmed so the separating space does not
+    /// survive as a leading or trailing one when a part is absent.
+    /// </remarks>
     public async Task<List<UserDocument>> GetByDisplayNameAsync(string displayName, CancellationToken cancellationToken = default)
     {
         Container container = await ContainerAsync(cancellationToken);
-        QueryDefinition query = new QueryDefinition("SELECT * FROM c WHERE UPPER(c.DisplayName) = UPPER(@displayName)")
+        QueryDefinition query = new QueryDefinition(
+            "SELECT * FROM c WHERE UPPER(TRIM(CONCAT(c.FirstName ?? '', ' ', c.LastName ?? ''))) = UPPER(TRIM(@displayName))")
             .WithParameter("@displayName", displayName);
         return await CosmosCoreOperations.QueryAsync<UserDocument>(container, query, null, cancellationToken);
     }

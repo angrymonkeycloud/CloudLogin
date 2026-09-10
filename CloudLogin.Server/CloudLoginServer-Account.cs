@@ -183,7 +183,7 @@ public partial class CloudLoginServer : Interfaces.ICloudLogin
             profiles.Add(new CloudWorkspaceMemberProfile
             {
                 UserId = member.UserId,
-                DisplayName = user?.DisplayName ?? string.Join(" ", new[] { user?.FirstName, user?.LastName }.Where(part => !string.IsNullOrWhiteSpace(part))),
+                DisplayName = user?.DisplayName,
                 EmailAddress = (user?.PrimaryEmailAddress ?? user?.EmailAddresses.FirstOrDefault())?.Input,
                 ProfilePicture = user?.ProfilePicture,
                 Roles = member.Roles,

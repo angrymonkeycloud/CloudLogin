@@ -13,7 +13,6 @@ public class DataParse
 
         CloudUserInfo userInformation = new()
         {
-            DisplayName = user.DisplayName,
             FirstName = user.FirstName,
             IsLocked = user.IsLocked,
             IsTest = user.IsTest,
@@ -56,7 +55,6 @@ public class DataParse
         return new()
         {
             Id = dbUser.GetId(),
-            DisplayName = dbUser.DisplayName,
             FirstName = dbUser.FirstName,
             IsLocked = dbUser.IsLocked,
             IsTest = dbUser.IsTest,

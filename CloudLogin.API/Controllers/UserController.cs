@@ -67,7 +67,6 @@ public class UserController(CloudLoginWebConfiguration configuration, ICloudLogi
             // identifiers, password hashes, and lock state are server-managed.
             storedUser.FirstName = user.FirstName;
             storedUser.LastName = user.LastName;
-            storedUser.DisplayName = user.DisplayName;
             storedUser.Username = user.Username;
             storedUser.DateOfBirth = user.DateOfBirth;
             storedUser.Country = user.Country;

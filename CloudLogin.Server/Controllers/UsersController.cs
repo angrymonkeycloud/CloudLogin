@@ -23,7 +23,6 @@ public class UsersController(ILogger<UsersController> logger) : ControllerBase
 
             // Extract user information from claims
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var displayName = User.FindFirst(ClaimTypes.Name)?.Value;
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             var firstName = User.FindFirst(ClaimTypes.GivenName)?.Value;
             var lastName = User.FindFirst(ClaimTypes.Surname)?.Value;
@@ -39,7 +38,6 @@ public class UsersController(ILogger<UsersController> logger) : ControllerBase
             var user = new CloudUser
             {
                 Id = userId,
-                DisplayName = displayName,
                 FirstName = firstName,
                 LastName = lastName,
                 ProfilePicture = picture,

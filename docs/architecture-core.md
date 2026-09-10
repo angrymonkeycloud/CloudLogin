@@ -321,7 +321,6 @@ After — `Users` container (partition key `/id`; no hash, no subject):
   "SchemaVersion": 1,
   "FirstName": "Ada",
   "LastName": "Lovelace",
-  "DisplayName": "Ada Lovelace",
   "State": "Active",
   "IsLocked": false,
   "IsGlobalAdmin": false,

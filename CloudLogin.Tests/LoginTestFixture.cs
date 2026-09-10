@@ -134,7 +134,6 @@ internal sealed class LoginTestFixture
         Id = Guid.NewGuid(),
         FirstName = "Test",
         LastName = "Person",
-        DisplayName = "Test Person",
         IsTest = isTest,
         CreatedOn = DateTimeOffset.UtcNow.AddDays(-1),
         Inputs =

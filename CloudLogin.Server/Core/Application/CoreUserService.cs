@@ -48,7 +48,6 @@ public sealed class CoreUserService(
             Id = Guid.Parse(user.Id),
             FirstName = user.FirstName,
             LastName = user.LastName,
-            DisplayName = user.DisplayName,
             Username = user.Username,
             DateOfBirth = user.DateOfBirth,
             IsLocked = user.IsLocked || user.State == UserStates.Disabled,
@@ -117,7 +116,6 @@ public sealed class CoreUserService(
 
         user.FirstName = cloudUser.FirstName;
         user.LastName = cloudUser.LastName;
-        user.DisplayName = cloudUser.DisplayName;
         user.Username = cloudUser.Username;
         user.DateOfBirth = cloudUser.DateOfBirth;
         user.IsLocked = cloudUser.IsLocked;

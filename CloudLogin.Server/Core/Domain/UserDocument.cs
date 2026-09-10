@@ -25,7 +25,10 @@ public sealed class UserDocument : CloudLoginCoreDocument
 {
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public string? DisplayName { get; set; }
+
+    // No DisplayName. It is composed from the two names above wherever it is shown
+    // (CloudLoginDisplayName.Compose), so there is no stored third copy to drift from them.
+
     public string? Username { get; set; }
     public DateOnly? DateOfBirth { get; set; }
 

@@ -67,9 +67,11 @@
             @if (_isEditingName)
             {
                 <div class="edit-fields">
-                    <input class="form-input" @bind="_editFirstName" placeholder="First name" />
-                    <input class="form-input" @bind="_editLastName" placeholder="Last name" />
-                    <input class="form-input" @bind="_editDisplayName" placeholder="Display name" />
+                    <input class="form-input" @bind="_editFirstName" @bind:event="oninput" placeholder="First name" />
+                    <input class="form-input" @bind="_editLastName" @bind:event="oninput" placeholder="Last name" />
+                    @* Shown, not asked for: the display name is these two joined, so it updates
+                       as they are typed rather than being a third field to keep in agreement. *@
+                    <p class="edit-preview">Shown as <strong>@(CloudLoginDisplayName.Compose(_editFirstName, _editLastName) ?? "—")</strong></p>
                     <div class="edit-actions">
                         <button class="btn btn-primary btn-sm" @onclick="SaveName" disabled="@_isSaving">Save</button>
                         <button class="btn btn-outline btn-sm" @onclick="CancelEditName" disabled="@_isSaving">Cancel</button>
@@ -206,7 +208,6 @@
     private bool _isEditingName = false;
     private string? _editFirstName;
     private string? _editLastName;
-    private string? _editDisplayName;
 
     // Profile editing state
     private bool _isEditingProfile = false;
@@ -486,7 +487,6 @@
     {
         _editFirstName = CurrentUser.FirstName;
         _editLastName = CurrentUser.LastName;
-        _editDisplayName = CurrentUser.DisplayName;
         _isEditingName = true;
     }
 
@@ -505,9 +505,6 @@
 
             CurrentUser.FirstName = _editFirstName?.Trim();
             CurrentUser.LastName = _editLastName?.Trim();
-            CurrentUser.DisplayName = string.IsNullOrWhiteSpace(_editDisplayName)
-                ? string.Join(" ", new[] { CurrentUser.FirstName, CurrentUser.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)))
-                : _editDisplayName.Trim();
 
             await cloudLogin.UpdateUser(CurrentUser.ToContract());
 

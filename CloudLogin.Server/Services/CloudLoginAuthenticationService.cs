@@ -275,7 +275,6 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
         // Update user information with latest from provider, but never override existing non-empty values
         user.FirstName = string.IsNullOrWhiteSpace(user.FirstName) ? (principal.FindFirst(ClaimTypes.GivenName)?.Value ?? user.FirstName) : user.FirstName;
         user.LastName = string.IsNullOrWhiteSpace(user.LastName) ? (principal.FindFirst(ClaimTypes.Surname)?.Value ?? user.LastName) : user.LastName;
-        user.DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? (principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{user.FirstName} {user.LastName}") : user.DisplayName;
 
         // Profile picture: only set when missing and not a user-uploaded custom picture
         if (string.IsNullOrWhiteSpace(user.ProfilePicture) && !user.IsCustomProfilePicture)
@@ -380,7 +379,6 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
 
         string firstName = principal.FindFirst(ClaimTypes.GivenName)?.Value ?? "User";
         string lastName = principal.FindFirst(ClaimTypes.Surname)?.Value ?? "";
-        string displayName = principal.FindFirst(ClaimTypes.Name)?.Value ?? $"{firstName} {lastName}";
 
         string? providerPictureUrl = GetProfilePictureUrl(principal);
         string? storedPicture = null;
@@ -398,7 +396,6 @@ public class CloudLoginAuthenticationService(IServiceProvider serviceProvider)
             Id = Guid.NewGuid(),
             FirstName = firstName,
             LastName = lastName,
-            DisplayName = displayName.Trim(),
             CreatedOn = currentDateTime,
             LastSignedIn = currentDateTime,
             ProfilePicture = storedPicture,

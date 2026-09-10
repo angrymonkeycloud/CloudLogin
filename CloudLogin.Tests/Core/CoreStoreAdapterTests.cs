@@ -54,7 +54,6 @@ public class CoreStoreAdapterTests
             Id = Guid.NewGuid(),
             FirstName = "Ada",
             LastName = "Lovelace",
-            DisplayName = "Ada Lovelace",
             CreatedOn = DateTimeOffset.UtcNow.AddDays(-2),
             Inputs = [input]
         };
@@ -81,6 +80,43 @@ public class CoreStoreAdapterTests
 
         // The identity index resolves the email and the external identity.
         Assert.NotNull(await _identityKeys.ResolveAsync("default", IdentityKey.CanonicalEmail("ada@example.com")));
+    }
+
+    /// <summary>
+    /// The display name reaches storage nowhere: the document has no such field, so a rename
+    /// cannot leave a stale copy of the old one behind for a reader to prefer.
+    /// </summary>
+    [Fact]
+    public async Task Create_DoesNotPersistTheDisplayName()
+    {
+        CloudUser user = BuildUser();
+
+        await _adapter.Create(user);
+
+        UserDocument stored = _users.Documents.Values.Single();
+        string storedJson = System.Text.Json.JsonSerializer.Serialize(stored);
+
+        Assert.DoesNotContain("DisplayName", storedJson, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Ada Lovelace", storedJson);
+
+        // Still composed on the way back out, from the two names that were stored.
+        CloudUser? read = await _adapter.GetUserById(user.Id);
+        Assert.Equal("Ada Lovelace", read!.DisplayName);
+    }
+
+    /// <summary>A rename is the whole story: nothing else has to be updated to match it.</summary>
+    [Fact]
+    public async Task Update_MovesTheDisplayNameWithTheRename()
+    {
+        CloudUser user = BuildUser();
+        await _adapter.Create(user);
+
+        CloudUser stored = (await _adapter.GetUserById(user.Id))!;
+        stored.LastName = "Byron";
+        await _adapter.Update(stored);
+
+        CloudUser? renamed = await _adapter.GetUserById(user.Id);
+        Assert.Equal("Ada Byron", renamed!.DisplayName);
     }
 
     [Fact]

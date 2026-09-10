@@ -8,7 +8,18 @@ public record CloudUser
     public Guid Id { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public string? DisplayName { get; set; }
+
+    /// <summary>
+    /// The name shown for this user: <see cref="FirstName"/> and <see cref="LastName"/> with a
+    /// space between them. Computed on read and never stored, so it cannot fall out of step with
+    /// the names it comes from - see <see cref="CloudLoginDisplayName"/>.
+    /// </summary>
+    /// <remarks>
+    /// Still serialized, so a client reading the JSON by hand keeps the field it always had;
+    /// there is simply no setter behind it, so a value sent back in is ignored rather than saved.
+    /// </remarks>
+    public string? DisplayName => CloudLoginDisplayName.Compose(FirstName, LastName);
+
     public bool IsLocked { get; set; } = false;
 
     /// <summary>

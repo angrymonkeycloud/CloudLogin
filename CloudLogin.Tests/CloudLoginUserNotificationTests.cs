@@ -48,7 +48,7 @@ public class CloudLoginUserNotificationTests
 
         try
         {
-            CloudUser signedIn = new() { Id = Guid.NewGuid(), DisplayName = "Test User" };
+            CloudUser signedIn = new() { Id = Guid.NewGuid(), FirstName = "Test", LastName = "User" };
 
             // The bootstrapper's instance confirms the session; the subscriber that renders
             // the account UI is attached to a different instance entirely.

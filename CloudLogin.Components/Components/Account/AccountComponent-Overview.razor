@@ -6,130 +6,301 @@
 @namespace AngryMonkey.CloudLogin
 
 <div class="account-section overview-page">
-    <div class="section-header">
-        <h3>Account overview</h3>
-        <p class="section-description">A quick look at your account and the areas you can manage.</p>
-    </div>
+    @* ── Your info ───────────────────────────────────────── *@
+    <section class="card section-card">
+        <header class="section-card-header">
+            <span class="section-card-icon" aria-hidden="true"><PersonIcon /></span>
+            <div class="section-card-heading">
+                <h4 class="section-card-title">Your info</h4>
+                <p class="section-card-subtitle">Your name, photo, contact details, and regional settings</p>
+            </div>
+            <div class="section-card-actions">
+                <button type="button" class="section-card-link" @onclick='() => Navigate("Profile")'>Edit profile</button>
+                <button type="button" class="section-card-toggle" aria-expanded="@AriaExpanded(InfoSection)" aria-label="@ToggleLabel(InfoSection, "your info")" @onclick="() => Toggle(InfoSection)">
+                    @if (IsOpen(InfoSection))
+                    {
+                        <ChevronUpIcon />
+                    }
+                    else
+                    {
+                        <ChevronDownIcon />
+                    }
+                </button>
+            </div>
+        </header>
 
-    <div class="card hero-card">
-        <div class="hero-identity">
-            @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
-            {
-                <img class="hero-avatar" src="@CurrentUser.ProfilePicture" alt="Profile picture" />
-            }
-            else
-            {
-                <div class="hero-avatar initials" aria-hidden="true">@GetInitials()</div>
-            }
-            <div class="hero-identity-copy">
-                <div class="hero-name">@GetDisplayName()</div>
-                <div class="hero-email">@GetPrimaryEmail()</div>
-                @if (CurrentUser.IsLocked)
+        @if (IsOpen(InfoSection))
+        {
+            <div class="section-card-body">
+                <div class="identity-row">
+                    <div class="hero-identity">
+                        @if (!string.IsNullOrWhiteSpace(CurrentUser.ProfilePicture))
+                        {
+                            <img class="hero-avatar" src="@CurrentUser.ProfilePicture" alt="Profile picture" />
+                        }
+                        else
+                        {
+                            <div class="hero-avatar initials" aria-hidden="true">@GetInitials()</div>
+                        }
+                        <div class="hero-identity-copy">
+                            <div class="hero-name">@GetDisplayName()</div>
+                            <div class="hero-email">@GetPrimaryEmail()</div>
+                            @if (CurrentUser.IsLocked)
+                            {
+                                <span class="chip chip--locked">Locked</span>
+                            }
+                            else
+                            {
+                                <span class="chip chip--active">Active</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="hero-meta">
+                        <div class="meta-item">
+                            <span class="meta-icon" aria-hidden="true"><CalendarIcon /></span>
+                            <div class="meta-copy">
+                                <div class="meta-label">Member since</div>
+                                <div class="meta-value">@FormatAbsolute(CurrentUser.CreatedOn, includeTime: false)</div>
+                                <div class="meta-relative">@FormatRelative(CurrentUser.CreatedOn)</div>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-icon" aria-hidden="true"><ClockIcon /></span>
+                            <div class="meta-copy">
+                                <div class="meta-label">Last signed in</div>
+                                <div class="meta-value">@FormatRelative(CurrentUser.LastSignedIn)</div>
+                                <div class="meta-relative">@FormatAbsolute(CurrentUser.LastSignedIn, includeTime: true)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </section>
+
+    @* ── Security ────────────────────────────────────────── *@
+    <section class="card section-card">
+        <header class="section-card-header">
+            <span class="section-card-icon" aria-hidden="true"><ShieldIcon /></span>
+            <div class="section-card-heading">
+                <h4 class="section-card-title">Security</h4>
+                <p class="section-card-subtitle">Password, authenticator app, passkeys, and the ways you sign in</p>
+            </div>
+            <div class="section-card-actions">
+                <button type="button" class="section-card-link" @onclick='() => Navigate("Security")'>Manage security</button>
+                <button type="button" class="section-card-toggle" aria-expanded="@AriaExpanded(SecuritySection)" aria-label="@ToggleLabel(SecuritySection, "security")" @onclick="() => Toggle(SecuritySection)">
+                    @if (IsOpen(SecuritySection))
+                    {
+                        <ChevronUpIcon />
+                    }
+                    else
+                    {
+                        <ChevronDownIcon />
+                    }
+                </button>
+            </div>
+        </header>
+
+        @if (IsOpen(SecuritySection))
+        {
+            <div class="section-card-body">
+                @{
+                    List<string> providers = [.. CurrentUser.Providers.Distinct()];
+                }
+                <div class="security-summary">
+                    <div class="security-stat">
+                        <span class="security-stat-value">@providers.Count</span>
+                        <span class="security-stat-label">@(providers.Count == 1 ? "sign-in method" : "sign-in methods")</span>
+                    </div>
+                    @if (providers.Count > 0)
+                    {
+                        <div class="hero-providers">
+                            @foreach (string provider in providers)
+                            {
+                                <span class="provider-badge">@FormatProviderName(provider)</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="section-note">No sign-in method is linked yet. Add a password or connect a provider so you can always get back in.</p>
+                    }
+                </div>
+                <div class="section-actions">
+                    <button type="button" class="btn btn-primary" @onclick='() => Navigate("Security")'>Change password</button>
+                </div>
+            </div>
+        }
+    </section>
+
+    @* ── Devices ─────────────────────────────────────────── *@
+    <section class="card section-card">
+        <header class="section-card-header">
+            <span class="section-card-icon" aria-hidden="true"><LaptopIcon /></span>
+            <div class="section-card-heading">
+                <h4 class="section-card-title">Devices</h4>
+                <p class="section-card-subtitle">Find, sign out, and manage the devices signed in to your account</p>
+            </div>
+            <div class="section-card-actions">
+                @if (!_loadingDevices)
                 {
-                    <span class="chip chip--locked">Locked</span>
+                    <button type="button" class="section-card-link" @onclick='() => Navigate("Devices")'>View all devices (@_devices.Count)</button>
+                }
+                <button type="button" class="section-card-toggle" aria-expanded="@AriaExpanded(DevicesSection)" aria-label="@ToggleLabel(DevicesSection, "devices")" @onclick="() => Toggle(DevicesSection)">
+                    @if (IsOpen(DevicesSection))
+                    {
+                        <ChevronUpIcon />
+                    }
+                    else
+                    {
+                        <ChevronDownIcon />
+                    }
+                </button>
+            </div>
+        </header>
+
+        @if (IsOpen(DevicesSection))
+        {
+            <div class="section-card-body">
+                @if (_loadingDevices)
+                {
+                    <div class="loading-spinner" role="status" aria-label="Loading devices"></div>
+                }
+                else if (_devices.Count == 0)
+                {
+                    <div class="empty-state">
+                        <p>No signed-in devices to show. Applications you sign in to appear here.</p>
+                    </div>
                 }
                 else
                 {
-                    <span class="chip chip--active">Active</span>
-                }
-            </div>
-        </div>
-
-        <div class="hero-meta">
-            <div class="meta-item">
-                <span class="meta-icon" aria-hidden="true"><CalendarIcon /></span>
-                <div class="meta-copy">
-                    <div class="meta-label">Member since</div>
-                    <div class="meta-value">@FormatAbsolute(CurrentUser.CreatedOn, includeTime: false)</div>
-                    <div class="meta-relative">@FormatRelative(CurrentUser.CreatedOn)</div>
-                </div>
-            </div>
-            <div class="meta-item">
-                <span class="meta-icon" aria-hidden="true"><ClockIcon /></span>
-                <div class="meta-copy">
-                    <div class="meta-label">Last signed in</div>
-                    <div class="meta-value">@FormatRelative(CurrentUser.LastSignedIn)</div>
-                    <div class="meta-relative">@FormatAbsolute(CurrentUser.LastSignedIn, includeTime: true)</div>
-                </div>
-            </div>
-        </div>
-
-        @if (CurrentUser.Providers.Any())
-        {
-            <div class="hero-providers">
-                @foreach (var provider in CurrentUser.Providers.Distinct())
-                {
-                    <span class="provider-badge">@FormatProviderName(provider)</span>
-                }
-            </div>
-        }
-    </div>
-
-    <div class="feature-grid">
-        <button type="button" class="feature-card" @onclick='() => Navigate("Profile")'>
-            <span class="feature-icon" aria-hidden="true"><PersonIcon /></span>
-            <span class="feature-copy">
-                <span class="feature-title">Profile</span>
-                <span class="feature-stat">Your name, photo, and regional settings — plus @ContactSummary().</span>
-            </span>
-            <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
-        </button>
-
-        @if (EnableWorkspaces)
-        {
-            <button type="button" class="feature-card" @onclick='() => Navigate("Workspaces")'>
-                <span class="feature-icon" aria-hidden="true"><BuildingIcon /></span>
-                <span class="feature-copy">
-                    <span class="feature-title">@WorkspaceLabelPlural</span>
-                    <span class="feature-stat">Teams you belong to and their members — @(_loadingWorkspaces ? "loading…" : WorkspacesSummary()).</span>
-                </span>
-                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
-            </button>
-        }
-
-        @if (CurrentUser.IsGlobalAdmin)
-        {
-            <button type="button" class="feature-card" @onclick='() => Navigate("Admin")'>
-                <span class="feature-icon" aria-hidden="true"><ShieldCheckIcon /></span>
-                <span class="feature-copy">
-                    <span class="feature-title">Administration</span>
-                    <span class="feature-stat">Manage every user, role, and access level across this CloudLogin host.</span>
-                </span>
-                <span class="feature-chevron" aria-hidden="true"><ChevronRightIcon /></span>
-            </button>
-        }
-    </div>
-
-    @if (CurrentUser.IsTest)
-    {
-        <div class="card danger-card">
-            <div class="card-header">
-                <h4>Danger zone</h4>
-            </div>
-            <div class="danger-row">
-                <div class="danger-copy">
-                    <p class="danger-title">Delete this account</p>
-                    <p class="danger-desc">Permanently deletes this test account and all of its data. This action can't be undone.</p>
-                </div>
-                @if (!_confirmingDelete)
-                {
-                    <button type="button" class="btn btn-danger" @onclick="() => _confirmingDelete = true">
-                        <span class="btn-icon" aria-hidden="true"><TrashIcon /></span>
-                        Delete account
-                    </button>
-                }
-                else
-                {
-                    <div class="danger-confirm">
-                        <span>Are you sure? This can't be undone.</span>
-                        <button type="button" class="btn btn-danger btn-sm" @onclick="ConfirmDelete" disabled="@_deleting">
-                            @(_deleting ? "Deleting…" : "Yes, delete")
-                        </button>
-                        <button type="button" class="btn btn-outline btn-sm" @onclick="() => _confirmingDelete = false" disabled="@_deleting">Cancel</button>
+                    <div class="device-grid">
+                        @foreach (CloudLoginSignedInDevice device in FeaturedDevices)
+                        {
+                            <div class="device-tile">
+                                <span class="device-art" aria-hidden="true">@DeviceTypeIcon(device)</span>
+                                <div class="device-copy">
+                                    <span class="device-name">@device.Name</span>
+                                    <span class="device-meta">@DescribeDevice(device)</span>
+                                    <button type="button" class="section-card-link device-link" @onclick='() => Navigate("Devices")'>View details</button>
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
             </div>
-        </div>
+        }
+    </section>
+
+    @* ── Workspaces ──────────────────────────────────────── *@
+    @if (EnableWorkspaces)
+    {
+        <section class="card section-card">
+            <header class="section-card-header">
+                <span class="section-card-icon" aria-hidden="true"><BuildingIcon /></span>
+                <div class="section-card-heading">
+                    <h4 class="section-card-title">@WorkspaceLabelPlural</h4>
+                    <p class="section-card-subtitle">Teams you belong to and their members</p>
+                </div>
+                <div class="section-card-actions">
+                    <button type="button" class="section-card-link" @onclick='() => Navigate("Workspaces")'>View all</button>
+                    <button type="button" class="section-card-toggle" aria-expanded="@AriaExpanded(WorkspacesSection)" aria-label="@ToggleLabel(WorkspacesSection, WorkspaceLabelPlural.ToLowerInvariant())" @onclick="() => Toggle(WorkspacesSection)">
+                        @if (IsOpen(WorkspacesSection))
+                        {
+                            <ChevronUpIcon />
+                        }
+                        else
+                        {
+                            <ChevronDownIcon />
+                        }
+                    </button>
+                </div>
+            </header>
+
+            @if (IsOpen(WorkspacesSection))
+            {
+                <div class="section-card-body">
+                    <p class="section-note">@(_loadingWorkspaces ? "Loading…" : WorkspacesSummary())</p>
+                </div>
+            }
+        </section>
+    }
+
+    @* ── Administration ──────────────────────────────────── *@
+    @if (CurrentUser.IsGlobalAdmin)
+    {
+        <section class="card section-card">
+            <header class="section-card-header">
+                <span class="section-card-icon" aria-hidden="true"><ShieldCheckIcon /></span>
+                <div class="section-card-heading">
+                    <h4 class="section-card-title">Administration</h4>
+                    <p class="section-card-subtitle">Manage every user, role, and access level across this CloudLogin host</p>
+                </div>
+                <div class="section-card-actions">
+                    <button type="button" class="section-card-link" @onclick='() => Navigate("Admin")'>Open administration</button>
+                    <button type="button" class="section-card-toggle" aria-expanded="@AriaExpanded(AdminSection)" aria-label="@ToggleLabel(AdminSection, "administration")" @onclick="() => Toggle(AdminSection)">
+                        @if (IsOpen(AdminSection))
+                        {
+                            <ChevronUpIcon />
+                        }
+                        else
+                        {
+                            <ChevronDownIcon />
+                        }
+                    </button>
+                </div>
+            </header>
+
+            @if (IsOpen(AdminSection))
+            {
+                <div class="section-card-body">
+                    <p class="section-note">You're a global administrator on this host. Review accounts, lock or unlock users, and grant or revoke administrator access.</p>
+                    <div class="section-actions">
+                        <button type="button" class="btn btn-primary" @onclick='() => Navigate("Admin")'>Open administration</button>
+                    </div>
+                </div>
+            }
+        </section>
+    }
+
+    @* ── Danger zone ─────────────────────────────────────── *@
+    @if (CurrentUser.IsTest)
+    {
+        <section class="card section-card danger-card">
+            <header class="section-card-header">
+                <span class="section-card-icon danger-icon" aria-hidden="true"><AlertTriangleIcon /></span>
+                <div class="section-card-heading">
+                    <h4 class="section-card-title">Danger zone</h4>
+                    <p class="section-card-subtitle">Actions here can't be undone</p>
+                </div>
+            </header>
+            <div class="section-card-body">
+                <div class="danger-row">
+                    <div class="danger-copy">
+                        <p class="danger-title">Delete this account</p>
+                        <p class="danger-desc">Permanently deletes this test account and all of its data.</p>
+                    </div>
+                    @if (!_confirmingDelete)
+                    {
+                        <button type="button" class="btn btn-danger" @onclick="() => _confirmingDelete = true">
+                            <span class="btn-icon" aria-hidden="true"><TrashIcon /></span>
+                            Delete account
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="danger-confirm">
+                            <span>Are you sure? This can't be undone.</span>
+                            <button type="button" class="btn btn-danger btn-sm" @onclick="ConfirmDelete" disabled="@_deleting">
+                                @(_deleting ? "Deleting…" : "Yes, delete")
+                            </button>
+                            <button type="button" class="btn btn-outline btn-sm" @onclick="() => _confirmingDelete = false" disabled="@_deleting">Cancel</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
     }
 </div>
 
@@ -146,21 +317,37 @@
     [Parameter] public EventCallback<string> OnNavigateToTab { get; set; }
     [Parameter] public EventCallback OnDeleteAccount { get; set; }
 
+    [CascadingParameter] private AccountErrorCenter? ErrorCenter { get; set; }
+
+    private const string InfoSection = "info";
+    private const string SecuritySection = "security";
+    private const string DevicesSection = "devices";
+    private const string WorkspacesSection = "workspaces";
+    private const string AdminSection = "admin";
+
+    /// <summary>The most devices the overview shows before deferring to the Devices tab.</summary>
+    private const int FeaturedDeviceCount = 3;
+
+    // Every section starts open; the chevron in its header folds it away for this visit only.
+    private readonly HashSet<string> _collapsed = [];
+
     private bool _loadingWorkspaces;
     private int _workspaceCount;
+
+    private bool _loadingDevices = true;
+    private List<CloudLoginSignedInDevice> _devices = [];
 
     private bool _confirmingDelete;
     private bool _deleting;
 
     protected override async Task OnInitializedAsync()
     {
-        List<Task> tasks = [];
+        List<Task> tasks = [LoadDevicesAsync()];
 
         if (EnableWorkspaces)
             tasks.Add(LoadWorkspacesAsync());
 
-        if (tasks.Count > 0)
-            await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks);
     }
 
     private async Task LoadWorkspacesAsync()
@@ -170,20 +357,69 @@
         _loadingWorkspaces = false;
     }
 
-    private string WorkspacesSummary()
-        => _workspaceCount == 0 ? "you're not a member of any yet" : $"{_workspaceCount} joined";
-
-    private string ContactSummary()
+    private async Task LoadDevicesAsync()
     {
-        int emails = CurrentUser.EmailAddresses.Count;
-        int phones = CurrentUser.PhoneNumbers.Count;
-
-        string emailPart = $"{emails} email address{(emails == 1 ? "" : "es")}";
-
-        return phones == 0
-            ? emailPart
-            : $"{emailPart} and {phones} phone number{(phones == 1 ? "" : "s")}";
+        try
+        {
+            _devices = await cloudLogin.GetMyDevices();
+        }
+        catch (Exception exception)
+        {
+            // A failed device list should not take the rest of the overview down with it; the
+            // card shows its empty state and the rail's error pill says what went wrong.
+            ErrorCenter?.Report("Overview — Devices", $"Failed to load your devices: {exception.Message}", exception);
+        }
+        finally
+        {
+            _loadingDevices = false;
+        }
     }
+
+    /// <summary>
+    /// The devices worth a tile: signed-in ones first, this device ahead of the rest, then
+    /// the most recently active - capped so the card stays a summary of the Devices tab.
+    /// </summary>
+    private IEnumerable<CloudLoginSignedInDevice> FeaturedDevices => _devices
+        .OrderByDescending(device => device.IsActive)
+        .ThenByDescending(device => device.IsCurrent)
+        .ThenByDescending(device => device.LastSeenOn ?? device.SignedInOn)
+        .Take(FeaturedDeviceCount);
+
+    private bool IsOpen(string section) => !_collapsed.Contains(section);
+
+    private void Toggle(string section)
+    {
+        if (!_collapsed.Remove(section))
+            _collapsed.Add(section);
+    }
+
+    private string AriaExpanded(string section) => IsOpen(section) ? "true" : "false";
+
+    private string ToggleLabel(string section, string subject) => IsOpen(section) ? $"Collapse {subject}" : $"Expand {subject}";
+
+    private static RenderFragment DeviceTypeIcon(CloudLoginSignedInDevice device) => device.Type switch
+    {
+        "Mobile" => @<PhoneIcon />,
+        "Tablet" => @<TabletIcon />,
+        "Desktop" => @<LaptopIcon />,
+        _ => @<DesktopIcon />
+    };
+
+    private static string DescribeDevice(CloudLoginSignedInDevice device)
+    {
+        if (device.IsCurrent)
+            return "This device";
+
+        if (!device.IsActive)
+            return "Signed out";
+
+        return $"Last active {FormatRelative(device.LastSeenOn ?? device.SignedInOn).ToLowerInvariant()}";
+    }
+
+    private string WorkspacesSummary()
+        => _workspaceCount == 0
+            ? $"You're not a member of any {WorkspaceLabelPlural.ToLowerInvariant()} yet."
+            : $"You belong to {_workspaceCount} {(_workspaceCount == 1 ? WorkspaceLabel.ToLowerInvariant() : WorkspaceLabelPlural.ToLowerInvariant())}.";
 
     private async Task Navigate(string tab) => await OnNavigateToTab.InvokeAsync(tab);
 
@@ -221,10 +457,10 @@
 
     private string GetInitials()
     {
-        var parts = new[] { CurrentUser.FirstName, CurrentUser.LastName }
+        IEnumerable<string> parts = new[] { CurrentUser.FirstName, CurrentUser.LastName }
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s!.Trim());
-        var initials = string.Concat(parts.Select(p => char.ToUpperInvariant(p[0])));
+        string initials = string.Concat(parts.Select(p => char.ToUpperInvariant(p[0])));
         if (string.IsNullOrWhiteSpace(initials) && !string.IsNullOrWhiteSpace(CurrentUser.DisplayName))
             initials = new string(CurrentUser.DisplayName!.Where(char.IsLetter).Take(2).Select(char.ToUpperInvariant).ToArray());
         return string.IsNullOrWhiteSpace(initials) ? "?" : initials;

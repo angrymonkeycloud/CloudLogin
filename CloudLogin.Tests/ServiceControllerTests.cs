@@ -314,8 +314,13 @@ public class ServiceControllerTests
         ActionResult<CloudUser> result = await controller.CreateUser(Values(new
         {
             PrimaryEmail = "dana@acme.test",
-            DisplayName = "Dana Haddad",
+
+            // Sent, and deliberately disagreeing with the two names: a display name is composed,
+            // never stored, so what comes back is "Dana Haddad" because of the names below - not
+            // because this was accepted.
+            DisplayName = "Someone Else",
             FirstName = "Dana",
+            LastName = "Haddad",
             Country = "LB",
             DateOfBirth = "1990-05-17"
         }));
@@ -323,6 +328,7 @@ public class ServiceControllerTests
         CloudUser created = Assert.IsType<CloudUser>(Assert.IsType<OkObjectResult>(result.Result).Value);
         Assert.Equal("Dana Haddad", created.DisplayName);
         Assert.Equal("Dana", created.FirstName);
+        Assert.Equal("Haddad", created.LastName);
         Assert.Equal("LB", created.Country);
         Assert.Equal(new DateOnly(1990, 5, 17), created.DateOfBirth);
         Assert.Equal("dana@acme.test", created.PrimaryEmailAddress?.Input);

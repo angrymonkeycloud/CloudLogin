@@ -304,7 +304,6 @@ public partial class CloudLoginServer
 
         string? firstName = user.FirstName ??= userIdentity.FindFirst(ClaimTypes.GivenName)?.Value;
         string? lastName = user.LastName ??= userIdentity.FindFirst(ClaimTypes.Surname)?.Value;
-        string? displayName = user.DisplayName ??= $"{firstName} {lastName}";
 
         if (existingUser is null)
         {
@@ -327,7 +326,6 @@ public partial class CloudLoginServer
 
             user = new()
             {
-                DisplayName = displayName,
                 FirstName = firstName,
                 LastName = lastName,
                 Id = Guid.NewGuid(),

@@ -133,14 +133,10 @@
                         <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class=" @(!string.IsNullOrEmpty(LastName) ? "active" : "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                         <label for="lastName">Last Name</label>
                     </div>
-                    <div class="amc-cloudlogin-input">
-                        <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class=" @(!string.IsNullOrEmpty(DisplayName) ? "active" : "") " @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
-                        <label for="displayName">Display Name</label>
-                    </div>
                 </div>
 
                 <div class="login-form-finish">
-                    <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnRegisterClicked">
+                    <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)) ? "" : "--disable")" @onclick="OnRegisterClicked">
                         <span>Register</span>
                         <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>
@@ -233,14 +229,10 @@
                         <label for="lastName">Last Name</label>
                         <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class="@(!string.IsNullOrEmpty(LastName) ? "active" : "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                     </div>
-                    <div class="amc-cloudlogin-input">
-                        <label for="displayName">Display Name</label>
-                        <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class="@(!string.IsNullOrEmpty(DisplayName) ? "active" : "")" @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
-                    </div>
                 </div>
 
                 <div class="login-form-finish">
-                    <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnRegistrationDetailsNextClicked">
+                    <button class="amc-cloudlogin-button @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)) ? "" : "--disable")" @onclick="OnRegistrationDetailsNextClicked">
                         <span>Next</span>
                         <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>
@@ -382,13 +374,9 @@
                         <label for="lastName">Last Name</label>
                         <input @onkeydown="OnInputKeyPressed" type="text" id="lastName" class="@(!string.IsNullOrEmpty(LastName) ? "active" : "")" @bind-value="LastName" @bind-value:event="oninput" spellcheck="false" />
                     </div>
-                    <div class="amc-cloudlogin-input">
-                        <label for="displayName">Display Name</label>
-                        <input @onkeydown="OnInputKeyPressed" type="text" id="displayName" class="@(!string.IsNullOrEmpty(DisplayName) ? "active" : "")" @bind-value="DisplayName" @bind-value:event="oninput" spellcheck="false" @onfocus="OnDisplayNameFocus" />
-                    </div>
                 </div>
                 <div class="login-form-finish">
-                    <button class="amc-cloudlogin-button _solid @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(DisplayName)) ? "" : "--disable")" @onclick="OnTestModeCreateConfirmedAsync">
+                    <button class="amc-cloudlogin-button _solid @((!string.IsNullOrEmpty(FirstName) && !string.IsNullOrEmpty(LastName)) ? "" : "--disable")" @onclick="OnTestModeCreateConfirmedAsync">
                         <span>Create &amp; Sign In</span>
                         <AngryMonkey.CloudComponents.Icons.LoadingButton />
                     </button>

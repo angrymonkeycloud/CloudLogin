@@ -707,7 +707,6 @@ public partial class CloudLoginServer : ICloudLogin
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Input);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.FirstName);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.LastName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
 
         LoginTestProviders.TestModeConfiguration? testProvider = _configuration.Providers
             .OfType<LoginTestProviders.TestModeConfiguration>()
@@ -747,7 +746,6 @@ public partial class CloudLoginServer : ICloudLogin
             Id = Guid.NewGuid(),
             FirstName = request.FirstName,
             LastName = request.LastName,
-            DisplayName = request.DisplayName,
             IsTest = isTestModeRegistration,
             CreatedOn = DateTimeOffset.UtcNow,
             LastSignedIn = DateTimeOffset.UtcNow,
@@ -786,7 +784,6 @@ public partial class CloudLoginServer : ICloudLogin
         ArgumentException.ThrowIfNullOrWhiteSpace(request.Input);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.FirstName);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.LastName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(request.DisplayName);
 
         // Ensure user doesn't already exist
         CloudUser? existing = request.InputFormat switch
@@ -814,7 +811,6 @@ public partial class CloudLoginServer : ICloudLogin
             Id = Guid.NewGuid(),
             FirstName = request.FirstName,
             LastName = request.LastName,
-            DisplayName = request.DisplayName,
             CreatedOn = DateTimeOffset.UtcNow,
             LastSignedIn = DateTimeOffset.UtcNow,
             Inputs = [new() {

@@ -4,14 +4,17 @@
     --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
     --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
     --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
+    --cloudlogin-page: #f5f5f5;
+    --cloudlogin-ink: #242424;
+    --cloudlogin-ink-soft: #616161;
+    --cloudlogin-line: #e6e6e6;
     --rail-width-collapsed: 68px;
     --rail-width-expanded: 300px;
-    --rail-width-desktop: 272px;
+    --rail-width-desktop: 260px;
     direction: ltr !important;
     min-height: 100vh;
-    border-top: 2px solid var(--cloudlogin-brand);
-    background: #f5f6f7;
-    color: #1b1b1b;
+    background: var(--cloudlogin-page);
+    color: var(--cloudlogin-ink);
     font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
 }
 
@@ -22,7 +25,7 @@
 .account-management .account-shell {
     display: flex;
     align-items: flex-start;
-    min-height: calc(100vh - 2px);
+    min-height: 100vh;
 }
 
 /* ── CloudIcons theming ───────────────────────────────────────
@@ -40,8 +43,9 @@
 .account-management ::deep .amc-svg-stroke {
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.6;
+    stroke-width: 1.5;
     stroke-miterlimit: 10;
+    stroke-linejoin: round;
 }
 
 .account-management ::deep .amc-svg-stroke._corner-rounded {
@@ -57,7 +61,9 @@
    height) so it never moves while the page scrolls. Using insets
    instead of `height: 100vh` also means a host page can still
    contain it to its own box (via `contain: layout` or a transform
-   ancestor) without the rail spilling past that box's edges. */
+   ancestor) without the rail spilling past that box's edges.
+   It shares the page background: the active tab is what stands
+   out - a white card lifted off the page - not the rail itself. */
 
 .account-management .sidebar {
     position: fixed;
@@ -69,9 +75,7 @@
     flex-direction: column;
     width: var(--rail-width-collapsed);
     overflow: hidden;
-    background: #fff;
-    border-right: 1px solid #e4e4e4;
-    box-shadow: 1px 0 0 rgba(0,0,0,.02);
+    background: var(--cloudlogin-page);
     transition: width .2s ease;
 }
 
@@ -89,7 +93,6 @@
     width: 100%;
     height: 56px;
     border: 0;
-    border-bottom: 1px solid #eee;
     background: transparent;
     color: #4b4b4b;
     cursor: pointer;
@@ -109,43 +112,42 @@
 }
 
 .account-management .sidebar-toggle:hover {
-    background: #f2f2f2;
+    background: #ebebeb;
     color: var(--cloudlogin-brand);
 }
 
 .account-management .profile-mini {
     display: flex;
     flex: 0 0 auto;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
-    padding: 18px 14px;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 20px 10px 18px;
 }
 
 .account-management .profile-mini-avatar {
-    width: 38px;
-    height: 38px;
-    flex: 0 0 38px;
-    border: 1px solid #d6d6d6;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
     border-radius: 50%;
     background: #fff;
     object-fit: cover;
-    box-shadow: 0 1px 2px rgba(0,0,0,.06);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.06);
 }
 
 .account-management .profile-mini-avatar.initials {
     display: grid;
     place-items: center;
-    border: 0;
     background: var(--cloudlogin-brand);
     color: #fff;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
+    box-shadow: none;
 }
 
 .account-management .profile-mini-copy {
     display: none;
     min-width: 0;
+    padding-top: 2px;
 }
 
 .account-management .sidebar._open .profile-mini-copy {
@@ -160,23 +162,45 @@
 }
 
 .account-management .profile-mini-name {
-    color: #161616;
-    font-size: 14px;
+    color: var(--cloudlogin-ink);
+    font-size: 15px;
     font-weight: 600;
 }
 
 .account-management .profile-mini-email {
-    margin-top: 1px;
-    color: #616161;
-    font-size: 12px;
+    margin-top: 2px;
+    color: var(--cloudlogin-ink-soft);
+    font-size: 12.5px;
+}
+
+.account-management .profile-mini-link {
+    display: block;
+    margin-top: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--cloudlogin-brand);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.account-management .profile-mini-link:hover {
+    text-decoration: underline;
+}
+
+.account-management .profile-mini-link:focus-visible {
+    outline: 2px solid var(--cloudlogin-brand);
+    outline-offset: 2px;
 }
 
 .account-management .tabs {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    gap: 2px;
-    padding: 10px 10px;
+    gap: 4px;
+    padding: 6px 10px;
     overflow-y: auto;
 }
 
@@ -190,15 +214,15 @@
     display: flex;
     flex: 0 0 auto;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
 }
 
 .account-management .rail-group-label {
     display: none;
-    padding: 10px 15px 6px;
+    padding: 12px 12px 6px;
     color: #8a8886;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: .06em;
     text-transform: uppercase;
     overflow: hidden;
@@ -213,17 +237,17 @@
 .account-management .rail-divider {
     flex: 0 0 auto;
     height: 1px;
-    margin: 8px 5px;
-    background: #f0f0f0;
+    margin: 8px 4px;
+    background: var(--cloudlogin-line);
 }
 
 .account-management .sidebar-footer {
     display: flex;
     flex: 0 0 auto;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     padding: 10px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--cloudlogin-line);
 }
 
 /* Session-state indicator. Lives in the rail (not on each page) so it reads as a
@@ -233,10 +257,10 @@
 .account-management .account-security-pill {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     min-height: 40px;
-    padding: 0 15px;
-    border-radius: 8px;
+    padding: 0 12px;
+    border-radius: 6px;
     background: var(--cloudlogin-brand-soft);
     color: var(--cloudlogin-brand-strong);
     font-size: 12.5px;
@@ -264,12 +288,12 @@
 .account-management .account-error-pill {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     min-height: 40px;
-    padding: 0 15px;
-    margin-bottom: 6px;
+    padding: 0 12px;
+    margin-bottom: 4px;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #fdecea;
     color: #a4262c;
     font-size: 12.5px;
@@ -334,25 +358,29 @@
     text-align: center;
 }
 
+/* ── Tabs ─────────────────────────────────────────────────────
+   Plain text rows; the active one becomes a white card with a
+   brand bar down its left edge. Hover only tints - nothing moves. */
+
 .account-management .tab-button {
     position: relative;
     display: flex;
     flex: 0 0 auto;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     width: 100%;
-    min-height: 46px;
-    padding: 0 15px;
-    border: 1px solid transparent;
-    border-radius: 8px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 6px;
     background: transparent;
-    color: #323130;
+    color: var(--cloudlogin-ink);
     cursor: pointer;
     font: inherit;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 400;
     text-align: left;
-    transition: background-color .12s ease, color .12s ease;
+    transition: background-color .12s ease, color .12s ease, box-shadow .12s ease;
 }
 
 .account-management .tab-icon {
@@ -361,7 +389,7 @@
     place-items: center;
     width: 20px;
     height: 20px;
-    color: #6b6b6b;
+    color: #424242;
     transition: color .12s ease;
 }
 
@@ -382,37 +410,39 @@
 }
 
 .account-management .tab-button:hover {
-    background: #f2f2f2;
-    color: #161616;
+    background: #ebebeb;
+    color: var(--cloudlogin-ink);
 }
 
 .account-management .tab-button:hover .tab-icon {
-    color: #161616;
+    color: var(--cloudlogin-ink);
 }
 
 .account-management .tab-button.active {
-    background: var(--cloudlogin-brand-soft);
-    color: var(--cloudlogin-brand-strong);
+    background: #fff;
+    color: var(--cloudlogin-ink);
     font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
 }
 
 .account-management .tab-button.active .tab-icon {
-    color: var(--cloudlogin-brand-strong);
+    color: var(--cloudlogin-ink);
 }
 
 .account-management .tab-button.active::before {
     content: "";
     position: absolute;
-    left: -10px;
-    top: 8px;
-    bottom: 8px;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
     width: 3px;
-    border-radius: 2px;
+    border-radius: 3px;
     background: var(--cloudlogin-brand);
 }
 
-.account-management .sidebar._open .tab-button.active::before {
-    left: 0;
+.account-management .tab-button:focus-visible {
+    outline: 2px solid var(--cloudlogin-brand);
+    outline-offset: 2px;
 }
 
 .account-management .tab-button--admin {
@@ -477,14 +507,14 @@
     align-items: flex-start;
     flex-direction: column;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 22px;
+    gap: 18px;
+    margin-bottom: 24px;
 }
 
 .account-management .account-page-eyebrow {
     display: block;
     margin-bottom: 4px;
-    color: #605e5c;
+    color: var(--cloudlogin-ink-soft);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: .04em;
@@ -493,10 +523,79 @@
 
 .account-management .account-page-header h1 {
     margin: 0;
-    color: #111;
-    font-size: 24px;
+    color: var(--cloudlogin-ink);
+    font-size: 26px;
     font-weight: 600;
-    letter-spacing: -.02em;
+    letter-spacing: -.01em;
+}
+
+/* Quick actions: a round tinted icon beside a two-line label, sitting at the
+   header's far end. They're buttons dressed as labels, so nothing about them
+   suggests a form control - and hover only recolours the title. */
+
+.account-management .account-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 32px;
+}
+
+.account-management .quick-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: var(--cloudlogin-ink);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.account-management .quick-action-icon {
+    display: grid;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--cloudlogin-brand-soft);
+    color: var(--cloudlogin-brand);
+}
+
+.account-management .quick-action-icon ::deep svg {
+    width: 20px;
+    height: 20px;
+}
+
+.account-management .quick-action-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.account-management .quick-action-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color .12s ease;
+}
+
+.account-management .quick-action-subtitle {
+    color: var(--cloudlogin-ink-soft);
+    font-size: 12.5px;
+    white-space: nowrap;
+}
+
+.account-management .quick-action:hover .quick-action-title {
+    color: var(--cloudlogin-brand);
+}
+
+.account-management .quick-action:focus-visible {
+    outline: 2px solid var(--cloudlogin-brand);
+    outline-offset: 4px;
+    border-radius: 4px;
 }
 
 /* States for a workspace's detail being fetched, or no longer reachable. */
@@ -526,23 +625,23 @@
 .account-management .workspace-missing {
     padding: 28px 24px;
     border: 1px dashed #dcdcdc;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #fff;
     text-align: center;
 }
 
 .account-management .workspace-missing p {
     margin: 0 0 14px;
-    color: #605e5c;
+    color: var(--cloudlogin-ink-soft);
     font-size: 14px;
     line-height: 1.55;
 }
 
 .account-management .workspace-missing-action {
-    min-height: 40px;
-    padding: 8px 18px;
+    min-height: 36px;
+    padding: 7px 18px;
     border: 1px solid var(--cloudlogin-brand);
-    border-radius: 6px;
+    border-radius: 4px;
     background: transparent;
     color: var(--cloudlogin-brand);
     font: inherit;
@@ -557,8 +656,13 @@
     color: #fff;
 }
 
+/* ── Shared card language ─────────────────────────────────────
+   Every tab renders into .tab-content, so the card, section-card
+   and control rules below are defined once here and reach each
+   tab's own markup through ::deep. */
+
 .account-management .tab-content ::deep .account-section {
-    gap: 18px;
+    gap: 16px;
     margin: 0;
     padding: 0;
     background: transparent;
@@ -574,7 +678,7 @@
 
 .account-management .tab-content ::deep .section-header h3 {
     margin: 0;
-    color: #1b1b1b;
+    color: var(--cloudlogin-ink);
     font-size: 18px;
     font-weight: 600;
 }
@@ -582,27 +686,148 @@
 .account-management .tab-content ::deep .section-description,
 .account-management .tab-content ::deep .section-header-description {
     margin: 4px 0 0;
-    color: #605e5c;
+    color: var(--cloudlogin-ink-soft);
     font-size: 13px;
 }
 
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card,
 .account-management .tab-content ::deep .account-section > .form-container {
-    border: 1px solid #e4e4e4;
-    border-radius: 10px;
+    border: 1px solid var(--cloudlogin-line);
+    border-radius: 8px;
     background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
 }
 
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card {
-    padding: 22px;
+    padding: 20px 22px;
 }
 
 .account-management .tab-content ::deep .account-section > .form-container {
     max-width: 760px;
     padding: 18px;
+}
+
+.account-management .tab-content ::deep .card-header h4 {
+    color: var(--cloudlogin-ink);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Section card: an icon-led header (icon, title, one-line subtitle) with the
+   actions at its far end - a text link and a collapse chevron - over a body
+   the chevron can fold away. The header and body pad themselves so the
+   divider between them runs the card's full width. */
+
+/* Block on purpose: a host's global stylesheet may lay every <section> out as a
+   centred flex column (the sign-in page relies on exactly that), which would turn
+   this card's header and body into shrink-to-fit items centred in the card. */
+.account-management .tab-content ::deep .section-card {
+    display: block;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* The heading claims the row first; the actions ride along on the right while
+   there is room and drop to a line of their own when there isn't, so the title
+   is never squeezed into a word-per-line column beside them. */
+.account-management .tab-content ::deep .section-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 14px;
+    padding: 16px 20px;
+}
+
+.account-management .tab-content ::deep .section-card-icon {
+    display: grid;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    place-items: center;
+    color: var(--cloudlogin-brand);
+}
+
+.account-management .tab-content ::deep .section-card-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.account-management .tab-content ::deep .section-card-heading {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.account-management .tab-content ::deep .section-card-title {
+    margin: 0;
+    color: var(--cloudlogin-ink);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.account-management .tab-content ::deep .section-card-subtitle {
+    margin: 2px 0 0;
+    color: var(--cloudlogin-ink-soft);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.account-management .tab-content ::deep .section-card-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.account-management .tab-content ::deep .section-card-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--cloudlogin-brand);
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.account-management .tab-content ::deep .section-card-link:hover {
+    text-decoration: underline;
+}
+
+.account-management .tab-content ::deep .section-card-toggle {
+    display: grid;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--cloudlogin-ink-soft);
+    cursor: pointer;
+    transition: background-color .12s ease, color .12s ease;
+}
+
+.account-management .tab-content ::deep .section-card-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.account-management .tab-content ::deep .section-card-toggle:hover {
+    background: #f0f0f0;
+    color: var(--cloudlogin-ink);
+}
+
+/* A size container, so a card's contents can lay themselves out by how wide the
+   card actually is rather than by how wide the window happens to be. */
+.account-management .tab-content ::deep .section-card-body {
+    padding: 20px 20px 22px;
+    border-top: 1px solid #ededed;
+    container: section-card / inline-size;
 }
 
 .account-management .tab-content ::deep .info-item,
@@ -616,7 +841,7 @@
 
 .account-management .tab-content ::deep .form-label {
     margin: 0 0 6px;
-    color: #323130;
+    color: var(--cloudlogin-ink);
     font-size: 13px;
     font-weight: 600;
 }
@@ -628,12 +853,12 @@
 .account-management .tab-content ::deep input[type="password"],
 .account-management .tab-content ::deep select,
 .account-management .tab-content ::deep textarea {
-    min-height: 40px;
-    padding: 8px 11px;
+    min-height: 36px;
+    padding: 7px 11px;
     border: 1px solid #8a8886;
-    border-radius: 6px;
+    border-radius: 4px;
     background: #fff;
-    color: #242424;
+    color: var(--cloudlogin-ink);
     font: inherit;
     font-size: 14px;
     transition: border-color .12s ease, box-shadow .12s ease;
@@ -656,15 +881,15 @@
 }
 
 /* Baseline button sizing for content that doesn't style its own controls.
-   `.feature-card` is excluded: it's a full-size card that happens to be a
-   <button>, and this rule's specificity (0,4,1) would otherwise flatten its
-   own padding and min-height back down to control-sized. */
+   Link-shaped buttons and the small header chevron are excluded: this rule's
+   specificity (0,4,1) would otherwise flatten their own padding and min-height
+   back down to control-sized. */
 .account-management .tab-content ::deep .btn,
 .account-management .tab-content ::deep .admin-action-btn,
-.account-management .tab-content ::deep button:not(.link-action):not(.admin-tab):not(.feature-card) {
-    min-height: 40px;
-    padding: 8px 16px;
-    border-radius: 6px;
+.account-management .tab-content ::deep button:not(.link-action):not(.admin-tab):not(.quick-action):not(.section-card-link):not(.section-card-toggle) {
+    min-height: 36px;
+    padding: 7px 16px;
+    border-radius: 4px;
     font: inherit;
     font-size: 14px;
     font-weight: 600;
@@ -689,7 +914,7 @@
 .account-management .tab-content ::deep .admin-action-btn--outline {
     border: 1px solid #8a8886;
     background: #fff;
-    color: #323130;
+    color: var(--cloudlogin-ink);
 }
 
 .account-management .tab-content ::deep .btn-outline:hover:not(:disabled),
@@ -736,7 +961,7 @@
     .account-management .account-page-header {
         align-items: center;
         flex-direction: row;
-        gap: 20px;
+        gap: 24px;
     }
 
     .account-management .account-page-header h1 {
@@ -745,7 +970,19 @@
 
     .account-management .tab-content ::deep .card,
     .account-management .tab-content ::deep .header-card {
-        padding: 26px 28px;
+        padding: 24px 28px;
+    }
+
+    .account-management .tab-content ::deep .section-card {
+        padding: 0;
+    }
+
+    .account-management .tab-content ::deep .section-card-header {
+        padding: 18px 24px;
+    }
+
+    .account-management .tab-content ::deep .section-card-body {
+        padding: 24px 24px 26px;
     }
 
     .account-management .tab-content ::deep .account-section > .form-container {
@@ -763,6 +1000,15 @@
         display: none;
     }
 
+    .account-management .profile-mini {
+        padding: 28px 16px 20px;
+    }
+
+    .account-management .tabs,
+    .account-management .sidebar-footer {
+        padding-inline: 12px;
+    }
+
     .account-management .profile-mini-copy,
     .account-management .rail-group-label,
     .account-management .tab-label {
@@ -773,17 +1019,13 @@
         display: inline-block;
     }
 
-    .account-management .tab-button.active::before {
-        left: 0;
-    }
-
     .account-management .nav-backdrop {
         display: none;
     }
 
     .account-management .tab-content {
         margin-left: var(--rail-width-desktop);
-        padding: 38px clamp(32px, 5vw, 72px) 72px;
+        padding: 40px clamp(32px, 5vw, 72px) 72px;
     }
 
     /* Narrow the reading column to ~80% of the available content area once

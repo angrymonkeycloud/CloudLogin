@@ -454,7 +454,6 @@ public class CloudLoginServerLoginTests
                 "Valid#123456",
                 "New",
                 "Person",
-                "New Person",
                 verification.VerificationToken,
                 keepMeSignedIn: true));
 

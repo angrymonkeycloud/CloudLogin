@@ -37,7 +37,6 @@ public sealed class V3UsersController(CloudLoginWebConfiguration configuration, 
         // Whitelist only. Privileges, providers, identifiers, and lock state are server-managed.
         stored.FirstName = request.FirstName ?? stored.FirstName;
         stored.LastName = request.LastName ?? stored.LastName;
-        stored.DisplayName = request.DisplayName ?? stored.DisplayName;
         stored.Username = request.Username ?? stored.Username;
         stored.DateOfBirth = request.DateOfBirth ?? stored.DateOfBirth;
         stored.Country = request.Country ?? stored.Country;

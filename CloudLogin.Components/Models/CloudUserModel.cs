@@ -5,7 +5,10 @@ public class CloudUserModel
     public Guid Id { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public string? DisplayName { get; set; }
+
+    /// <summary>Composed from <see cref="FirstName"/> and <see cref="LastName"/>; never stored.</summary>
+    public string? DisplayName => CloudLoginDisplayName.Compose(FirstName, LastName);
+
     public bool IsLocked { get; set; } = false;
     public bool IsTest { get; set; } = false;
     public bool IsGlobalAdmin { get; set; } = false;
@@ -34,7 +37,6 @@ public static class CloudUserModelExtensions
         Id = source.Id,
         FirstName = source.FirstName,
         LastName = source.LastName,
-        DisplayName = source.DisplayName,
         IsLocked = source.IsLocked,
         IsTest = source.IsTest,
         IsGlobalAdmin = source.IsGlobalAdmin,
@@ -58,7 +60,6 @@ public static class CloudUserModelExtensions
         Id = model.Id,
         FirstName = model.FirstName,
         LastName = model.LastName,
-        DisplayName = model.DisplayName,
         IsLocked = model.IsLocked,
         IsTest = model.IsTest,
         IsGlobalAdmin = model.IsGlobalAdmin,

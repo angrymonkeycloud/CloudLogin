@@ -31,7 +31,6 @@ public class V2ContractSnapshotTests
         Id = Guid.Parse("b6f1b2a0-2f43-4b3a-9e21-4a4b6f2c9a11"),
         FirstName = "Ada",
         LastName = "Lovelace",
-        DisplayName = "Ada Lovelace",
         Username = "ada",
         DateOfBirth = new DateOnly(1815, 12, 10),
         CreatedOn = new DateTimeOffset(2026, 1, 14, 9, 12, 0, TimeSpan.Zero),

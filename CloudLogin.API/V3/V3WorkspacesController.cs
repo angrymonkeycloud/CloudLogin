@@ -90,7 +90,7 @@ public sealed class V3WorkspacesController(CloudLoginWebConfiguration configurat
             members.Add(new V3WorkspaceMemberResponse
             {
                 UserId = memberId,
-                DisplayName = member?.DisplayName,
+                DisplayName = CloudLoginDisplayName.Compose(member?.FirstName, member?.LastName),
                 Roles = [.. access.Roles],
                 State = access.State.ToString()
             });

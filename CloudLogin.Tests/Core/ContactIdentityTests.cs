@@ -33,7 +33,6 @@ public class ContactIdentityTests
         Id = Guid.NewGuid(),
         FirstName = "Ada",
         LastName = "Lovelace",
-        DisplayName = "Ada Lovelace",
         CreatedOn = DateTimeOffset.UtcNow,
         Inputs =
         [

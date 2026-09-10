@@ -69,7 +69,6 @@ public class LoginController(CloudLoginWebConfiguration configuration, CloudLogi
         [FromForm] string? password,
         [FromForm] string firstName,
         [FromForm] string lastName,
-        [FromForm] string displayName,
         [FromForm] string? verificationToken = null,
         [FromForm] bool keepMeSignedIn = false)
     {
@@ -79,7 +78,7 @@ public class LoginController(CloudLoginWebConfiguration configuration, CloudLogi
         try
         {
             CloudLoginPasswordRegistrationRequest request = CloudLoginPasswordRegistrationRequest.Create(
-                input, format, password, firstName, lastName, displayName, verificationToken, keepMeSignedIn);
+                input, format, password, firstName, lastName, verificationToken, keepMeSignedIn);
             CloudUser user = await _server.PasswordRegistration(request);
             return Ok(CloudLoginTransportSecurity.ForTransport(user));
         }
@@ -91,13 +90,13 @@ public class LoginController(CloudLoginWebConfiguration configuration, CloudLogi
 
     [HttpPost("Login/CodeRegistration")]
     [EnableRateLimiting(CloudLoginSecurityDefaults.AuthenticationRateLimitPolicy)]
-    public async Task<IActionResult> CodeRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string displayName, [FromForm] string? verificationToken = null, [FromForm] bool keepMeSignedIn = false, [FromForm] string? referer = null)
+    public async Task<IActionResult> CodeRegistration([FromForm] string input, [FromForm] string inputFormat, [FromForm] string firstName, [FromForm] string lastName, [FromForm] string? verificationToken = null, [FromForm] bool keepMeSignedIn = false, [FromForm] string? referer = null)
     {
         if (!Enum.TryParse(inputFormat, true, out CloudLoginInputFormat format))
             return BadRequest("Invalid input format.");
 
         CloudLoginCodeRegistrationRequest request = CloudLoginCodeRegistrationRequest.Create(
-            input, format, firstName, lastName, displayName, verificationToken, keepMeSignedIn);
+            input, format, firstName, lastName, verificationToken, keepMeSignedIn);
 
         try
         {

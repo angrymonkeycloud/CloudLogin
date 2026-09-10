@@ -43,6 +43,10 @@
                         <div class="profile-mini-copy">
                             <div class="profile-mini-name">@GetDisplayName()</div>
                             <div class="profile-mini-email">@GetPrimaryEmail()</div>
+                            @if (activeWorkspaceId is null)
+                            {
+                                <button type="button" class="profile-mini-link" @onclick='() => SwitchTab("Profile")'>View my profile</button>
+                            }
                         </div>
                     </div>
 
@@ -129,9 +133,34 @@
                     <div class="tab-content-inner">
                         <header class="account-page-header">
                             <div>
-                                <span class="account-page-eyebrow">@(activeWorkspaceId is null ? "CloudLogin account" : ActiveWorkspaceName)</span>
+                                @if (activeWorkspaceId is not null)
+                                {
+                                    <span class="account-page-eyebrow">@ActiveWorkspaceName</span>
+                                }
                                 <h1>@GetActiveTabDisplayName()</h1>
                             </div>
+
+                            @* The two things people come here to do most, reachable from every
+                               personal-account page without hunting for the right tab. *@
+                            @if (activeWorkspaceId is null && activeTab != "Admin")
+                            {
+                                <div class="account-quick-actions" aria-label="Quick actions">
+                                    <button type="button" class="quick-action" @onclick='() => SwitchTab("Profile")'>
+                                        <span class="quick-action-icon" aria-hidden="true"><PersonIcon /></span>
+                                        <span class="quick-action-copy">
+                                            <span class="quick-action-title">Your info</span>
+                                            <span class="quick-action-subtitle">Profile</span>
+                                        </span>
+                                    </button>
+                                    <button type="button" class="quick-action" @onclick='() => SwitchTab("Security")'>
+                                        <span class="quick-action-icon" aria-hidden="true"><KeyIcon /></span>
+                                        <span class="quick-action-copy">
+                                            <span class="quick-action-title">Change password</span>
+                                            <span class="quick-action-subtitle">Security</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            }
                         </header>
                         @if (activeWorkspaceId is Guid workspaceId)
                         {
@@ -524,13 +553,13 @@ else
 
     private static RenderFragment TabIcon(string tabName) => tabName switch
     {
-        "Overview" => @<GridIcon />,
+        "Overview" => @<HomeIcon />,
         "Profile" => @<PersonIcon />,
-        "Security" => @<ShieldCheckIcon />,
-        "Devices" => @<DevicePlatformIcon />,
+        "Security" => @<ShieldIcon />,
+        "Devices" => @<LaptopIcon />,
         "Workspace" => @<BuildingIcon />,
         "Admin" => @<ShieldCheckIcon />,
-        _ => @<GridIcon />
+        _ => @<HomeIcon />
     };
 
     private string GetActiveTabDisplayName()

@@ -1,65 +1,32 @@
 @import (reference) "../../Src/variable.less";
 
+// The card shell, its icon-led header and the collapse chevron are styled once in
+// AccountComponent.razor.less (::deep .section-card*), since every tab shares them.
+// What lives here is the inside of each overview card.
+
+@ink: #242424;
+@ink-soft: #616161;
+@line: #ededed;
+
 .account-section {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
 }
 
-.section {
-    &-header {
-        margin-bottom: 8px;
+/* ── Your info ─────────────────────────────────────────────── */
 
-        h3 {
-            font-size: 24px;
-            font-weight: 600;
-            color: @text;
-            margin: 0 0 4px 0;
-        }
-
-        &-description {
-            font-size: 14px;
-            color: @muted;
-            margin: 0;
-        }
-    }
-}
-
-.card {
-    background: @white;
-    border: 1px solid @border;
-    border-radius: 12px;
-    padding: 20px;
-}
-
-.card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-block: 10px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid @surface-alt;
-
-    h4 {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 700;
-    }
-}
-
-/* ── Hero card ─────────────────────────────────────────────── */
-
-.hero-card {
+.identity-row {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 24px;
 }
 
 .hero-identity {
     display: flex;
     align-items: center;
     gap: 16px;
+    min-width: 0;
 }
 
 .hero-avatar {
@@ -68,30 +35,30 @@
     flex: 0 0 64px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid @border-dashed;
-    box-shadow: @shadow-sm;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .06);
 
     &.initials {
         display: grid;
         place-items: center;
         background: var(--amc-accentColor);
         color: @white;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 22px;
+        box-shadow: none;
     }
 }
 
 .hero-identity-copy {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     min-width: 0;
 }
 
 .hero-name {
-    font-size: 19px;
-    font-weight: 700;
-    color: @heading;
+    font-size: 18px;
+    font-weight: 600;
+    color: @ink;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -99,7 +66,7 @@
 
 .hero-email {
     font-size: 13px;
-    color: @muted;
+    color: @ink-soft;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -108,10 +75,10 @@
 .chip {
     display: inline-block;
     align-self: flex-start;
-    margin-top: 2px;
+    margin-top: 3px;
     padding: 2px 9px;
     font-size: .68rem;
-    font-weight: 700;
+    font-weight: 600;
     border-radius: 20px;
     text-transform: uppercase;
     letter-spacing: .04em;
@@ -130,9 +97,9 @@
 .hero-meta {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 16px;
     padding-top: 18px;
-    border-top: 1px solid @surface;
+    border-top: 1px solid @line;
 }
 
 .meta-item {
@@ -154,20 +121,20 @@
     width: 34px;
     height: 34px;
     place-items: center;
-    border-radius: 9px;
-    background: @surface;
+    border-radius: 8px;
+    background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 9%, #fff));
     color: var(--amc-accentColor);
 
     ::deep svg {
-        width: 17px;
-        height: 17px;
+        width: 18px;
+        height: 18px;
     }
 }
 
 .meta-label {
     font-size: .72rem;
     font-weight: 600;
-    color: @muted;
+    color: @ink-soft;
     text-transform: uppercase;
     letter-spacing: .04em;
 }
@@ -176,156 +143,157 @@
     margin-top: 2px;
     font-size: .875rem;
     font-weight: 600;
-    color: @text;
+    color: @ink;
 }
 
 // Secondary line: the exact timestamp beside "Member since", or the relative
 // age beside "Last signed in" — whichever the primary line isn't showing.
 .meta-relative {
     font-size: .78rem;
-    color: @muted;
+    color: @ink-soft;
+}
+
+/* ── Security ──────────────────────────────────────────────── */
+
+.security-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.security-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.security-stat-value {
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1;
+    color: @ink;
+}
+
+.security-stat-label {
+    font-size: 14px;
+    color: @ink-soft;
 }
 
 .hero-providers {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding-top: 4px;
 }
 
 .provider-badge {
     padding: 5px 12px;
     background-color: @white;
-    border: 1.5px solid var(--amc-accentColor);
+    border: 1px solid var(--amc-accentColor);
     color: var(--amc-accentColor);
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
 }
 
-/* ── Feature grid ──────────────────────────────────────────── */
-
-// One full-width row per feature. A single column keeps every destination equally
-// weighted and gives each card room for a real description instead of a truncated
-// one-liner, which is what the cramped multi-column grid forced.
-.feature-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+.section-note {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: @ink-soft;
 }
 
-// Hover is expressed purely through colour — no lift, no growth, no nudge. The
-// card stays exactly where it is; only the accent stripe, tint and border shift.
-.feature-card {
-    position: relative;
+.section-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+/* ── Devices ───────────────────────────────────────────────── */
+
+.device-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+.device-tile {
     display: flex;
     align-items: center;
-    gap: 20px;
-    width: 100%;
-    min-height: 132px;
-    padding: 26px 28px;
-    border: 1px solid @border;
-    border-radius: 14px;
-    background: @white;
-    text-align: left;
-    cursor: pointer;
-    overflow: hidden;
-    transition: border-color .15s ease, background-color .15s ease;
-
-    // Accent stripe pinned along the left edge; it fades in rather than growing.
-    &::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 4px;
-        background: var(--amc-accentColor);
-        opacity: 0;
-        transition: opacity .15s ease;
-    }
-
-    &:hover {
-        border-color: var(--amc-accentColor);
-        background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 4%, #fff));
-    }
-
-    &:hover::before {
-        opacity: 1;
-    }
-
-    &:focus-visible {
-        outline: 2px solid var(--amc-accentColor);
-        outline-offset: 2px;
-    }
+    gap: 16px;
+    min-width: 0;
 }
 
-.feature-icon {
+.device-art {
     display: grid;
-    flex: 0 0 52px;
-    width: 52px;
-    height: 52px;
+    flex: 0 0 96px;
+    width: 96px;
+    height: 72px;
     place-items: center;
-    border-radius: 14px;
-    background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 12%, #fff));
+    border-radius: 8px;
+    background: #f3f3f3;
     color: var(--amc-accentColor);
-    transition: background-color .15s ease, color .15s ease;
 
     ::deep svg {
-        width: 25px;
-        height: 25px;
+        width: 40px;
+        height: 40px;
     }
 }
 
-.feature-card:hover .feature-icon {
-    background: var(--amc-accentColor);
-    color: @white;
-}
-
-.feature-copy {
+.device-copy {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 3px;
     min-width: 0;
-    flex: 1 1 auto;
 }
 
-.feature-title {
-    font-size: 17px;
-    font-weight: 700;
-    color: @heading;
-    letter-spacing: -.01em;
+.device-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: @ink;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.feature-stat {
-    font-size: 13.5px;
-    color: @muted;
-    line-height: 1.45;
+.device-meta {
+    font-size: 13px;
+    color: @ink-soft;
 }
 
-.feature-chevron {
-    display: grid;
-    flex: 0 0 20px;
-    place-items: center;
-    color: @placeholder;
-    transition: color .15s ease;
+.device-link {
+    align-self: flex-start;
+    margin-top: 4px;
+}
 
-    ::deep svg {
-        width: 18px;
-        height: 18px;
+.empty-state {
+    padding: 24px 20px;
+    text-align: center;
+    background: @surface;
+    border-radius: @radius-sm;
+    border: 1px dashed @border-dashed;
+
+    p {
+        margin: 0;
+        color: @ink-soft;
+        font-size: 14px;
     }
 }
 
-.feature-card:hover .feature-chevron {
-    color: var(--amc-accentColor);
+.loading-spinner {
+    width: 22px;
+    height: 22px;
+    border: 2px solid fade(#000, 15%);
+    border-top-color: var(--amc-accentColor);
+    border-radius: 50%;
+    display: block;
+    margin: 12px auto;
+    animation: overview-spin .7s linear infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .feature-card,
-    .feature-card::before,
-    .feature-icon,
-    .feature-chevron {
-        transition: none;
+@keyframes overview-spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 
@@ -333,7 +301,10 @@
 
 .danger-card {
     border-color: color-mix(in srgb, @danger 35%, @border);
-    background: @danger-soft;
+}
+
+.danger-icon {
+    color: @danger;
 }
 
 .danger-row {
@@ -345,14 +316,14 @@
 .danger-title {
     margin: 0 0 4px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     color: @danger-dark;
 }
 
 .danger-desc {
     margin: 0;
     font-size: 13px;
-    color: @text-soft;
+    color: @ink-soft;
 }
 
 .danger-confirm {
@@ -372,13 +343,13 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
-    border-radius: 6px;
-    border: none;
+    padding: 7px 16px;
+    border-radius: 4px;
+    border: 1px solid transparent;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all .15s ease;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 
     &-icon {
         display: grid;
@@ -392,16 +363,18 @@
 
     &-danger {
         background: @danger;
+        border-color: @danger;
         color: @white;
 
         &:hover:not(:disabled) {
             background: @danger-dark;
+            border-color: @danger-dark;
         }
     }
 
     &-outline {
         background: transparent;
-        border: 1px solid @border-strong;
+        border-color: @border-strong;
         color: @text-soft;
 
         &:hover:not(:disabled) {
@@ -410,7 +383,7 @@
     }
 
     &-sm {
-        padding: 7px 12px;
+        padding: 5px 12px;
         font-size: 13px;
     }
 
@@ -421,17 +394,40 @@
 }
 
 @media @media-medium {
-    .hero-card {
+    .hero-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 24px;
     }
 
-    .hero-meta {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .device-grid {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px 28px;
     }
 
     .danger-row {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
+    }
+}
+
+// Only once the card itself is genuinely wide do the dates move beside the
+// identity, divided from it by a rule. Keyed to the card's width rather than the
+// viewport's, because how wide this column is depends on the host page around it.
+// Sized with minmax(0, 1fr) on both halves so a long date can never push the name
+// out of existence; narrower than this the two stay stacked, each with the full
+// card to itself.
+@container section-card (min-width: 760px) {
+    .identity-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        align-items: center;
+        gap: 32px;
+    }
+
+    .hero-meta {
+        padding: 0 0 0 28px;
+        border-top: 0;
+        border-left: 1px solid @line;
     }
 }

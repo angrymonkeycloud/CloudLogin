@@ -89,7 +89,7 @@ internal sealed class InMemoryUserRepository : IUserRepository
 
     public Task<List<UserDocument>> GetByDisplayNameAsync(string displayName, CancellationToken cancellationToken = default) =>
         Task.FromResult(Documents.Values
-            .Where(user => string.Equals(user.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
+            .Where(user => string.Equals(CloudLoginDisplayName.Compose(user.FirstName, user.LastName), displayName, StringComparison.OrdinalIgnoreCase))
             .Select(TestClone.Clone).ToList());
 
     public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Documents.Count);

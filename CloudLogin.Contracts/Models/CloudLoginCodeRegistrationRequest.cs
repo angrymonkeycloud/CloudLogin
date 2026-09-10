@@ -25,10 +25,8 @@ public sealed record CloudLoginCodeRegistrationRequest
     /// </summary>
     public required string LastName { get; init; }
 
-    /// <summary>
-    /// User's display name
-    /// </summary>
-    public required string DisplayName { get; init; }
+    // No display name: it is composed from the first and last names above, so accepting one
+    // here would only let a caller register a name the account does not actually have.
 
     /// <summary>
     /// Proof that the code sent to <see cref="Input"/> was answered correctly, from
@@ -47,7 +45,6 @@ public sealed record CloudLoginCodeRegistrationRequest
     /// <param name="inputFormat">Format of the input</param>
     /// <param name="firstName">User's first name</param>
     /// <param name="lastName">User's last name</param>
-    /// <param name="displayName">User's display name (optional)</param>
     /// <param name="verificationToken">Proof the address was verified</param>
     /// <param name="keepMeSignedIn">Whether the resulting sign-in is persistent</param>
     /// <returns>A new CloudLoginCodeRegistrationRequest instance</returns>
@@ -56,7 +53,6 @@ public sealed record CloudLoginCodeRegistrationRequest
         CloudLoginInputFormat inputFormat,
         string firstName,
         string lastName,
-        string? displayName = null,
         string? verificationToken = null,
         bool keepMeSignedIn = false)
         => new()
@@ -65,7 +61,6 @@ public sealed record CloudLoginCodeRegistrationRequest
             InputFormat = inputFormat,
             FirstName = firstName,
             LastName = lastName,
-            DisplayName = displayName ?? $"{firstName} {lastName}",
             VerificationToken = verificationToken,
             KeepMeSignedIn = keepMeSignedIn
         };

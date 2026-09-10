@@ -7,7 +7,9 @@ public record CloudUserInfo : CloudLoginBaseRecord
 
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public string? DisplayName { get; set; }
+
+    // No DisplayName: composed from the two names above on read, never persisted.
+
     public bool IsLocked { get; set; } = false;
     /// <summary>
     /// Indicates that the user was created via the LoginTest shared-password flow.

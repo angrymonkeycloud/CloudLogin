@@ -114,7 +114,8 @@ public class TokenServiceTests
     private static CloudUser CreateUser(Guid? id = null, bool isLocked = false, bool isGlobalAdmin = false) => new()
     {
         Id = id ?? Guid.NewGuid(),
-        DisplayName = "Ada Lovelace",
+        FirstName = "Ada",
+        LastName = "Lovelace",
         IsLocked = isLocked,
         IsGlobalAdmin = isGlobalAdmin,
         Inputs =

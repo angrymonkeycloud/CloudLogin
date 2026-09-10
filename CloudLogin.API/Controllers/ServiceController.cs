@@ -354,7 +354,12 @@ public class ServiceController(CloudLoginWebConfiguration configuration, ICloudL
             {
                 case nameof(CloudUser.FirstName): user.FirstName = Text(value); break;
                 case nameof(CloudUser.LastName): user.LastName = Text(value); break;
-                case nameof(CloudUser.DisplayName): user.DisplayName = Text(value); break;
+
+                // DisplayName is composed from the two names above, so a value sent for it is
+                // dropped rather than applied - accepting it would report a change that the next
+                // read would not show.
+                case nameof(CloudUser.DisplayName): break;
+
                 case nameof(CloudUser.Country): user.Country = Text(value); break;
                 case nameof(CloudUser.Locale): user.Locale = Text(value); break;
                 case nameof(CloudUser.DateOfBirth):

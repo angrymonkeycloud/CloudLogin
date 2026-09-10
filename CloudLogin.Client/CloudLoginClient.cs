@@ -606,8 +606,7 @@ public class CloudLoginClient : ICloudLogin
             { new StringContent(request.InputFormat.ToString()), "inputFormat" },
             { new StringContent(request.Password ?? string.Empty), "password" },
             { new StringContent(request.FirstName), "firstName" },
-            { new StringContent(request.LastName), "lastName" },
-            { new StringContent(request.DisplayName), "displayName" }
+            { new StringContent(request.LastName), "lastName" }
         };
 
         HttpResponseMessage message = await HttpServer.PostAsync($"CloudLogin/Login/PasswordRegistration", form);
@@ -637,7 +636,6 @@ public class CloudLoginClient : ICloudLogin
             { new StringContent(request.InputFormat.ToString()), "inputFormat" },
             { new StringContent(request.FirstName), "firstName" },
             { new StringContent(request.LastName), "lastName" },
-            { new StringContent(request.DisplayName), "displayName" },
             { new StringContent(request.VerificationToken ?? string.Empty), "verificationToken" },
             { new StringContent(request.KeepMeSignedIn.ToString()), "keepMeSignedIn" }
         };

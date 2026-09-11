@@ -16,6 +16,9 @@ CloudLoginWebConfiguration configuration = builder.ReadCloudLoginConfiguration()
 if (communications.GetServices<IEmailProvider>().Any())
     configuration.EmailSendCodeRequest = value => SendVerificationCodeAsync(communications, configuration, value);
 
+if (configuration.Workspace is not null)
+    builder.Services.AddCloudLoginAccountRegistry();
+
 builder.AddCloudLoginWeb(configuration);
 
 await CloudLoginWeb.InitApp(builder);

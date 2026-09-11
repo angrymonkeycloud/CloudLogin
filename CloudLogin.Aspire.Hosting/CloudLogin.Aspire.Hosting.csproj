@@ -42,13 +42,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Where the generated login project finds CloudLogin and CoconutSharp from source, when the
+		     AppHost takes this package as a project reference. -->
 		<AssemblyMetadata Include="CloudLoginSourceRoot" Value="$(MSBuildProjectDirectory)\.." />
+		<AssemblyMetadata Include="CoconutSharpSourceRoot" Value="$(MSBuildProjectDirectory)\..\..\..\CoconutSharp\CoconutSharpAspire\src" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Remove="Standalone\**\*.cs" />
-		<EmbeddedResource Include="Standalone\CloudLogin.Standalone.csproj" />
-		<EmbeddedResource Include="Standalone\Program.cs" />
+		<Compile Remove="Template\**\*.cs" />
+		<EmbeddedResource Include="Template\Program.cs" />
+		<EmbeddedResource Include="Template\appsettings.json" />
 	</ItemGroup>
 
 <ItemGroup><None Update="amc-logo.png"><Pack>True</Pack><PackagePath>\</PackagePath></None></ItemGroup></Project>

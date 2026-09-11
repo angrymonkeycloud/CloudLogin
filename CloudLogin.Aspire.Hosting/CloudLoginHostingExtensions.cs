@@ -46,63 +46,76 @@ public static class CloudLoginHostingExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        CloudLoginWebConfiguration configuration = new();
-        configure?.Invoke(configuration);
-
-        CloudLoginServerAnnotation annotation = new();
-        annotation.Apply(configuration);
-
-        IResourceBuilder<ProjectResource> project = builder.AddProject<TProject>(name)
-            .WithExternalHttpEndpoints()
-            .WithAnnotation(annotation)
-            .WithAnnotation(new CoconutSharp.Aspire.Hosting.CoconutEntraSignInAnnotation("/signin-microsoft"));
-
-        project.ApplyCloudLoginDefaults();
-
-        // The V3 identity secret, generated once and kept. Wired unconditionally so a CloudLogin
-        // under an AppHost simply works: the server requires the secret and will not invent one,
-        // and an AppHost is the only place with somewhere durable to keep the same value across
-        // restarts. WithIdentityHmacSecret afterwards replaces it.
-        project.WithEnvironment(
-            CloudLoginConfigurationKeys.IdentityHmacSecretVariable,
-            IdentityHmacSecretParameter.AddFor(builder, name));
-
-        if (configure is not null)
-            CloudLoginConfigurationProjection.Apply(project, configuration);
-        return new CloudLoginServerBuilder(project);
+        return ConfigureServer(builder.AddProject<TProject>(name), configure);
     }
 
     /// <summary>
-    /// Adds the packaged CloudLogin server without requiring an application project.
+    /// Adds a CloudLogin server named <c>login</c> without a login project in the solution: the
+    /// project is generated under the AppHost's <c>obj</c> folder, built when it starts, and
+    /// published like any other project.
+    /// </summary>
+    /// <param name="builder">The distributed application builder.</param>
+    /// <param name="configure">Optional shared CloudLogin configuration.</param>
+    /// <param name="configureProject">Optional local ports and static files for the generated project.</param>
+    /// <returns>A CloudLogin project resource. Hold it in a <c>var</c> - see <see cref="AddCloudLogin{TProject}"/>.</returns>
+    public static ICloudLoginServerBuilder AddCloudLoginProject(
+        this IDistributedApplicationBuilder builder,
+        Action<CloudLoginWebConfiguration>? configure = null,
+        Action<CloudLoginProjectOptions>? configureProject = null) =>
+        builder.AddCloudLoginProject("login", configure, configureProject);
+
+    /// <summary>
+    /// Adds a CloudLogin server without a login project in the solution: the project is generated
+    /// under the AppHost's <c>obj</c> folder, built when it starts, and published like any other
+    /// project.
     /// </summary>
     /// <param name="builder">The distributed application builder.</param>
     /// <param name="name">The CloudLogin resource name.</param>
     /// <param name="configure">Optional shared CloudLogin configuration.</param>
-    /// <returns>
-    /// A CloudLogin project resource that can be referenced and deployed like any other project.
-    /// Hold it in a <c>var</c> - see <see cref="AddCloudLogin{TProject}"/>.
-    /// </returns>
-    public static ICloudLoginServerBuilder AddCloudLogin(
+    /// <param name="configureProject">Optional local ports and static files for the generated project.</param>
+    /// <returns>A CloudLogin project resource. Hold it in a <c>var</c> - see <see cref="AddCloudLogin{TProject}"/>.</returns>
+    public static ICloudLoginServerBuilder AddCloudLoginProject(
         this IDistributedApplicationBuilder builder,
-        string name = "login",
-        Action<CloudLoginWebConfiguration>? configure = null)
+        string name,
+        Action<CloudLoginWebConfiguration>? configure = null,
+        Action<CloudLoginProjectOptions>? configureProject = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
+        CloudLoginProjectOptions options = new();
+        configureProject?.Invoke(options);
+
+        string projectPath = CloudLoginGeneratedProject.Generate(builder, name, options);
+        IResourceBuilder<ProjectResource> project = builder.AddProject(name, projectPath, CloudLoginGeneratedProject.LaunchProfileName);
+
+        // A plain `dotnet run`, which builds the generated project (nothing else does) and keeps the
+        // IDE out of launching it: Visual Studio only launches projects that are in the open solution.
+        if (builder.ExecutionContext.IsRunMode)
+        {
+#pragma warning disable ASPIREPROJECTS001
+            project.WithAnnotation(new ProjectLaunchArgsOverrideAnnotation(["run", "--no-launch-profile", "--project"]));
+#pragma warning restore ASPIREPROJECTS001
+        }
+
+        return ConfigureServer(project, configure);
+    }
+
+    private static ICloudLoginServerBuilder ConfigureServer(
+        IResourceBuilder<ProjectResource> project,
+        Action<CloudLoginWebConfiguration>? configure)
+    {
         CloudLoginWebConfiguration configuration = new();
         configure?.Invoke(configuration);
 
         CloudLoginServerAnnotation annotation = new();
         annotation.Apply(configuration);
 
-        IResourceBuilder<ProjectResource> project = builder
-            .AddProject(name, CloudLoginStandaloneProject.Extract())
-            .WithHttpEndpoint(name: "http")
+        project
             .WithExternalHttpEndpoints()
             .WithAnnotation(annotation)
-            .WithAnnotation(new CoconutSharp.Aspire.Hosting.CoconutEntraSignInAnnotation("/signin-microsoft"));
-
-        project.ApplyCloudLoginDefaults();
+            .WithAnnotation(new CoconutSharp.Aspire.Hosting.CoconutEntraSignInAnnotation("/signin-microsoft"))
+            .ApplyCloudLoginDefaults();
 
         // The V3 identity secret, generated once and kept. Wired unconditionally so a CloudLogin
         // under an AppHost simply works: the server requires the secret and will not invent one,
@@ -110,10 +123,11 @@ public static class CloudLoginHostingExtensions
         // restarts. WithIdentityHmacSecret afterwards replaces it.
         project.WithEnvironment(
             CloudLoginConfigurationKeys.IdentityHmacSecretVariable,
-            IdentityHmacSecretParameter.AddFor(builder, name));
+            IdentityHmacSecretParameter.AddFor(project.ApplicationBuilder, project.Resource.Name));
 
         if (configure is not null)
             CloudLoginConfigurationProjection.Apply(project, configuration);
+
         return new CloudLoginServerBuilder(project);
     }
 
@@ -223,7 +237,7 @@ public static class CloudLoginHostingExtensions
         string method) =>
         builder.Resource.Annotations.OfType<CloudLoginServerAnnotation>().LastOrDefault()
         ?? throw new DistributedApplicationException(
-            $"Project '{builder.Resource.Name}' was not added with AddCloudLogin<TProject>(), so {method} has " +
+            $"Project '{builder.Resource.Name}' was not added with AddCloudLogin<TProject>() or AddCloudLoginProject(), so {method} has " +
             "nothing to configure. These helpers write the CloudLogin server's own configuration section and " +
             "only apply to the project hosting it.");
 }

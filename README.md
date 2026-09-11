@@ -262,11 +262,11 @@ using AngryMonkey.CloudLogin.Aspire.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// The application's own CloudLogin server project:
-var login = builder.AddCloudLogin<Projects.My_Login>("login");
+// A generated login project, with no login project in the solution:
+var login = builder.AddCloudLoginProject(configuration => configuration.Title = "My Login");
 
-// ...or the packaged server, with no project of your own:
-var login = builder.AddCloudLogin("login");
+// ...or the application's own CloudLogin server project:
+var login = builder.AddCloudLogin<Projects.My_Login>("login");
 
 // ...or an already-deployed authority, reached by URL:
 var login = builder.AddCloudLogin("login", "https://login.example.com");
@@ -275,6 +275,34 @@ var login = builder.AddCloudLogin("login", "https://login.example.com");
 // forms above) configures the redirect allow-list to match.
 var web = builder.AddProject<Projects.Web>("web").WithCloudLogin(login);
 ```
+
+`AddCloudLoginProject` writes a complete CloudLogin website project under the AppHost's `obj`
+folder on every start and adds it as an ordinary project resource: `dotnet run` builds it, the
+dashboard shows it as `login`, and a deployment tool publishes it like any project it can see.
+Nothing is added to the solution. Visual Studio launches it as a plain process rather than through
+the debugger, since the IDE can only launch projects that are part of the open solution. The
+project references CloudLogin from NuGet at the same version as the hosting package, or from
+source when the AppHost takes the hosting package as a project reference.
+
+```csharp
+var login = builder.AddCloudLoginProject("login", configuration =>
+{
+    configuration.Title = "My Login";
+    configuration.AllowMobileApp("myapp");
+}, project =>
+{
+    // Fixed local ports, so sign-in providers can be registered against them.
+    project.HttpsPort = 7116;
+    project.HttpPort = 5045;
+
+    // A folder served as the site's web root: put logo.svg here for the account page.
+    project.WebRootPath = "login";
+});
+```
+
+Verification-code emails are sent through CoconutSharp Communications when the resource
+references a CoconutSharp Entra registration configured with `WithMail(...)`; without one, the
+code provider reports that email is not configured.
 
 A server that also reads CloudLogin-owned records directly - CDM's external data provider, for
 example - additionally calls `WithServiceAccess(login)`: that channel bypasses user identity, so

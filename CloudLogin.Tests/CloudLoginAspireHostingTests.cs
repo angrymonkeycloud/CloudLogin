@@ -16,7 +16,7 @@ public sealed class CloudLoginAspireHostingTests
         {
             Args = ["--operation", "publish"], DisableDashboard = true
         });
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login", configuration =>
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject("login", configuration =>
             configuration.Providers = [new AngryMonkey.CloudLogin.Sever.Providers.LoginProviders.GoogleProviderConfiguration(builder.Configuration.GetSection("Google"))
             {
                 ClientId = "test-client", ClientSecret = "test-provider-credential"
@@ -37,7 +37,7 @@ public sealed class CloudLoginAspireHostingTests
                 DisableDashboard = true
             });
 
-        IResourceBuilder<ProjectResource> login = builder.AddCloudLogin();
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLoginProject();
         IResourceBuilder<ExecutableResource> consumer = builder
             .AddExecutable("api", "dotnet", ".")
             .WithHttpEndpoint()
@@ -78,7 +78,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = ["--operation", "publish"], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login");
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject("login");
         login.WithReference(builder.AddAzureCosmosDB("cosmos"));
 
         AzureCosmosDBDatabaseResource database = Assert.Single(builder.Resources.OfType<AzureCosmosDBDatabaseResource>());
@@ -128,7 +128,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = ["--operation", "publish"], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login", configuration =>
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject("login", configuration =>
             configuration.Core = new CloudLoginCoreConfiguration { DatabaseId = "LoginStaging" });
 
         login.WithReference(builder.AddAzureCosmosDB("cosmos"));
@@ -149,7 +149,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
         login.WithReference(builder.AddAzureCosmosDB("cosmos").RunAsEmulator());
 
         Dictionary<string, object> environment = await ReadEnvironmentAsync(login.Resource);
@@ -170,8 +170,8 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder authority = builder.AddCloudLogin("authority");
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login");
+        ICloudLoginServerBuilder authority = builder.AddCloudLoginProject("authority");
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject("login");
 
         login
             .WithReference(authority)
@@ -195,7 +195,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
         IResourceBuilder<ExecutableResource> portal = builder
             .AddExecutable("portal", "dotnet", ".")
             .WithHttpEndpoint()
@@ -223,7 +223,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
         IResourceBuilder<ExecutableResource> worker = builder
             .AddExecutable("worker", "dotnet", ".")
             .WithServiceAccess(login);
@@ -244,7 +244,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
         IResourceBuilder<ExecutableResource> worker = builder.AddExecutable("worker", "dotnet", ".");
 
         worker.WithServiceAccess(login);
@@ -264,7 +264,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
         IResourceBuilder<ExecutableResource> app = builder
             .AddExecutable("app", "dotnet", ".")
             .WithHttpEndpoint()
@@ -290,7 +290,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
 
         login.WithReference(builder.AddAzureCosmosDB("cosmos").RunAsEmulator());
 
@@ -314,7 +314,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
         IResourceBuilder<AzureStorageResource> storage = builder.AddAzureStorage("storage").RunAsEmulator();
 
         login.WithReference(storage);
@@ -349,7 +349,7 @@ public sealed class CloudLoginAspireHostingTests
                 DisableDashboard = true
             });
 
-        IResourceBuilder<ProjectResource> login = builder.AddCloudLogin();
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLoginProject();
         IResourceBuilder<ExecutableResource> consumer = builder
             .AddExecutable("api", "dotnet", ".")
             .WithHttpEndpoint()
@@ -385,7 +385,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login", configuration =>
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject("login", configuration =>
             configuration.AddTestMode());
 
         Dictionary<string, object> environment = await ReadEnvironmentAsync(login.Resource);
@@ -405,7 +405,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
             new DistributedApplicationOptions { Args = [], DisableDashboard = true });
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin("login", configuration =>
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject("login", configuration =>
             configuration.AddTestMode(isEnabled: false));
 
         Dictionary<string, object> environment = await ReadEnvironmentAsync(login.Resource);
@@ -432,7 +432,7 @@ public sealed class CloudLoginAspireHostingTests
         // The server requires the secret and will not invent one, so an AppHost that had to be
         // told to add it would simply fail to start by default.
         IDistributedApplicationBuilder builder = NewBuilder();
-        IResourceBuilder<ProjectResource> login = builder.AddCloudLogin();
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLoginProject();
 
         Assert.Contains(SecretVariable, await ReadEnvironmentAsync(login.Resource));
     }
@@ -441,7 +441,7 @@ public sealed class CloudLoginAspireHostingTests
     public void TheGeneratedSecret_IsThirtyTwoRandomBytesBase64Encoded()
     {
         IDistributedApplicationBuilder builder = NewBuilder();
-        builder.AddCloudLogin();
+        builder.AddCloudLoginProject();
 
         string value = IdentitySecretParameter(builder).Value;
 
@@ -457,10 +457,10 @@ public sealed class CloudLoginAspireHostingTests
         // Two AppHosts are two deployments with two identity indexes; sharing a key would let one
         // read the other's rows.
         IDistributedApplicationBuilder first = NewBuilder();
-        first.AddCloudLogin();
+        first.AddCloudLoginProject();
 
         IDistributedApplicationBuilder second = NewBuilder();
-        second.AddCloudLogin();
+        second.AddCloudLoginProject();
 
         Assert.Equal(IdentitySecretParameter(first).Value, IdentitySecretParameter(second).Value);
     }
@@ -471,7 +471,7 @@ public sealed class CloudLoginAspireHostingTests
         // Secret so it is redacted in the dashboard and never published as a literal; persisted so
         // the same value comes back on the next run - a fresh key would orphan every account.
         IDistributedApplicationBuilder builder = NewBuilder();
-        builder.AddCloudLogin();
+        builder.AddCloudLoginProject();
 
         ParameterResource parameter = IdentitySecretParameter(builder);
 
@@ -491,7 +491,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = NewBuilder();
         builder.Configuration["Parameters:login-identity-hmac"] = fromPreviousRun;
 
-        builder.AddCloudLogin();
+        builder.AddCloudLoginProject();
 
         Assert.Equal(fromPreviousRun, IdentitySecretParameter(builder).Value);
     }
@@ -503,7 +503,7 @@ public sealed class CloudLoginAspireHostingTests
         // see one value. A parameter that regenerated per read would key writes and reads
         // differently inside a single run.
         IDistributedApplicationBuilder builder = NewBuilder();
-        builder.AddCloudLogin();
+        builder.AddCloudLoginProject();
 
         ParameterResource parameter = IdentitySecretParameter(builder);
 
@@ -515,8 +515,8 @@ public sealed class CloudLoginAspireHostingTests
     {
         // Two authorities in one AppHost are two identity indexes.
         IDistributedApplicationBuilder builder = NewBuilder();
-        builder.AddCloudLogin("login");
-        builder.AddCloudLogin("partner-login");
+        builder.AddCloudLoginProject("login");
+        builder.AddCloudLoginProject("partner-login");
 
         Assert.NotEqual(
             IdentitySecretParameter(builder, "login").Value,
@@ -531,7 +531,7 @@ public sealed class CloudLoginAspireHostingTests
         IDistributedApplicationBuilder builder = NewBuilder();
         builder.Configuration["Parameters:my-own-hmac"] = chosen;
 
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
         login.WithIdentityHmacSecret(builder.AddParameter("my-own-hmac", secret: true));
 
         Dictionary<string, object> environment = await ReadEnvironmentAsync(login.Resource);
@@ -560,7 +560,7 @@ public sealed class CloudLoginAspireHostingTests
         builder.Configuration["Parameters:identity-hmac-fallbacks"] = json;
         IResourceBuilder<ParameterResource> fallbackParameter =
             builder.AddParameter("identity-hmac-fallbacks", secret: true);
-        ICloudLoginServerBuilder login = builder.AddCloudLogin();
+        ICloudLoginServerBuilder login = builder.AddCloudLoginProject();
 
         login.WithIdentityHmacFallbackSecrets(fallbackParameter);
 
@@ -581,7 +581,7 @@ public sealed class CloudLoginAspireHostingTests
         // Double underscores, not a colon: Linux App Service and containers reject a colon in an
         // environment variable name, so the colon form would silently never arrive.
         IDistributedApplicationBuilder builder = NewBuilder();
-        IResourceBuilder<ProjectResource> login = builder.AddCloudLogin();
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLoginProject();
 
         Dictionary<string, object> environment = await ReadEnvironmentAsync(login.Resource);
 
@@ -596,7 +596,7 @@ public sealed class CloudLoginAspireHostingTests
         // to generate the secret, which the deployment resolves once per environment - never the
         // secret itself.
         IDistributedApplicationBuilder builder = NewBuilder();
-        IResourceBuilder<ProjectResource> login = builder.AddCloudLogin();
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLoginProject();
 
         string generated = IdentitySecretParameter(builder).Value;
 

@@ -887,7 +887,7 @@
   }
   .account-management .tab-content {
     margin-left: var(--rail-width-desktop);
-    padding: 40px clamp(32px, 5vw, 72px) 72px;
+    padding: 40px calc(clamp(32px, 5vw, 72px)) 72px;
   }
   /* Narrow the reading column to ~80% of the available content area once
        there's room for it, so cards don't run edge to edge on wide screens. */

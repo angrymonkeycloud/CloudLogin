@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging;
@@ -64,14 +65,17 @@ public sealed class CloudLoginSigningKeyManager
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
         IReadOnlyList<CloudLoginSigningKey> keys = await GetKeysAsync(cancellationToken);
-        CloudLoginSigningKey? active = keys
-            .Where(key => key.CanSign(now))
-            .OrderByDescending(key => key.CreatedOn)
-            .FirstOrDefault();
 
-        active ??= await RotateAsync(cancellationToken);
+        if (!TrySelectSigner(keys, now, out CloudLoginSigningKey? active, out ECDsa? privateKey))
+        {
+            active = await RotateAsync(cancellationToken);
 
-        ECDsa privateKey = ImportPrivateKey(active);
+            if (!TryImportPrivateKey(active, out privateKey))
+                throw new InvalidOperationException(
+                    $"CloudLogin generated signing key {active.KeyId} but could not read it back. Data Protection is not " +
+                    "able to unwrap what it has just wrapped, so no key this instance creates can sign a token.");
+        }
+
         ECDsaSecurityKey securityKey = new(privateKey) { KeyId = active.KeyId };
 
         return (new SigningCredentials(securityKey, SecurityAlgorithms.EcdsaSha256), active.KeyId);
@@ -148,15 +152,17 @@ public sealed class CloudLoginSigningKeyManager
             DateTimeOffset now = DateTimeOffset.UtcNow;
 
             // Re-check under the lock: a concurrent request may have rotated already,
-            // and minting two keys would leave one orphaned in JWKS.
+            // and minting two keys would leave one orphaned in JWKS. The re-check has to apply the
+            // same usability test as the caller - a key whose private half cannot be unwrapped
+            // still looks active by date, and returning it here would rotate forever without ever
+            // producing a key that signs.
             IReadOnlyList<CloudLoginSigningKey> existing = await LoadAsync(cancellationToken);
-            CloudLoginSigningKey? active = existing
-                .Where(key => key.CanSign(now))
-                .OrderByDescending(key => key.CreatedOn)
-                .FirstOrDefault();
 
-            if (active is not null)
+            if (TrySelectSigner(existing, now, out CloudLoginSigningKey? active, out ECDsa? usable))
+            {
+                usable.Dispose();
                 return active;
+            }
 
             using ECDsa ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
             ECParameters parameters = ecdsa.ExportParameters(includePrivateParameters: true);
@@ -219,15 +225,77 @@ public sealed class CloudLoginSigningKeyManager
 
     private void InvalidateCache() => _cacheExpiresOn = DateTimeOffset.MinValue;
 
+    /// <summary>
+    /// The newest key that is both within its signing window and still readable.
+    /// </summary>
+    private bool TrySelectSigner(
+        IReadOnlyList<CloudLoginSigningKey> keys,
+        DateTimeOffset now,
+        [NotNullWhen(true)] out CloudLoginSigningKey? signer,
+        [NotNullWhen(true)] out ECDsa? privateKey)
+    {
+        foreach (CloudLoginSigningKey key in keys
+            .Where(candidate => candidate.CanSign(now))
+            .OrderByDescending(candidate => candidate.CreatedOn))
+        {
+            if (!TryImportPrivateKey(key, out privateKey))
+                continue;
+
+            signer = key;
+            return true;
+        }
+
+        signer = null;
+        privateKey = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Reads a key's private half, reporting failure rather than throwing when the Data Protection
+    /// key ring that wrapped it is no longer available.
+    /// </summary>
+    /// <remarks>
+    /// That happens whenever the protector's inputs change: a different machine, a cleared key
+    /// ring, or an application whose Data Protection discriminator moved with its content root.
+    /// The key material is unrecoverable, so the authority replaces the key instead of failing.
+    /// Treating it as fatal is worse than it sounds: signing in at the authority is cookie-based
+    /// and keeps working, so every relying party reports the person as unknown while the login
+    /// page itself looks healthy.
+    /// </remarks>
+    private bool TryImportPrivateKey(CloudLoginSigningKey key, [NotNullWhen(true)] out ECDsa? privateKey)
+    {
+        try
+        {
+            privateKey = ImportPrivateKey(key);
+            return true;
+        }
+        catch (Exception exception) when (exception is CryptographicException or FormatException)
+        {
+            _logger.LogWarning(
+                exception,
+                "CloudLogin cannot unwrap signing key {KeyId}, so it will be replaced. Tokens already signed with it " +
+                "still verify, because verification uses its public half.",
+                key.KeyId);
+
+            privateKey = null;
+            return false;
+        }
+    }
+
     private ECDsa ImportPrivateKey(CloudLoginSigningKey key)
     {
         byte[] pkcs8 = _protector.Unprotect(Convert.FromBase64String(key.ProtectedPrivateKey));
+        ECDsa ecdsa = ECDsa.Create();
 
         try
         {
-            ECDsa ecdsa = ECDsa.Create();
             ecdsa.ImportPkcs8PrivateKey(pkcs8, out _);
             return ecdsa;
+        }
+        catch
+        {
+            ecdsa.Dispose();
+            throw;
         }
         finally
         {

@@ -590,4 +590,58 @@ public class TokenServiceTests
         Assert.Equal(2, (await store.GetSigningKeysAsync()).Count);
         Assert.NotNull(await service.ValidateAccessTokenAsync(before.AccessToken, PortalAudience));
     }
+
+    [Fact]
+    public async Task AKeyWrappedByADifferentKeyRingIsReplacedRatherThanThrowing()
+    {
+        // The stored key outlives the Data Protection key ring that wrapped it whenever the
+        // protector's inputs change - a new machine, a cleared key ring, or an application whose
+        // discriminator moved with its content root. The authority has to mint a new key instead
+        // of failing: signing in is cookie-based and keeps working, so a throw here surfaces only
+        // as every relying party reporting the person as unknown.
+        InMemoryTokenStore store = new();
+        IOptions<CloudLoginTokenOptions> options = Options.Create(DefaultOptions());
+
+        CloudLoginSigningKeyManager before = new(
+            store, new EphemeralDataProtectionProvider(), options, NullLogger<CloudLoginSigningKeyManager>.Instance);
+
+        (_, string orphanedKeyId) = await before.GetSigningCredentialsAsync();
+
+        CloudLoginSigningKeyManager after = new(
+            store, new EphemeralDataProtectionProvider(), options, NullLogger<CloudLoginSigningKeyManager>.Instance);
+
+        (SigningCredentials credentials, string keyId) = await after.GetSigningCredentialsAsync();
+
+        Assert.NotEqual(orphanedKeyId, keyId);
+        Assert.Equal(SecurityAlgorithms.EcdsaSha256, credentials.Algorithm);
+        Assert.Equal(2, (await store.GetSigningKeysAsync()).Count);
+
+        // The unreadable key keeps verifying: its public half is stored in the clear, so tokens
+        // signed before the key ring was lost are not invalidated by the replacement.
+        Assert.Contains(await after.GetValidationKeysAsync(), key => key.KeyId == orphanedKeyId);
+    }
+
+    [Fact]
+    public async Task AnUnreadableKeyIsReplacedOnceRatherThanOnEveryCall()
+    {
+        // The re-check inside RotateAsync applies the same usability test as the caller. Without
+        // that, the unreadable key still looks active by date, every call mints another key, and
+        // the store grows on every request.
+        InMemoryTokenStore store = new();
+        IOptions<CloudLoginTokenOptions> options = Options.Create(DefaultOptions());
+
+        CloudLoginSigningKeyManager before = new(
+            store, new EphemeralDataProtectionProvider(), options, NullLogger<CloudLoginSigningKeyManager>.Instance);
+
+        await before.GetSigningCredentialsAsync();
+
+        CloudLoginSigningKeyManager after = new(
+            store, new EphemeralDataProtectionProvider(), options, NullLogger<CloudLoginSigningKeyManager>.Instance);
+
+        (_, string first) = await after.GetSigningCredentialsAsync();
+        (_, string second) = await after.GetSigningCredentialsAsync();
+
+        Assert.Equal(first, second);
+        Assert.Equal(2, (await store.GetSigningKeysAsync()).Count);
+    }
 }

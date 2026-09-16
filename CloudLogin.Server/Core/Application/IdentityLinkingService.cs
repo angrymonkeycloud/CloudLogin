@@ -11,6 +11,30 @@ public sealed class FinalSignInMethodException() :
     InvalidOperationException("This is the account's only remaining sign-in method and cannot be removed.");
 
 /// <summary>
+/// Registration was about to create a second account for an identity an existing account already
+/// holds, because the identity index did not resolve it.
+/// </summary>
+/// <remarks>
+/// The index and the user store disagree, which registration cannot repair on its own: the two
+/// candidate repairs are re-indexing the existing account and merging two accounts, and choosing
+/// between them by guessing is how one person's data gets attached to another's. Refusing is the
+/// conservative half — a person sees an error and asks, instead of silently acquiring a second
+/// account whose split only becomes visible much later.
+/// </remarks>
+public sealed class IdentityIndexOutOfSyncException(string canonicalValue, Guid existingUserId)
+    : InvalidOperationException(
+        "This sign-in identity is already held by an existing account, but the identity index did not resolve it. " +
+        "Registration stopped rather than creating a second account for the same person. Check that " +
+        $"{IdentityKeyHasher.ConfigurationKey} is the value this data was written under.")
+{
+    /// <summary>The canonical identity that resolved to nothing but is already held.</summary>
+    public string CanonicalValue { get; } = canonicalValue;
+
+    /// <summary>The account already holding it.</summary>
+    public Guid ExistingUserId { get; } = existingUserId;
+}
+
+/// <summary>
 /// An unverified email or phone number cannot be reserved in the identity index.
 /// <para>
 /// The reservation is permanent and exclusive: whoever claims <c>ada@example.com</c> owns it for
@@ -286,6 +310,8 @@ public sealed class IdentityLinkingService(
         List<string> claimed = [];
         bool bootstrapReserved = false;
 
+        await EnsureNoExistingAccountHoldsAsync(identities, cancellationToken);
+
         try
         {
             foreach (IdentityReservation reservation in identities)
@@ -326,6 +352,60 @@ public sealed class IdentityLinkingService(
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Refuses to register when an email or phone being claimed is already a contact point on a
+    /// live account. The index is what resolves an identity, so reaching this point at all means
+    /// the index has stopped answering for data that exists.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Nothing else notices that, which is the reason this exists. A wrong
+    /// <c>CloudLogin:IdentityHmacSecret</c> makes every lookup a legitimate miss, external sign-in
+    /// falls through to registration, and the person quietly gets a second account — the first one
+    /// still there, still holding their history, now unreachable.
+    /// </para>
+    /// <para>
+    /// Only verified email and phone reservations are checked. An external identity is
+    /// <c>(issuer, subject)</c> and is not stored as a contact point, so there is nothing to
+    /// compare it against here; the email that accompanies it is covered by the same pass.
+    /// Deleted accounts are ignored - re-registering an address a closed account used is ordinary.
+    /// </para>
+    /// </remarks>
+    private async Task EnsureNoExistingAccountHoldsAsync(
+        IReadOnlyList<IdentityReservation> identities, CancellationToken cancellationToken)
+    {
+        foreach (IdentityReservation reservation in identities)
+        {
+            if (reservation.Type is not (IdentityKeyTypes.Email or IdentityKeyTypes.Phone))
+                continue;
+
+            // An identity the index still resolves is not what this guards. Whoever holds it,
+            // ClaimIdentityAsync below reaches the right answer: idempotent for the same user, and
+            // IdentityAlreadyLinkedException for anyone else. Only an identity the index says is
+            // free, while an account visibly holds it, means the two have come apart.
+            if (await _identityKeys.ResolveAsync(Realm, reservation.CanonicalValue, cancellationToken) is not null)
+                continue;
+
+            string normalized = ValueOf(reservation.CanonicalValue);
+
+            if (normalized.Length == 0)
+                continue;
+
+            List<UserDocument> holders = await _users.GetByNormalizedContactAsync(normalized, cancellationToken);
+            UserDocument? holder = holders.FirstOrDefault(candidate => candidate.State != UserStates.Deleted);
+
+            if (holder is not null)
+                throw new IdentityIndexOutOfSyncException(reservation.CanonicalValue, Guid.Parse(holder.Id));
+        }
+    }
+
+    /// <summary>The value half of a canonical identity string - what a contact point stores.</summary>
+    private static string ValueOf(string canonicalValue)
+    {
+        int separator = canonicalValue.IndexOf(':', StringComparison.Ordinal);
+        return separator < 0 ? canonicalValue : canonicalValue[(separator + 1)..];
+    }
 
     /// <summary>Throws when removing <paramref name="credentialIdBeingRemoved"/> would leave no usable sign-in method.</summary>
     public async Task EnsureNotFinalMethodAsync(Guid userId, string credentialIdBeingRemoved, CancellationToken cancellationToken = default)

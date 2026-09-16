@@ -72,6 +72,25 @@ public interface IIdentityKeyStore
     Task ReleaseBootstrapAsync(
         string realm, string slotName, Guid expectedUserId,
         CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    /// <summary>
+    /// The stored proof of which HMAC key this realm's rows were written under, or
+    /// <see langword="null"/> when none has been recorded yet.
+    /// </summary>
+    /// <remarks>
+    /// Safe to store beside the rows it describes: it is a keyed hash of a fixed public constant,
+    /// so it confirms a key that is already known and reveals nothing to a reader who lacks it.
+    /// </remarks>
+    Task<string?> GetKeyVerifierAsync(string realm, CancellationToken cancellationToken = default) =>
+        Task.FromResult<string?>(null);
+
+    /// <summary>Records the verifier for the key rows are now written under.</summary>
+    Task SetKeyVerifierAsync(string realm, string verifier, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+
+    /// <summary>Whether this realm holds any identity rows at all, used to tell a first run from an adopted one.</summary>
+    Task<bool> HasAnyIdentityAsync(string realm, CancellationToken cancellationToken = default) =>
+        Task.FromResult(false);
 }
 
 /// <summary>

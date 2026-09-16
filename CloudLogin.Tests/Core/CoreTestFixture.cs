@@ -92,6 +92,12 @@ internal sealed class InMemoryUserRepository : IUserRepository
             .Where(user => string.Equals(CloudLoginDisplayName.Compose(user.FirstName, user.LastName), displayName, StringComparison.OrdinalIgnoreCase))
             .Select(TestClone.Clone).ToList());
 
+    public Task<List<UserDocument>> GetByNormalizedContactAsync(string normalizedValue, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Documents.Values
+            .Where(user => user.Contacts.Any(contact =>
+                string.Equals(contact.NormalizedValue, normalizedValue, StringComparison.OrdinalIgnoreCase)))
+            .Select(TestClone.Clone).ToList());
+
     public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Documents.Count);
 }
 
@@ -593,6 +599,21 @@ internal sealed class InMemoryIdentityKeyStore(IdentityKeyHasher hasher) : IIden
 
     public Task<bool> TryReserveBootstrapAsync(string realm, string slotName, Guid userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(Bootstraps.TryAdd((CloudLoginCoreContainers.IdentityKeysTableFor(realm), slotName), userId));
+
+    public ConcurrentDictionary<string, string> KeyVerifiers { get; } = new();
+
+    public Task<string?> GetKeyVerifierAsync(string realm, CancellationToken cancellationToken = default) =>
+        Task.FromResult(KeyVerifiers.TryGetValue(
+            CloudLoginCoreContainers.IdentityKeysTableFor(realm), out string? verifier) ? verifier : null);
+
+    public Task SetKeyVerifierAsync(string realm, string verifier, CancellationToken cancellationToken = default)
+    {
+        KeyVerifiers[CloudLoginCoreContainers.IdentityKeysTableFor(realm)] = verifier;
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> HasAnyIdentityAsync(string realm, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Keys.Keys.Any(key => key.Table == CloudLoginCoreContainers.IdentityKeysTableFor(realm)));
 }
 
 internal sealed class InMemoryUserWorkspaceIndexStore : IUserWorkspaceIndexStore

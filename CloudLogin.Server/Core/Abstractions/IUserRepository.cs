@@ -29,5 +29,18 @@ public interface IUserRepository
 
     Task<List<UserDocument>> GetByDisplayNameAsync(string displayName, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Users holding <paramref name="normalizedValue"/> as a contact point, whatever the identity
+    /// index says.
+    /// </summary>
+    /// <remarks>
+    /// Not a resolution path — <see cref="IIdentityKeyStore"/> remains the only way an identity is
+    /// resolved to an account, and this deliberately cannot replace it (it reads plaintext contacts,
+    /// which is exactly what the keyed index exists to avoid relying on). It is the second opinion
+    /// registration consults before creating an account, so an index that has stopped answering
+    /// produces a refusal rather than a duplicate person.
+    /// </remarks>
+    Task<List<UserDocument>> GetByNormalizedContactAsync(string normalizedValue, CancellationToken cancellationToken = default);
+
     Task<int> CountAsync(CancellationToken cancellationToken = default);
 }

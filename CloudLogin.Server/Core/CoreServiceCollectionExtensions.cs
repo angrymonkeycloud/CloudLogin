@@ -50,6 +50,12 @@ public static class CoreServiceCollectionExtensions
             services.TryAddSingleton<TableServiceClient>(_ => storage.CreateTableServiceClient());
             services.TryAddSingleton<IIdentityKeyStore, TableIdentityKeyStore>();
             services.TryAddSingleton<IUserWorkspaceIndexStore, TableUserWorkspaceIndexStore>();
+
+            // A valid secret is not necessarily the right one, and the wrong one is invisible: every
+            // lookup becomes a legitimate miss and sign-in silently registers a second account for
+            // someone who already has one.
+            services.TryAddSingleton<IdentityKeyVerification>();
+            services.AddHostedService<CloudLoginIdentityKeyGuard>();
         }
 
         // ── Repositories ─────────────────────────────────────────────────────

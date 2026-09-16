@@ -145,6 +145,21 @@ public sealed class CosmosUserRepository(CosmosCoreDatabase database) : IUserRep
         return await CosmosCoreOperations.QueryAsync<UserDocument>(container, query, null, cancellationToken);
     }
 
+    /// <summary>
+    /// Cross-partition, and deliberately so: contact points are not the partition key, and this
+    /// runs only when an account is about to be created — rarely, and never on a sign-in that
+    /// resolves normally.
+    /// </summary>
+    public async Task<List<UserDocument>> GetByNormalizedContactAsync(string normalizedValue, CancellationToken cancellationToken = default)
+    {
+        Container container = await ContainerAsync(cancellationToken);
+        QueryDefinition query = new QueryDefinition(
+            "SELECT * FROM c WHERE EXISTS(SELECT VALUE contact FROM contact IN c.Contacts WHERE contact.NormalizedValue = @value)")
+            .WithParameter("@value", normalizedValue);
+
+        return await CosmosCoreOperations.QueryAsync<UserDocument>(container, query, null, cancellationToken);
+    }
+
     public async Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
         Container container = await ContainerAsync(cancellationToken);

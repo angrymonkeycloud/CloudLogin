@@ -24,6 +24,8 @@ public sealed class TableIdentityKeyStore(TableServiceClient tableService, Ident
     private readonly ConcurrentDictionary<string, Task<TableClient>> _tables = new(StringComparer.OrdinalIgnoreCase);
 
     private const string BootstrapPartitionKey = "bootstrap";
+    private const string MetaPartitionKey = "meta";
+    private const string KeyVerifierRowKey = "identity-key-verifier";
 
     private Task<TableClient> TableAsync(string realm) =>
         _tables.GetOrAdd(CloudLoginCoreContainers.IdentityKeysTableFor(realm), CreateAsync);
@@ -294,6 +296,46 @@ public sealed class TableIdentityKeyStore(TableServiceClient tableService, Ident
         catch (RequestFailedException exception) when (exception.Status is 404 or 412)
         {
         }
+    }
+
+    public async Task<string?> GetKeyVerifierAsync(string realm, CancellationToken cancellationToken = default)
+    {
+        TableClient table = await TableAsync(realm);
+        TableEntity? entity = await ReadOrNullAsync(table, MetaPartitionKey, KeyVerifierRowKey, cancellationToken);
+
+        return entity?.GetString("Verifier");
+    }
+
+    public async Task SetKeyVerifierAsync(string realm, string verifier, CancellationToken cancellationToken = default)
+    {
+        TableClient table = await TableAsync(realm);
+        TableEntity entity = new(MetaPartitionKey, KeyVerifierRowKey)
+        {
+            ["Verifier"] = verifier,
+            ["SchemaVersion"] = CloudLoginCoreSchema.CurrentVersion,
+            ["HashVersion"] = IdentityKeyHasher.CurrentHashVersion,
+            ["UpdatedOn"] = DateTimeOffset.UtcNow
+        };
+
+        await table.UpsertEntityAsync(entity, TableUpdateMode.Replace, cancellationToken);
+    }
+
+    /// <summary>
+    /// Whether any identity row exists. Only the presence of a single row matters, so this asks for
+    /// one and stops.
+    /// </summary>
+    public async Task<bool> HasAnyIdentityAsync(string realm, CancellationToken cancellationToken = default)
+    {
+        TableClient table = await TableAsync(realm);
+
+        await foreach (TableEntity entity in table.QueryAsync<TableEntity>(
+            entity => entity.PartitionKey != MetaPartitionKey && entity.PartitionKey != BootstrapPartitionKey,
+            maxPerPage: 1,
+            select: ["PartitionKey"],
+            cancellationToken: cancellationToken))
+            return true;
+
+        return false;
     }
 
     private static IdentityKey FromEntity(TableEntity entity) => new()

@@ -10,5 +10,4 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\CloudLogin.Server\CloudLogin.Server.csproj" />
 	</ItemGroup>
-
 </Project>

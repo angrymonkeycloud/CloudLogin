@@ -1,0 +1,125 @@
+@namespace WorkshopUI
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+
+<div class="workshop" aria-busy="@(Interactive ? "false" : "true")">
+    <a class="workshop-skip" href="#workshop-content">Skip to example</a>
+    <aside class="workshop-nav">
+        <a class="workshop-brand" href="@BasePath"><span>@Monogram</span><strong>@Product<small>Developer workshop</small></strong></a>
+        <label class="workshop-search">Find a feature<input type="search" disabled="@(!Interactive)" placeholder="Search features…" @bind="Search" @bind:event="oninput" /></label>
+        <nav aria-label="Feature navigation">
+            @foreach (IGrouping<string, WorkshopFeature> group in Filtered.GroupBy(item => item.Group))
+            {
+                <h2>@group.Key</h2>
+                @foreach (WorkshopFeature item in group)
+                {
+                    <a class="@(item.Id == Active.Id ? "_active" : null)" aria-current="@(item.Id == Active.Id ? "page" : null)" href="@($"{BasePath.TrimEnd('/')}/{item.Id}")">@item.Title</a>
+                }
+            }
+            @if (!Filtered.Any())
+            {
+                <p role="status">No matching features.</p>
+            }
+        </nav>
+        <p class="workshop-footnote">@Features.Count examples · local workshop</p>
+    </aside>
+    <main id="workshop-content" class="workshop-content" tabindex="-1">
+        <header class="workshop-header">
+            <div><span class="workshop-eyebrow">@Active.Group</span><h1>@Active.Title</h1><p>@Active.Description</p></div>
+            @if (Configuration is not null)
+            {
+                <button type="button" class="workshop-secondary" disabled="@(!Interactive)" aria-controls="workshop-configuration" aria-expanded="@(ShowConfiguration ? "true" : "false")" @onclick="() => ShowConfiguration = !ShowConfiguration">Configure</button>
+            }
+        </header>
+        <div class="workshop-tabs" role="tablist" aria-label="Example content" @onkeydown="ChangeTabWithKeyboard">
+            @foreach (string tab in Tabs)
+            {
+                <button id="@($"tab-{tab}")" type="button" role="tab" disabled="@(!Interactive)" aria-selected="@(ActiveTab == tab ? "true" : "false")" aria-controls="@($"panel-{tab}")" tabindex="@(ActiveTab == tab ? 0 : -1)" @onclick="() => SelectTab(tab)">@tab</button>
+            }
+        </div>
+        @if (Active.Prerequisite is not null)
+        {
+            <p class="workshop-notice">@Active.Prerequisite</p>
+        }
+        <section id="panel-View" role="tabpanel" aria-labelledby="tab-View" hidden="@(ActiveTab != "View")" class="workshop-panel">
+            @if (View is not null)
+            {
+                @View(Active)
+            }
+        </section>
+        <section id="panel-Code" role="tabpanel" aria-labelledby="tab-Code" hidden="@(ActiveTab != "Code")" class="workshop-panel">
+            <div class="workshop-code-toolbar"><span>Copy into your application</span><button type="button" disabled="@(!Interactive)" @onclick="CopyCode">Copy code</button></div>
+            <pre class="workshop-code"><code>@(Code ?? Active.Code)</code></pre>
+            <p role="status" aria-live="polite">@CopyStatus</p>
+        </section>
+        <section id="panel-Instructions" role="tabpanel" aria-labelledby="tab-Instructions" hidden="@(ActiveTab != "Instructions")" class="workshop-panel workshop-instructions">
+            <h2>Try this feature</h2>
+            <ol>@foreach (string instruction in Active.Instructions) { <li>@instruction</li> }</ol>
+            @if (Instructions is not null) { @Instructions(Active) }
+        </section>
+    </main>
+    @if (Configuration is not null && ShowConfiguration)
+    {
+        <aside id="workshop-configuration" class="workshop-configuration" aria-label="Example configuration">
+            <header><h2>Configuration</h2><button type="button" aria-label="Close configuration" @onclick="() => ShowConfiguration = false">×</button></header>
+            @Configuration(Active)
+        </aside>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Product { get; set; } = "";
+    [Parameter, EditorRequired] public string Monogram { get; set; } = "";
+    [Parameter] public string BasePath { get; set; } = "/workshop";
+    [Parameter, EditorRequired] public IReadOnlyList<WorkshopFeature> Features { get; set; } = [];
+    [Parameter] public string? FeatureId { get; set; }
+    [Parameter] public string? Code { get; set; }
+    [Parameter] public RenderFragment<WorkshopFeature>? View { get; set; }
+    [Parameter] public RenderFragment<WorkshopFeature>? Configuration { get; set; }
+    [Parameter] public RenderFragment<WorkshopFeature>? Instructions { get; set; }
+    private static readonly string[] Tabs = ["View", "Code", "Instructions"];
+    private bool Interactive;
+    protected override void OnAfterRender(bool firstRender) { if (firstRender) { Interactive = true; StateHasChanged(); } }
+    private string Search = "";
+    private string ActiveTab = "View";
+    private string CopyStatus = "";
+    private bool ShowConfiguration = true;
+    private string? PreviousFeature;
+    private WorkshopFeature Active => Features.FirstOrDefault(item => item.Id == FeatureId) ?? Features[0];
+    private IEnumerable<WorkshopFeature> Filtered => Features.Where(item => $"{item.Title} {item.Group} {item.Description}".Contains(Search, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnParametersSet()
+    {
+        if (PreviousFeature == Active.Id)
+            return;
+        PreviousFeature = Active.Id;
+        ActiveTab = "View";
+        CopyStatus = "";
+    }
+
+    private void SelectTab(string tab) { ActiveTab = tab; CopyStatus = ""; }
+
+    private async Task ChangeTabWithKeyboard(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs args)
+    {
+        int current = Array.IndexOf(Tabs, ActiveTab);
+        int next = args.Key switch { "ArrowRight" => (current + 1) % Tabs.Length, "ArrowLeft" => (current + Tabs.Length - 1) % Tabs.Length, "Home" => 0, "End" => Tabs.Length - 1, _ => -1 };
+        if (next < 0)
+            return;
+        SelectTab(Tabs[next]);
+        await JS.InvokeVoidAsync("workshop.focusTab", $"tab-{ActiveTab}");
+    }
+
+    private async Task CopyCode()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("workshop.copy", Code ?? Active.Code);
+            CopyStatus = "Code copied.";
+        }
+        catch (JSException)
+        {
+            CopyStatus = "Clipboard unavailable. Select and copy the code above.";
+        }
+    }
+}

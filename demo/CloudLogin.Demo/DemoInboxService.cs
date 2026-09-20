@@ -4,7 +4,7 @@ namespace CloudLogin.Demo;
 
 /// <summary>
 /// Stands in for a real mailbox: the Code provider hands verification codes to this
-/// service instead of sending email, and <c>/demo/inbox</c> exposes them so a tester can
+/// service instead of sending email, and <c>/demo-api/inbox</c> exposes them so a tester can
 /// complete the code-based sign-in flow without SMTP.
 /// </summary>
 public sealed class DemoInboxService

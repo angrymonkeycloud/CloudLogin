@@ -104,6 +104,9 @@ public static class CloudLoginShared
         if (string.IsNullOrWhiteSpace(redirectUri))
             return false;
 
+        if (redirectUri.Contains('\\') || redirectUri.Any(char.IsControl))
+            return false;
+
         // Allow relative URLs (they're safe)
         if (redirectUri.StartsWith('/') && !redirectUri.StartsWith("//"))
             return true;

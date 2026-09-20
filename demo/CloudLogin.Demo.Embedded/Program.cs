@@ -5,6 +5,8 @@ using AngryMonkey.CloudLogin.Sever.Providers;
 using CloudLogin.Demo.Embedded;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+if (!builder.Environment.IsDevelopment())
+    throw new InvalidOperationException("CloudLogin demos expose local test accounts and verification codes. Run them only in Development.");
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
@@ -65,10 +67,24 @@ app.UseHttpsRedirection();
 app.MapStaticAssets();
 app.UseRouting();
 app.UseCloudLoginSecurity();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/playground"))
+    {
+        context.Response.Headers.XFrameOptions = "SAMEORIGIN";
+        context.Response.Headers["Content-Security-Policy"] = "frame-ancestors 'self'; object-src 'none'; base-uri 'self'";
+    }
+    await next(context);
+});
 app.UseAuthentication();
 app.UseAntiforgery();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/login", () => Results.Redirect("/workshop/authentication"));
+app.MapGet("/account/{*path}", () => Results.Redirect("/workshop/profile"));
+app.MapGet("/providers", () => Results.Redirect("/workshop/guide-providers"));
+app.MapGet("/inbox", () => Results.Redirect("/workshop/inbox"));
+app.MapGet("/workspaces", () => Results.Redirect("/workshop/workspaces"));
 
 app.MapRazorComponents<CloudLogin.Demo.Embedded.App>()
     .AddInteractiveServerRenderMode()

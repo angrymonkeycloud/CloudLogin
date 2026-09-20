@@ -1,21 +1,20 @@
 <section class="demo-example" data-example>
     <header>
-        <div>
-            <span class="demo-artifact">@Artifact</span>
-            <small>@Kind</small>
-            <h2>@Title</h2>
-            <p>@Description</p>
-        </div>
+        <div><span class="demo-artifact">@Artifact</span><small>@Kind</small><h2>@Title</h2><p>@Description</p></div>
         <div class="demo-tabs" role="tablist" aria-label="@Title">
-            <button type="button" class="active" aria-selected="true" onclick="cloudLoginDemo.showExample(this, 'preview')">Preview</button>
-            <button type="button" aria-selected="false" onclick="cloudLoginDemo.showExample(this, 'code')">Code</button>
+            @foreach (string tab in new[] { "View", "Code", "Instructions" })
+            {
+                <button type="button" role="tab" id="@($"{Id}-{tab}")" aria-controls="@($"{Id}-panel-{tab}")" aria-selected="@(tab == "View" ? "true" : "false")" tabindex="@(tab == "View" ? 0 : -1)" class="@(tab == "View" ? "active" : null)" onclick="@($"cloudLoginDemo.showExample(this, '{tab}')")">@tab</button>
+            }
         </div>
     </header>
-    <div class="demo-preview" data-panel="preview">@ChildContent</div>
-    <div class="demo-code" data-panel="code" hidden><div><span>@FileName</span></div><pre><code>@Code</code></pre></div>
+    <div class="demo-preview" id="@($"{Id}-panel-View")" role="tabpanel" aria-labelledby="@($"{Id}-View")" data-panel="View">@ChildContent</div>
+    <div class="demo-code" id="@($"{Id}-panel-Code")" role="tabpanel" aria-labelledby="@($"{Id}-Code")" data-panel="Code" hidden><div><span>@FileName</span><button type="button" onclick="cloudLoginDemo.copyExample(this)">Copy code</button><span role="status"></span></div><pre><code>@Code</code></pre></div>
+    <div class="demo-preview" id="@($"{Id}-panel-Instructions")" role="tabpanel" aria-labelledby="@($"{Id}-Instructions")" data-panel="Instructions" hidden><h3>Try this example</h3><ol><li>@Description</li><li>Use the controls in View and inspect the resulting state.</li><li>Copy the code into the matching application shown by the filename. The local demo data resets on restart.</li></ol></div>
 </section>
 
 @code {
+    private readonly string Id = $"example-{Guid.NewGuid():N}";
     [Parameter, EditorRequired] public required string Title { get; set; }
     [Parameter, EditorRequired] public required string Description { get; set; }
     [Parameter, EditorRequired] public required string Code { get; set; }

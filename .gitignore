@@ -348,3 +348,9 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Workshop dependencies and validation artifacts
+node_modules/
+playwright-report/
+test-results/
+TestResults/

@@ -1,0 +1,24 @@
+@page "/demo"
+@page "/demo/{FeatureId}"
+@layout AuthorityWorkshopLayout
+@rendermode InteractiveServer
+@using WorkshopUI
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+
+<PageTitle>CloudLogin authority workshop</PageTitle>
+<WorkshopShell Product="CloudLogin authority" Monogram="CL" BasePath="/demo" Features="Features" FeatureId="@FeatureId">
+    <View Context="feature"><iframe class="workshop-frame" src="@Route(feature.Id)" title="@feature.Title"></iframe></View>
+    <Configuration><p>This authority uses a local demo store. Open the full developer workshop for configuration, provider, session, and deployment examples.</p><a href="https://localhost:7300/workshop">Full CloudLogin workshop</a></Configuration>
+</WorkshopShell>
+
+@code {
+    [Parameter] public string? FeatureId { get; set; }
+    private static readonly IReadOnlyList<WorkshopFeature> Features =
+    [
+        new("authentication", "Authority authentication", "Standalone authority", "Try the authority's actual authentication UI.", DemoCodeSamples.Registration, ["Start this authority in Development on HTTPS port 7100.", "Use the shipped authentication UI below, then inspect the account example.", "Retrieve locally captured email codes from the inbox."]),
+        new("account", "Account center", "Standalone authority", "Inspect the account UI for the current session.", DemoCodeSamples.Registration, ["Sign in through Authentication first.", "Edit profile and contact methods using the actual account UI.", "Use a disposable demo account for deletion and recovery experiments."]),
+        new("workspaces", "Workspaces and invitations", "Standalone authority", "Inspect seeded businesses, members, roles, and invitations.", DemoCodeSamples.Workspaces, ["Inspect the seeded workspace registry.", "Copy the public registry API example from Code.", "Use the full workshop to create and edit local workspaces interactively."]),
+        new("inbox", "Verification inbox", "Standalone authority", "Inspect verification messages captured by the authority.", DemoCodeSamples.Registration, ["Request an email code through Authentication.", "Read the corresponding code from this local inbox.", "The inbox is a Development-only facility."])
+    ];
+    private static string Route(string id) => id switch { "account" => "/Account", "workspaces" => "/demo-live/workspaces", "inbox" => "/demo/inbox.html", _ => "/" };
+}

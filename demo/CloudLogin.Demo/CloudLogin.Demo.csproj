@@ -12,4 +12,8 @@
 		<ProjectReference Include="..\..\CloudLogin.Web\CloudLogin.Web.csproj" />
 	</ItemGroup>
 
+  <ItemGroup>
+    <Content Include="../CloudLogin.Demo.Embedded/WorkshopUI/WorkshopShell.razor" Link="WorkshopUI/WorkshopShell.razor" />
+    <Compile Include="../CloudLogin.Demo.Embedded/WorkshopUI/WorkshopFeature.cs" Link="WorkshopUI/WorkshopFeature.cs" />
+  </ItemGroup>
 </Project>

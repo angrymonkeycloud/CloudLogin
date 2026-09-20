@@ -22,6 +22,9 @@ public partial class CloudLoginServer
         if (string.IsNullOrWhiteSpace(target))
             return true;
 
+        if (target.Contains('\\') || target.Any(char.IsControl))
+            return false;
+
         if (IsRelativePath(target))
             return true;
 

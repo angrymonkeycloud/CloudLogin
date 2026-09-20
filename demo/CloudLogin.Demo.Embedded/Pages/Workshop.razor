@@ -1,0 +1,114 @@
+@page "/"
+@page "/workshop"
+@page "/workshop/{FeatureId}"
+@layout WorkshopLayout
+@rendermode InteractiveServer
+@using System.Text.Json
+@using AngryMonkey.CloudLogin.Server
+@using AngryMonkey.CloudLogin.Server.Core.Application
+@using AngryMonkey.CloudLogin.Server.Core.Domain
+@using WorkshopUI
+@inject DemoInboxService Inbox
+
+<PageTitle>CloudLogin developer workshop</PageTitle>
+<WorkshopShell Product="CloudLogin" Monogram="CL" Features="WorkshopCatalog.All" FeatureId="@FeatureId">
+    <View Context="feature">
+        @if (feature.Id.StartsWith("guide-", StringComparison.Ordinal))
+        {
+            <p>Open Instructions for the complete guide and Code for its integration examples.</p>
+            <WorkshopMarkdown Text="@WorkshopCatalog.Guides[feature.Id[6..]].Split("\n## ", 2)[0]" />
+        }
+        else if (LiveRoute(feature) is string route)
+        {
+            <iframe class="workshop-frame" @key="feature.Id" src="@route" title="@($"{feature.Title} live example")"></iframe>
+        }
+        else if (feature.Id == "inbox")
+        {
+            <button type="button" @onclick="RefreshInbox">Refresh inbox</button>
+            <table><thead><tr><th>Recipient</th><th>Verification code</th><th>Sent</th></tr></thead>
+                <tbody>@foreach (DemoInboxService.InboxEntry entry in Entries) { <tr><td>@entry.Address</td><td><code>@entry.Code</code></td><td>@entry.SentAt.ToLocalTime().ToString("HH:mm:ss")</td></tr> }</tbody>
+            </table>
+            @if (Entries.Count == 0) { <p>No codes yet. Request one in Authentication.</p> }
+        }
+        else
+        {
+            <button type="button" @onclick="Evaluate">Run example</button>
+            <pre class="workshop-result" role="status">@Result</pre>
+        }
+    </View>
+    <Configuration Context="feature">
+        @if (feature.Id == "quotas")
+        {
+            <label>Owned workspaces<input type="number" min="0" @bind="Owned" /></label>
+            <label>Total memberships<input type="number" min="0" @bind="Total" /></label>
+        }
+        else if (feature.Id == "roles")
+        {
+            <label>Role<select @bind="Role"><option>Owner</option><option>Admin</option><option>Member</option><option>Unknown</option></select></label>
+            <label>State<select @bind="State">@foreach (WorkspaceAccessStates state in Enum.GetValues<WorkspaceAccessStates>()) { <option value="@state">@state</option> }</select></label>
+            <label><input type="checkbox" @bind="Invitation" /> Invitation instead of membership</label>
+        }
+        else if (feature.Id == "configuration")
+        {
+            <label>Accent color<input maxlength="16" @bind="Accent" /></label>
+            <label>Minimum password length<input type="number" @bind="PasswordLength" /></label>
+            <label>Session duration in days<input type="number" @bind="Days" /></label>
+        }
+        else if (feature.Id == "redirects")
+        {
+            <label>Candidate URL<input maxlength="2048" @bind="Candidate" /></label>
+            <label>Allowed origin<input maxlength="2048" @bind="Origin" /></label>
+        }
+        else
+        {
+            <p>Use the live component's controls to configure and try this feature. Authentication changes remain in the local demo store.</p>
+            <a href="/workshop/authentication">Sign in</a><br /><a href="/workshop/inbox">Verification inbox</a>
+        }
+    </Configuration>
+    <Instructions Context="feature">
+        @if (feature.Id.StartsWith("guide-", StringComparison.Ordinal)) { <WorkshopMarkdown Text="@WorkshopCatalog.Guides[feature.Id[6..]]" /> }
+    </Instructions>
+</WorkshopShell>
+
+@code {
+    [Parameter] public string? FeatureId { get; set; }
+    private string ActiveId => FeatureId ?? "authentication";
+    private int Owned = 3, Total = 10, PasswordLength = 12, Days = 14;
+    private string Accent = "#137d69", Role = "Admin", Candidate = "https://portal.example/account", Origin = "https://portal.example";
+    private WorkspaceAccessStates State = WorkspaceAccessStates.Active;
+    private bool Invitation;
+    private string Result = "";
+    private IReadOnlyList<DemoInboxService.InboxEntry> Entries = [];
+    private static string? LiveRoute(WorkshopFeature feature) => feature.Group switch
+    {
+        "Authentication" => "/playground/login", "Account" => "/playground/account",
+        "Workspace" when feature.Id == "workspaces" => "/playground/workspaces", _ => null
+    };
+    protected override void OnParametersSet() { Result = ""; RefreshInbox(); }
+    private void RefreshInbox() => Entries = Inbox.GetRecent();
+    private void Evaluate()
+    {
+        try
+        {
+            if (ActiveId == "quotas")
+            {
+                WorkspaceConfiguration options = new() { MaxOwnedPerUser = Owned, MaxPerUser = Total };
+                Result = $"Owned workspaces: {options.EffectiveMaxOwnedPerUser}\nTotal memberships: {options.EffectiveMaxPerUser}";
+            }
+            else if (ActiveId == "roles")
+            {
+                WorkspaceAccessDocument access = new() { Kind = Invitation ? WorkspaceAccessKinds.Invitation : WorkspaceAccessKinds.Membership, State = State, Roles = [Role] };
+                Result = $"Edit profile: {WorkspaceRolePolicy.CanEditProfile(access)}\nManage members: {WorkspaceRolePolicy.CanManageMembers(access)}\nDelete workspace: {WorkspaceRolePolicy.CanDeleteWorkspace(access)}";
+            }
+            else if (ActiveId == "configuration")
+            {
+                CloudLoginWebConfiguration options = new() { PrimaryColor = Accent, LoginDuration = TimeSpan.FromDays(Days) };
+                options.Security.MinimumPasswordLength = PasswordLength;
+                CloudLoginConfigurationValidator.Validate(options, isDevelopment: true);
+                Result = "Configuration is valid. Apply these options when registering CloudLogin.";
+            }
+            else if (ActiveId == "redirects") Result = $"Same origin: {CloudLoginShared.IsSameOrigin(Candidate, Origin)}";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or OverflowException) { Result = exception.Message; }
+    }
+}

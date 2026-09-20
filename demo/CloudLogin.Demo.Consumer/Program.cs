@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+if (!builder.Environment.IsDevelopment())
+    throw new InvalidOperationException("CloudLogin demos expose local test accounts and verification codes. Run them only in Development.");
 
 builder.Services.AddRazorPages();
 builder.Services.AddRateLimiter();

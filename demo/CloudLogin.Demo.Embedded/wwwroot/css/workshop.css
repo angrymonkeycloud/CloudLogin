@@ -1,0 +1,348 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: #17312f;
+  background: #f5f8f5;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #ecac38;
+  outline-offset: 3px;
+}
+button {
+  cursor: pointer;
+}
+[hidden] {
+  display: none !important;
+}
+.workshop {
+  display: flex;
+  min-height: 100dvh;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+.workshop-skip {
+  position: absolute;
+  top: -6rem;
+  z-index: 20;
+  padding: 1rem;
+  background: white;
+}
+.workshop-skip:focus {
+  top: 0;
+}
+.workshop-nav {
+  flex: 0 0 250px;
+  background: #142f2b;
+  color: #b9cfc4;
+  padding: 1.6rem 1.1rem;
+  max-height: 100dvh;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+}
+.workshop-nav nav {
+  display: grid;
+  gap: 0.2rem;
+}
+.workshop-nav nav h2 {
+  margin: 1.4rem 0.6rem 0.5rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #83ab99;
+}
+.workshop-nav nav a {
+  color: #d1e1d7;
+  text-decoration: none;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.88rem;
+}
+.workshop-nav nav a:hover {
+  background: #25483e;
+}
+.workshop-nav nav a._active {
+  background: #d4f2bd;
+  color: #193326;
+  font-weight: 650;
+}
+.workshop-brand {
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+}
+.workshop-brand > span {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid #759680;
+  border-radius: 0.75rem;
+  font-size: 0.8rem;
+}
+.workshop-brand small {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  margin-top: 0.25rem;
+  color: #93b3a4;
+}
+.workshop-search {
+  display: block;
+  font-size: 0.72rem;
+}
+.workshop-search input {
+  margin-top: 0.45rem;
+  width: 100%;
+  border: 1px solid #3f5c50;
+  background: #1c3b33;
+  color: white;
+  padding: 0.7rem;
+  border-radius: 0.5rem;
+}
+.workshop-content {
+  flex: 1 1 34rem;
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 3rem);
+  max-width: 100%;
+}
+.workshop-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+}
+.workshop-header h1 {
+  font-size: clamp(1.7rem, 3vw, 2.8rem);
+  letter-spacing: -0.04em;
+  margin: 0.6rem 0;
+  font-weight: 650;
+}
+.workshop-header p {
+  color: #627773;
+  max-width: 64ch;
+  line-height: 1.7;
+}
+.workshop-eyebrow {
+  color: #137d69;
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+.workshop-secondary,
+.workshop-code-toolbar button,
+.workshop-panel button {
+  border: 1px solid #dce6e1;
+  background: white;
+  color: #17312f;
+  padding: 0.6rem 1rem;
+  border-radius: 0.45rem;
+}
+.workshop-tabs {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid #dce6e1;
+  margin-bottom: 1.6rem;
+}
+.workshop-tabs button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  padding: 0.9rem 0.1rem;
+  color: #627773;
+}
+.workshop-tabs button[aria-selected="true"] {
+  border-color: #137d69;
+  color: #137d69;
+  font-weight: 650;
+}
+.workshop-panel {
+  padding: clamp(1rem, 2vw, 2rem);
+  background: white;
+  border: 1px solid #dce6e1;
+  border-radius: 0.8rem;
+  min-height: 24rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.workshop-panel h2 {
+  font-size: 1.1rem;
+}
+.workshop-panel a {
+  color: #137d69;
+}
+.workshop-panel input:not([type="checkbox"]):not([type="radio"]),
+.workshop-panel textarea,
+.workshop-panel select {
+  max-width: 100%;
+  padding: 0.65rem;
+  border: 1px solid #bacfc3;
+  border-radius: 0.4rem;
+  background: white;
+  color: #17312f;
+}
+.workshop-panel textarea {
+  width: 100%;
+  min-height: 10rem;
+  font-family: ui-monospace, monospace;
+}
+.workshop-panel table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.workshop-panel table th,
+.workshop-panel table td {
+  text-align: left;
+  padding: 0.7rem;
+  border-bottom: 1px solid #dce6e1;
+}
+.workshop-panel pre {
+  overflow: auto;
+  max-width: 100%;
+}
+.workshop-code {
+  background: #142b29;
+  color: #deebda;
+  padding: 1.5rem;
+  border-radius: 0.65rem;
+  font-size: 0.83rem;
+  line-height: 1.7;
+  tab-size: 4;
+  white-space: pre;
+  overflow: auto;
+}
+.workshop-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #627773;
+  gap: 1rem;
+  font-size: 0.8rem;
+}
+.workshop-instructions li {
+  padding: 0.45rem 0 0.8rem 0.3rem;
+  max-width: 75ch;
+}
+.workshop-notice {
+  padding: 0.8rem 1rem;
+  background: #fff5db;
+  border-left: 3px solid #dda840;
+  border-radius: 0.3rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.workshop-configuration {
+  flex: 0 1 290px;
+  min-width: 230px;
+  background: #edf3ed;
+  padding: 1.5rem;
+  border-left: 1px solid #dce6e1;
+}
+.workshop-configuration header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.workshop-configuration header h2 {
+  font-size: 0.95rem;
+}
+.workshop-configuration header button {
+  border: 0;
+  background: none;
+  font-size: 1.5rem;
+}
+.workshop-configuration label {
+  display: block;
+  font-size: 0.82rem;
+  margin: 1.2rem 0;
+}
+.workshop-configuration input:not([type="checkbox"]):not([type="radio"]),
+.workshop-configuration select {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.55rem;
+  border: 1px solid #bdcec0;
+  border-radius: 0.35rem;
+  background: white;
+}
+.workshop-configuration button {
+  background: white;
+  border: 1px solid #bdcec0;
+  border-radius: 0.35rem;
+  padding: 0.5rem 0.9rem;
+}
+.workshop-configuration p {
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: #627773;
+}
+.workshop-footnote {
+  font-size: 0.72rem;
+  margin: 2rem 0.6rem 0;
+  color: #9dbaab;
+}
+.workshop-result {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #eef6ed;
+  margin-top: 1.2rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.workshop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: 1rem;
+}
+.workshop-card {
+  border: 1px solid #dce6e1;
+  border-radius: 0.6rem;
+  padding: 1rem;
+}
+.workshop-live {
+  border: 1px dashed #b5c9b9;
+  padding: 1.4rem;
+  border-radius: 0.6rem;
+  margin: 1rem 0;
+}
+@media (max-width: 800px) {
+  .workshop-nav {
+    position: static;
+    flex-basis: 100%;
+    max-height: 19rem;
+  }
+  .workshop-configuration {
+    flex-basis: 100%;
+    border-left: 0;
+    border-top: 1px solid #dce6e1;
+  }
+}
+.workshop-frame {
+  width: 100%;
+  min-height: 70dvh;
+  border: 0;
+  background: white;
+}

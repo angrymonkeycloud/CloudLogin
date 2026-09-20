@@ -1,29 +1,64 @@
-name: Tests
+name: Tests and developer workshops
 
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: cloudlogin-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  tests:
-    name: CloudLogin tests
+  validate:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: workspace/angrymonkeycloud/CloudLogin
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up .NET 10
-        uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v6
+        with:
+          path: workspace/angrymonkeycloud/CloudLogin
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: angrymonkeycloud/CloudComponents
+          path: workspace/angrymonkeycloud/CloudComponents
+          token: ${{ secrets.WORKSPACE_READ_TOKEN || github.token }}
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: CoconutSharp/CoconutSharpAspire
+          path: workspace/CoconutSharp/CoconutSharpAspire
+          token: ${{ secrets.WORKSPACE_READ_TOKEN || github.token }}
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
-
-      - name: Restore
-        run: dotnet restore CloudLogin.Tests/CloudLogin.Tests.csproj
-
-      - name: Test
-        run: dotnet test CloudLogin.Tests/CloudLogin.Tests.csproj --configuration Release --no-restore
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser system libraries
+        working-directory: workspace/angrymonkeycloud/CloudLogin/demo/CloudLogin.Demo.Embedded
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Tests, coverage, demo builds and browser checks
+        shell: pwsh
+        run: ./scripts/validate.ps1 -Browser
+      - name: Reject high and critical dependency advisories
+        run: dotnet restore CloudLogin.Tests/CloudLogin.Tests.csproj -p:NuGetAuditMode=all -p:WarningsAsErrors=NU1903,NU1904
+      - name: Save test and browser reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: cloudlogin-validation
+          path: |
+            workspace/angrymonkeycloud/CloudLogin/TestResults/
+            workspace/angrymonkeycloud/CloudLogin/demo/CloudLogin.Demo.Embedded/playwright-report/
+          retention-days: 14

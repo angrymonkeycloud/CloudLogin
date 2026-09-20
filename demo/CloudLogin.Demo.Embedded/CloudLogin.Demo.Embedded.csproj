@@ -12,4 +12,5 @@
 		<ProjectReference Include="..\..\CloudLogin.WebAssembly\CloudLogin.WebAssembly.csproj" />
 	</ItemGroup>
 
+<ItemGroup><EmbeddedResource Include="../../docs/**/*.md" LogicalName="WorkshopGuide.%(Filename).md" /><EmbeddedResource Include="../../README.md" LogicalName="WorkshopGuide.overview.md" /><EmbeddedResource Include="../../providers.md" LogicalName="WorkshopGuide.providers.md" /><EmbeddedResource Include="../../Integration.md" LogicalName="WorkshopGuide.integration.md" /></ItemGroup>
 </Project>

@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "scripts": {
+    "build:assets": "node scripts/build-assets.mjs",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "less": "4.9.1",
+    "@playwright/test": "1.63.0"
+  }
+}

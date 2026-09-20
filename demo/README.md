@@ -1,82 +1,43 @@
-# CloudLogin demo suite
+# CloudLogin developer workshop
 
-The demo suite contains three runnable applications with no external database, OAuth
-registration, or SMTP requirement. Each uses in-memory state that resets when the process
-restarts and seeds a Demo Admin account for the administration UI.
+The Embedded demo is the primary place to try features, copy code, and read integration guides. It uses the shipped components and local demo stores. The standalone authority and consumer demonstrate a separate-site authentication handoff.
 
-| App | Default URL | Purpose |
+| Demo | Start command from repository root | Open |
 | --- | --- | --- |
-| [`CloudLogin.Demo`](CloudLogin.Demo) | `https://localhost:7100` | Standalone CloudLogin authority with login, account, administration, and recovery flows. |
-| [`CloudLogin.Demo.Consumer`](CloudLogin.Demo.Consumer) | `https://localhost:7200` | Consumer-site integration through the cookie redirect and confidential token exchange, including coordinated logout. |
-| [`CloudLogin.Demo.Embedded`](CloudLogin.Demo.Embedded) | `https://localhost:7300` | Comprehensive component and account-registry showcase embedded in a custom host. |
+| Full workshop | `dotnet run --project demo/CloudLogin.Demo.Embedded` | https://localhost:7300/workshop |
+| Standalone authority | `dotnet run --project demo/CloudLogin.Demo` | https://localhost:7100/demo |
+| Consumer | `dotnet run --project demo/CloudLogin.Demo.Consumer` | https://localhost:7200 |
 
-## Run the demos
+Start the authority before the consumer. Use .NET 10 and the sibling source checkouts referenced by the projects: CloudComponents alongside CloudLogin, and CoconutSharp/CoconutSharpAspire beside the angrymonkeycloud directory. Trust the local ASP.NET development certificate for interactive authentication.
 
-Start any app in its own terminal:
+Every workshop example has **View**, **Code**, and **Instructions**. The left navigation searches features and reference guides. The right panel changes supported example options. Code can be copied with one button; tabs support arrow, Home, and End keys.
 
-```bash
-dotnet run --project demo/CloudLogin.Demo
-dotnet run --project demo/CloudLogin.Demo.Consumer
-dotnet run --project demo/CloudLogin.Demo.Embedded
+The full workshop covers password and email-code authentication, registration and recovery, profile/contact management, authenticator/passkey entry points, devices and sessions, sign-in history, administration, deletion/logout, workspace creation/membership/invitations, quota and role evaluation, configuration validation, redirect origins, and a captured verification inbox. Reference guides are embedded from the repository and are readable in Instructions without leaving the workshop.
+
+Use Test mode and Demo Admin for a quick account tour. Request codes in Authentication and read them in Demo inbox. Workspaces calls the real account-registry services. Configuration evaluators use the production contracts but do not change other visitors' authentication policies. Demo state resets with its process or browser circuit as indicated in each example.
+
+External OAuth, real message delivery, platform authenticators, production persistence, and multi-device session checks require the corresponding providers, devices, HTTPS, and credentials. The local workshop does not provision those services. Subscription and payment-processing routes from older documentation are not part of the current account-registry demo.
+
+These applications refuse to start outside Development. Test accounts, captured codes, and the consumer's local-only client secret belong only to these hosts. Only designated live UI pages permit same-origin framing; the library's production frame protections remain unchanged.
+
+## Build and validate
+
+The compiled styles are included. The shared asset build updates all three hosts, including the authority inbox; edit the LESS and JavaScript sources rather than generated files. When editing LESS or JavaScript, rebuild them in `demo/CloudLogin.Demo.Embedded`:
+
+```text
+npm ci --ignore-scripts
+npm run build:assets
 ```
 
-The Consumer app expects the Authority app at `https://localhost:7100`; start the Authority
-first for that flow. The Embedded demo is self-contained.
+Run all unit tests with coverage, build all three hosts, and audit workshop dependencies:
 
-## Sign in and verify accounts
+```text
+pwsh ./scripts/validate.ps1
+pwsh ./scripts/validate.ps1 -Browser
+```
 
-- **Test Mode** is the quickest route. Choose Demo Admin to unlock the global-administration
-  features or create a generated regular user.
-- **Password** supports registration, sign-in, and recovery with a password of at least 12
-  characters.
-- **Email verification code** uses the real CloudLogin code-provider pipeline. In the
-  Embedded demo, request a code on `/login` and read it from `/inbox`. The Authority demo
-  exposes its standalone inbox at `https://localhost:7100/demo/inbox.html`.
-## Standalone authority showcase
+The browser run starts all three local hosts and checks every feature's tabs, clipboard, keyboard navigation, mobile width, live evaluators, framed authentication, workspace creation, the consumer-to-authority handoff, and safe inbox rendering. On Linux, install browser system libraries with `npx playwright install --with-deps chromium`. Reports are written under TestResults and the workshop's playwright-report directory.
 
-The standalone `CloudLogin.Demo` now wraps the packaged authentication and account pages in
-a developer navigation shell. Open `https://localhost:7100/demo` to explore account-registry
-features without signing in. All records are seeded once through CloudLogin's public services
-when the application starts.
+GitHub Actions checks out the sibling sources into the required layout. If a sibling repository is private, configure the read-only WORKSPACE_READ_TOKEN secret; do not grant write permissions. The validation workflow does not deploy anything.
 
-| Route | Seeded showcase |
-| --- | --- |
-| `/` | Packaged authentication UI with Password, Code, and Test Mode providers. |
-| `/Account` | Packaged account and global-administration UI. |
-| `/demo` | Feature overview and seed-data summary. |
-| `/demo/workspaces` | Two workspaces, owners, members, application-defined roles and permissions, and expiring invitations. |
-| `/demo/subscriptions` | Active and expired user subscriptions plus active Cedar Labs and Northstar Clinic subscriptions. |
-| `/demo/billing` | User and workspace billing profiles with Stripe, MyFatoorah, and SkipCash references. |
-| `/demo/inbox.html` | Verification codes captured from the real demo callback. |
-
-Each account-registry page includes expandable integration code. The records deliberately
-show both user and workspace ownership, different subscription states, renewal behavior,
-application metadata, provider references, and multiple saved payment methods.
-
-- **External OAuth and WhatsApp** require real provider credentials and are intentionally not
-  faked. Their adapters can be registered in a configured application.
-
-## Embedded developer showcase
-
-The Embedded demo identifies the real artifact on every example, renders a working Preview,
-and provides a Code tab with registration or Razor integration code. Demo-only infrastructure
-is explicitly labelled so it cannot be confused with a package component.
-
-| Route | Public API demonstrated |
-| --- | --- |
-| `/login` | Shipped `CloudLoginPage` with Test Mode, Password, and email-code providers. |
-| `/providers` | Provider registration, production credential expectations, and the authentication pipeline. |
-| `/account` | Shipped `AccountPageComponent` with profile, contacts, administration, and account lifecycle features. |
-| `/workspaces` | `ICloudLoginWorkspaceRegistry`: workspaces, members, roles, permissions, and expiring invitations. |
-| `/subscriptions` | `ICloudLoginSubscriptionRegistry`: user and workspace subscriptions, status, expiry, auto-renew, provider references, and application metadata. |
-| `/billing` | `ICloudLoginAccountStore`: account-level provider customer and saved payment-method references. |
-| `/inbox` | Demo-only verification-code capture wired to the real email-code callback. |
-
-The workspace, subscription, and billing labs perform real calls against CloudLogin's
-public services. The demo supplies a scoped in-memory adapter; production applications can
-replace it with a private database adapter without adding a database dependency to public
-CloudLogin packages. CloudLogin stores billing references but never authorizes, captures, or
-refunds payments.
-
-See [`docs/account-registry.md`](../docs/account-registry.md) for the complete account-registry
-boundary and API.
+Older /login, /account, /workspaces, /providers, and /inbox links lead into the central workshop. The /playground routes are implementation hosts for live previews, rather than separate documentation surfaces.

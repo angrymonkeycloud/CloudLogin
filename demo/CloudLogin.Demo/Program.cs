@@ -6,6 +6,8 @@ using CloudLogin.Demo;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+if (!builder.Environment.IsDevelopment())
+    throw new InvalidOperationException("CloudLogin demos expose local test accounts and verification codes. Run them only in Development.");
 
 DemoInboxService demoInbox = new();
 DemoInMemoryCloudLoginStore demoStore = new();
@@ -94,12 +96,21 @@ app.UseHttpsRedirection();
 app.MapStaticAssets();
 app.UseRouting();
 app.UseCloudLoginSecurity();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/" || context.Request.Path.StartsWithSegments("/Account") || context.Request.Path.StartsWithSegments("/demo-live") || context.Request.Path == "/demo/inbox.html")
+    {
+        context.Response.Headers.XFrameOptions = "SAMEORIGIN";
+        context.Response.Headers["Content-Security-Policy"] = "frame-ancestors 'self'; object-src 'none'; base-uri 'self'";
+    }
+    await next(context);
+});
 app.UseAuthentication();
 app.UseAntiforgery();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapGet("/demo/inbox", (DemoInboxService inbox) => Results.Json(inbox.GetRecent()));
+app.MapGet("/demo-api/inbox", (DemoInboxService inbox) => Results.Json(inbox.GetRecent()));
 
 app.MapRazorComponents<CloudLogin.Demo.App>()
     .AddInteractiveServerRenderMode()

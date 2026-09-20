@@ -1,0 +1,5 @@
+@page "/playground/account"
+@page "/playground/account/{*Path}"
+@layout WorkshopLayout
+<AccountPageComponent BasePath="/playground/account" />
+@code { [Parameter] public string? Path { get; set; } }

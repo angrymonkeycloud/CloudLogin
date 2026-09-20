@@ -1,0 +1,34 @@
+@namespace WorkshopUI
+@foreach ((string Kind, string Text) block in Parse(Text))
+{
+    @switch (block.Kind)
+    {
+        case "code": <pre class="workshop-code"><code>@block.Text</code></pre> break;
+        case "heading": <h2>@block.Text</h2> break;
+        case "item": <p>• @block.Text</p> break;
+        default: <p>@block.Text</p> break;
+    }
+}
+@code {
+    [Parameter] public string Text { get; set; } = "";
+    private static IEnumerable<(string Kind, string Text)> Parse(string text)
+    {
+        bool inCode = false;
+        List<string> code = [];
+        foreach (string line in text.Replace("\r", "").Split('\n'))
+        {
+            if (line.StartsWith(new string((char)96, 3), StringComparison.Ordinal))
+            {
+                if (inCode) { yield return ("code", string.Join("\n", code)); code.Clear(); }
+                inCode = !inCode;
+                continue;
+            }
+            if (inCode) { code.Add(line); continue; }
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            if (line.StartsWith('#')) yield return ("heading", line.TrimStart('#', ' '));
+            else if (line.StartsWith("- ", StringComparison.Ordinal)) yield return ("item", line[2..]);
+            else yield return ("text", line);
+        }
+        if (code.Count > 0) yield return ("code", string.Join("\n", code));
+    }
+}

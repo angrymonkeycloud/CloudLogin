@@ -1,4 +1,6 @@
 # CloudLogin
+
+Start with the [CloudLogin developer workshop](demo/README.md) to try features, copy code, and read the integration guides in one place. Every example has View, Code, and Instructions tabs.
 [![Website](https://img.shields.io/badge/Website-angrymonkeycloud.com-0B5FFF?style=flat-square&logo=googlechrome&logoColor=white)](https://angrymonkeycloud.com/cloudlogin)
 [![GitHub repository](https://img.shields.io/badge/GitHub-CloudLogin-181717?style=flat-square&logo=github)](https://github.com/angrymonkeycloud/CloudLogin)
 [![Tests](https://github.com/angrymonkeycloud/CloudLogin/actions/workflows/tests.yml/badge.svg)](https://github.com/angrymonkeycloud/CloudLogin/actions/workflows/tests.yml)

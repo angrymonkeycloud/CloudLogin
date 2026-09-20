@@ -1,11 +1,12 @@
-@page "/workspaces"
-@rendermode InteractiveServer
+@page "/playground/workspaces"
+@layout WorkshopLayout
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject DemoAccountRegistryState DemoState
 
 <PageTitle>CloudLogin workspaces and teams</PageTitle>
 
 <DemoPageHeader Eyebrow="ICloudLoginWorkspaceRegistry" Title="Workspaces, teams, roles, permissions, and invitations." Description="Every interaction uses the real CloudLogin account-registry contracts. The generated identities are demo data; the workspace and membership behavior is package behavior.">
-    <a class="demo-button demo-button--secondary" href="/inbox">Continue to the demo inbox</a>
+    <a class="demo-button demo-button--secondary" href="/workshop/inbox" target="_top">Continue to the demo inbox</a>
 </DemoPageHeader>
 
 <DemoExample Title="Business identity and membership" Kind="Live public service workflow" Description="Create a workspace, switch business context, add a member with application-defined roles and permissions, or issue an expiring invitation." Code="@DemoCodeSamples.Workspaces" FileName="Workspaces.razor">
@@ -18,7 +19,7 @@
                     <span>@Initials(workspaceSummary.Name)</span><div><strong>@workspaceSummary.Name</strong><small>@ShortId(workspaceSummary.Id)</small></div>
                 </button>
             }
-            <div class="demo-form-block"><label><span>New workspace</span><input @bind="_workspaceName" placeholder="Workspace name" /></label><button class="demo-button demo-button--primary" disabled="@string.IsNullOrWhiteSpace(_workspaceName)" @onclick="CreateAsync">Create</button></div>
+            <div class="demo-form-block"><label><span>New workspace</span><input @bind="_workspaceName" @bind:event="oninput" placeholder="Workspace name" /></label><button class="demo-button demo-button--primary" disabled="@string.IsNullOrWhiteSpace(_workspaceName)" @onclick="CreateAsync">Create</button></div>
         </aside>
 
         <section>

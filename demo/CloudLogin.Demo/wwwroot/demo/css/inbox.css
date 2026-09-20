@@ -1,0 +1,39 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+h1 {
+  font-size: 1.25rem;
+}
+p.hint {
+  color: #94a3b8;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #1e293b;
+}
+th {
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+code {
+  background: #1e293b;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+.empty {
+  color: #64748b;
+  padding: 1rem 0;
+}

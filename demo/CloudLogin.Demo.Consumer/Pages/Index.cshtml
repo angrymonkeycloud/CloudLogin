@@ -1,56 +1,61 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "CloudLogin Demo - Consumer";
-}
+    ViewData["Title"] = "CloudLogin consumer workshop";
+    string integrationCode = """
+        builder.Services.AddCloudLoginServer("https://localhost:7100");
+        builder.Services.AddCloudLoginTokenAuthentication(options =>
+        {
+            options.Authority = "https://localhost:7100";
+            options.Audience = "cloudlogin-demo-consumer";
+            options.ClientId = "cloudlogin-demo-consumer";
+            options.ClientSecret = builder.Configuration["CloudLogin:ClientSecret"]!;
+        });
 
+        app.UseCloudLoginSecurity();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers();
+        """;
+}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"]</title>
-    <style>
-        body { font-family: system-ui, sans-serif; margin: 0; padding: 3rem; background: #0f172a; color: #e2e8f0; }
-        h1 { font-size: 1.5rem; }
-        p.hint { color: #94a3b8; max-width: 40rem; }
-        .status { padding: 1rem 1.25rem; border-radius: 8px; margin: 1.5rem 0; }
-        .status.signed-in { background: #14532d; }
-        .status.signed-out { background: #1e293b; }
-        .actions a { display: inline-block; margin-right: 0.75rem; padding: 0.6rem 1.1rem; border-radius: 6px; background: #2563eb; color: white; text-decoration: none; }
-        .actions a.secondary { background: #334155; }
-        dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; }
-        dt { color: #94a3b8; }
-    </style>
-</head>
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>@ViewData["Title"]</title><link rel="stylesheet" href="/css/workshop.css" /></head>
 <body>
-    <h1>CloudLogin Demo &mdash; Consumer Website</h1>
-    <p class="hint">
-        This site does not run any CloudLogin UI itself. It calls the authority app running
-        at <code>https://localhost:7100</code> via <code>AddCloudLoginServer</code>, using the
-        <code>/auth/login</code>, <code>/auth/profile</code>, and <code>/auth/logout</code>
-        endpoints from <code>AuthController</code>.
-    </p>
-
-    @if (Model.IsAuthenticated)
-    {
-        <div class="status signed-in">
-            <strong>Signed in</strong>
-            <dl>
-                <dt>Name</dt><dd>@Model.Name</dd>
-                <dt>Email</dt><dd>@Model.Email</dd>
-            </dl>
+<div class="workshop" data-static-workshop>
+    <aside class="workshop-nav">
+        <a class="workshop-brand" href="/"><span>CL</span><strong>CloudLogin<small>Consumer workshop</small></strong></a>
+        <nav aria-label="Feature navigation"><h2>Integration</h2><a class="_active" href="/">Consumer authentication</a><a href="https://localhost:7100/demo">Authority workshop</a><a href="https://localhost:7300/workshop">Full developer workshop</a></nav>
+    </aside>
+    <main class="workshop-content">
+        <header class="workshop-header"><div><span class="workshop-eyebrow">Standalone consumer</span><h1>Authentication handoff</h1><p>Try login, profile navigation, and logout through a separate CloudLogin authority.</p></div></header>
+        <div class="workshop-tabs" role="tablist" aria-label="Example content">
+            <button id="tab-View" role="tab" aria-selected="true" aria-controls="panel-View" data-workshop-tab="View">View</button>
+            <button id="tab-Code" role="tab" aria-selected="false" aria-controls="panel-Code" data-workshop-tab="Code" tabindex="-1">Code</button>
+            <button id="tab-Instructions" role="tab" aria-selected="false" aria-controls="panel-Instructions" data-workshop-tab="Instructions" tabindex="-1">Instructions</button>
         </div>
-        <div class="actions">
-            <a href="/auth/profile?returnUrl=/">Manage profile on authority</a>
-            <a class="secondary" href="/auth/logout?returnUrl=/">Log out</a>
-        </div>
-    }
-    else
-    {
-        <div class="status signed-out">Not signed in.</div>
-        <div class="actions">
-            <a href="/auth/login?returnUrl=/">Log in via CloudLogin</a>
-        </div>
-    }
+        <section id="panel-View" role="tabpanel" aria-labelledby="tab-View" class="workshop-panel">
+            @if (Model.IsAuthenticated)
+            {
+                <h2>Signed in</h2>
+                <dl><dt>Name</dt><dd>@Model.Name</dd><dt>Email</dt><dd>@Model.Email</dd></dl>
+                <p><a href="/auth/profile?returnUrl=/">Manage profile on authority</a></p><p><a href="/auth/logout?returnUrl=/">Log out</a></p>
+            }
+            else
+            {
+                <p>Not signed in.</p><a href="/auth/login?returnUrl=/">Log in via CloudLogin</a>
+            }
+        </section>
+        <section id="panel-Code" role="tabpanel" aria-labelledby="tab-Code" class="workshop-panel" hidden>
+            <button type="button" data-workshop-copy>Copy code</button><pre class="workshop-code"><code>@integrationCode</code></pre><p role="status"></p>
+        </section>
+        <section id="panel-Instructions" role="tabpanel" aria-labelledby="tab-Instructions" class="workshop-panel workshop-instructions" hidden>
+            <h2>Try this integration</h2>
+            <ol><li>Run CloudLogin.Demo on HTTPS port 7100 and this consumer on HTTPS port 7200 in Development.</li><li>Trust the local development certificate, then choose Log in in View.</li><li>Complete authentication on the authority and verify the consumer displays the same identity.</li><li>Open the profile, return to the consumer, and test logout.</li><li>For your application, register its origin, client identifier, audience, and a secret held outside source control. Use the Code tab as the registration example.</li></ol>
+        </section>
+    </main>
+    <aside class="workshop-configuration"><h2>Configuration</h2><p>Authority: <code>https://localhost:7100</code></p><p>Consumer: <code>https://localhost:7200</code></p><p>The demo client is registered by the authority startup. Configure application origins and credentials before starting each host.</p></aside>
+</div>
+<script src="/js/workshop.js"></script>
 </body>
 </html>

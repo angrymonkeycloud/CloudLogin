@@ -12,6 +12,21 @@ public record CloudLoginSecurityOverview
     /// <summary>True when the host has the password provider configured at all.</summary>
     public bool PasswordProviderConfigured { get; set; }
 
+    /// <summary>True when the host has a code-verification provider configured (email code, WhatsApp).</summary>
+    public bool CodeProviderConfigured { get; set; }
+
+    /// <summary>
+    /// Whether this authority signs people in itself, rather than only handing them to an external
+    /// provider.
+    /// </summary>
+    /// <remarks>
+    /// When it does not, the whole idea of a credential on this account is empty: there is no
+    /// password to change, and a second factor or a passkey would guard a sign-in that never
+    /// happens here. The account UI hides those sections rather than offering settings that can
+    /// never take effect.
+    /// </remarks>
+    public bool LocalSignInConfigured => PasswordProviderConfigured || CodeProviderConfigured;
+
     public bool HasAuthenticatorApp { get; set; }
     public DateTimeOffset? AuthenticatorEnrolledOn { get; set; }
 

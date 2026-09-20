@@ -11,6 +11,9 @@ public class CloudLoginProviderDefinitionModel
     public bool InputRequired { get; set; }
     public bool IsExternal { get; set; }
 
+    /// <summary>See <see cref="CloudLoginProviderDefinition.VerifiesCredentials"/>.</summary>
+    public bool VerifiesCredentials { get; set; }
+
     public string CssClass => $"_{Code.ToLowerInvariant()}";
 }
 
@@ -25,6 +28,7 @@ public static class CloudLoginProviderDefinitionModelExtensions
         HandlesPhoneNumber = source.HandlesPhoneNumber,
         IsCodeVerification = source.IsCodeVerification,
         InputRequired = source.InputRequired,
-        IsExternal = source.IsExternal
+        IsExternal = source.IsExternal,
+        VerifiesCredentials = source.VerifiesCredentials
     };
 }

@@ -4,6 +4,11 @@ public class CloudLoginSecurityOverviewModel
 {
     public bool HasPassword { get; set; }
     public bool PasswordProviderConfigured { get; set; }
+    public bool CodeProviderConfigured { get; set; }
+
+    /// <summary>See <see cref="CloudLoginSecurityOverview.LocalSignInConfigured"/>.</summary>
+    public bool LocalSignInConfigured => PasswordProviderConfigured || CodeProviderConfigured;
+
     public bool HasAuthenticatorApp { get; set; }
     public DateTimeOffset? AuthenticatorEnrolledOn { get; set; }
     public List<CloudLoginPasskeySummaryModel> Passkeys { get; set; } = [];
@@ -17,6 +22,7 @@ public static class CloudLoginSecurityOverviewModelExtensions
     {
         HasPassword = source.HasPassword,
         PasswordProviderConfigured = source.PasswordProviderConfigured,
+        CodeProviderConfigured = source.CodeProviderConfigured,
         HasAuthenticatorApp = source.HasAuthenticatorApp,
         AuthenticatorEnrolledOn = source.AuthenticatorEnrolledOn,
         Passkeys = [.. source.Passkeys.Select(passkey => passkey.ToModel())],

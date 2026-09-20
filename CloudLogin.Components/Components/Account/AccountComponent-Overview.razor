@@ -85,7 +85,11 @@
             <span class="section-card-icon" aria-hidden="true"><ShieldIcon /></span>
             <div class="section-card-heading">
                 <h4 class="section-card-title">Security</h4>
-                <p class="section-card-subtitle">Password, authenticator app, passkeys, and the ways you sign in</p>
+                <p class="section-card-subtitle">
+                    @(LocalSignInConfigured
+                        ? "Password, authenticator app, passkeys, and the ways you sign in"
+                        : "The ways you sign in, your devices, and recent activity")
+                </p>
             </div>
             <div class="section-card-actions">
                 <button type="button" class="section-card-link" @onclick='() => Navigate("Security")'>Manage security</button>
@@ -124,11 +128,17 @@
                     }
                     else
                     {
-                        <p class="section-note">No sign-in method is linked yet. Add a password or connect a provider so you can always get back in.</p>
+                        <p class="section-note">
+                            @(LocalSignInConfigured
+                                ? "No sign-in method is linked yet. Add a password or connect a provider so you can always get back in."
+                                : "No sign-in method is linked yet. Connect a provider so you can always get back in.")
+                        </p>
                     }
                 </div>
                 <div class="section-actions">
-                    <button type="button" class="btn btn-primary" @onclick='() => Navigate("Security")'>Change password</button>
+                    <button type="button" class="btn btn-primary" @onclick='() => Navigate("Security")'>
+                        @(LocalSignInConfigured ? "Change password" : "Manage sign-in")
+                    </button>
                 </div>
             </div>
         }
@@ -306,6 +316,13 @@
 
 @code {
     [Parameter] public required CloudUserModel CurrentUser { get; set; }
+
+    /// <summary>
+    /// Whether this authority signs people in itself. False when it only hands off to external
+    /// providers, where there is no password to change and nothing a second factor would guard.
+    /// </summary>
+    [Parameter] public bool LocalSignInConfigured { get; set; } = true;
+
     [Parameter] public bool EnableWorkspaces { get; set; }
 
     /// <summary>Display name for one workspace (e.g. "Organization", "Business"). Defaults to "Workspace".</summary>

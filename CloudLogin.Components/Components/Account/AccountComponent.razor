@@ -155,7 +155,7 @@
                                     <button type="button" class="quick-action" @onclick='() => SwitchTab("Security")'>
                                         <span class="quick-action-icon" aria-hidden="true"><KeyIcon /></span>
                                         <span class="quick-action-copy">
-                                            <span class="quick-action-title">Change password</span>
+                                            <span class="quick-action-title">@(localSignInConfigured ? "Change password" : "Sign-in and devices")</span>
                                             <span class="quick-action-subtitle">Security</span>
                                         </span>
                                     </button>
@@ -206,6 +206,7 @@
                         {
                             <AccountComponent_Overview @key="RouteKey"
                                                         CurrentUser="CurrentUser"
+                                                        LocalSignInConfigured="localSignInConfigured"
                                                         EnableWorkspaces="EnableWorkspaces"
                                                         WorkspaceLabel="@WorkspaceLabel"
                                                         WorkspaceLabelPlural="@WorkspaceLabelPlural"
@@ -302,6 +303,7 @@ else
         _errorCenter.Changed += OnErrorCenterChanged;
         navigationManager.LocationChanged += OnLocationChanged;
 
+        await LoadSignInCapability();
         await RefreshWorkspaces();
 
         string? legacyUrl = BuildLegacyRedirect();
@@ -318,6 +320,30 @@ else
 
         if (activeWorkspaceId is Guid workspaceId)
             await LoadWorkspace(workspaceId);
+    }
+
+    /// <summary>
+    /// Whether this authority checks a credential of its own, which decides whether the account
+    /// offers anything to manage beyond the providers it hands sign-in to.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to true and stays there if the providers cannot be read: showing a password
+    /// section that turns out to be unusable is a smaller failure than hiding the only way
+    /// somebody has to change their password.
+    /// </remarks>
+    private bool localSignInConfigured = true;
+
+    private async Task LoadSignInCapability()
+    {
+        try
+        {
+            List<CloudLoginProviderDefinition> providers = await cloudLogin.GetProviders();
+            localSignInConfigured = providers.Any(provider => provider.VerifiesCredentials);
+        }
+        catch
+        {
+            localSignInConfigured = true;
+        }
     }
 
     private void OnErrorCenterChanged() => InvokeAsync(StateHasChanged);

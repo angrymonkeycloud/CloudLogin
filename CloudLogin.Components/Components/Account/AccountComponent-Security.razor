@@ -11,7 +11,7 @@
 <div class="account-section security-page">
     <div class="section-header">
         <h3>@(DevicesOnly ? "Devices" : "Security")</h3>
-        <p class="section-description">@(DevicesOnly ? "Review your devices and the applications signed in on each one." : "Manage how you sign in, add extra verification, and review recent activity on your account.")</p>
+        <p class="section-description">@SectionDescription</p>
     </div>
 
     @if (_loading)
@@ -72,6 +72,11 @@
         }
 
         @* ── Authenticator app ────────────────────────────────── *@
+        @* Both this and passkeys guard a sign-in this authority performs itself. Where it only
+           hands off to an external provider there is nothing for them to protect, and offering
+           them would promise security the sign-in never consults. *@
+        @if (_overview.LocalSignInConfigured)
+        {
         <div class="card">
             <div class="card-header">
                 <h4>Authenticator app</h4>
@@ -176,6 +181,7 @@
                 }
             }
         </div>
+        }
 
         @* ── Connected providers ──────────────────────────────── *@
         <div class="card">
@@ -395,6 +401,17 @@
     private CloudLoginSecurityOverviewModel _overview = new();
     private List<CloudLoginHistoryEntryModel> _history = [];
     private List<CloudLoginSignedInDevice> _devices = [];
+
+    /// <summary>
+    /// Describes only what the page actually offers. An authority that hands every sign-in to an
+    /// external provider has no extra verification to add, so promising it would be describing a
+    /// page that is not there.
+    /// </summary>
+    private string SectionDescription => DevicesOnly
+        ? "Review your devices and the applications signed in on each one."
+        : _overview.LocalSignInConfigured
+            ? "Manage how you sign in, add extra verification, and review recent activity on your account."
+            : "Manage how you sign in, and review your devices and recent activity on your account.";
 
     private bool _loading = true;
     private bool _busy;

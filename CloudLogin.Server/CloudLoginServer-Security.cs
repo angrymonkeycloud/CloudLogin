@@ -121,6 +121,7 @@ public partial class CloudLoginServer
         {
             HasPassword = hasPassword,
             PasswordProviderConfigured = configured.Any(p => p.Code.Equals("password", StringComparison.OrdinalIgnoreCase)),
+            CodeProviderConfigured = configured.Any(p => p.VerifiesCredentials && p.IsCodeVerification),
             HasAuthenticatorApp = credentials.Authenticator is { IsConfirmed: true },
             AuthenticatorEnrolledOn = credentials.Authenticator is { IsConfirmed: true } ? credentials.Authenticator.EnrolledOn : null,
             Passkeys = [.. credentials.Passkeys

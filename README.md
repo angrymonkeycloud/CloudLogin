@@ -634,3 +634,7 @@ CloudLogin never creates application records in response to its own events. A co
 ### CDM mapping
 
 The initial native CDM mappings are Business ↔ Workspace and Contact ↔ User. CDM can operate in a CloudLogin read-only view mode or a combined CloudLogin + CDM mode. CloudLogin-created lifecycle timestamps remain distinct from CDM's link time and actor. Manual Sync and record-specific Open in CloudLogin actions are provided by CDM's generic external-provider runtime.
+
+## Shared theme
+
+UI visuals consume CloudCommon --amc-* tokens. Library overrides use --cloudlogin-*. Load ThemeCss.ExportDocument(theme) or render CloudThemeDocument in the document head; set html data-amc-theme to light, dark or system. Use CloudThemeScope for independent embedded themes. Component class names are unchanged. See [CloudCommon integration](../CloudCommon/docs/migration.md) for the token migration and source build instructions.

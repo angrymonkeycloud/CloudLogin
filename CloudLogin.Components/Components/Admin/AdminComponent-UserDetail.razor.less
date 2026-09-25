@@ -1,3 +1,4 @@
+@import (reference) "../../Src/css/theme.less";
 // ── AdminComponent-UserDetail ────────────────────────────
 // Mobile-first · Tablet @640px · Desktop @900px
 
@@ -34,7 +35,7 @@
 
         &:hover {
             background-color: @surface;
-            color: var(--amc-accentColor);
+            color: @login-color-primary;
         }
     }
     // ── Profile hero ──
@@ -58,7 +59,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--amc-accentColor);
+        background: @login-color-primary;
         color: @white;
         font-size: 28px;
         font-weight: 700;
@@ -217,7 +218,7 @@
             transition: all .3s ease-in-out;
 
             &:focus {
-                border-color: var(--amc-accentColor);
+                border-color: @login-color-primary;
             }
         }
     }
@@ -250,12 +251,12 @@
     letter-spacing: 0.3px;
 
     &--admin {
-        background-color: var(--amc-accentColor);
+        background-color: @login-color-primary;
         color: @white;
     }
 
     &--test {
-        background-color: var(--amc-secondColor);
+        background-color: @login-color-primary-hover;
         color: @white;
     }
 
@@ -291,7 +292,7 @@
     }
 
     &--primary {
-        background-color: var(--amc-accentColor);
+        background-color: @login-color-primary;
         color: @white;
 
         &:hover:not(:disabled) {
@@ -310,11 +311,11 @@
 
     &--outline {
         background-color: transparent;
-        border-color: var(--amc-accentColor);
-        color: var(--amc-accentColor);
+        border-color: @login-color-primary;
+        color: @login-color-primary;
 
         &:hover:not(:disabled) {
-            background-color: var(--amc-accentColor);
+            background-color: @login-color-primary;
             color: @white;
         }
     }

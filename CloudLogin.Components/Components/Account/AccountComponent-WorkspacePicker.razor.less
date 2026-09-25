@@ -1,3 +1,4 @@
+@import (reference) "../../Src/css/theme.less";
 @import (reference) "../../Src/variable.less";
 
 // This component renders inside AccountComponent's rail, so it inherits that component's
@@ -52,8 +53,8 @@
 }
 
 .workspace-trigger-mark._personal {
-    background: var(--cloudlogin-brand-soft);
-    color: var(--cloudlogin-brand-strong);
+    background: @login-brand-soft;
+    color: @login-brand-strong;
 }
 
 .workspace-trigger-mark ::deep svg {
@@ -195,7 +196,7 @@
 }
 
 .workspace-menu-item._active {
-    background: var(--cloudlogin-brand-soft);
+    background: @login-brand-soft;
 }
 
 .workspace-menu-item-mark {
@@ -213,8 +214,8 @@
 }
 
 .workspace-menu-item-mark._personal {
-    background: var(--cloudlogin-brand-soft);
-    color: var(--cloudlogin-brand-strong);
+    background: @login-brand-soft;
+    color: @login-brand-strong;
 }
 
 .workspace-menu-item-mark ::deep svg {
@@ -253,7 +254,7 @@
     width: 16px;
     height: 16px;
     place-items: center;
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
 }
 
 .workspace-menu-item-check ::deep svg {
@@ -277,7 +278,7 @@
     border: 0;
     border-radius: 8px;
     background: transparent;
-    color: var(--cloudlogin-brand-strong);
+    color: @login-brand-strong;
     cursor: pointer;
     font: inherit;
     font-size: 13.5px;
@@ -287,7 +288,7 @@
 }
 
 .workspace-menu-add:hover {
-    background: var(--cloudlogin-brand-soft);
+    background: @login-brand-soft;
 }
 
 .workspace-menu-add-icon {
@@ -297,8 +298,8 @@
     height: 24px;
     place-items: center;
     border-radius: 999px;
-    background: var(--cloudlogin-brand-soft);
-    color: var(--cloudlogin-brand-strong);
+    background: @login-brand-soft;
+    color: @login-brand-strong;
 }
 
 .workspace-menu-add-icon ::deep svg {
@@ -373,8 +374,8 @@
 }
 
 .workspace-menu-input:focus {
-    border-color: var(--cloudlogin-brand);
-    box-shadow: 0 0 0 3px var(--cloudlogin-brand-soft);
+    border-color: @login-brand;
+    box-shadow: 0 0 0 3px @login-brand-soft;
 }
 
 .workspace-menu-input:disabled {
@@ -387,9 +388,9 @@
     min-height: 40px;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--cloudlogin-brand);
+    border: 1px solid @login-brand;
     border-radius: 7px;
-    background: var(--cloudlogin-brand);
+    background: @login-brand;
     color: #fff;
     cursor: pointer;
     font: inherit;
@@ -398,8 +399,8 @@
 }
 
 .workspace-menu-create-submit:hover:not(:disabled) {
-    border-color: var(--cloudlogin-brand-strong);
-    background: var(--cloudlogin-brand-strong);
+    border-color: @login-brand-strong;
+    background: @login-brand-strong;
 }
 
 .workspace-menu-create-submit:disabled {

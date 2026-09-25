@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .contacts-card {
   display: flex;
   flex-direction: column;
@@ -21,7 +22,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -85,8 +86,8 @@
   border-color: #495057;
 }
 .contacts-card .form-input:focus {
-  border-color: var(--amc-accentColor);
-  box-shadow: 0 0 0 3px var(--amc-accentColor-soft, rgba(0, 120, 212, 0.12));
+  border-color: var(--amc-color-primary, #525252);
+  box-shadow: 0 0 0 3px var(--amc-color-primary-soft, #f8f8f8);
 }
 .contacts-card .form-input:disabled {
   background-color: #f1f3f5;
@@ -120,13 +121,13 @@
   cursor: not-allowed;
 }
 .contacts-card .btn-primary {
-  background-color: var(--amc-accentColor);
-  border-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
+  border-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .contacts-card .btn-primary:hover:not(:disabled) {
-  background-color: var(--amc-secondColor);
-  border-color: var(--amc-secondColor);
+  background-color: var(--amc-color-primary-hover, #464646);
+  border-color: var(--amc-color-primary-hover, #464646);
 }
 .contacts-card .btn-outline {
   background-color: #fff;
@@ -190,7 +191,7 @@
   place-items: center;
   border-radius: 8px;
   background: #f8f9fa;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
 }
 .contacts-card .contact-icon ::deep svg {
   width: 15px;
@@ -215,7 +216,7 @@
   letter-spacing: 0.02em;
 }
 .contacts-card .badge-primary {
-  background-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .contacts-card .badge-info {

@@ -1,6 +1,7 @@
+/* Generated from LESS. Do not edit. */
 .entity-card.deep-link-target {
-  border-color: var(--cloudlogin-primary, #0078d4);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cloudlogin-primary, #0078d4) 20%, transparent);
+  border-color: var(--cloudlogin-primary, var(--amc-color-primary, #525252));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cloudlogin-primary, var(--amc-color-primary, #525252)) 20%, transparent);
   scroll-margin-top: 1rem;
 }
 /* CloudLogin Account Management Styles */
@@ -52,7 +53,7 @@
 }
 .form-input:focus {
   outline: none;
-  border-color: var(--amc-accentColor, #0078d4);
+  border-color: var(--amc-color-primary, #525252);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 .form-input:disabled {
@@ -82,13 +83,13 @@
   cursor: not-allowed;
 }
 .btn-primary {
-  background-color: var(--amc-accentColor, #0078d4);
+  background-color: var(--amc-color-primary, #525252);
   color: #ffffff;
-  border-color: var(--amc-accentColor, #0078d4);
+  border-color: var(--amc-color-primary, #525252);
 }
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--amc-secondColor, #005a9e);
-  border-color: var(--amc-secondColor, #005a9e);
+  background-color: var(--amc-color-primary-hover, #464646);
+  border-color: var(--amc-color-primary-hover, #464646);
 }
 .btn-secondary {
   background-color: #6b7280;
@@ -101,11 +102,11 @@
 }
 .btn-outline {
   background-color: transparent;
-  color: var(--amc-accentColor, #0078d4);
-  border-color: var(--amc-accentColor, #0078d4);
+  color: var(--amc-color-primary, #525252);
+  border-color: var(--amc-color-primary, #525252);
 }
 .btn-outline:hover:not(:disabled) {
-  background-color: var(--amc-accentColor, #0078d4);
+  background-color: var(--amc-color-primary, #525252);
   color: #ffffff;
 }
 .btn-danger {
@@ -353,7 +354,7 @@
 }
 .btn:focus-visible,
 .form-input:focus-visible {
-  outline: 2px solid var(--amc-accentColor, #0078d4);
+  outline: 2px solid var(--amc-color-primary, #525252);
   outline-offset: 2px;
 }
 /* High contrast mode support */
@@ -406,7 +407,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.6rem;
-  background: linear-gradient(135deg, var(--amc-accentColor, #0078d4), var(--amc-accentColor, #0078d4));
+  background: linear-gradient(135deg, var(--amc-color-primary, #525252), var(--amc-color-primary, #525252));
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -436,15 +437,15 @@
   transition: all 0.15s ease;
 }
 .admin-tab:hover {
-  color: var(--amc-accentColor, #0078d4);
+  color: var(--amc-color-primary, #525252);
 }
 .admin-tab.active {
-  color: var(--amc-accentColor, #0078d4);
-  border-bottom-color: var(--amc-accentColor, #0078d4);
+  color: var(--amc-color-primary, #525252);
+  border-bottom-color: var(--amc-color-primary, #525252);
 }
 .admin-count-badge {
-  background: var(--amc-accentColor-soft, #e8f3fb);
-  color: var(--amc-accentColor, #0078d4);
+  background: var(--amc-color-primary-soft, #f8f8f8);
+  color: var(--amc-color-primary, #525252);
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.1rem 0.45rem;
@@ -452,13 +453,13 @@
 }
 /* Account sidebar tab — Admin variant */
 .tab-button--admin {
-  color: var(--amc-accentColor, #0078d4) !important;
+  color: var(--amc-color-primary, #525252) !important;
 }
 .tab-button--admin:hover {
-  background-color: var(--amc-accentColor-soft, #e8f3fb) !important;
+  background-color: var(--amc-color-primary-soft, #f8f8f8) !important;
 }
 .tab-button--admin.active {
-  background-color: var(--amc-accentColor, #0078d4) !important;
+  background-color: var(--amc-color-primary, #525252) !important;
   color: #fff !important;
 }
 .admin-tab-badge {
@@ -483,12 +484,12 @@
 }
 .admin-filter-select:focus {
   outline: none;
-  border-color: var(--amc-accentColor, #0078d4);
+  border-color: var(--amc-color-primary, #525252);
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
 }
 /* ── Clickable CloudDataGrid rows ── */
 .cloudgrid-row[style*="cursor: pointer"]:hover {
-  background-color: var(--cloudgrid-hover-background, #f0f0f0) !important;
+  background-color: var(--cloudcomponents-grid-hover-background, var(--amc-color-primary-soft, #f8f8f8)) !important;
 }
 /* ── User Detail ─────────────────────────────────────────────── */
 .admin-detail {
@@ -536,7 +537,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--amc-accentColor, #0078d4), var(--amc-accentColor, #0078d4));
+  background: linear-gradient(135deg, var(--amc-color-primary, #525252), var(--amc-color-primary, #525252));
   color: #fff;
   font-size: 1.2rem;
   font-weight: 700;
@@ -574,8 +575,8 @@
   letter-spacing: 0.04em;
 }
 .chip--admin {
-  background: var(--amc-accentColor-soft, #e8f3fb);
-  color: var(--amc-secondColor, #005a9e);
+  background: var(--amc-color-primary-soft, #f8f8f8);
+  color: var(--amc-color-primary-hover, #464646);
 }
 .chip--test {
   background: #fef9c3;
@@ -722,12 +723,12 @@
   cursor: not-allowed;
 }
 .admin-action-btn--primary {
-  background: var(--amc-accentColor, #0078d4);
+  background: var(--amc-color-primary, #525252);
   color: #fff;
-  border-color: var(--amc-accentColor, #0078d4);
+  border-color: var(--amc-color-primary, #525252);
 }
 .admin-action-btn--primary:hover:not(:disabled) {
-  background: var(--amc-secondColor, #005a9e);
+  background: var(--amc-color-primary-hover, #464646);
 }
 .admin-action-btn--danger {
   background: #dc2626;
@@ -747,11 +748,11 @@
 }
 .admin-action-btn--outline {
   background: transparent;
-  color: var(--amc-accentColor, #0078d4);
-  border-color: var(--amc-accentColor, #0078d4);
+  color: var(--amc-color-primary, #525252);
+  border-color: var(--amc-color-primary, #525252);
 }
 .admin-action-btn--outline:hover:not(:disabled) {
-  background: var(--amc-accentColor-soft, #e8f3fb);
+  background: var(--amc-color-primary-soft, #f8f8f8);
 }
 .admin-action-btn--sm {
   padding: 0.3rem 0.65rem;
@@ -841,7 +842,7 @@
   letter-spacing: 0.3px;
 }
 .badge-primary {
-  background-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .badge-secondary {
@@ -872,7 +873,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid rgba(0, 0, 0, 0.15);
-  border-top-color: var(--amc-accentColor);
+  border-top-color: var(--amc-color-primary, #525252);
   border-radius: 50%;
   display: block;
   margin: 24px auto;

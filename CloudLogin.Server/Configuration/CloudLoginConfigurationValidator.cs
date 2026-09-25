@@ -1,3 +1,4 @@
+using AngryMonkey.CloudCommon.Theming;
 using AngryMonkey.CloudLogin.Sever.Providers;
 using System.Text.RegularExpressions;
 
@@ -47,8 +48,13 @@ public static partial class CloudLoginConfigurationValidator
         if (string.IsNullOrWhiteSpace(configuration.CookieName))
             throw new InvalidOperationException("CookieName is required.");
 
-        if (string.IsNullOrWhiteSpace(configuration.PrimaryColor) || !HexColorPattern().IsMatch(configuration.PrimaryColor))
+        if (configuration.Theme is null && (string.IsNullOrWhiteSpace(configuration.PrimaryColor) || !HexColorPattern().IsMatch(configuration.PrimaryColor)))
             throw new InvalidOperationException("PrimaryColor must be a hex color, e.g. \"#0078D4\" or \"#06C\".");
+
+        if (!Enum.IsDefined(configuration.ThemeMode))
+            throw new InvalidOperationException("ThemeMode must be Light or Dark.");
+        ThemeResolver.Resolve(configuration.Theme ?? CloudThemes.Color(configuration.PrimaryColor), ThemeModes.Light);
+        ThemeResolver.Resolve(configuration.Theme ?? CloudThemes.Color(configuration.PrimaryColor), ThemeModes.Dark);
 
         if (!string.IsNullOrWhiteSpace(configuration.CookieDomain) &&
             configuration.CookieName.StartsWith("__Host-", StringComparison.Ordinal))
@@ -66,16 +72,16 @@ public static partial class CloudLoginConfigurationValidator
         foreach (CloudLoginWebhookRegistration webhook in configuration.Webhooks)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(webhook.Application);
-            
+
             if (!webhook.Url.IsAbsoluteUri
                 || (!isDevelopment && webhook.Url.Scheme != Uri.UriSchemeHttps)
                 || (isDevelopment && webhook.Url.Scheme != Uri.UriSchemeHttp
                     && webhook.Url.Scheme != Uri.UriSchemeHttps))
                 throw new InvalidOperationException("Webhook URLs must be absolute HTTPS URLs (HTTP is allowed only in development).");
-            
+
             if (string.IsNullOrWhiteSpace(webhook.Secret) || webhook.Secret.Length < 32)
                 throw new InvalidOperationException("Webhook secrets must contain at least 32 characters.");
-            
+
             if (webhook.Events.Any(string.IsNullOrWhiteSpace))
                 throw new InvalidOperationException("Webhook event identifiers cannot be empty.");
         }

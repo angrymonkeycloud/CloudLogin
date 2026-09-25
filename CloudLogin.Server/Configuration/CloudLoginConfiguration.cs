@@ -1,3 +1,4 @@
+using AngryMonkey.CloudCommon.Theming;
 using AngryMonkey.CloudBlazor.Web;
 using AngryMonkey.CloudLogin.Server.Core;
 using AngryMonkey.CloudLogin.Server.Core.Application;
@@ -71,9 +72,15 @@ public class CloudLoginWebConfiguration
 
     /// <summary>
     /// The primary/accent color used across the login and account UI, as a hex string
-    /// (e.g. "#0078D4" or "#06C"). Defaults to blue.
+    /// (e.g. "#0078D4" or "#06C"). Defaults to grayscale (#525252).
     /// </summary>
     public string PrimaryColor { get; set; } = "#0078D4";
+
+    /// <summary>Complete shared theme. When provided, takes precedence over PrimaryColor.</summary>
+    public ThemeDefinition? Theme { get; set; }
+
+    /// <summary>Initial display mode for the standalone Login host.</summary>
+    public ThemeModes ThemeMode { get; set; } = ThemeModes.Light;
 
     /// <summary>
     /// Optional exact origins for websites hosted separately from CloudLogin.
@@ -145,4 +152,17 @@ public class CloudLoginWebConfiguration
         AllowedMobileSchemes.Add(callbackScheme.Trim().ToLowerInvariant());
         return this;
     }
+    public ThemeDefinition ResolveTheme() => Theme ?? CloudThemes.Color(PrimaryColor, theme =>
+    {
+        theme.Typography.Family = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif";
+        theme.Colors.Danger = "#dc2626";
+        theme.Colors.Success = "#047857";
+        theme.Colors.Warning = "#ffc107";
+        theme.ModeTokens[ThemeModes.Light] = new()
+        {
+            ["color-surface"] = "#ffffff",
+            ["color-text"] = "#242424",
+            ["color-control-border"] = "#8a8886"
+        };
+    });
 }

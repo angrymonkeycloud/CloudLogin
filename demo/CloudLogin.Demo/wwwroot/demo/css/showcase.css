@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 :root {
   color-scheme: light;
   --authority-canvas: #f5f6fb;
@@ -48,7 +49,7 @@ body {
   min-height: 72px;
   align-items: center;
   gap: 28px;
-  padding: 0 calc(clamp(18px, 4vw, 58px));
+  padding: 0 clamp(18px, 4vw, 58px);
   border-bottom: 1px solid var(--authority-line);
   background: color-mix(in srgb, var(--authority-canvas) 88%, transparent);
   backdrop-filter: blur(18px);
@@ -122,7 +123,7 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  padding: 22px calc(clamp(18px, 4vw, 58px));
+  padding: 22px clamp(18px, 4vw, 58px);
   border-top: 1px solid var(--authority-line);
   color: var(--authority-muted);
   font-size: 13px;
@@ -132,7 +133,7 @@ body {
   grid-template-columns: minmax(0, 1.4fr) minmax(290px, 0.6fr);
   gap: 40px;
   align-items: center;
-  padding: calc(clamp(32px, 6vw, 72px));
+  padding: clamp(32px, 6vw, 72px);
   border: 1px solid var(--authority-line);
   border-radius: 28px;
   background: radial-gradient(circle at 90% 5%, color-mix(in srgb, var(--authority-accent) 20%, transparent), transparent 34%), var(--authority-surface);
@@ -141,7 +142,7 @@ body {
 .authority-hero h1 {
   max-width: 760px;
   margin: 0;
-  font-size: calc(clamp(42px, 6vw, 72px));
+  font-size: clamp(42px, 6vw, 72px);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
@@ -252,7 +253,7 @@ body {
 }
 .authority-page-header h1 {
   margin: 0;
-  font-size: calc(clamp(38px, 6vw, 62px));
+  font-size: clamp(38px, 6vw, 62px);
   line-height: 1;
   letter-spacing: -0.045em;
 }

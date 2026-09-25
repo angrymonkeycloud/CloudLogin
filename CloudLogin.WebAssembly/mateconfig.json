@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "input": "src/css/site.less",
+      "output": "wwwroot/css/site.css",
+      "minify": false
+    }
+  ]
+}

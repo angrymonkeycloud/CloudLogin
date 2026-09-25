@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 @keyframes PageloadingProgress {
   0% {
     transform: translateX(-110%);
@@ -37,7 +38,7 @@
   left: 0;
   bottom: 0;
   width: 50%;
-  background-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
   animation: PageloadingProgress 3s ease-in-out infinite;
   border-radius: 100px;
 }

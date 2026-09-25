@@ -1,112 +1,92 @@
+/* Generated from LESS. Do not edit. */
 :root {
-    -webkit-tap-highlight-color: transparent;
-    /* Consistent line spacing, which does not unnecessarily grow to accommodate things that would fit anyway */
-    /* From CSS Inline Layout Module Level 3: https://drafts.csswg.org/css-inline-3/#line-sizing-property */
-    line-sizing: normal;
-    /* Improve spacing of punctuation marks and at script changes in CJK languages */
-    /* From CSS Text Module Level 4: https://drafts.csswg.org/css-text-4/#text-spacing-property */
-    text-spacing: trim-start allow-end trim-adjacent ideograph-alpha ideograph-numeric;
-    --amc-accentColor: #0c75c4;
-    --amc-secondColor: #00dd64;
+  -webkit-tap-highlight-color: transparent;
+  /* Consistent line spacing, which does not unnecessarily grow to accommodate things that would fit anyway */
+  /* From CSS Inline Layout Module Level 3: https://drafts.csswg.org/css-inline-3/#line-sizing-property */
+  line-sizing: normal;
+  /* Improve spacing of punctuation marks and at script changes in CJK languages */
+  /* From CSS Text Module Level 4: https://drafts.csswg.org/css-text-4/#text-spacing-property */
+  text-spacing: trim-start allow-end trim-adjacent ideograph-alpha ideograph-numeric;
 }
-
 body > header,
 body > footer {
-    user-select: none;
+  user-select: none;
 }
-
 button,
 a {
-    user-select: none;
+  user-select: none;
 }
-
 html {
-    height: 100%;
+  height: 100%;
 }
-
 html,
 body {
-    overflow-x: hidden;
-    margin: 0;
-    padding: 0;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
-
-    html ._noscroll,
-    body ._noscroll {
-        overflow: hidden;
-    }
-
+html ._noscroll,
+body ._noscroll {
+  overflow: hidden;
+}
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
-
 h1 {
-    font-size: 2rem;
-    margin: 0.67em 0;
+  font-size: 2rem;
+  margin: 0.67em 0;
 }
-
 h2 {
-    font-size: 1.5rem;
+  font-size: 1.5rem;
 }
-
 h3 {
-    font-size: 1.17rem;
+  font-size: 1.17rem;
 }
-
 h4 {
-    font-size: 1rem;
+  font-size: 1rem;
 }
-
 h5 {
-    font-size: 0.83rem;
+  font-size: 0.83rem;
 }
-
 h6 {
-    font-size: 0.67rem;
+  font-size: 0.67rem;
 }
-
 h2,
 h3,
 h4,
 h5,
 h6 {
-    line-height: 1;
+  line-height: 1;
 }
-
 pre {
-    white-space: pre-wrap;
+  white-space: pre-wrap;
 }
-
 hr {
-    border: 0.5px solid;
+  border: 0.5px solid;
 }
-
 *:focus,
 *:active {
-    outline: none;
+  outline: none;
 }
-
 input,
 select,
 textarea,
 button {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    border-radius: 0;
-    -moz-border-radius: 0;
-    -webkit-border-radius: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border-radius: 0;
+  -moz-border-radius: 0;
+  -webkit-border-radius: 0;
 }
-
 a,
 a:focus,
 a:active,
 a:visited,
 a:hover {
-    text-decoration: none;
+  text-decoration: none;
 }
-
 img,
 video,
 canvas,
@@ -114,79 +94,215 @@ audio,
 iframe,
 embed,
 object {
-    display: block;
-    /* Switch display mode to block, since that's what we usually want for images. */
-    vertical-align: middle;
-    /* If you override, and make an image inline, it's likely you'll want middle vertical alignment. */
+  display: block;
+  /* Switch display mode to block, since that's what we usually want for images. */
+  vertical-align: middle;
+  /* If you override, and make an image inline, it's likely you'll want middle vertical alignment. */
 }
-
 img,
 video {
-    max-width: 100%;
-    /* Make images and video flexible by default. */
-    height: auto;
-    /* Ensure images and video maintain their aspect ratio when max-width comes into play. */
+  max-width: 100%;
+  /* Make images and video flexible by default. */
+  height: auto;
+  /* Ensure images and video maintain their aspect ratio when max-width comes into play. */
 }
-
 img {
-    display: inline-block;
-    max-width: 100%;
+  display: inline-block;
+  max-width: 100%;
 }
-
 [disabled="disabled"] {
-    opacity: 0.4;
-    pointer-events: none;
+  opacity: 0.4;
+  pointer-events: none;
 }
-
 textarea {
-    resize: none;
+  resize: none;
 }
-
 code,
 kbd,
 samp {
-    font-family: monospace;
-    font-size: 1rem;
+  font-family: monospace;
+  font-size: 1rem;
 }
-
 section,
 aside {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding-left: 20px;
-    padding-right: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-left: 20px;
+  padding-right: 20px;
 }
-
-    section article,
-    aside article {
-        max-width: var(--maxWidth);
-        width: 100%;
-        overflow: hidden;
-    }
-
+section article,
+aside article {
+  max-width: var(--cloudlogin-content-max-width, 80rem);
+  width: 100%;
+  overflow: hidden;
+}
 :root,
 html,
 body,
 button,
 textarea {
-    font-family: 'Segoe UI';
-    --primaryColor: #372549;
+  font-family: var(--cloudlogin-font-family, var(--amc-font-family, system-ui));
 }
-
 button {
-    border: 1px solid #000;
-    background-color: transparent;
-    padding: 5px 10px;
-    cursor: pointer;
+  background: var(--cloudlogin-button-normal-background, var(--amc-button-normal-background, #525252));
+  color: var(--cloudlogin-button-normal-color, var(--amc-button-normal-color, #ffffff));
+  border-color: var(--cloudlogin-button-normal-border-color, var(--amc-button-normal-border-color, #525252));
+  border-width: var(--cloudlogin-button-normal-border-width, var(--amc-button-normal-border-width, 1px));
+  border-style: var(--cloudlogin-button-normal-border-style, var(--amc-button-normal-border-style, solid));
+  border-radius: var(--cloudlogin-button-normal-border-radius, var(--amc-button-normal-border-radius, .5rem));
+  box-shadow: var(--cloudlogin-button-normal-box-shadow, var(--amc-button-normal-box-shadow, none));
+  font-family: var(--cloudlogin-button-normal-font-family, var(--amc-button-normal-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+  font-size: var(--cloudlogin-button-normal-font-size, var(--amc-button-normal-font-size, 1rem));
+  font-weight: var(--cloudlogin-button-normal-font-weight, var(--amc-button-normal-font-weight, 400));
+  line-height: var(--cloudlogin-button-normal-line-height, var(--amc-button-normal-line-height, 1.5));
+  letter-spacing: var(--cloudlogin-button-normal-letter-spacing, var(--amc-button-normal-letter-spacing, normal));
+  text-decoration: var(--cloudlogin-button-normal-text-decoration, var(--amc-button-normal-text-decoration, none));
+  opacity: var(--cloudlogin-button-normal-opacity, var(--amc-button-normal-opacity, 1));
+  outline: var(--cloudlogin-button-normal-outline, var(--amc-button-normal-outline, revert));
+  outline-offset: var(--cloudlogin-button-normal-outline-offset, var(--amc-button-normal-outline-offset, 0));
+  transition: var(--cloudlogin-button-normal-transition, var(--amc-button-normal-transition, background 160ms ease, color 160ms ease, box-shadow 160ms ease));
+  filter: var(--cloudlogin-button-normal-filter, var(--amc-button-normal-filter, none));
+  animation: var(--cloudlogin-button-normal-animation, var(--amc-button-normal-animation, none));
+  padding: 5px 10px;
+  cursor: pointer;
 }
-
-body main .amc-cloudlogin {
-    --amc-accentColor: var(--primaryColor) !important;
+button:where(:hover:not(:disabled):not([aria-disabled="true"])) {
+  background: var(--cloudlogin-button-hover-background, var(--amc-button-hover-background, #464646));
+  color: var(--cloudlogin-button-hover-color, var(--amc-button-hover-color, #ffffff));
+  border-color: var(--cloudlogin-button-hover-border-color, var(--amc-button-hover-border-color, #525252));
+  border-width: var(--cloudlogin-button-hover-border-width, var(--amc-button-hover-border-width, 1px));
+  border-style: var(--cloudlogin-button-hover-border-style, var(--amc-button-hover-border-style, solid));
+  border-radius: var(--cloudlogin-button-hover-border-radius, var(--amc-button-hover-border-radius, .5rem));
+  box-shadow: var(--cloudlogin-button-hover-box-shadow, var(--amc-button-hover-box-shadow, none));
+  font-family: var(--cloudlogin-button-hover-font-family, var(--amc-button-hover-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+  font-size: var(--cloudlogin-button-hover-font-size, var(--amc-button-hover-font-size, 1rem));
+  font-weight: var(--cloudlogin-button-hover-font-weight, var(--amc-button-hover-font-weight, 400));
+  line-height: var(--cloudlogin-button-hover-line-height, var(--amc-button-hover-line-height, 1.5));
+  letter-spacing: var(--cloudlogin-button-hover-letter-spacing, var(--amc-button-hover-letter-spacing, normal));
+  text-decoration: var(--cloudlogin-button-hover-text-decoration, var(--amc-button-hover-text-decoration, none));
+  opacity: var(--cloudlogin-button-hover-opacity, var(--amc-button-hover-opacity, 1));
+  outline: var(--cloudlogin-button-hover-outline, var(--amc-button-hover-outline, revert));
+  outline-offset: var(--cloudlogin-button-hover-outline-offset, var(--amc-button-hover-outline-offset, 0));
+  transition: var(--cloudlogin-button-hover-transition, var(--amc-button-hover-transition, background 160ms ease, color 160ms ease, box-shadow 160ms ease));
+  filter: var(--cloudlogin-button-hover-filter, var(--amc-button-hover-filter, none));
+  animation: var(--cloudlogin-button-hover-animation, var(--amc-button-hover-animation, none));
 }
-
+button:active:not(:disabled) {
+  background: var(--cloudlogin-button-active-background, var(--amc-button-active-background, #393939));
+  color: var(--cloudlogin-button-active-color, var(--amc-button-active-color, #ffffff));
+  border-color: var(--cloudlogin-button-active-border-color, var(--amc-button-active-border-color, #525252));
+  border-width: var(--cloudlogin-button-active-border-width, var(--amc-button-active-border-width, 1px));
+  border-style: var(--cloudlogin-button-active-border-style, var(--amc-button-active-border-style, solid));
+  border-radius: var(--cloudlogin-button-active-border-radius, var(--amc-button-active-border-radius, .5rem));
+  box-shadow: var(--cloudlogin-button-active-box-shadow, var(--amc-button-active-box-shadow, none));
+  font-family: var(--cloudlogin-button-active-font-family, var(--amc-button-active-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+  font-size: var(--cloudlogin-button-active-font-size, var(--amc-button-active-font-size, 1rem));
+  font-weight: var(--cloudlogin-button-active-font-weight, var(--amc-button-active-font-weight, 400));
+  line-height: var(--cloudlogin-button-active-line-height, var(--amc-button-active-line-height, 1.5));
+  letter-spacing: var(--cloudlogin-button-active-letter-spacing, var(--amc-button-active-letter-spacing, normal));
+  text-decoration: var(--cloudlogin-button-active-text-decoration, var(--amc-button-active-text-decoration, none));
+  opacity: var(--cloudlogin-button-active-opacity, var(--amc-button-active-opacity, 1));
+  outline: var(--cloudlogin-button-active-outline, var(--amc-button-active-outline, revert));
+  outline-offset: var(--cloudlogin-button-active-outline-offset, var(--amc-button-active-outline-offset, 0));
+  transition: var(--cloudlogin-button-active-transition, var(--amc-button-active-transition, background 160ms ease, color 160ms ease, box-shadow 160ms ease));
+  filter: var(--cloudlogin-button-active-filter, var(--amc-button-active-filter, none));
+  animation: var(--cloudlogin-button-active-animation, var(--amc-button-active-animation, none));
+}
+button[aria-pressed="true"],
+button[aria-selected="true"],
+button._selected {
+  background: var(--cloudlogin-button-selected-background, var(--amc-button-selected-background, #eeeeee));
+  color: var(--cloudlogin-button-selected-color, var(--amc-button-selected-color, #000000));
+  border-color: var(--cloudlogin-button-selected-border-color, var(--amc-button-selected-border-color, #525252));
+  border-width: var(--cloudlogin-button-selected-border-width, var(--amc-button-selected-border-width, 1px));
+  border-style: var(--cloudlogin-button-selected-border-style, var(--amc-button-selected-border-style, solid));
+  border-radius: var(--cloudlogin-button-selected-border-radius, var(--amc-button-selected-border-radius, .5rem));
+  box-shadow: var(--cloudlogin-button-selected-box-shadow, var(--amc-button-selected-box-shadow, none));
+  font-family: var(--cloudlogin-button-selected-font-family, var(--amc-button-selected-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+  font-size: var(--cloudlogin-button-selected-font-size, var(--amc-button-selected-font-size, 1rem));
+  font-weight: var(--cloudlogin-button-selected-font-weight, var(--amc-button-selected-font-weight, 400));
+  line-height: var(--cloudlogin-button-selected-line-height, var(--amc-button-selected-line-height, 1.5));
+  letter-spacing: var(--cloudlogin-button-selected-letter-spacing, var(--amc-button-selected-letter-spacing, normal));
+  text-decoration: var(--cloudlogin-button-selected-text-decoration, var(--amc-button-selected-text-decoration, none));
+  opacity: var(--cloudlogin-button-selected-opacity, var(--amc-button-selected-opacity, 1));
+  outline: var(--cloudlogin-button-selected-outline, var(--amc-button-selected-outline, revert));
+  outline-offset: var(--cloudlogin-button-selected-outline-offset, var(--amc-button-selected-outline-offset, 0));
+  transition: var(--cloudlogin-button-selected-transition, var(--amc-button-selected-transition, background 160ms ease, color 160ms ease, box-shadow 160ms ease));
+  filter: var(--cloudlogin-button-selected-filter, var(--amc-button-selected-filter, none));
+  animation: var(--cloudlogin-button-selected-animation, var(--amc-button-selected-animation, none));
+}
+button[aria-invalid="true"],
+button:user-invalid {
+  background: var(--cloudlogin-button-invalid-background, var(--amc-button-invalid-background, #525252));
+  color: var(--cloudlogin-button-invalid-color, var(--amc-button-invalid-color, #ffffff));
+  border-color: var(--cloudlogin-button-invalid-border-color, var(--amc-button-invalid-border-color, #525252));
+  border-width: var(--cloudlogin-button-invalid-border-width, var(--amc-button-invalid-border-width, 1px));
+  border-style: var(--cloudlogin-button-invalid-border-style, var(--amc-button-invalid-border-style, solid));
+  border-radius: var(--cloudlogin-button-invalid-border-radius, var(--amc-button-invalid-border-radius, .5rem));
+  box-shadow: var(--cloudlogin-button-invalid-box-shadow, var(--amc-button-invalid-box-shadow, none));
+  font-family: var(--cloudlogin-button-invalid-font-family, var(--amc-button-invalid-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+  font-size: var(--cloudlogin-button-invalid-font-size, var(--amc-button-invalid-font-size, 1rem));
+  font-weight: var(--cloudlogin-button-invalid-font-weight, var(--amc-button-invalid-font-weight, 400));
+  line-height: var(--cloudlogin-button-invalid-line-height, var(--amc-button-invalid-line-height, 1.5));
+  letter-spacing: var(--cloudlogin-button-invalid-letter-spacing, var(--amc-button-invalid-letter-spacing, normal));
+  text-decoration: var(--cloudlogin-button-invalid-text-decoration, var(--amc-button-invalid-text-decoration, none));
+  opacity: var(--cloudlogin-button-invalid-opacity, var(--amc-button-invalid-opacity, 1));
+  outline: var(--cloudlogin-button-invalid-outline, var(--amc-button-invalid-outline, revert));
+  outline-offset: var(--cloudlogin-button-invalid-outline-offset, var(--amc-button-invalid-outline-offset, 0));
+  transition: var(--cloudlogin-button-invalid-transition, var(--amc-button-invalid-transition, background 160ms ease, color 160ms ease, box-shadow 160ms ease));
+  filter: var(--cloudlogin-button-invalid-filter, var(--amc-button-invalid-filter, none));
+  animation: var(--cloudlogin-button-invalid-animation, var(--amc-button-invalid-animation, none));
+}
+button:disabled,
+button[aria-disabled="true"],
+button._disabled {
+  background: var(--cloudlogin-button-disabled-background, var(--amc-button-disabled-background, #525252));
+  color: var(--cloudlogin-button-disabled-color, var(--amc-button-disabled-color, #ffffff));
+  border-color: var(--cloudlogin-button-disabled-border-color, var(--amc-button-disabled-border-color, #525252));
+  border-width: var(--cloudlogin-button-disabled-border-width, var(--amc-button-disabled-border-width, 1px));
+  border-style: var(--cloudlogin-button-disabled-border-style, var(--amc-button-disabled-border-style, solid));
+  border-radius: var(--cloudlogin-button-disabled-border-radius, var(--amc-button-disabled-border-radius, .5rem));
+  box-shadow: var(--cloudlogin-button-disabled-box-shadow, var(--amc-button-disabled-box-shadow, none));
+  font-family: var(--cloudlogin-button-disabled-font-family, var(--amc-button-disabled-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+  font-size: var(--cloudlogin-button-disabled-font-size, var(--amc-button-disabled-font-size, 1rem));
+  font-weight: var(--cloudlogin-button-disabled-font-weight, var(--amc-button-disabled-font-weight, 400));
+  line-height: var(--cloudlogin-button-disabled-line-height, var(--amc-button-disabled-line-height, 1.5));
+  letter-spacing: var(--cloudlogin-button-disabled-letter-spacing, var(--amc-button-disabled-letter-spacing, normal));
+  text-decoration: var(--cloudlogin-button-disabled-text-decoration, var(--amc-button-disabled-text-decoration, none));
+  opacity: var(--cloudlogin-button-disabled-opacity, var(--amc-button-disabled-opacity, .5));
+  outline: var(--cloudlogin-button-disabled-outline, var(--amc-button-disabled-outline, revert));
+  outline-offset: var(--cloudlogin-button-disabled-outline-offset, var(--amc-button-disabled-outline-offset, 0));
+  transition: var(--cloudlogin-button-disabled-transition, var(--amc-button-disabled-transition, background 160ms ease, color 160ms ease, box-shadow 160ms ease));
+  filter: var(--cloudlogin-button-disabled-filter, var(--amc-button-disabled-filter, none));
+  animation: var(--cloudlogin-button-disabled-animation, var(--amc-button-disabled-animation, none));
+}
+button:focus-visible {
+  background: var(--cloudlogin-button-focus-background, var(--amc-button-focus-background, #525252));
+  color: var(--cloudlogin-button-focus-color, var(--amc-button-focus-color, #ffffff));
+  border-color: var(--cloudlogin-button-focus-border-color, var(--amc-button-focus-border-color, #525252));
+  border-width: var(--cloudlogin-button-focus-border-width, var(--amc-button-focus-border-width, 1px));
+  border-style: var(--cloudlogin-button-focus-border-style, var(--amc-button-focus-border-style, solid));
+  border-radius: var(--cloudlogin-button-focus-border-radius, var(--amc-button-focus-border-radius, .5rem));
+  box-shadow: var(--cloudlogin-button-focus-box-shadow, var(--amc-button-focus-box-shadow, none));
+  font-family: var(--cloudlogin-button-focus-font-family, var(--amc-button-focus-font-family, Inter, 'Segoe UI', system-ui, sans-serif));
+  font-size: var(--cloudlogin-button-focus-font-size, var(--amc-button-focus-font-size, 1rem));
+  font-weight: var(--cloudlogin-button-focus-font-weight, var(--amc-button-focus-font-weight, 400));
+  line-height: var(--cloudlogin-button-focus-line-height, var(--amc-button-focus-line-height, 1.5));
+  letter-spacing: var(--cloudlogin-button-focus-letter-spacing, var(--amc-button-focus-letter-spacing, normal));
+  text-decoration: var(--cloudlogin-button-focus-text-decoration, var(--amc-button-focus-text-decoration, none));
+  opacity: var(--cloudlogin-button-focus-opacity, var(--amc-button-focus-opacity, 1));
+  outline: var(--cloudlogin-button-focus-outline, var(--amc-button-focus-outline, 2px solid #464646));
+  outline-offset: var(--cloudlogin-button-focus-outline-offset, var(--amc-button-focus-outline-offset, 3px));
+  transition: var(--cloudlogin-button-focus-transition, var(--amc-button-focus-transition, background 160ms ease, color 160ms ease, box-shadow 160ms ease));
+  filter: var(--cloudlogin-button-focus-filter, var(--amc-button-focus-filter, none));
+  animation: var(--cloudlogin-button-focus-animation, var(--amc-button-focus-animation, none));
+}
 body main .amc-cloudlogin-footer-links a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
-
+body {
+  color: var(--cloudlogin-text, var(--amc-color-text, #111111));
+  background: var(--cloudlogin-page, var(--amc-color-background, #f9f9f9));
+}

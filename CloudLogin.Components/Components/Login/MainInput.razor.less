@@ -1,9 +1,10 @@
+@import (reference) "../../Src/css/theme.less";
 .input {
     width: 100%;
 
     &-label {
         font-size: .8rem;
-        color: var(--amc-accentColor);
+        color: @login-color-primary;
         user-select: none;
         display: block;
     }
@@ -17,7 +18,7 @@
             outline: none;
             font-size: .9rem;
             padding: 10px;
-            border: 1px solid var(--amc-accentColor);
+            border: 1px solid @login-color-primary;
             border-radius: 3px;
             -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
             -webkit-transition-delay: 9999s;
@@ -47,9 +48,9 @@
 }
 /* Standard CloudLogin field */
 .input { width: 100%; }
-.input-label { display: block; margin-bottom: 6px; color: #323130; font-family: "Segoe UI", sans-serif; font-size: 13px; font-weight: 600; }
-.input-content input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #8a8886; border-radius: 3px; background: #fff; color: #242424; font-family: "Segoe UI", sans-serif; font-size: 15px; transition: border-color .12s ease, box-shadow .12s ease; }
+.input-label { display: block; margin-bottom: 6px; color: #323130; font-family: @login-font-family; font-size: 13px; font-weight: 600; }
+.input-content input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid @login-field-border; border-radius: 3px; background: @login-field-surface; color: @login-field-text; font-family: @login-font-family; font-size: 15px; transition: border-color .12s ease, box-shadow .12s ease; }
 .input-content input:hover { border-color: #323130; }
-.input-content input:focus { outline: 2px solid var(--amc-accentColor, #0078d4); outline-offset: -2px; border-color: var(--amc-accentColor, #0078d4); }
+.input-content input:focus { outline: 2px solid @login-color-primary; outline-offset: -2px; border-color: @login-color-primary; }
 .input-content input:disabled { border-color: #d2d0ce; background: #f3f2f1; color: #a19f9d; cursor: not-allowed; }
 .input-content input::placeholder { color: #767676; }

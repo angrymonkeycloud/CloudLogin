@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .account-section {
   display: flex;
   flex-direction: column;
@@ -101,7 +102,7 @@
 .link-action {
   background: none;
   border: none;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   font-weight: 600;
   cursor: pointer;
 }
@@ -140,8 +141,8 @@
 }
 .form-input:focus {
   outline: none;
-  border-color: var(--amc-accentColor);
-  box-shadow: 0 0 0 3px var(--amc-accentColor-soft, rgba(0, 120, 212, 0.12));
+  border-color: var(--amc-color-primary, #525252);
+  box-shadow: 0 0 0 3px var(--amc-color-primary-soft, #f8f8f8);
 }
 select.form-input {
   appearance: none;
@@ -175,8 +176,8 @@ select.form-input:hover {
   gap: 8px;
 }
 .btn.btn-primary {
-  background: var(--amc-accentColor);
-  border: 1px solid var(--amc-accentColor);
+  background: var(--amc-color-primary, #525252);
+  border: 1px solid var(--amc-color-primary, #525252);
   color: #fff;
   padding: 8px 14px;
   border-radius: 6px;

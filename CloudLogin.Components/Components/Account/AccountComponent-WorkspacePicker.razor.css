@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .workspace-switcher {
   position: relative;
 }
@@ -37,8 +38,8 @@
   letter-spacing: 0.02em;
 }
 .workspace-trigger-mark._personal {
-  background: var(--cloudlogin-brand-soft);
-  color: var(--cloudlogin-brand-strong);
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
 }
 .workspace-trigger-mark ::deep svg {
   width: 15px;
@@ -149,7 +150,7 @@
   background: #f5f5f5;
 }
 .workspace-menu-item._active {
-  background: var(--cloudlogin-brand-soft);
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
 }
 .workspace-menu-item-mark {
   display: grid;
@@ -165,8 +166,8 @@
   letter-spacing: 0.02em;
 }
 .workspace-menu-item-mark._personal {
-  background: var(--cloudlogin-brand-soft);
-  color: var(--cloudlogin-brand-strong);
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
 }
 .workspace-menu-item-mark ::deep svg {
   width: 16px;
@@ -200,7 +201,7 @@
   width: 16px;
   height: 16px;
   place-items: center;
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .workspace-menu-item-check ::deep svg {
   width: 14px;
@@ -221,7 +222,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--cloudlogin-brand-strong);
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
   cursor: pointer;
   font: inherit;
   font-size: 13.5px;
@@ -230,7 +231,7 @@
   transition: background-color 0.12s ease;
 }
 .workspace-menu-add:hover {
-  background: var(--cloudlogin-brand-soft);
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
 }
 .workspace-menu-add-icon {
   display: grid;
@@ -239,8 +240,8 @@
   height: 24px;
   place-items: center;
   border-radius: 999px;
-  background: var(--cloudlogin-brand-soft);
-  color: var(--cloudlogin-brand-strong);
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
 }
 .workspace-menu-add-icon ::deep svg {
   width: 13px;
@@ -302,8 +303,8 @@
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 .workspace-menu-input:focus {
-  border-color: var(--cloudlogin-brand);
-  box-shadow: 0 0 0 3px var(--cloudlogin-brand-soft);
+  border-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
+  box-shadow: 0 0 0 3px var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
 }
 .workspace-menu-input:disabled {
   background: #f5f5f5;
@@ -314,9 +315,9 @@
   min-height: 40px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--cloudlogin-brand);
+  border: 1px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   border-radius: 7px;
-  background: var(--cloudlogin-brand);
+  background: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   color: #fff;
   cursor: pointer;
   font: inherit;
@@ -324,8 +325,8 @@
   font-weight: 600;
 }
 .workspace-menu-create-submit:hover:not(:disabled) {
-  border-color: var(--cloudlogin-brand-strong);
-  background: var(--cloudlogin-brand-strong);
+  border-color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
+  background: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
 }
 .workspace-menu-create-submit:disabled {
   cursor: not-allowed;

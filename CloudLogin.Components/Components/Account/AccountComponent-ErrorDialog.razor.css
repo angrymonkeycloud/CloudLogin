@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 ::deep .amc-dialog-message {
   max-height: 60vh;
   overflow-y: auto;
@@ -102,7 +103,7 @@
   padding: 0;
   border: none;
   background: none;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
@@ -151,11 +152,11 @@
   background: #f8f9fa;
 }
 ::deep .error-dialog-btn--primary {
-  border: 1px solid var(--amc-accentColor);
-  background: var(--amc-accentColor);
+  border: 1px solid var(--amc-color-primary, #525252);
+  background: var(--amc-color-primary, #525252);
   color: #fff;
 }
 ::deep .error-dialog-btn--primary:hover {
-  background: var(--amc-secondColor);
-  border-color: var(--amc-secondColor);
+  background: var(--amc-color-primary-hover, #464646);
+  border-color: var(--amc-color-primary-hover, #464646);
 }

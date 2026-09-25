@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 @keyframes cloudlogin-header-loading {
   0% {
     left: -34%;
@@ -74,7 +75,7 @@
   width: 34%;
   height: 100%;
   border-radius: 0 20px 20px 0;
-  background-color: var(--amc-accentColor, #0078d4);
+  background-color: var(--amc-color-primary, #525252);
   animation: cloudlogin-header-loading 1.35s ease-in-out infinite;
 }
 .amc-cloudlogin-logo {

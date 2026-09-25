@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .account-section {
   display: flex;
   flex-direction: column;
@@ -26,7 +27,7 @@
 .hero-avatar.initials {
   display: grid;
   place-items: center;
-  background: var(--amc-accentColor);
+  background: var(--amc-color-primary, #525252);
   color: #fff;
   font-weight: 600;
   font-size: 22px;
@@ -97,8 +98,8 @@
   height: 34px;
   place-items: center;
   border-radius: 8px;
-  background: var(--amc-accentColor-soft, color-mix(in srgb, var(--amc-accentColor) 9%, #fff));
-  color: var(--amc-accentColor);
+  background: var(--amc-color-primary-soft, #f8f8f8);
+  color: var(--amc-color-primary, #525252);
 }
 .meta-icon ::deep svg {
   width: 18px;
@@ -150,8 +151,8 @@
 .provider-badge {
   padding: 5px 12px;
   background-color: #fff;
-  border: 1px solid var(--amc-accentColor);
-  color: var(--amc-accentColor);
+  border: 1px solid var(--amc-color-primary, #525252);
+  color: var(--amc-color-primary, #525252);
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -188,7 +189,7 @@
   place-items: center;
   border-radius: 8px;
   background: #f3f3f3;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
 }
 .device-art ::deep svg {
   width: 40px;
@@ -232,7 +233,7 @@
   width: 22px;
   height: 22px;
   border: 2px solid rgba(0, 0, 0, 0.15);
-  border-top-color: var(--amc-accentColor);
+  border-top-color: var(--amc-color-primary, #525252);
   border-radius: 50%;
   display: block;
   margin: 12px auto;

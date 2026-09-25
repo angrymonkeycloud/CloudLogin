@@ -60,4 +60,5 @@
 		<None Include="mateconfig.json" />
 	</ItemGroup>
 
+  <ItemGroup><ProjectReference Include="../../CloudCommon/CloudCommon.Theming.Blazor/CloudCommon.Theming.Blazor.csproj" /></ItemGroup>
 </Project>

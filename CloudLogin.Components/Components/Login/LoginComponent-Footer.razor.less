@@ -1,3 +1,4 @@
+@import (reference) "../../Src/css/theme.less";
 
 .amc-cloudlogin {
 
@@ -17,7 +18,7 @@
         }
 
         &-separator {
-            border-top: 1px solid var(--amc-accentColor);
+            border-top: 1px solid @login-color-primary;
             max-width: 20rem;
             width: 100%;
             opacity: .6;
@@ -35,7 +36,7 @@
             width: 24px;
 
             .amc-svg-fill {
-                fill: var(--amc-accentColor);
+                fill: @login-color-primary;
             }
         }
     }

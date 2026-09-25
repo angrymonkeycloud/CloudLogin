@@ -1,0 +1,11 @@
+// Project-local CloudTheme contract. Components import this file and use these names.
+@import (reference) "../../../../CloudCommon/CloudCommon.Theming/src/css/library.less";
+
+@login-pages-content-max-width: var(--cloudlogin-content-max-width, 80rem);
+@login-pages-font-family: var(--cloudlogin-font-family, var(--amc-font-family, system-ui));
+@login-pages-text: var(--cloudlogin-text,var(--amc-color-text,#111111));
+@login-pages-page: var(--cloudlogin-page,var(--amc-color-background,#f9f9f9));
+
+.login-pages-control(@element) {
+    .amc-control(cloudlogin; @element);
+}

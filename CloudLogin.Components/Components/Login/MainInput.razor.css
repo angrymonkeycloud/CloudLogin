@@ -1,9 +1,10 @@
+/* Generated from LESS. Do not edit. */
 .input {
   width: 100%;
 }
 .input-label {
   font-size: 0.8rem;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   user-select: none;
   display: block;
 }
@@ -15,7 +16,7 @@
   outline: none;
   font-size: 0.9rem;
   padding: 10px;
-  border: 1px solid var(--amc-accentColor);
+  border: 1px solid var(--amc-color-primary, #525252);
   border-radius: 3px;
   -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
   -webkit-transition-delay: 9999s;
@@ -33,7 +34,7 @@
   display: block;
   margin-bottom: 6px;
   color: #323130;
-  font-family: "Segoe UI", sans-serif;
+  font-family: var(--cloudlogin-font-family, var(--amc-font-family, 'Segoe UI', sans-serif));
   font-size: 13px;
   font-weight: 600;
 }
@@ -41,11 +42,11 @@
   width: 100%;
   min-height: 42px;
   padding: 9px 11px;
-  border: 1px solid #8a8886;
+  border: 1px solid var(--cloudlogin-field-border, var(--amc-color-control-border, #8a8886));
   border-radius: 3px;
-  background: #fff;
-  color: #242424;
-  font-family: "Segoe UI", sans-serif;
+  background: var(--cloudlogin-field-surface, var(--amc-color-surface, #fff));
+  color: var(--cloudlogin-field-text, var(--amc-color-text, #242424));
+  font-family: var(--cloudlogin-font-family, var(--amc-font-family, 'Segoe UI', sans-serif));
   font-size: 15px;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
@@ -53,9 +54,9 @@
   border-color: #323130;
 }
 .input-content input:focus {
-  outline: 2px solid var(--amc-accentColor, #0078d4);
+  outline: 2px solid var(--amc-color-primary, #525252);
   outline-offset: -2px;
-  border-color: var(--amc-accentColor, #0078d4);
+  border-color: var(--amc-color-primary, #525252);
 }
 .input-content input:disabled {
   border-color: #d2d0ce;

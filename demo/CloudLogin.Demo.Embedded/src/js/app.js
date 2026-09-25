@@ -9,6 +9,7 @@
 
   const applyTheme = theme => {
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.amcTheme = theme;
     document.querySelectorAll("[data-theme-label]").forEach(element => {
       element.textContent = theme === "dark" ? "Light mode" : "Dark mode";
     });

@@ -1,18 +1,12 @@
+/* Generated from LESS. Do not edit. */
 .account-management {
-  --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
-  --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
-  --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
-  --cloudlogin-page: #f5f5f5;
-  --cloudlogin-ink: #242424;
-  --cloudlogin-ink-soft: #616161;
-  --cloudlogin-line: #e6e6e6;
   --rail-width-collapsed: 68px;
   --rail-width-expanded: 300px;
   --rail-width-desktop: 260px;
   direction: ltr !important;
   min-height: 100vh;
-  background: var(--cloudlogin-page);
-  color: var(--cloudlogin-ink);
+  background: var(--cloudlogin-page, var(--amc-color-background, #f9f9f9));
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
 }
 .account-management *,
@@ -66,7 +60,7 @@
   flex-direction: column;
   width: var(--rail-width-collapsed);
   overflow: hidden;
-  background: var(--cloudlogin-page);
+  background: var(--cloudlogin-page, var(--amc-color-background, #f9f9f9));
   transition: width 0.2s ease;
 }
 .account-management .sidebar._open {
@@ -99,7 +93,7 @@
 }
 .account-management .sidebar-toggle:hover {
   background: #ebebeb;
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .account-management .profile-mini {
   display: flex;
@@ -120,7 +114,7 @@
 .account-management .profile-mini-avatar.initials {
   display: grid;
   place-items: center;
-  background: var(--cloudlogin-brand);
+  background: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   color: #fff;
   font-size: 16px;
   font-weight: 600;
@@ -141,13 +135,13 @@
   white-space: nowrap;
 }
 .account-management .profile-mini-name {
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-size: 15px;
   font-weight: 600;
 }
 .account-management .profile-mini-email {
   margin-top: 2px;
-  color: var(--cloudlogin-ink-soft);
+  color: var(--cloudlogin-ink-soft, var(--amc-color-muted, #505050));
   font-size: 12.5px;
 }
 .account-management .profile-mini-link {
@@ -156,7 +150,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -166,7 +160,7 @@
   text-decoration: underline;
 }
 .account-management .profile-mini-link:focus-visible {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   outline-offset: 2px;
 }
 .account-management .tabs {
@@ -207,7 +201,7 @@
   flex: 0 0 auto;
   height: 1px;
   margin: 8px 4px;
-  background: var(--cloudlogin-line);
+  background: var(--cloudlogin-line, var(--amc-color-border, #c0c0c0));
 }
 .account-management .sidebar-footer {
   display: flex;
@@ -215,7 +209,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 10px;
-  border-top: 1px solid var(--cloudlogin-line);
+  border-top: 1px solid var(--cloudlogin-line, var(--amc-color-border, #c0c0c0));
 }
 /* Session-state indicator. Lives in the rail (not on each page) so it reads as a
    property of the session rather than of whichever tab happens to be open. It
@@ -227,8 +221,8 @@
   min-height: 40px;
   padding: 0 12px;
   border-radius: 6px;
-  background: var(--cloudlogin-brand-soft);
-  color: var(--cloudlogin-brand-strong);
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
   font-size: 12.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -328,7 +322,7 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   cursor: pointer;
   font: inherit;
   font-size: 14px;
@@ -360,19 +354,19 @@
 }
 .account-management .tab-button:hover {
   background: #ebebeb;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
 }
 .account-management .tab-button:hover .tab-icon {
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
 }
 .account-management .tab-button.active {
   background: #fff;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 .account-management .tab-button.active .tab-icon {
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
 }
 .account-management .tab-button.active::before {
   content: "";
@@ -382,18 +376,18 @@
   bottom: 12px;
   width: 3px;
   border-radius: 3px;
-  background: var(--cloudlogin-brand);
+  background: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .account-management .tab-button:focus-visible {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   outline-offset: 2px;
 }
 .account-management .tab-button--admin {
-  color: var(--cloudlogin-brand-strong) !important;
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646)) !important;
 }
 .account-management .admin-tab-badge {
   margin-left: 4px;
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   font-size: 11px;
 }
 .account-management .tab-button--logout {
@@ -449,7 +443,7 @@
 .account-management .account-page-eyebrow {
   display: block;
   margin-bottom: 4px;
-  color: var(--cloudlogin-ink-soft);
+  color: var(--cloudlogin-ink-soft, var(--amc-color-muted, #505050));
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -457,7 +451,7 @@
 }
 .account-management .account-page-header h1 {
   margin: 0;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-size: 26px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -477,7 +471,7 @@
   padding: 2px 0;
   border: 0;
   background: transparent;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   cursor: pointer;
   font: inherit;
   text-align: left;
@@ -489,8 +483,8 @@
   height: 40px;
   place-items: center;
   border-radius: 50%;
-  background: var(--cloudlogin-brand-soft);
-  color: var(--cloudlogin-brand);
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .account-management .quick-action-icon ::deep svg {
   width: 20px;
@@ -509,15 +503,15 @@
   transition: color 0.12s ease;
 }
 .account-management .quick-action-subtitle {
-  color: var(--cloudlogin-ink-soft);
+  color: var(--cloudlogin-ink-soft, var(--amc-color-muted, #505050));
   font-size: 12.5px;
   white-space: nowrap;
 }
 .account-management .quick-action:hover .quick-action-title {
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .account-management .quick-action:focus-visible {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -532,7 +526,7 @@
   width: 24px;
   height: 24px;
   border: 2px solid rgba(0, 0, 0, 0.12);
-  border-top-color: var(--cloudlogin-brand);
+  border-top-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   border-radius: 50%;
   animation: cloudlogin-workspace-spin 0.7s linear infinite;
 }
@@ -550,17 +544,17 @@
 }
 .account-management .workspace-missing p {
   margin: 0 0 14px;
-  color: var(--cloudlogin-ink-soft);
+  color: var(--cloudlogin-ink-soft, var(--amc-color-muted, #505050));
   font-size: 14px;
   line-height: 1.55;
 }
 .account-management .workspace-missing-action {
   min-height: 36px;
   padding: 7px 18px;
-  border: 1px solid var(--cloudlogin-brand);
+  border: 1px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   border-radius: 4px;
   background: transparent;
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -568,7 +562,7 @@
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 .account-management .workspace-missing-action:hover {
-  background: var(--cloudlogin-brand);
+  background: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   color: #fff;
 }
 /* ── Shared card language ─────────────────────────────────────
@@ -590,20 +584,20 @@
 }
 .account-management .tab-content ::deep .section-header h3 {
   margin: 0;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-size: 18px;
   font-weight: 600;
 }
 .account-management .tab-content ::deep .section-description,
 .account-management .tab-content ::deep .section-header-description {
   margin: 4px 0 0;
-  color: var(--cloudlogin-ink-soft);
+  color: var(--cloudlogin-ink-soft, var(--amc-color-muted, #505050));
   font-size: 13px;
 }
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card,
 .account-management .tab-content ::deep .account-section > .form-container {
-  border: 1px solid var(--cloudlogin-line);
+  border: 1px solid var(--cloudlogin-line, var(--amc-color-border, #c0c0c0));
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -617,7 +611,7 @@
   padding: 18px;
 }
 .account-management .tab-content ::deep .card-header h4 {
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-size: 15px;
   font-weight: 600;
 }
@@ -650,7 +644,7 @@
   height: 22px;
   margin-top: 1px;
   place-items: center;
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .account-management .tab-content ::deep .section-card-icon svg {
   width: 20px;
@@ -662,13 +656,13 @@
 }
 .account-management .tab-content ::deep .section-card-title {
   margin: 0;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-size: 15px;
   font-weight: 600;
 }
 .account-management .tab-content ::deep .section-card-subtitle {
   margin: 2px 0 0;
-  color: var(--cloudlogin-ink-soft);
+  color: var(--cloudlogin-ink-soft, var(--amc-color-muted, #505050));
   font-size: 13px;
   line-height: 1.4;
 }
@@ -683,7 +677,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   font: inherit;
   font-size: 13.5px;
   font-weight: 500;
@@ -702,7 +696,7 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--cloudlogin-ink-soft);
+  color: var(--cloudlogin-ink-soft, var(--amc-color-muted, #505050));
   cursor: pointer;
   transition: background-color 0.12s ease, color 0.12s ease;
 }
@@ -712,7 +706,7 @@
 }
 .account-management .tab-content ::deep .section-card-toggle:hover {
   background: #f0f0f0;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
 }
 /* A size container, so a card's contents can lay themselves out by how wide the
    card actually is rather than by how wide the window happens to be. */
@@ -724,14 +718,14 @@
 .account-management .tab-content ::deep .info-item,
 .account-management .tab-content ::deep .contact-item {
   border: 1px solid #e5e5e5;
-  border-left: 3px solid var(--cloudlogin-brand);
+  border-left: 3px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   border-radius: 6px;
   background: #fafafa;
   box-shadow: none;
 }
 .account-management .tab-content ::deep .form-label {
   margin: 0 0 6px;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-size: 13px;
   font-weight: 600;
 }
@@ -747,7 +741,7 @@
   border: 1px solid #8a8886;
   border-radius: 4px;
   background: #fff;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font: inherit;
   font-size: 14px;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
@@ -761,9 +755,9 @@
 .account-management .tab-content ::deep input:focus,
 .account-management .tab-content ::deep select:focus,
 .account-management .tab-content ::deep textarea:focus {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   outline-offset: -2px;
-  border-color: var(--cloudlogin-brand);
+  border-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   box-shadow: none;
 }
 /* Baseline button sizing for content that doesn't style its own controls.
@@ -783,21 +777,21 @@
 }
 .account-management .tab-content ::deep .btn-primary,
 .account-management .tab-content ::deep .admin-action-btn--primary {
-  border: 1px solid var(--cloudlogin-brand);
-  background: var(--cloudlogin-brand);
+  border: 1px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
+  background: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   color: #fff;
   box-shadow: none;
 }
 .account-management .tab-content ::deep .btn-primary:hover:not(:disabled),
 .account-management .tab-content ::deep .admin-action-btn--primary:hover:not(:disabled) {
-  border-color: var(--cloudlogin-brand-strong);
-  background: var(--cloudlogin-brand-strong);
+  border-color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
+  background: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
 }
 .account-management .tab-content ::deep .btn-outline,
 .account-management .tab-content ::deep .admin-action-btn--outline {
   border: 1px solid #8a8886;
   background: #fff;
-  color: var(--cloudlogin-ink);
+  color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
 }
 .account-management .tab-content ::deep .btn-outline:hover:not(:disabled),
 .account-management .tab-content ::deep .admin-action-btn--outline:hover:not(:disabled) {
@@ -807,7 +801,7 @@
 .account-management .tab-content ::deep button:focus-visible,
 .account-management .tab-content ::deep input:focus-visible,
 .account-management .tab-content ::deep select:focus-visible {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   outline-offset: 2px;
 }
 .account-management.skelton {
@@ -887,7 +881,7 @@
   }
   .account-management .tab-content {
     margin-left: var(--rail-width-desktop);
-    padding: 40px calc(clamp(32px, 5vw, 72px)) 72px;
+    padding: 40px clamp(32px, 5vw, 72px) 72px;
   }
   /* Narrow the reading column to ~80% of the available content area once
        there's room for it, so cards don't run edge to edge on wide screens. */

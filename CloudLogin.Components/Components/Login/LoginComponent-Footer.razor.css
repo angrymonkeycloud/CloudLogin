@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .amc-cloudlogin-footer {
   width: 100%;
   display: flex;
@@ -12,7 +13,7 @@
   gap: 20px;
 }
 .amc-cloudlogin-footer-separator {
-  border-top: 1px solid var(--amc-accentColor);
+  border-top: 1px solid var(--amc-color-primary, #525252);
   max-width: 20rem;
   width: 100%;
   opacity: 0.6;
@@ -28,5 +29,5 @@
   width: 24px;
 }
 .amc-cloudlogin-footer ::deep svg .amc-svg-fill {
-  fill: var(--amc-accentColor);
+  fill: var(--amc-color-primary, #525252);
 }

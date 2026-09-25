@@ -62,4 +62,5 @@
 		<None Include="..\README.md" Pack="True" PackagePath="\" Link="README.md" />
 	</ItemGroup>
 
+  <ItemGroup><ProjectReference Include="../../CloudCommon/CloudCommon.Theming/CloudCommon.Theming.csproj" /></ItemGroup>
 </Project>

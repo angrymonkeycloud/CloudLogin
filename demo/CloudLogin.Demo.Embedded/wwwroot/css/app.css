@@ -1,9 +1,10 @@
+/* Generated from LESS. Do not edit. */
 :root {
   color-scheme: light;
   --cloudlogin-color: #0078d4;
-  --amc-accentColor: var(--cloudlogin-color);
-  --amc-secondColor: color-mix(in srgb, var(--cloudlogin-color) 82%, #000);
-  --amc-accentColor-soft: color-mix(in srgb, var(--cloudlogin-color) 10%, #fff);
+  --amc-color-primary: var(--cloudlogin-color);
+  --amc-color-primary-hover: color-mix(in srgb, var(--cloudlogin-color) 82%, #000);
+  --amc-color-primary-soft: color-mix(in srgb, var(--cloudlogin-color) 10%, #fff);
   --canvas: #f5f6fb;
   --surface: #ffffff;
   --surface-soft: #f0f1f8;

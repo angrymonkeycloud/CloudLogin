@@ -1,20 +1,14 @@
+@import (reference) "../../Src/css/theme.less";
 @import (reference) "../../Src/variable.less";
 
 .account-management {
-    --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
-    --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
-    --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
-    --cloudlogin-page: #f5f5f5;
-    --cloudlogin-ink: #242424;
-    --cloudlogin-ink-soft: #616161;
-    --cloudlogin-line: #e6e6e6;
     --rail-width-collapsed: 68px;
     --rail-width-expanded: 300px;
     --rail-width-desktop: 260px;
     direction: ltr !important;
     min-height: 100vh;
-    background: var(--cloudlogin-page);
-    color: var(--cloudlogin-ink);
+    background: @login-page;
+    color: @login-ink;
     font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
 }
 
@@ -73,14 +67,14 @@
     left: 0;
     display: flex;
     flex-direction: column;
-    width: var(--rail-width-collapsed);
+    width: @login-rail-width-collapsed;
     overflow: hidden;
-    background: var(--cloudlogin-page);
+    background: @login-page;
     transition: width .2s ease;
 }
 
 .account-management .sidebar._open {
-    width: var(--rail-width-expanded);
+    width: @login-rail-width-expanded;
     max-width: 86vw;
     overflow-y: auto;
     box-shadow: 2px 0 24px rgba(0,0,0,.18);
@@ -113,7 +107,7 @@
 
 .account-management .sidebar-toggle:hover {
     background: #ebebeb;
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
 }
 
 .account-management .profile-mini {
@@ -137,7 +131,7 @@
 .account-management .profile-mini-avatar.initials {
     display: grid;
     place-items: center;
-    background: var(--cloudlogin-brand);
+    background: @login-brand;
     color: #fff;
     font-size: 16px;
     font-weight: 600;
@@ -162,14 +156,14 @@
 }
 
 .account-management .profile-mini-name {
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font-size: 15px;
     font-weight: 600;
 }
 
 .account-management .profile-mini-email {
     margin-top: 2px;
-    color: var(--cloudlogin-ink-soft);
+    color: @login-ink-soft;
     font-size: 12.5px;
 }
 
@@ -179,7 +173,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
     font: inherit;
     font-size: 13px;
     font-weight: 500;
@@ -191,7 +185,7 @@
 }
 
 .account-management .profile-mini-link:focus-visible {
-    outline: 2px solid var(--cloudlogin-brand);
+    outline: 2px solid @login-brand;
     outline-offset: 2px;
 }
 
@@ -238,7 +232,7 @@
     flex: 0 0 auto;
     height: 1px;
     margin: 8px 4px;
-    background: var(--cloudlogin-line);
+    background: @login-line;
 }
 
 .account-management .sidebar-footer {
@@ -247,7 +241,7 @@
     flex-direction: column;
     gap: 4px;
     padding: 10px;
-    border-top: 1px solid var(--cloudlogin-line);
+    border-top: 1px solid @login-line;
 }
 
 /* Session-state indicator. Lives in the rail (not on each page) so it reads as a
@@ -261,8 +255,8 @@
     min-height: 40px;
     padding: 0 12px;
     border-radius: 6px;
-    background: var(--cloudlogin-brand-soft);
-    color: var(--cloudlogin-brand-strong);
+    background: @login-brand-soft;
+    color: @login-brand-strong;
     font-size: 12.5px;
     font-weight: 600;
     white-space: nowrap;
@@ -374,7 +368,7 @@
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     cursor: pointer;
     font: inherit;
     font-size: 14px;
@@ -411,22 +405,22 @@
 
 .account-management .tab-button:hover {
     background: #ebebeb;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
 }
 
 .account-management .tab-button:hover .tab-icon {
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
 }
 
 .account-management .tab-button.active {
     background: #fff;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
 }
 
 .account-management .tab-button.active .tab-icon {
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
 }
 
 .account-management .tab-button.active::before {
@@ -437,21 +431,21 @@
     bottom: 12px;
     width: 3px;
     border-radius: 3px;
-    background: var(--cloudlogin-brand);
+    background: @login-brand;
 }
 
 .account-management .tab-button:focus-visible {
-    outline: 2px solid var(--cloudlogin-brand);
+    outline: 2px solid @login-brand;
     outline-offset: 2px;
 }
 
 .account-management .tab-button--admin {
-    color: var(--cloudlogin-brand-strong) !important;
+    color: @login-brand-strong !important;
 }
 
 .account-management .admin-tab-badge {
     margin-left: 4px;
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
     font-size: 11px;
 }
 
@@ -491,7 +485,7 @@
     flex: 1 1 auto;
     width: 100%;
     min-width: 0;
-    margin-left: var(--rail-width-collapsed);
+    margin-left: @login-rail-width-collapsed;
     padding: 24px 18px 64px;
     overflow-x: hidden;
 }
@@ -514,7 +508,7 @@
 .account-management .account-page-eyebrow {
     display: block;
     margin-bottom: 4px;
-    color: var(--cloudlogin-ink-soft);
+    color: @login-ink-soft;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: .04em;
@@ -523,7 +517,7 @@
 
 .account-management .account-page-header h1 {
     margin: 0;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font-size: 26px;
     font-weight: 600;
     letter-spacing: -.01em;
@@ -546,7 +540,7 @@
     padding: 2px 0;
     border: 0;
     background: transparent;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     cursor: pointer;
     font: inherit;
     text-align: left;
@@ -559,8 +553,8 @@
     height: 40px;
     place-items: center;
     border-radius: 50%;
-    background: var(--cloudlogin-brand-soft);
-    color: var(--cloudlogin-brand);
+    background: @login-brand-soft;
+    color: @login-brand;
 }
 
 .account-management .quick-action-icon ::deep svg {
@@ -583,17 +577,17 @@
 }
 
 .account-management .quick-action-subtitle {
-    color: var(--cloudlogin-ink-soft);
+    color: @login-ink-soft;
     font-size: 12.5px;
     white-space: nowrap;
 }
 
 .account-management .quick-action:hover .quick-action-title {
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
 }
 
 .account-management .quick-action:focus-visible {
-    outline: 2px solid var(--cloudlogin-brand);
+    outline: 2px solid @login-brand;
     outline-offset: 4px;
     border-radius: 4px;
 }
@@ -611,7 +605,7 @@
     width: 24px;
     height: 24px;
     border: 2px solid rgba(0,0,0,.12);
-    border-top-color: var(--cloudlogin-brand);
+    border-top-color: @login-brand;
     border-radius: 50%;
     animation: cloudlogin-workspace-spin .7s linear infinite;
 }
@@ -632,7 +626,7 @@
 
 .account-management .workspace-missing p {
     margin: 0 0 14px;
-    color: var(--cloudlogin-ink-soft);
+    color: @login-ink-soft;
     font-size: 14px;
     line-height: 1.55;
 }
@@ -640,10 +634,10 @@
 .account-management .workspace-missing-action {
     min-height: 36px;
     padding: 7px 18px;
-    border: 1px solid var(--cloudlogin-brand);
+    border: 1px solid @login-brand;
     border-radius: 4px;
     background: transparent;
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
     font: inherit;
     font-size: 14px;
     font-weight: 600;
@@ -652,7 +646,7 @@
 }
 
 .account-management .workspace-missing-action:hover {
-    background: var(--cloudlogin-brand);
+    background: @login-brand;
     color: #fff;
 }
 
@@ -678,7 +672,7 @@
 
 .account-management .tab-content ::deep .section-header h3 {
     margin: 0;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font-size: 18px;
     font-weight: 600;
 }
@@ -686,14 +680,14 @@
 .account-management .tab-content ::deep .section-description,
 .account-management .tab-content ::deep .section-header-description {
     margin: 4px 0 0;
-    color: var(--cloudlogin-ink-soft);
+    color: @login-ink-soft;
     font-size: 13px;
 }
 
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card,
 .account-management .tab-content ::deep .account-section > .form-container {
-    border: 1px solid var(--cloudlogin-line);
+    border: 1px solid @login-line;
     border-radius: 8px;
     background: #fff;
     box-shadow: 0 1px 2px rgba(0,0,0,.05);
@@ -710,7 +704,7 @@
 }
 
 .account-management .tab-content ::deep .card-header h4 {
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font-size: 15px;
     font-weight: 600;
 }
@@ -747,7 +741,7 @@
     height: 22px;
     margin-top: 1px;
     place-items: center;
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
 }
 
 .account-management .tab-content ::deep .section-card-icon svg {
@@ -762,14 +756,14 @@
 
 .account-management .tab-content ::deep .section-card-title {
     margin: 0;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font-size: 15px;
     font-weight: 600;
 }
 
 .account-management .tab-content ::deep .section-card-subtitle {
     margin: 2px 0 0;
-    color: var(--cloudlogin-ink-soft);
+    color: @login-ink-soft;
     font-size: 13px;
     line-height: 1.4;
 }
@@ -786,7 +780,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: var(--cloudlogin-brand);
+    color: @login-brand;
     font: inherit;
     font-size: 13.5px;
     font-weight: 500;
@@ -807,7 +801,7 @@
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: var(--cloudlogin-ink-soft);
+    color: @login-ink-soft;
     cursor: pointer;
     transition: background-color .12s ease, color .12s ease;
 }
@@ -819,7 +813,7 @@
 
 .account-management .tab-content ::deep .section-card-toggle:hover {
     background: #f0f0f0;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
 }
 
 /* A size container, so a card's contents can lay themselves out by how wide the
@@ -833,7 +827,7 @@
 .account-management .tab-content ::deep .info-item,
 .account-management .tab-content ::deep .contact-item {
     border: 1px solid #e5e5e5;
-    border-left: 3px solid var(--cloudlogin-brand);
+    border-left: 3px solid @login-brand;
     border-radius: 6px;
     background: #fafafa;
     box-shadow: none;
@@ -841,7 +835,7 @@
 
 .account-management .tab-content ::deep .form-label {
     margin: 0 0 6px;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font-size: 13px;
     font-weight: 600;
 }
@@ -858,7 +852,7 @@
     border: 1px solid #8a8886;
     border-radius: 4px;
     background: #fff;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
     font: inherit;
     font-size: 14px;
     transition: border-color .12s ease, box-shadow .12s ease;
@@ -874,9 +868,9 @@
 .account-management .tab-content ::deep input:focus,
 .account-management .tab-content ::deep select:focus,
 .account-management .tab-content ::deep textarea:focus {
-    outline: 2px solid var(--cloudlogin-brand);
+    outline: 2px solid @login-brand;
     outline-offset: -2px;
-    border-color: var(--cloudlogin-brand);
+    border-color: @login-brand;
     box-shadow: none;
 }
 
@@ -898,23 +892,23 @@
 
 .account-management .tab-content ::deep .btn-primary,
 .account-management .tab-content ::deep .admin-action-btn--primary {
-    border: 1px solid var(--cloudlogin-brand);
-    background: var(--cloudlogin-brand);
+    border: 1px solid @login-brand;
+    background: @login-brand;
     color: #fff;
     box-shadow: none;
 }
 
 .account-management .tab-content ::deep .btn-primary:hover:not(:disabled),
 .account-management .tab-content ::deep .admin-action-btn--primary:hover:not(:disabled) {
-    border-color: var(--cloudlogin-brand-strong);
-    background: var(--cloudlogin-brand-strong);
+    border-color: @login-brand-strong;
+    background: @login-brand-strong;
 }
 
 .account-management .tab-content ::deep .btn-outline,
 .account-management .tab-content ::deep .admin-action-btn--outline {
     border: 1px solid #8a8886;
     background: #fff;
-    color: var(--cloudlogin-ink);
+    color: @login-ink;
 }
 
 .account-management .tab-content ::deep .btn-outline:hover:not(:disabled),
@@ -926,7 +920,7 @@
 .account-management .tab-content ::deep button:focus-visible,
 .account-management .tab-content ::deep input:focus-visible,
 .account-management .tab-content ::deep select:focus-visible {
-    outline: 2px solid var(--cloudlogin-brand);
+    outline: 2px solid @login-brand;
     outline-offset: 2px;
 }
 
@@ -992,7 +986,7 @@
 
 @media @media-large {
     .account-management .sidebar {
-        width: var(--rail-width-desktop);
+        width: @login-rail-width-desktop;
         box-shadow: none;
     }
 
@@ -1024,7 +1018,7 @@
     }
 
     .account-management .tab-content {
-        margin-left: var(--rail-width-desktop);
+        margin-left: @login-rail-width-desktop;
         padding: 40px clamp(32px, 5vw, 72px) 72px;
     }
 

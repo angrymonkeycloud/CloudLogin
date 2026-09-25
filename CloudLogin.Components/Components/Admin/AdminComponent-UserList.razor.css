@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 ::deep .admin-select {
   position: relative;
   border: 1px solid #ced4da;
@@ -26,7 +27,7 @@
   fill: #374151;
 }
 ::deep .admin-select:has(select:focus) {
-  border-color: var(--amc-accentColor);
+  border-color: var(--amc-color-primary, #525252);
 }
 ::deep .admin-select:has(select:focus) select {
   outline: none;

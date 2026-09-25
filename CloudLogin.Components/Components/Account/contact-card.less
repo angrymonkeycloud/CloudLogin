@@ -1,3 +1,4 @@
+@import (reference) "../../Src/css/theme.less";
 // Shared styling for the account page's contact cards (email addresses and phone
 // numbers). Both sections render identical markup, so the rules live here once and
 // each component's scoped stylesheet mixes them in — Blazor scoped CSS can't share a
@@ -32,7 +33,7 @@
         background: none;
         border: none;
         padding: 0;
-        color: var(--amc-accentColor);
+        color: @login-color-primary;
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
@@ -107,8 +108,8 @@
         }
 
         &:focus {
-            border-color: var(--amc-accentColor);
-            box-shadow: 0 0 0 3px var(--amc-accentColor-soft, fade(#0078d4, 12%));
+            border-color: @login-color-primary;
+            box-shadow: 0 0 0 3px @login-color-primary-soft;
         }
 
         &:disabled {
@@ -148,13 +149,13 @@
         }
 
         &-primary {
-            background-color: var(--amc-accentColor);
-            border-color: var(--amc-accentColor);
+            background-color: @login-color-primary;
+            border-color: @login-color-primary;
             color: @white;
 
             &:hover:not(:disabled) {
-                background-color: var(--amc-secondColor);
-                border-color: var(--amc-secondColor);
+                background-color: @login-color-primary-hover;
+                border-color: @login-color-primary-hover;
             }
         }
 
@@ -232,7 +233,7 @@
         place-items: center;
         border-radius: 8px;
         background: @surface;
-        color: var(--amc-accentColor);
+        color: @login-color-primary;
 
         ::deep svg {
             width: 15px;
@@ -261,7 +262,7 @@
         letter-spacing: 0.02em;
 
         &-primary {
-            background-color: var(--amc-accentColor);
+            background-color: @login-color-primary;
             color: @white;
         }
 

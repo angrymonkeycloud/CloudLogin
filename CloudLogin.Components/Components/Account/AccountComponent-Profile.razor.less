@@ -1,3 +1,4 @@
+@import (reference) "../../Src/css/theme.less";
 @import (reference) "../../Src/variable.less";
 
 .account-section {
@@ -123,7 +124,7 @@
 .link-action {
     background: none;
     border: none;
-    color: var(--amc-accentColor);
+    color: @login-color-primary;
     font-weight: 600;
     cursor: pointer;
 
@@ -166,8 +167,8 @@
 
     &:focus {
         outline: none;
-        border-color: var(--amc-accentColor);
-        box-shadow: 0 0 0 3px var(--amc-accentColor-soft, fade(#0078d4, 12%));
+        border-color: @login-color-primary;
+        box-shadow: 0 0 0 3px @login-color-primary-soft;
     }
 }
 
@@ -214,8 +215,8 @@ select.form-input {
 }
 
 .btn.btn-primary {
-    background: var(--amc-accentColor);
-    border: 1px solid var(--amc-accentColor);
+    background: @login-color-primary;
+    border: 1px solid @login-color-primary;
     color: @white;
     padding: 8px 14px;
     border-radius: 6px;

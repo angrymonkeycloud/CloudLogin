@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .admin-detail {
   display: flex;
   flex-direction: column;
@@ -27,7 +28,7 @@
 }
 .admin-detail-back:hover {
   background-color: #f8f9fa;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
 }
 .admin-detail-hero {
   display: flex;
@@ -48,7 +49,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--amc-accentColor);
+  background: var(--amc-color-primary, #525252);
   color: #fff;
   font-size: 28px;
   font-weight: 700;
@@ -185,7 +186,7 @@
   transition: all 0.3s ease-in-out;
 }
 .admin-detail-field input:focus {
-  border-color: var(--amc-accentColor);
+  border-color: var(--amc-color-primary, #525252);
 }
 .admin-detail-hint {
   font-size: 0.72rem;
@@ -210,11 +211,11 @@
   letter-spacing: 0.3px;
 }
 .chip--admin {
-  background-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .chip--test {
-  background-color: var(--amc-secondColor);
+  background-color: var(--amc-color-primary-hover, #464646);
   color: #fff;
 }
 .chip--active {
@@ -244,7 +245,7 @@
   cursor: not-allowed;
 }
 .admin-action-btn--primary {
-  background-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .admin-action-btn--primary:hover:not(:disabled) {
@@ -259,11 +260,11 @@
 }
 .admin-action-btn--outline {
   background-color: transparent;
-  border-color: var(--amc-accentColor);
-  color: var(--amc-accentColor);
+  border-color: var(--amc-color-primary, #525252);
+  color: var(--amc-color-primary, #525252);
 }
 .admin-action-btn--outline:hover:not(:disabled) {
-  background-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .admin-action-btn--muted {

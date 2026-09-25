@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .account-section {
   display: flex;
   flex-direction: column;
@@ -52,7 +53,7 @@
   padding: 0;
   border: none;
   background: none;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -82,7 +83,7 @@
   height: 52px;
   place-items: center;
   border-radius: 14px;
-  background: var(--amc-accentColor);
+  background: var(--amc-color-primary, #525252);
   color: #fff;
   font-size: 18px;
   font-weight: 700;
@@ -121,8 +122,8 @@
   text-transform: uppercase;
 }
 .chip--owner {
-  background: var(--amc-accentColor-soft, rgba(0, 120, 212, 0.12));
-  color: var(--amc-accentColor);
+  background: var(--amc-color-primary-soft, #f8f8f8);
+  color: var(--amc-color-primary, #525252);
 }
 .chip--muted {
   background: #fff3cd;
@@ -146,7 +147,7 @@
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .stat:hover:not(:disabled):not(._static) {
-  border-color: var(--amc-accentColor);
+  border-color: var(--amc-color-primary, #525252);
   background: #fff;
 }
 .stat._static,
@@ -255,8 +256,8 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .form-input:focus {
-  border-color: var(--amc-accentColor);
-  box-shadow: 0 0 0 3px var(--amc-accentColor-soft, rgba(0, 120, 212, 0.12));
+  border-color: var(--amc-color-primary, #525252);
+  box-shadow: 0 0 0 3px var(--amc-color-primary-soft, #f8f8f8);
 }
 .form-input:disabled {
   background: #f1f3f5;
@@ -295,13 +296,13 @@ textarea.form-input {
   opacity: 0.55;
 }
 .btn-primary {
-  border-color: var(--amc-accentColor);
-  background: var(--amc-accentColor);
+  border-color: var(--amc-color-primary, #525252);
+  background: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
-  border-color: var(--amc-secondColor);
-  background: var(--amc-secondColor);
+  border-color: var(--amc-color-primary-hover, #464646);
+  background: var(--amc-color-primary-hover, #464646);
 }
 .btn-outline {
   border-color: #ced4da;

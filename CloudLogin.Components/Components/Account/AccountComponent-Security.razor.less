@@ -1,3 +1,4 @@
+@import (reference) "../../Src/css/theme.less";
 @import (reference) "../../Src/variable.less";
 
 .account-section {
@@ -59,7 +60,7 @@
     background: none;
     border: none;
     padding: 0;
-    color: var(--amc-accentColor);
+    color: @login-color-primary;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -110,8 +111,8 @@
     transition: border-color .15s ease, box-shadow .15s ease;
 
     &:focus {
-        border-color: var(--amc-accentColor);
-        box-shadow: 0 0 0 3px var(--amc-accentColor-soft, fade(#0078d4, 12%));
+        border-color: @login-color-primary;
+        box-shadow: 0 0 0 3px @login-color-primary-soft;
     }
 
     &:disabled {
@@ -157,13 +158,13 @@
     }
 
     &-primary {
-        background: var(--amc-accentColor);
-        border-color: var(--amc-accentColor);
+        background: @login-color-primary;
+        border-color: @login-color-primary;
         color: @white;
 
         &:hover:not(:disabled) {
-            background: var(--amc-secondColor);
-            border-color: var(--amc-secondColor);
+            background: @login-color-primary-hover;
+            border-color: @login-color-primary-hover;
         }
     }
 
@@ -292,7 +293,7 @@
     place-items: center;
     border-radius: 9px;
     background: @surface;
-    color: var(--amc-accentColor);
+    color: @login-color-primary;
 
     ::deep svg {
         width: 17px;
@@ -346,17 +347,17 @@
 
 .provider-chip {
     padding: 8px 16px;
-    border: 1px solid var(--amc-accentColor);
+    border: 1px solid @login-color-primary;
     border-radius: @radius-pill;
     background: @white;
-    color: var(--amc-accentColor);
+    color: @login-color-primary;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color .15s ease, color .15s ease;
 
     &:hover:not(:disabled) {
-        background: var(--amc-accentColor);
+        background: @login-color-primary;
         color: @white;
     }
 
@@ -404,7 +405,7 @@
     width: 22px;
     height: 22px;
     border: 2px solid fade(#000, 15%);
-    border-top-color: var(--amc-accentColor);
+    border-top-color: @login-color-primary;
     border-radius: 50%;
     display: block;
     margin: 28px auto;

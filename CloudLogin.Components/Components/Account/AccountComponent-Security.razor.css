@@ -1,3 +1,4 @@
+/* Generated from LESS. Do not edit. */
 .account-section {
   display: flex;
   flex-direction: column;
@@ -47,7 +48,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -91,8 +92,8 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .form-input:focus {
-  border-color: var(--amc-accentColor);
-  box-shadow: 0 0 0 3px var(--amc-accentColor-soft, rgba(0, 120, 212, 0.12));
+  border-color: var(--amc-color-primary, #525252);
+  box-shadow: 0 0 0 3px var(--amc-color-primary-soft, #f8f8f8);
 }
 .form-input:disabled {
   background: #f1f3f5;
@@ -132,13 +133,13 @@
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--amc-accentColor);
-  border-color: var(--amc-accentColor);
+  background: var(--amc-color-primary, #525252);
+  border-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--amc-secondColor);
-  border-color: var(--amc-secondColor);
+  background: var(--amc-color-primary-hover, #464646);
+  border-color: var(--amc-color-primary-hover, #464646);
 }
 .btn-outline {
   background: #fff;
@@ -245,7 +246,7 @@
   place-items: center;
   border-radius: 9px;
   background: #f8f9fa;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
 }
 .entry-icon ::deep svg {
   width: 17px;
@@ -290,17 +291,17 @@
 }
 .provider-chip {
   padding: 8px 16px;
-  border: 1px solid var(--amc-accentColor);
+  border: 1px solid var(--amc-color-primary, #525252);
   border-radius: 999px;
   background: #fff;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 .provider-chip:hover:not(:disabled) {
-  background: var(--amc-accentColor);
+  background: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .provider-chip:disabled {
@@ -340,7 +341,7 @@
   width: 22px;
   height: 22px;
   border: 2px solid rgba(0, 0, 0, 0.15);
-  border-top-color: var(--amc-accentColor);
+  border-top-color: var(--amc-color-primary, #525252);
   border-radius: 50%;
   display: block;
   margin: 28px auto;

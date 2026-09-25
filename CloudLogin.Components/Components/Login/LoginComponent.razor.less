@@ -1,8 +1,9 @@
-/*@import url('http://fonts.cdnfonts.com/css/helvetica-neue-9');*/
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+@import (reference) "../../Src/css/theme.less";
+
+
 @--borderColor: #dadce0;
 @--height: 5px;
-/*var(--amc-accentColor): #4569D4;*/
+/*@login-color-primary: #4569D4;*/
 @--textColor: #202124;
 @--colorError: #f53030;
 @--colorWhatsApp: #25d366;
@@ -19,7 +20,7 @@
 }
 
 .amc-cloudlogin {
-    /*--amc-secondColor:#000;*/
+    /*--amc-color-primary-hover:#000;*/
 
     --microsoftColor: #00A4EF;
     --googleColor: #DB4437;
@@ -31,7 +32,7 @@
     align-items: center;
     padding-bottom: 20px;
     overflow: auto;
-    background-color: #fff;
+    background-color: @login-field-surface;
     overflow-x: hidden;
     padding-block: 50px;
     direction: ltr;
@@ -43,7 +44,7 @@
         &:focus,
         &:hover,
         &:active {
-            color: var(--amc-accentColor);
+            color: @login-color-primary;
 
             &:hover {
                 text-decoration: underline;
@@ -67,7 +68,7 @@
         outline: none;
         font-size: .9rem;
         padding: 10px;
-        border: 1px solid var(--amc-accentColor);
+        border: 1px solid @login-color-primary;
         border-radius: 3px;
         -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
         -webkit-transition-delay: 9999s;
@@ -90,30 +91,30 @@
     }
 
     &-provider {
-        --currentColor: var(--amc-accentColor);
+        --currentColor: @login-color-primary;
 
         &._primary {
             --currentColor: #ffd800;
         }
 
         &._microsoft {
-            --currentColor: var(--microsoftColor);
+            --currentColor: @login-microsoft-color;
         }
 
         &._google {
-            --currentColor: var(--googleColor);
+            --currentColor: @login-google-color;
         }
 
         &._facebook {
-            --currentColor: var(--facebookColor);
+            --currentColor: @login-facebook-color;
         }
 
         &._twitter {
-            --currentColor: var(--twitterColor);
+            --currentColor: @login-twitter-color;
         }
 
         &._whatsapp {
-            --currentColor: var(--whatsappColor);
+            --currentColor: @login-whatsapp-color;
         }
 
         background-color: transparent;
@@ -125,14 +126,14 @@
         justify-content: center;
         gap: 10px;
         transition: all .5s;
-        border: 1px solid var(--currentColor);
+        border: 1px solid @login-current-color;
         border-radius: 3px;
-        color: var(--currentColor);
+        color: @login-current-color;
         padding: 15px 20px;
 
         &:hover {
             color: #fff;
-            background-color: var(--currentColor);
+            background-color: @login-current-color;
         }
     }
 
@@ -184,7 +185,7 @@
                     button {
                         border: none;
                         background-color: transparent;
-                        color: var(--activeColor);
+                        color: @login-active-color;
                         font-size: .8rem;
                         transition: all .3s;
                         cursor: pointer;
@@ -230,7 +231,7 @@
     }
 
     &-selectedinput {
-        color: var(--amc-accentColor);
+        color: @login-color-primary;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -271,14 +272,14 @@
     &-link {
         cursor: pointer;
         font-size: .8rem;
-        color: var(--amc-accentColor);
+        color: @login-color-primary;
         transition: all .3s ease-in-out;
         background-color: transparent;
         outline: none;
         border: none;
 
         &:hover {
-            color: var(--amc-secondColor);
+            color: @login-color-primary-hover;
         }
     }
 
@@ -293,13 +294,13 @@
         cursor: pointer;
         border-radius: 20px;
         background-color: transparent;
-        color: var(--amc-accentColor);
-        border: 1px solid var(--amc-accentColor);
+        color: @login-color-primary;
+        border: 1px solid @login-color-primary;
         transition: all .5s;
         position: relative;
 
         &:hover {
-            background-color: var(--amc-accentColor);
+            background-color: @login-color-primary;
             color: #fff;
         }
 
@@ -308,13 +309,13 @@
         }
 
         &._solid {
-            background-color: var(--amc-secondColor);
-            border-color: var(--amc-secondColor);
+            background-color: @login-color-primary-hover;
+            border-color: @login-color-primary-hover;
             color: #fff;
 
             &:hover {
                 background-color: transparent;
-                color: var(--amc-secondColor);
+                color: @login-color-primary-hover;
             }
         }
     }
@@ -328,13 +329,13 @@
             margin-left: 5px;
             font-size: .8rem;
             font-weight: bold;
-            color: var(--amc-accentColor);
+            color: @login-color-primary;
         }
 
         input {
             padding: 15px 20px;
             outline: none;
-            border: 1px solid var(--amc-accentColor);
+            border: 1px solid @login-color-primary;
             border-radius: 5px;
         }
     }
@@ -368,7 +369,7 @@
                     padding: 5px;
 
                     rect {
-                        fill: var(--amc-accentColor);
+                        fill: @login-color-primary;
                     }
                 }
             }
@@ -482,20 +483,17 @@
 }
 /* Microsoft account-inspired CloudLogin surface */
 .amc-cloudlogin {
-  --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
-  --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
-  --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
   width: min(440px, calc(100% - 32px));
   margin: 32px auto;
   padding: 40px 44px 36px;
   overflow: visible;
   border: 1px solid #e1e1e1;
-  border-top: 3px solid var(--cloudlogin-brand);
+  border-top: 3px solid @login-brand;
   border-radius: 4px;
-  background: #fff;
+  background: @login-field-surface;
   box-shadow: 0 3px 14px rgba(0,0,0,.14);
   color: #1b1b1b;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  font-family: @login-font-family;
   direction: ltr;
 }
 .amc-cloudlogin *, .amc-cloudlogin *::before, .amc-cloudlogin *::after { box-sizing: border-box; }
@@ -528,10 +526,10 @@
   min-height: 44px;
   justify-content: flex-start;
   padding: 10px 14px;
-  border: 1px solid #8a8886;
+  border: 1px solid @login-field-border;
   border-radius: 3px;
-  background: #fff;
-  color: #242424;
+  background: @login-field-surface;
+  color: @login-field-text;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -544,9 +542,9 @@
   max-width: none;
   min-height: 40px;
   padding: 8px 18px;
-  border: 1px solid var(--cloudlogin-brand);
+  border: 1px solid @login-brand;
   border-radius: 3px;
-  background: var(--cloudlogin-brand);
+  background: @login-brand;
   color: #fff;
   font: inherit;
   font-size: 14px;
@@ -554,9 +552,9 @@
   text-transform: none;
   transition: background-color .12s ease, border-color .12s ease;
 }
-.amc-cloudlogin-button:hover { border-color: var(--cloudlogin-brand-strong); background: var(--cloudlogin-brand-strong); color: #fff; }
-.amc-cloudlogin-button._solid { border-color: var(--cloudlogin-brand); background: var(--cloudlogin-brand); }
-.amc-cloudlogin-button._solid:hover { border-color: var(--cloudlogin-brand-strong); background: var(--cloudlogin-brand-strong); color: #fff; }
+.amc-cloudlogin-button:hover { border-color: @login-brand-strong; background: @login-brand-strong; color: #fff; }
+.amc-cloudlogin-button._solid { border-color: @login-brand; background: @login-brand; }
+.amc-cloudlogin-button._solid:hover { border-color: @login-brand-strong; background: @login-brand-strong; color: #fff; }
 .amc-cloudlogin-input { gap: 6px; width: 100%; }
 .amc-cloudlogin-input label { order: -1; margin: 0; color: #323130; font-size: 13px; font-weight: 600; }
 .amc-cloudlogin input[type="text"],
@@ -569,10 +567,10 @@
   width: 100%;
   min-height: 42px;
   padding: 9px 11px;
-  border: 1px solid #8a8886;
+  border: 1px solid @login-field-border;
   border-radius: 3px;
-  background: #fff;
-  color: #242424;
+  background: @login-field-surface;
+  color: @login-field-text;
   font: inherit;
   font-size: 15px;
   transition: border-color .12s ease, box-shadow .12s ease;
@@ -583,19 +581,19 @@
 .amc-cloudlogin select:focus,
 .amc-cloudlogin textarea:focus,
 .amc-cloudlogin ::deep .input-content input:focus {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid @login-brand;
   outline-offset: -2px;
-  border-color: var(--cloudlogin-brand);
+  border-color: @login-brand;
   box-shadow: none;
 }
 .amc-cloudlogin ::deep .input-label { display: block; margin-bottom: 6px; color: #323130; font-size: 13px; font-weight: 600; }
 .amc-cloudlogin-keppsignedin { margin: 2px 0; opacity: 1; color: #323130; }
-.amc-cloudlogin-keppsignedin input { width: 18px; height: 18px; accent-color: var(--cloudlogin-brand); }
+.amc-cloudlogin-keppsignedin input { width: 18px; height: 18px; accent-color: @login-brand; }
 .amc-cloudlogin-keppsignedin label { padding-left: 3px; font-size: 13px; }
-.amc-cloudlogin-link { color: var(--cloudlogin-brand); font-family: inherit; font-size: 13px; }
-.amc-cloudlogin-link:hover { color: var(--cloudlogin-brand-strong); text-decoration: underline; }
-.amc-cloudlogin a, .amc-cloudlogin a:visited { color: var(--cloudlogin-brand); }
-.amc-cloudlogin :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--cloudlogin-brand); outline-offset: 2px; }
+.amc-cloudlogin-link { color: @login-brand; font-family: inherit; font-size: 13px; }
+.amc-cloudlogin-link:hover { color: @login-brand-strong; text-decoration: underline; }
+.amc-cloudlogin a, .amc-cloudlogin a:visited { color: @login-brand; }
+.amc-cloudlogin :is(button, input, select, textarea):focus-visible { outline: 2px solid @login-brand; outline-offset: 2px; }
 .amc-cloudlogin .--disable { cursor: not-allowed; opacity: .45; }
 @media only screen and (max-width: 520px) {
   .amc-cloudlogin { width: 100%; margin: 0; padding: 32px 24px; border-right: 0; border-left: 0; border-radius: 0; box-shadow: none; }

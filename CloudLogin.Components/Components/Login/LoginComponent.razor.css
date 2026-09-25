@@ -1,33 +1,5 @@
-/*@import url('http://fonts.cdnfonts.com/css/helvetica-neue-9');*/
-@font-face {
-  font-family: 'Tajawal';
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iurf6YBj_oCad4k1l5qjLrY.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Tajawal';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iura6YBj_oCad4k1rzY.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Tajawal';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iurf6YBj_oCad4k1l8KiLrY.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Tajawal';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url(https://fonts.gstatic.com/s/tajawal/v12/Iurf6YBj_oCad4k1l4qkLrY.ttf) format('truetype');
-}
-/*var(--amc-accentColor): #4569D4;*/
+/* Generated from LESS. Do not edit. */
+/*@login-color-primary: #4569D4;*/
 .disableProvider ::deep svg:first-child {
   display: none;
 }
@@ -35,7 +7,7 @@
   display: block;
 }
 .amc-cloudlogin {
-  /*--amc-secondColor:#000;*/
+  /*--amc-color-primary-hover:#000;*/
   --microsoftColor: #00A4EF;
   --googleColor: #DB4437;
   --facebookColor: #4267B2;
@@ -46,7 +18,7 @@
   align-items: center;
   padding-bottom: 20px;
   overflow: auto;
-  background-color: #fff;
+  background-color: var(--cloudlogin-field-surface, var(--amc-color-surface, #fff));
   overflow-x: hidden;
   padding-block: 50px;
   direction: ltr;
@@ -57,7 +29,7 @@
 .amc-cloudlogin a:focus,
 .amc-cloudlogin a:hover,
 .amc-cloudlogin a:active {
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
 }
 .amc-cloudlogin a:hover,
 .amc-cloudlogin a:visited:hover,
@@ -81,7 +53,7 @@
   outline: none;
   font-size: 0.9rem;
   padding: 10px;
-  border: 1px solid var(--amc-accentColor);
+  border: 1px solid var(--amc-color-primary, #525252);
   border-radius: 3px;
   -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
   -webkit-transition-delay: 9999s;
@@ -101,7 +73,7 @@
   width: 100%;
 }
 .amc-cloudlogin-provider {
-  --currentColor: var(--amc-accentColor);
+  --currentColor: var(--amc-color-primary, #525252);
   background-color: transparent;
   cursor: pointer;
   width: 100%;
@@ -219,7 +191,7 @@
   width: fit-content;
 }
 .amc-cloudlogin-selectedinput {
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -255,14 +227,14 @@
 .amc-cloudlogin-link {
   cursor: pointer;
   font-size: 0.8rem;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
   transition: all 0.3s ease-in-out;
   background-color: transparent;
   outline: none;
   border: none;
 }
 .amc-cloudlogin-link:hover {
-  color: var(--amc-secondColor);
+  color: var(--amc-color-primary-hover, #464646);
 }
 .amc-cloudlogin-button {
   width: 100%;
@@ -275,26 +247,26 @@
   cursor: pointer;
   border-radius: 20px;
   background-color: transparent;
-  color: var(--amc-accentColor);
-  border: 1px solid var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
+  border: 1px solid var(--amc-color-primary, #525252);
   transition: all 0.5s;
   position: relative;
 }
 .amc-cloudlogin-button:hover {
-  background-color: var(--amc-accentColor);
+  background-color: var(--amc-color-primary, #525252);
   color: #fff;
 }
 .amc-cloudlogin-button ::deep svg {
   display: none;
 }
 .amc-cloudlogin-button._solid {
-  background-color: var(--amc-secondColor);
-  border-color: var(--amc-secondColor);
+  background-color: var(--amc-color-primary-hover, #464646);
+  border-color: var(--amc-color-primary-hover, #464646);
   color: #fff;
 }
 .amc-cloudlogin-button._solid:hover {
   background-color: transparent;
-  color: var(--amc-secondColor);
+  color: var(--amc-color-primary-hover, #464646);
 }
 .amc-cloudlogin-input {
   display: flex;
@@ -305,12 +277,12 @@
   margin-left: 5px;
   font-size: 0.8rem;
   font-weight: bold;
-  color: var(--amc-accentColor);
+  color: var(--amc-color-primary, #525252);
 }
 .amc-cloudlogin-input input {
   padding: 15px 20px;
   outline: none;
-  border: 1px solid var(--amc-accentColor);
+  border: 1px solid var(--amc-color-primary, #525252);
   border-radius: 5px;
 }
 .amc-cloudlogin._loading .amc-cloudlogin-providers button {
@@ -336,7 +308,7 @@
   padding: 5px;
 }
 .amc-cloudlogin._loading .amc-cloudlogin-button ::deep svg rect {
-  fill: var(--amc-accentColor);
+  fill: var(--amc-color-primary, #525252);
 }
 .amc-cloudlogin ._fullpage-header {
   min-height: 12rem;
@@ -412,20 +384,17 @@
 }
 /* Microsoft account-inspired CloudLogin surface */
 .amc-cloudlogin {
-  --cloudlogin-brand: var(--amc-accentColor, var(--cloudlogin-color, #0078d4));
-  --cloudlogin-brand-strong: var(--amc-secondColor, color-mix(in srgb, var(--cloudlogin-brand) 82%, #000));
-  --cloudlogin-brand-soft: var(--amc-accentColor-soft, color-mix(in srgb, var(--cloudlogin-brand) 9%, #fff));
-  width: 440px;
+  width: min(440px, calc(100% - 32px));
   margin: 32px auto;
   padding: 40px 44px 36px;
   overflow: visible;
   border: 1px solid #e1e1e1;
-  border-top: 3px solid var(--cloudlogin-brand);
+  border-top: 3px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   border-radius: 4px;
-  background: #fff;
+  background: var(--cloudlogin-field-surface, var(--amc-color-surface, #fff));
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.14);
   color: #1b1b1b;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  font-family: var(--cloudlogin-font-family, var(--amc-font-family, 'Segoe UI', sans-serif));
   direction: ltr;
 }
 .amc-cloudlogin *,
@@ -495,10 +464,10 @@
   min-height: 44px;
   justify-content: flex-start;
   padding: 10px 14px;
-  border: 1px solid #8a8886;
+  border: 1px solid var(--cloudlogin-field-border, var(--amc-color-control-border, #8a8886));
   border-radius: 3px;
-  background: #fff;
-  color: #242424;
+  background: var(--cloudlogin-field-surface, var(--amc-color-surface, #fff));
+  color: var(--cloudlogin-field-text, var(--amc-color-text, #242424));
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -515,9 +484,9 @@
   max-width: none;
   min-height: 40px;
   padding: 8px 18px;
-  border: 1px solid var(--cloudlogin-brand);
+  border: 1px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   border-radius: 3px;
-  background: var(--cloudlogin-brand);
+  background: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   color: #fff;
   font: inherit;
   font-size: 14px;
@@ -526,17 +495,17 @@
   transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 .amc-cloudlogin-button:hover {
-  border-color: var(--cloudlogin-brand-strong);
-  background: var(--cloudlogin-brand-strong);
+  border-color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
+  background: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
   color: #fff;
 }
 .amc-cloudlogin-button._solid {
-  border-color: var(--cloudlogin-brand);
-  background: var(--cloudlogin-brand);
+  border-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
+  background: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .amc-cloudlogin-button._solid:hover {
-  border-color: var(--cloudlogin-brand-strong);
-  background: var(--cloudlogin-brand-strong);
+  border-color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
+  background: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
   color: #fff;
 }
 .amc-cloudlogin-input {
@@ -560,10 +529,10 @@
   width: 100%;
   min-height: 42px;
   padding: 9px 11px;
-  border: 1px solid #8a8886;
+  border: 1px solid var(--cloudlogin-field-border, var(--amc-color-control-border, #8a8886));
   border-radius: 3px;
-  background: #fff;
-  color: #242424;
+  background: var(--cloudlogin-field-surface, var(--amc-color-surface, #fff));
+  color: var(--cloudlogin-field-text, var(--amc-color-text, #242424));
   font: inherit;
   font-size: 15px;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
@@ -576,9 +545,9 @@
 .amc-cloudlogin select:focus,
 .amc-cloudlogin textarea:focus,
 .amc-cloudlogin ::deep .input-content input:focus {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   outline-offset: -2px;
-  border-color: var(--cloudlogin-brand);
+  border-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   box-shadow: none;
 }
 .amc-cloudlogin ::deep .input-label {
@@ -596,27 +565,27 @@
 .amc-cloudlogin-keppsignedin input {
   width: 18px;
   height: 18px;
-  accent-color: var(--cloudlogin-brand);
+  accent-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .amc-cloudlogin-keppsignedin label {
   padding-left: 3px;
   font-size: 13px;
 }
 .amc-cloudlogin-link {
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   font-family: inherit;
   font-size: 13px;
 }
 .amc-cloudlogin-link:hover {
-  color: var(--cloudlogin-brand-strong);
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
   text-decoration: underline;
 }
 .amc-cloudlogin a,
 .amc-cloudlogin a:visited {
-  color: var(--cloudlogin-brand);
+  color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
 }
 .amc-cloudlogin :is(button, input, select, textarea):focus-visible {
-  outline: 2px solid var(--cloudlogin-brand);
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   outline-offset: 2px;
 }
 .amc-cloudlogin .--disable {

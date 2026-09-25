@@ -1,6 +1,7 @@
+@import (reference) "css/theme.less";
 .entity-card.deep-link-target {
-    border-color: var(--cloudlogin-primary, #0078d4);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cloudlogin-primary, #0078d4) 20%, transparent);
+    border-color: @login-primary;
+    box-shadow: 0 0 0 3px color-mix(in srgb, @login-primary 20%, transparent);
     scroll-margin-top: 1rem;
 }
 
@@ -65,7 +66,7 @@
 
     .form-input:focus {
         outline: none;
-        border-color: var(--amc-accentColor, #0078d4);
+        border-color: @login-color-primary;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
@@ -100,14 +101,14 @@
     }
 
 .btn-primary {
-    background-color: var(--amc-accentColor, #0078d4);
+    background-color: @login-color-primary;
     color: #ffffff;
-    border-color: var(--amc-accentColor, #0078d4);
+    border-color: @login-color-primary;
 }
 
     .btn-primary:hover:not(:disabled) {
-        background-color: var(--amc-secondColor, #005a9e);
-        border-color: var(--amc-secondColor, #005a9e);
+        background-color: @login-color-primary-hover;
+        border-color: @login-color-primary-hover;
     }
 
 .btn-secondary {
@@ -123,12 +124,12 @@
 
 .btn-outline {
     background-color: transparent;
-    color: var(--amc-accentColor, #0078d4);
-    border-color: var(--amc-accentColor, #0078d4);
+    color: @login-color-primary;
+    border-color: @login-color-primary;
 }
 
     .btn-outline:hover:not(:disabled) {
-        background-color: var(--amc-accentColor, #0078d4);
+        background-color: @login-color-primary;
         color: #ffffff;
     }
 
@@ -420,7 +421,7 @@
 
 .btn:focus-visible,
 .form-input:focus-visible {
-    outline: 2px solid var(--amc-accentColor, #0078d4);
+    outline: 2px solid @login-color-primary;
     outline-offset: 2px;
 }
 
@@ -484,7 +485,7 @@
     display: inline-flex;
     align-items: center;
     padding: 0.2rem 0.6rem;
-    background: linear-gradient(135deg, var(--amc-accentColor, #0078d4), var(--amc-accentColor, #0078d4));
+    background: linear-gradient(135deg, @login-color-primary, @login-color-primary);
     color: #fff;
     font-size: 0.7rem;
     font-weight: 700;
@@ -517,17 +518,17 @@
 }
 
     .admin-tab:hover {
-        color: var(--amc-accentColor, #0078d4);
+        color: @login-color-primary;
     }
 
     .admin-tab.active {
-        color: var(--amc-accentColor, #0078d4);
-        border-bottom-color: var(--amc-accentColor, #0078d4);
+        color: @login-color-primary;
+        border-bottom-color: @login-color-primary;
     }
 
 .admin-count-badge {
-    background: var(--amc-accentColor-soft, #e8f3fb);
-    color: var(--amc-accentColor, #0078d4);
+    background: @login-color-primary-soft;
+    color: @login-color-primary;
     font-size: 0.7rem;
     font-weight: 700;
     padding: 0.1rem 0.45rem;
@@ -536,15 +537,15 @@
 
 /* Account sidebar tab — Admin variant */
 .tab-button--admin {
-    color: var(--amc-accentColor, #0078d4) !important;
+    color: @login-color-primary !important;
 }
 
     .tab-button--admin:hover {
-        background-color: var(--amc-accentColor-soft, #e8f3fb) !important;
+        background-color: @login-color-primary-soft !important;
     }
 
     .tab-button--admin.active {
-        background-color: var(--amc-accentColor, #0078d4) !important;
+        background-color: @login-color-primary !important;
         color: #fff !important;
     }
 
@@ -573,13 +574,13 @@
 
     .admin-filter-select:focus {
         outline: none;
-        border-color: var(--amc-accentColor, #0078d4);
+        border-color: @login-color-primary;
         box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
     }
 
 /* ── Clickable CloudDataGrid rows ── */
 .cloudgrid-row[style*="cursor: pointer"]:hover {
-    background-color: var(--cloudgrid-hover-background, #f0f0f0) !important;
+    background-color: @login-cloudcomponents-grid-hover-background !important;
 }
 
 /* ── User Detail ─────────────────────────────────────────────── */
@@ -635,7 +636,7 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--amc-accentColor, #0078d4), var(--amc-accentColor, #0078d4));
+    background: linear-gradient(135deg, @login-color-primary, @login-color-primary);
     color: #fff;
     font-size: 1.2rem;
     font-weight: 700;
@@ -679,8 +680,8 @@
 }
 
 .chip--admin {
-    background: var(--amc-accentColor-soft, #e8f3fb);
-    color: var(--amc-secondColor, #005a9e);
+    background: @login-color-primary-soft;
+    color: @login-color-primary-hover;
 }
 
 .chip--test {
@@ -852,13 +853,13 @@
     }
 
 .admin-action-btn--primary {
-    background: var(--amc-accentColor, #0078d4);
+    background: @login-color-primary;
     color: #fff;
-    border-color: var(--amc-accentColor, #0078d4);
+    border-color: @login-color-primary;
 }
 
     .admin-action-btn--primary:hover:not(:disabled) {
-        background: var(--amc-secondColor, #005a9e);
+        background: @login-color-primary-hover;
     }
 
 .admin-action-btn--danger {
@@ -883,12 +884,12 @@
 
 .admin-action-btn--outline {
     background: transparent;
-    color: var(--amc-accentColor, #0078d4);
-    border-color: var(--amc-accentColor, #0078d4);
+    color: @login-color-primary;
+    border-color: @login-color-primary;
 }
 
     .admin-action-btn--outline:hover:not(:disabled) {
-        background: var(--amc-accentColor-soft, #e8f3fb);
+        background: @login-color-primary-soft;
     }
 
 .admin-action-btn--sm {
@@ -996,7 +997,7 @@
 }
 
 .badge-primary {
-    background-color: var(--amc-accentColor);
+    background-color: @login-color-primary;
     color: #fff;
 }
 
@@ -1033,7 +1034,7 @@
     width: 20px;
     height: 20px;
     border: 2px solid rgba(0, 0, 0, 0.15);
-    border-top-color: var(--amc-accentColor);
+    border-top-color: @login-color-primary;
     border-radius: 50%;
     display: block;
     margin: 24px auto;

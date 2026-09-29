@@ -45,9 +45,15 @@ public static class CloudLoginApplicationExtensions
                     return;
                 }
 
+                // The browser's own verdict comes first. The no-referrer policy above makes browsers
+                // send "Origin: null" on an ordinary same-origin form post, so rejecting on Origin
+                // alone blocked every HTML form behind this middleware. Sec-Fetch-Site cannot be set
+                // by page script, so it is at least as trustworthy as the Origin it overrides.
+                bool sameOrigin = string.Equals(fetchSite, "same-origin", StringComparison.OrdinalIgnoreCase);
                 string? origin = context.Request.Headers.Origin.FirstOrDefault();
                 string requestOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
-                if (!string.IsNullOrWhiteSpace(origin) &&
+                if (!sameOrigin &&
+                    !string.IsNullOrWhiteSpace(origin) &&
                     !CloudLoginShared.IsSameOrigin(origin, requestOrigin))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;

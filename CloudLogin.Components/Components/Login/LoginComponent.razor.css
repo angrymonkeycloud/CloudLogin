@@ -1,4 +1,3 @@
-/* Generated from LESS. Do not edit. */
 /*@login-color-primary: #4569D4;*/
 .disableProvider ::deep svg:first-child {
   display: none;
@@ -384,7 +383,7 @@
 }
 /* Microsoft account-inspired CloudLogin surface */
 .amc-cloudlogin {
-  width: min(440px, calc(100% - 32px));
+  width: calc(min(440px, calc(100% - 32px)));
   margin: 32px auto;
   padding: 40px 44px 36px;
   overflow: visible;

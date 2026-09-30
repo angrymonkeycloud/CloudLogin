@@ -1,4 +1,3 @@
-/* Generated from LESS. Do not edit. */
 .entity-card.deep-link-target {
   border-color: var(--cloudlogin-primary, var(--amc-color-primary, #525252));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--cloudlogin-primary, var(--amc-color-primary, #525252)) 20%, transparent);

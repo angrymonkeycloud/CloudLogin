@@ -423,7 +423,7 @@
   width: 100%;
   min-width: 0;
   margin-left: var(--rail-width-collapsed);
-  padding: 24px clamp(12px, 3vw, 24px) 64px;
+  padding: 24px calc(clamp(12px, 3vw, 24px)) 64px;
   overflow-wrap: anywhere;
 }
 .account-management .tab-content-inner {
@@ -451,7 +451,7 @@
 .account-management .account-page-header h1 {
   margin: 0;
   color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
-  font-size: clamp(24px, 2.5vw, 32px);
+  font-size: calc(clamp(24px, 2.5vw, 32px));
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -603,7 +603,7 @@
 }
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card {
-  padding: clamp(16px, 2.5vw, 24px);
+  padding: calc(clamp(16px, 2.5vw, 24px));
 }
 .account-management .tab-content ::deep .account-section > .form-container {
   max-width: 760px;
@@ -634,7 +634,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 10px 14px;
-  padding: 16px clamp(14px, 2.5vw, 24px);
+  padding: 16px calc(clamp(14px, 2.5vw, 24px));
 }
 .account-management .tab-content ::deep .section-card-icon {
   display: grid;
@@ -710,7 +710,7 @@
 /* A size container, so a card's contents can lay themselves out by how wide the
    card actually is rather than by how wide the window happens to be. */
 .account-management .tab-content ::deep .section-card-body {
-  padding: clamp(16px, 2.5vw, 24px);
+  padding: calc(clamp(16px, 2.5vw, 24px));
   border-top: 1px solid #ededed;
   container: section-card / inline-size;
 }
@@ -880,7 +880,7 @@
   }
   .account-management .tab-content {
     margin-left: var(--rail-width-desktop);
-    padding: 40px clamp(32px, 5vw, 72px) 72px;
+    padding: 40px calc(clamp(32px, 5vw, 72px)) 72px;
   }
   .account-management .tab-content-inner {
     width: 100%;

@@ -7,5 +7,30 @@
 @login-pages-page: var(--cloudlogin-page,var(--amc-color-background,#f9f9f9));
 
 .login-pages-control(@element) {
-    .amc-control(cloudlogin; @element);
+    .amc-state(cloudlogin; @element; normal);
+
+    &:where(:hover:not(:disabled):not([aria-disabled="true"])) {
+        .amc-state(cloudlogin; @element; hover);
+    }
+
+    &[aria-pressed="true"],
+    &[aria-selected="true"],
+    &._selected {
+        .amc-state(cloudlogin; @element; selected);
+    }
+
+    &[aria-invalid="true"],
+    &:user-invalid {
+        .amc-state(cloudlogin; @element; invalid);
+    }
+
+    &:disabled,
+    &[aria-disabled="true"],
+    &._disabled {
+        .amc-state(cloudlogin; @element; disabled);
+    }
+
+    &:focus-visible {
+        .amc-state(cloudlogin; @element; focus);
+    }
 }

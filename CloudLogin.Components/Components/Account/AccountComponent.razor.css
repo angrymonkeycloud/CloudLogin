@@ -1,10 +1,9 @@
-/* Generated from LESS. Do not edit. */
 .account-management {
   --rail-width-collapsed: 68px;
   --rail-width-expanded: 300px;
   --rail-width-desktop: 260px;
   direction: ltr !important;
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--cloudlogin-page, var(--amc-color-background, #f9f9f9));
   color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
   font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
@@ -424,12 +423,12 @@
   width: 100%;
   min-width: 0;
   margin-left: var(--rail-width-collapsed);
-  padding: 24px 18px 64px;
-  overflow-x: hidden;
+  padding: 24px clamp(12px, 3vw, 24px) 64px;
+  overflow-wrap: anywhere;
 }
 .account-management .tab-content-inner {
   width: 100%;
-  max-width: 1160px;
+  max-width: 1080px;
   margin-inline: auto;
 }
 .account-management .account-page-header {
@@ -452,7 +451,7 @@
 .account-management .account-page-header h1 {
   margin: 0;
   color: var(--cloudlogin-ink, var(--amc-color-text, #111111));
-  font-size: 26px;
+  font-size: clamp(24px, 2.5vw, 32px);
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -549,7 +548,7 @@
   line-height: 1.55;
 }
 .account-management .workspace-missing-action {
-  min-height: 36px;
+  min-height: 40px;
   padding: 7px 18px;
   border: 1px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
   border-radius: 4px;
@@ -604,7 +603,7 @@
 }
 .account-management .tab-content ::deep .card,
 .account-management .tab-content ::deep .header-card {
-  padding: 20px 22px;
+  padding: clamp(16px, 2.5vw, 24px);
 }
 .account-management .tab-content ::deep .account-section > .form-container {
   max-width: 760px;
@@ -635,7 +634,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 10px 14px;
-  padding: 16px 20px;
+  padding: 16px clamp(14px, 2.5vw, 24px);
 }
 .account-management .tab-content ::deep .section-card-icon {
   display: grid;
@@ -651,7 +650,7 @@
   height: 20px;
 }
 .account-management .tab-content ::deep .section-card-heading {
-  flex: 1 1 220px;
+  flex: 1 1 140px;
   min-width: 0;
 }
 .account-management .tab-content ::deep .section-card-title {
@@ -681,7 +680,7 @@
   font: inherit;
   font-size: 13.5px;
   font-weight: 500;
-  white-space: nowrap;
+  white-space: normal;
   cursor: pointer;
 }
 .account-management .tab-content ::deep .section-card-link:hover {
@@ -689,9 +688,9 @@
 }
 .account-management .tab-content ::deep .section-card-toggle {
   display: grid;
-  flex: 0 0 32px;
-  width: 32px;
-  height: 32px;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
   place-items: center;
   border: 0;
   border-radius: 6px;
@@ -711,7 +710,7 @@
 /* A size container, so a card's contents can lay themselves out by how wide the
    card actually is rather than by how wide the window happens to be. */
 .account-management .tab-content ::deep .section-card-body {
-  padding: 20px 20px 22px;
+  padding: clamp(16px, 2.5vw, 24px);
   border-top: 1px solid #ededed;
   container: section-card / inline-size;
 }
@@ -736,7 +735,7 @@
 .account-management .tab-content ::deep input[type="password"],
 .account-management .tab-content ::deep select,
 .account-management .tab-content ::deep textarea {
-  min-height: 36px;
+  min-height: 40px;
   padding: 7px 11px;
   border: 1px solid #8a8886;
   border-radius: 4px;
@@ -767,7 +766,7 @@
 .account-management .tab-content ::deep .btn,
 .account-management .tab-content ::deep .admin-action-btn,
 .account-management .tab-content ::deep button:not(.link-action):not(.admin-tab):not(.quick-action):not(.section-card-link):not(.section-card-toggle) {
-  min-height: 36px;
+  min-height: 40px;
   padding: 7px 16px;
   border-radius: 4px;
   font: inherit;
@@ -883,10 +882,8 @@
     margin-left: var(--rail-width-desktop);
     padding: 40px clamp(32px, 5vw, 72px) 72px;
   }
-  /* Narrow the reading column to ~80% of the available content area once
-       there's room for it, so cards don't run edge to edge on wide screens. */
   .account-management .tab-content-inner {
-    width: 80%;
+    width: 100%;
   }
 }
 @keyframes skelton {

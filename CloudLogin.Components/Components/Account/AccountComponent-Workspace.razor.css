@@ -1,4 +1,3 @@
-/* Generated from LESS. Do not edit. */
 .account-section {
   display: flex;
   flex-direction: column;
@@ -131,7 +130,7 @@
 }
 .stat-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
   gap: 10px;
 }
 .stat {
@@ -409,10 +408,10 @@ textarea.form-input {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .field._wide {
-    grid-column: 1 / -1;
+    grid-column: -1;
   }
   .detail-row {
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: minmax(110px, 0.7fr) minmax(0, 1fr);
     gap: 16px;
     align-items: baseline;
   }

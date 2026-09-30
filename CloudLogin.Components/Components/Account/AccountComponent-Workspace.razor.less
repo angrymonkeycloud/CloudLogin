@@ -159,7 +159,7 @@
 // ── Stats ────────────────────────────────────────────────────
 .stat-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: ~"repeat(auto-fit, minmax(min(100%, 140px), 1fr))";
     gap: 10px;
 }
 
@@ -494,7 +494,7 @@ textarea.form-input {
     }
 
     .detail-row {
-        grid-template-columns: 220px 1fr;
+        grid-template-columns: minmax(110px, 0.7fr) minmax(0, 1fr);
         gap: 16px;
         align-items: baseline;
     }

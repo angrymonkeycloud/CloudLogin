@@ -48,6 +48,8 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
 }
 
@@ -112,6 +114,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
         padding-top: 8px;
         border-top: 1px solid @surface-alt;
     }
@@ -210,6 +214,7 @@ select.form-input {
 
     &-actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
     }
 }
@@ -323,6 +328,8 @@ select.form-input {
     }
 
     &-value {
+        min-width: 0;
+        overflow-wrap: anywhere;
         color: @text;
         font-size: .8rem;
     }
@@ -334,7 +341,7 @@ select.form-input {
     }
 
     .kv-row {
-        grid-template-columns: 240px 1fr;
+        grid-template-columns: minmax(110px, 0.7fr) minmax(0, 1fr);
         gap: 16px;
     }
 }

@@ -11,7 +11,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.2.5</Version>
+		<Version>2.2.6</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Typed HTTP client for the CloudLogin API: programmatic sign-in, account, and session access for .NET apps that call an existing CloudLogin authority instead of hosting the UI themselves.</Description>
@@ -21,10 +21,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.10" />
-		<PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.10" />
-		<PackageReference Include="Microsoft.JSInterop" Version="10.0.10" />
-		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.12" />
+		<PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.12" />
+		<PackageReference Include="Microsoft.JSInterop" Version="10.0.12" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.12" />
 	</ItemGroup>
 
 	<ItemGroup>

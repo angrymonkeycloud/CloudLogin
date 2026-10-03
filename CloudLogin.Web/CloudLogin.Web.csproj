@@ -13,7 +13,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.2.6</Version>
+		<Version>2.2.7</Version>
 		<PackageOutputPath>../../../../../NugetPackages</PackageOutputPath>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -27,10 +27,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngryMonkey.CloudBlazor.Web" Version="1.1.0" />
+		<PackageReference Include="AngryMonkey.CloudBlazor.Web" Version="1.1.2" />
 		<PackageReference Include="Azure.Identity" Version="1.21.0" />
-		<PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.9.1" />
-		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.1" />
+		<PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.9.2" />
+		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.2" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="10.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.63.2" />

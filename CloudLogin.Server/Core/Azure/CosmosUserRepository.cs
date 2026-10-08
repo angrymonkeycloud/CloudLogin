@@ -167,4 +167,29 @@ public sealed class CosmosUserRepository(CosmosCoreDatabase database) : IUserRep
         List<int> counts = await CosmosCoreOperations.QueryAsync<int>(container, query, null, cancellationToken);
         return counts.Sum();
     }
+
+    public async Task<List<UserDocument>> SearchAsync(string? term, int skip, int take, CancellationToken cancellationToken = default)
+    {
+        Container container = await ContainerAsync(cancellationToken);
+        string fragment = (term ?? string.Empty).Trim().ToLowerInvariant();
+
+        QueryDefinition query = new QueryDefinition(
+            "SELECT * FROM c WHERE c.State != 'Deleted' AND (@term = '' " +
+            "OR CONTAINS(LOWER(CONCAT(c.FirstName ?? '', ' ', c.LastName ?? '')), @term) " +
+            "OR CONTAINS(LOWER(c.Username ?? ''), @term) " +
+            "OR EXISTS(SELECT VALUE contact FROM contact IN c.Contacts WHERE CONTAINS(contact.NormalizedValue, @term))) " +
+            "ORDER BY c.CreatedOn DESC OFFSET @skip LIMIT @take")
+            .WithParameter("@term", fragment)
+            .WithParameter("@skip", Math.Max(0, skip))
+            .WithParameter("@take", Math.Clamp(take, 1, 200));
+
+        return await CosmosCoreOperations.QueryAsync<UserDocument>(container, query, null, cancellationToken);
+    }
+
+    public async Task<List<UserDocument>> GetAdministratorsAsync(CancellationToken cancellationToken = default)
+    {
+        Container container = await ContainerAsync(cancellationToken);
+        QueryDefinition query = new("SELECT * FROM c WHERE c.State != 'Deleted' AND (c.IsGlobalAdmin = true OR ARRAY_LENGTH(c.AdminRoles) > 0)");
+        return await CosmosCoreOperations.QueryAsync<UserDocument>(container, query, null, cancellationToken);
+    }
 }

@@ -13,7 +13,18 @@ public enum LoginRequestKinds
     Device,
 
     /// <summary>A one-time verification code mailed or messaged to an address.</summary>
-    Verification
+    Verification,
+
+    /// <summary>
+    /// A sign-in transaction started by an authenticated application, binding the destination the
+    /// person returns to (and the application that may redeem the result) before the browser
+    /// ever leaves it.
+    /// </summary>
+    Authorization,
+
+    Logout,
+
+    Replay
 }
 
 /// <summary>States of a login or device authorization request.</summary>
@@ -95,6 +106,25 @@ public sealed class LoginRequestDocument : CloudLoginCoreDocument, IExpiringDocu
 
     /// <summary>Deterministic one-time login handoff created before device consumption.</summary>
     public string? HandoffRequestId { get; set; }
+
+    // ── Sign-in transactions (Kind = Authorization) ───────────────────────────
+    // ClientId (above) is the application that started the transaction. The return URL was
+    // submitted by that authenticated application, which is what makes it trustworthy without a
+    // list of hostnames: the authority never has to guess whether a destination is legitimate.
+
+    /// <summary>Where the person returns after signing in.</summary>
+    public string? ReturnUrl { get; set; }
+
+    /// <summary>An opaque value the application wants echoed back, to tie the return to its own session.</summary>
+    public string? ClientState { get; set; }
+
+    public string? CodeChallenge { get; set; }
+
+    public string? TransactionId { get; set; }
+
+    public string? Scope { get; set; }
+
+    public string? RedirectUri { get; set; }
 
     // ── Verification codes (Kind = Verification) ──────────────────────────────
     // The same single-winner machinery as the device flow, for the same reason: a code must be

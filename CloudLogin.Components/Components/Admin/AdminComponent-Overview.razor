@@ -1,0 +1,46 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+@if (_dashboard is not null)
+{
+    <div class="console-cards">
+        <div class="console-card"><span class="console-card-value">@_dashboard.Users</span><span class="console-card-label">Users</span></div>
+        <div class="console-card"><span class="console-card-value">@_dashboard.ActiveSessions</span><span class="console-card-label">Active sessions</span></div>
+        <div class="console-card"><span class="console-card-value">@_dashboard.ActiveApplications</span><span class="console-card-label">Applications</span></div>
+        <div class="console-card @(_dashboard.BlockedApplications > 0 ? "console-card--warn" : "")"><span class="console-card-value">@_dashboard.BlockedApplications</span><span class="console-card-label">Blocked applications</span></div>
+        <div class="console-card @(_dashboard.DormantApplications > 0 ? "console-card--warn" : "")"><span class="console-card-value">@_dashboard.DormantApplications</span><span class="console-card-label">Unused for 90 days</span></div>
+        <div class="console-card @(_dashboard.ExpiringKeys > 0 ? "console-card--warn" : "")"><span class="console-card-value">@_dashboard.ExpiringKeys</span><span class="console-card-label">Secret keys expiring</span></div>
+        <div class="console-card @(_dashboard.FailedAuthenticationsLast24Hours > 0 ? "console-card--warn" : "")"><span class="console-card-value">@_dashboard.FailedAuthenticationsLast24Hours</span><span class="console-card-label">Failed sign-ins, 24 h</span></div>
+    </div>
+
+    @if (_expiring.Count > 0)
+    {
+        <h3 class="console-heading">Secret keys that need attention</h3>
+        <AdminComponent_ExpiringKeys Keys="_expiring" />
+    }
+
+    <h3 class="console-heading">Recent security events</h3>
+    <AdminComponent_EventTable Events="_dashboard.RecentEvents" />
+}
+
+@code {
+    private V3AdminDashboardResponse? _dashboard;
+    private List<V3AdminSecretKeyModel> _expiring = [];
+
+    protected override Task OnInitializedAsync() => RunAsync(async () =>
+    {
+        if (Api is not { } api)
+        {
+            Error = "The admin console needs the browser client.";
+            return;
+        }
+
+        _dashboard = await api.GetDashboardAsync();
+
+        if (Can("applications.read"))
+            _expiring = await api.GetExpiringSecretKeysAsync();
+    });
+}

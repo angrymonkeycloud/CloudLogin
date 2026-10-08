@@ -15,7 +15,8 @@ namespace AngryMonkey.CloudLogin.Server.Core.Application;
 public sealed class CoreTokenStoreAdapter(
     ISessionRepository sessions,
     CosmosCoreDatabase database,
-    CloudLoginCoreConfiguration configuration) : ICloudLoginTokenStore, IAtomicCloudLoginTokenStore
+    CloudLoginCoreConfiguration configuration,
+    ILogoutNotifier? notifier = null) : ICloudLoginTokenStore, IAtomicCloudLoginTokenStore, ICloudLoginSessionOwnerLookup
 {
     private readonly ISessionRepository _sessions = sessions;
     private readonly CosmosCoreDatabase _database = database;
@@ -66,6 +67,7 @@ public sealed class CoreTokenStoreAdapter(
             SessionId = family?.SessionId ?? string.Empty,
             Audience = family?.Audience,
             Scope = family?.Scope,
+            ClientId = family?.ClientId,
             CreatedOn = token.CreatedOn,
             ExpiresOn = token.ExpiresOn ?? DateTimeOffset.MinValue,
             ConsumedOn = token.ConsumedOn,
@@ -112,6 +114,7 @@ public sealed class CoreTokenStoreAdapter(
                 UserId = token.UserId.ToString(),
                 SessionId = token.SessionId,
                 Audience = token.Audience,
+                ClientId = token.ClientId,
                 Scope = token.Scope,
                 CurrentTokenId = token.TokenHash,
                 CreatedOn = token.CreatedOn,
@@ -216,6 +219,15 @@ public sealed class CoreTokenStoreAdapter(
         }
     }
 
+    public async Task<IReadOnlyCollection<Guid>> GetSessionOwnersAsync(string sessionId, CancellationToken cancellationToken = default) =>
+        [.. (await _sessions.FindFamiliesBySessionIdAsync(sessionId, cancellationToken)).Select(family => Guid.TryParse(family.UserId, out Guid userId) ? userId : Guid.Empty).Where(userId => userId != Guid.Empty).Distinct()];
+
+    public async Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        return (await _sessions.FindFamiliesBySessionIdAsync(sessionId, cancellationToken)).Any(family => !family.IsRevoked && !DocumentExpiry.IsExpired(family, now));
+    }
+
     public async Task RevokeFamilyAsync(string familyId, CancellationToken cancellationToken = default)
     {
         SessionFamilyDocument? family = await _sessions.GetFamilyAsync(familyId, cancellationToken);
@@ -241,6 +253,21 @@ public sealed class CoreTokenStoreAdapter(
             await RevokeAsync(family, cancellationToken);
     }
 
+    private async Task NotifyAsync(SessionFamilyDocument family, CancellationToken cancellationToken)
+    {
+        if (notifier is null)
+            return;
+
+        try
+        {
+            await notifier.NotifyFamilyAsync(family, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Delivery is best effort and observable through the audit trail; the revocation itself already happened.
+        }
+    }
+
     private async Task RevokeAsync(SessionFamilyDocument family, CancellationToken cancellationToken)
     {
         family.IsRevoked = true;
@@ -263,7 +290,10 @@ public sealed class CoreTokenStoreAdapter(
             current.RevokedOn = DateTimeOffset.UtcNow;
             DocumentExpiry.Recompute(current);
             await _sessions.ReplaceFamilyAsync(current, cancellationToken);
+            family = current;
         }
+
+        await NotifyAsync(family, cancellationToken);
     }
 
     private async Task RevokeFamilyForReuseAsync(

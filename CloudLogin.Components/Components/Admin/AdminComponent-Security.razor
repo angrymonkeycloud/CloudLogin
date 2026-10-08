@@ -1,0 +1,81 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+<h3 class="console-heading console-heading--flush">Token signing keys</h3>
+<p class="console-muted">The key that signs every token CloudLogin issues. A retired key stays published until the tokens it signed have expired, so rotating never signs anyone out.</p>
+
+@if (_keys is { ManagedInKeyVault: true })
+{
+    <p class="console-feedback console-feedback--ok">Signing keys are held in Key Vault and rotated there. They are not listed here.</p>
+}
+else if (_keys is not null)
+{
+    @if (Can("keys.manage"))
+    {
+        <div class="console-toolbar">
+            <button class="console-btn console-btn--primary" disabled="@Busy" @onclick="RotateAsync">Rotate signing key now</button>
+        </div>
+    }
+
+    <div class="console-table-wrap">
+        <table class="console-table">
+            <thead><tr><th>Key</th><th>Status</th><th>Created</th><th>Stops signing</th><th>Stops verifying</th></tr></thead>
+            <tbody>
+                @foreach (V3AdminKeyModel key in _keys.Keys)
+                {
+                    <tr>
+                        <td class="console-mono">@key.KeyId</td>
+                        <td>
+                            <span class="console-pill console-pill--@StatusClass(key.Status)">@key.Status</span>
+                            @if (key.ExpiresSoon) { <span class="console-pill console-pill--warn">Expires soon</span> }
+                        </td>
+                        <td>@When(key.CreatedOn)</td>
+                        <td>@When(key.SigningExpiresOn)</td>
+                        <td>@When(key.PublishExpiresOn)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h3 class="console-heading">Secret keys</h3>
+<p class="console-muted">A secret key is shown once, when it is created. This list is only what is expired or about to be; manage keys in the Secret keys tab.</p>
+
+@if (_expiring.Count == 0)
+{
+    <p class="console-empty">No secret key expires in the next 30 days.</p>
+}
+else
+{
+    <AdminComponent_ExpiringKeys Keys="_expiring" />
+}
+
+@code {
+    private V3AdminKeysResponse? _keys;
+    private List<V3AdminSecretKeyModel> _expiring = [];
+
+    protected override Task OnInitializedAsync() => RunAsync(async () =>
+    {
+        if (Api is not { } api)
+            return;
+
+        if (Can("keys.read"))
+            _keys = await api.GetKeysAsync();
+
+        if (Can("applications.read"))
+            _expiring = await api.GetExpiringSecretKeysAsync();
+    });
+
+    private async Task RotateAsync()
+    {
+        await RunAsync(async () =>
+        {
+            await Api!.RotateKeyAsync();
+            _keys = await Api.GetKeysAsync();
+        }, "Signing key rotated. New tokens use the new key; earlier tokens still verify.");
+    }
+}

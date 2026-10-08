@@ -34,6 +34,9 @@ public record CloudLoginRefreshToken : CloudLoginBaseRecord
 
     public string? Scope { get; set; }
 
+    /// <summary>The client that received this chain. A refresh must come from the same client.</summary>
+    public string? ClientId { get; set; }
+
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset ExpiresOn { get; set; }

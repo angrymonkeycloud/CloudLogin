@@ -24,4 +24,10 @@ public interface ICredentialRepository
 
     /// <summary>Removes every credential for a user (account deletion).</summary>
     Task DeleteAllForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Linked external identities, optionally for one provider. Cross-partition.</summary>
+    Task<List<CredentialDocument>> GetExternalIdentitiesAsync(string? providerCode, int take, CancellationToken cancellationToken = default);
+
+    /// <summary>How many external identities each provider has linked. Cross-partition.</summary>
+    Task<List<ProviderIdentityCount>> CountExternalIdentitiesByProviderAsync(CancellationToken cancellationToken = default);
 }

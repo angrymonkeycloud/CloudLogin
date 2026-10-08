@@ -24,6 +24,14 @@ public static class CloudLoginCoreContainers
     public const string AuditEvents = "AuditEvents";
     public const string AuditEventsPartitionKey = "/partitionKey";
 
+    /// <summary>Applications seen using the authority. No TTL.</summary>
+    public const string Applications = "Applications";
+    public const string ApplicationsPartitionKey = "/id";
+
+    /// <summary>Secret keys websites with a backend authenticate with. No TTL.</summary>
+    public const string SecretKeys = "SecretKeys";
+    public const string SecretKeysPartitionKey = "/id";
+
     /// <summary>
     /// Azure Table Storage table names (permanent point-lookup records only).
     /// <para>

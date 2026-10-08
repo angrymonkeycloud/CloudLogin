@@ -84,4 +84,34 @@ public sealed class CosmosCredentialRepository(CosmosCoreDatabase database) : IC
         foreach (CredentialDocument credential in all)
             await CosmosCoreOperations.DeleteIfExistsAsync<CredentialDocument>(container, credential.Id, new PartitionKey(credential.UserId), cancellationToken);
     }
+
+    public async Task<List<CredentialDocument>> GetExternalIdentitiesAsync(string? providerCode, int take, CancellationToken cancellationToken = default)
+    {
+        Container container = await ContainerAsync(cancellationToken);
+        QueryDefinition query = new QueryDefinition(
+            "SELECT TOP @take * FROM c WHERE c.Kind = 'ExternalIdentity'" + (providerCode is null ? string.Empty : " AND c.ProviderCode = @provider"))
+            .WithParameter("@take", Math.Clamp(take, 1, 1000));
+
+        if (providerCode is not null)
+            query = query.WithParameter("@provider", providerCode);
+
+        List<CredentialDocument> identities = await CosmosCoreOperations.QueryAsync<CredentialDocument>(container, query, null, cancellationToken);
+        return [.. identities.Where(identity => !DocumentExpiry.IsExpired(identity))];
+    }
+
+    public async Task<List<ProviderIdentityCount>> CountExternalIdentitiesByProviderAsync(CancellationToken cancellationToken = default)
+    {
+        Container container = await ContainerAsync(cancellationToken);
+        QueryDefinition query = new("SELECT VALUE c.ProviderCode FROM c WHERE c.Kind = 'ExternalIdentity'");
+        List<string?> codes = await CosmosCoreOperations.QueryAsync<string?>(container, query, null, cancellationToken);
+
+        return
+        [
+            .. codes
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .GroupBy(code => code!, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new ProviderIdentityCount(group.Key, group.Count()))
+                .OrderBy(count => count.ProviderCode, StringComparer.OrdinalIgnoreCase)
+        ];
+    }
 }

@@ -46,4 +46,13 @@ public interface ISessionRepository
     /// consumes and creates tokens in separate calls rather than one batch.
     /// </summary>
     Task UpsertTokenAsync(SessionTokenDocument token, CancellationToken cancellationToken = default);
+
+    // ── Control-plane reads ───────────────────────────────────────────────────
+    // Cross-partition: they answer an administrator's questions about the whole realm.
+
+    /// <summary>Unrevoked, unexpired families, optionally for one audience and/or user, newest first.</summary>
+    Task<List<SessionFamilyDocument>> GetActiveFamiliesAsync(string? audience, Guid? userId, int take, CancellationToken cancellationToken = default);
+
+    /// <summary>How many unrevoked families exist (an expired one is removed by TTL, so this tracks active sessions).</summary>
+    Task<int> CountActiveFamiliesAsync(CancellationToken cancellationToken = default);
 }

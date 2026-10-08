@@ -30,6 +30,12 @@ public sealed class AuditEventDocument : CloudLoginCoreDocument, IExpiringDocume
     /// <summary>The acting user when different from the affected user (admin operations).</summary>
     public string? ActorUserId { get; set; }
 
+    /// <summary>The application the event concerns, when it concerns one.</summary>
+    public string? ClientId { get; set; }
+
+    /// <summary>How it went: <see cref="AuditResults"/>. Null on events written before results existed.</summary>
+    public string? Result { get; set; }
+
     public DateTimeOffset OccurredOn { get; set; }
 
     public string? IpAddress { get; set; }
@@ -44,6 +50,9 @@ public sealed class AuditEventDocument : CloudLoginCoreDocument, IExpiringDocume
     public int? Ttl { get; set; }
 
     public const string SystemSubject = "system";
+
+    /// <summary>The partition subject of events about one application, so its trail reads from few partitions.</summary>
+    public static string ApplicationSubject(string clientId) => $"app:{clientId}";
 
     public static string BuildPartitionKey(string realm, string? userId, DateTimeOffset timestamp) =>
         $"{realm}|{(string.IsNullOrEmpty(userId) ? SystemSubject : userId)}|{timestamp:yyyyMM}";

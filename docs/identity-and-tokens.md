@@ -3,7 +3,7 @@
 ## The rule
 
 **Identity is never a parameter.** It is derived from a verified credential on the
-request — a session cookie this application issued, or an access token signed by the
+request: a session cookie this application issued, or an access token signed by the
 CloudLogin authority and verified against its published public key.
 
 A user id in a request body or query string is data the *caller* chose. Using it for
@@ -18,9 +18,9 @@ anywhere that turns a bare user id into a token.
 | Session cookie | hours | browser / native HTTP stack | this browser session signed in |
 | Access token | 10 min | server-side, inside the cookie | *this user* is making *this call* to *this audience* |
 | Refresh token | 14 days, rotating | server-side, inside the cookie | this session may mint a new access token |
-| Service client secret | until rotated | server config / secret store | *this service* is who it says it is |
+| Secret key | until revoked or expired | server config / secret store | *this backend* may act as a CloudLogin client |
 
-Access tokens are short-lived because they cannot be revoked once minted — the
+Access tokens are short-lived because they cannot be revoked once minted: the
 lifetime **is** the revocation window. Refresh tokens are long-lived but single-use
 and revocable, so a leaked one is usable at most once before reuse detection burns
 the whole chain.
@@ -49,22 +49,13 @@ builder.Services.AddCloudLoginTokenIssuer(builder.Configuration.GetSection("Clou
 ```jsonc
 "CloudLoginTokens": {
   "Issuer": "https://login.example.com",
-  "AllowedAudiences": [ "portal", "cdm-api" ],
-  "ServiceClients": {
-    "portal": {
-      "ClientId": "portal",
-      "SecretHash": "<base64 SHA-256 of the secret>",
-      "AllowedAudiences": [ "portal", "cdm-api" ]
-    }
-  }
+  "SecretKeys": [ "<at least 32 characters, from a secret store>" ]
 }
 ```
 
-Generate a secret hash with:
-
-```bash
-pwsh -c '[Convert]::ToBase64String([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes("<secret>")))'
-```
+`SecretKeys` is optional: keys can also be created in the admin console. Any active key
+works for any application name, so nothing per application is configured here. An Aspire
+AppHost writes one key for you.
 
 **A relying party** (every app that authenticates users or exposes an API):
 
@@ -117,16 +108,34 @@ await portal.Contact.SaveAsync(contact);   // identity travels automatically
 ```
 
 There is no step where a user id is passed. If you find yourself wanting to pass one,
-you are either filtering data (fine — say `UserIds`, and the server still applies the
+you are either filtering data (fine: say `UserIds`, and the server still applies the
 caller's own permissions on top) or reintroducing impersonation (not fine).
 
-## Registering the client as a service client
+## Signing in from a website with a backend
 
-The sign-in callback exchanges the single-use login request id for tokens by
-presenting the application's client credentials. Without `ClientId` and
-`ClientSecret` configured, sign-in still works, but the application receives no
-tokens and cannot prove the user's identity to any other service — downstream calls
-will be anonymous and get 401s.
+The sign-in callback redeems a single-use authorization code, bound to the client name, the callback and a PKCE
+challenge, for tokens by presenting the application's name and secret key with HTTP Basic. Without `ClientId`
+and `ClientSecret` configured, the application cannot start a sign-in at all, because the authority only opens a
+sign-in for a caller holding a valid key. The application also needs `CloudLogin:PublicUrl`, the address its
+callback and back-channel logout URL are built from. A website without a backend or a native app needs no key:
+it is identified by its own origin, and its tokens are valid only there. See
+[sign-in-and-logout.md](sign-in-and-logout.md).
+
+## Applications in the admin
+
+Applications are not registered anywhere. An application appears in the admin console the first time it
+authenticates or signs someone in, with where it was seen, the key it last used and its active sessions. An
+administrator can block it (it is refused from then on and its sessions end), unblock it, end its sessions, or
+forget the record, and can create and revoke the secret keys backends authenticate with. See
+[admin-portal.md](admin-portal.md).
+
+## Access tokens and refresh
+
+Access tokens are stateless ES256 JWTs that live for at most `AccessTokenLifetime` (default 10 minutes) and
+cannot be revoked. Refresh tokens are bound to the client that received them, rotate on every use, and are
+checked each time: the caller must present a valid key and the same name (or, for a native app, its scheme), and
+the application must not be blocked. Ending a session revokes its refresh tokens at once and tells each
+application so through back-channel logout.
 
 ## Key rotation
 
@@ -137,11 +146,13 @@ database disclosure alone does not allow forging tokens.
 
 Rotation is automatic. `SigningKeyPublishGrace` must always exceed
 `AccessTokenLifetime`; the options validator enforces this at startup.
+An administrator can also rotate on demand from the console: the new key signs at once and the outgoing one
+stays published for the same grace period.
 
 Production deployments can move signing entirely into Azure Key Vault or Managed HSM by
 setting `CloudLoginTokens:SigningKeys:KeyVaultKeyId`: the key is created non-exportable,
 every signature is computed inside the vault, and rotation becomes the vault's own
-key-version rotation. That is the recommendation, not a requirement — the Cosmos fallback
+key-version rotation. That is the recommendation, not a requirement: the Cosmos fallback
 is Data Protection-wrapped and TTL-retired, so a deployment that configures nothing still
 runs. Set `SigningKeys:RequireExplicitStoreChoice` to make the choice mandatory where policy
 demands it. See [architecture-core.md](architecture-core.md).

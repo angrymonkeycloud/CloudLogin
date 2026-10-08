@@ -1,58 +1,66 @@
-﻿using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin;
 using System.Diagnostics;
-using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Maui.Storage;
 using AngryMonkey.CloudBlazor.App;
 
 namespace AngryMonkey.CloudLogin;
 
+/// <summary>What the system browser handed back to the app on its custom URL scheme.</summary>
+public sealed record MauiAuthCallback(string? Handoff, string? State, string? Operation, string? Error);
+
 public static class MobileAuthCallback
 {
-    public static event Action<string>? RequestIdReceived;
+    public static event Action<MauiAuthCallback>? Received;
 
-    private static string? _pendingRequestId;
+    private static MauiAuthCallback? _pending;
     private static readonly object _lock = new();
 
-    public static void Raise(string requestId)
+    public static void Raise(MauiAuthCallback callback)
     {
         lock (_lock)
         {
-            if (RequestIdReceived is not null)
+            if (Received is not null)
             {
-                _pendingRequestId = null;
-                RequestIdReceived.Invoke(requestId);
+                _pending = null;
+                Received.Invoke(callback);
             }
             else
             {
-                // No subscriber yet — buffer it so it can be consumed later
-                _pendingRequestId = requestId;
-                Debug.WriteLine($"[MobileAuthCallback] Buffered requestId (no subscriber): {requestId}");
+                // No subscriber yet: keep it so it can be consumed once the service exists.
+                _pending = callback;
+                Debug.WriteLine("[MobileAuthCallback] Buffered a callback (no subscriber).");
             }
         }
     }
 
-    /// <summary>
-    /// Consumes any buffered request Id that arrived before a subscriber was attached.
-    /// Returns null if nothing was buffered.
-    /// </summary>
-    public static string? ConsumePending()
+    /// <summary>Consumes a callback that arrived before a subscriber was attached, or null.</summary>
+    public static MauiAuthCallback? ConsumePending()
     {
         lock (_lock)
         {
-            var id = _pendingRequestId;
-            _pendingRequestId = null;
-            return id;
+            MauiAuthCallback? callback = _pending;
+            _pending = null;
+            return callback;
         }
     }
 }
 
+/// <summary>
+/// Native sign-in through the app's own backend. The app makes a PKCE verifier and state, the system browser signs in through the
+/// backend, and the backend hands back a one-time handoff that only this app can redeem because only it holds the verifier. The verifier
+/// is kept in secure storage until then, so a sign-in survives the app being stopped while the browser is open.
+/// </summary>
 public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 {
+    private static readonly TimeSpan PendingLoginLifetime = TimeSpan.FromMinutes(10);
+
     private readonly MauiCloudLoginOptions _options;
     private string CallbackUrl => _options.CallbackUrl;
     private string SecureUserIdKey => _options.StorageKey("secure.user-id");
-    private string SecureRequestIdKey => _options.StorageKey("secure.request-id");
+    private string PendingLoginKey => _options.StorageKey("secure.pending-login");
     private string UserDataKey => _options.StorageKey("user-data");
     private string PostLoginRouteKey => _options.StorageKey("post-login-route");
     private string LastLoginTimestampKey => _options.StorageKey("last-login-timestamp");
@@ -60,22 +68,23 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    private sealed record PendingLogin(string State, string Verifier, DateTimeOffset StartedOn);
+
     private INavigationService? _nav; // Lazy-loaded - set when Blazor initializes
     private bool _disposed;
     private bool _initialized;
     private static CloudLoginBaseService? _activeSubscriber;
     private static readonly SemaphoreSlim LoginCompletionLock = new(1, 1);
-    private static string? _completedRequestId;
-    private readonly IReadOnlyList<IMauiCloudLoginRequestExchange> _requestExchanges;
+    private readonly IReadOnlyList<IMauiCloudLoginNativeExchange> _exchanges;
 
     public MauiCloudLoginService(
         INavigationService navigationService,
         MauiCloudLoginOptions options,
-        IEnumerable<IMauiCloudLoginRequestExchange>? requestExchanges = null) : base()
+        IEnumerable<IMauiCloudLoginNativeExchange>? exchanges = null) : base()
     {
         _nav = navigationService;
         _options = options;
-        _requestExchanges = requestExchanges?.ToList() ?? [];
+        _exchanges = exchanges?.ToList() ?? [];
 
         // Lightweight constructor - just event subscriptions
         UserChanged += OnUserChangedInternal;
@@ -83,25 +92,21 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         try
         {
             if (_activeSubscriber is not null)
-            {
-                MobileAuthCallback.RequestIdReceived -= OnRequestIdReceived;
-            }
+                MobileAuthCallback.Received -= OnCallbackReceived;
 
-            MobileAuthCallback.RequestIdReceived += OnRequestIdReceived;
+            MobileAuthCallback.Received += OnCallbackReceived;
             _activeSubscriber = this;
 
-            // Check if a requestId arrived before we subscribed
-            string? pending = MobileAuthCallback.ConsumePending();
-            if (!string.IsNullOrWhiteSpace(pending))
+            // A callback may have arrived (the app was launched by it) before this service existed.
+            if (MobileAuthCallback.ConsumePending() is { } pending)
             {
-                Debug.WriteLine($"[MauiCloudLoginService] Consuming buffered requestId: {pending}");
-                OnRequestIdReceived(pending);
+                Debug.WriteLine("[MauiCloudLoginService] Consuming a buffered callback.");
+                OnCallbackReceived(pending);
             }
         }
         catch { }
     }
 
-    
     /// <summary>
     /// Initialize the account service and restore any saved session.
     /// Call this once during app startup from App.xaml.cs
@@ -141,7 +146,6 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     {
         try
         {
-            // Get user Id from secure storage
             string? userIdStr = await SecureStorage.Default.GetAsync(SecureUserIdKey);
 
             if (string.IsNullOrWhiteSpace(userIdStr))
@@ -150,7 +154,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
                 return;
             }
 
-            if (!Guid.TryParse(userIdStr, out Guid userId))
+            if (!Guid.TryParse(userIdStr, out Guid _))
             {
                 Debug.WriteLine("[AccountService] Invalid stored user Id");
                 await ClearStoredSessionAsync();
@@ -171,7 +175,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
                 }
             }
 
-            // Load cached user data
+            // The cached profile is only a display copy; the backend's own cookie decides whether the session is still valid.
             if (Preferences.Default.ContainsKey(UserDataKey))
             {
                 string? json = Preferences.Default.Get(UserDataKey, string.Empty);
@@ -183,26 +187,13 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
                     if (User != null)
                     {
                         Debug.WriteLine($"[AccountService] Restored session: {User.DisplayName} ({User.Id})");
-
                         return;
                     }
                 }
             }
 
-            // Try to restore from server if we have request Id
-            string? storedRequestId = await SecureStorage.Default.GetAsync(SecureRequestIdKey);
-
-            if (!string.IsNullOrWhiteSpace(storedRequestId))
-            {
-                Debug.WriteLine("[AccountService] Restoring session from server");
-                RequestId = storedRequestId;
-                await FetchUser();
-            }
-            else
-            {
-                Debug.WriteLine("[AccountService] No request Id, clearing stale session");
-                await ClearStoredSessionAsync();
-            }
+            Debug.WriteLine("[AccountService] No cached profile, clearing stale session");
+            await ClearStoredSessionAsync();
         }
         catch (Exception ex)
         {
@@ -225,11 +216,6 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         {
             await SecureStorage.Default.SetAsync(SecureUserIdKey, user.Id.ToString());
 
-            if (!string.IsNullOrWhiteSpace(RequestId))
-            {
-                await SecureStorage.Default.SetAsync(SecureRequestIdKey, RequestId);
-            }
-
             string json = JsonSerializer.Serialize(user, JsonOptions);
             Preferences.Default.Set(UserDataKey, json);
             Preferences.Default.Set(LastLoginTimestampKey, DateTime.UtcNow.ToBinary());
@@ -247,7 +233,6 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         try
         {
             SecureStorage.Default.Remove(SecureUserIdKey);
-            SecureStorage.Default.Remove(SecureRequestIdKey);
             Preferences.Default.Remove(UserDataKey);
             Preferences.Default.Remove(LastLoginTimestampKey);
 
@@ -279,6 +264,10 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         if (User != null)
             return;
 
+        if (_exchanges.Count == 0)
+            throw new InvalidOperationException(
+                $"Register an {nameof(IMauiCloudLoginNativeExchange)} so the app can keep the session the sign-in returns.");
+
         // A cancelled/offline logout may have cleared the local app while leaving
         // the authority cookie intact. Finish that logout before allowing another
         // sign-in, otherwise the old account could be returned automatically.
@@ -293,51 +282,30 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         }
 
         string relative = NormalizeToBaseRelative(returnUrl ?? _nav.CurrentUri);
-        string callbackWithReturn = $"{CallbackUrl}?return={Uri.EscapeDataString(relative)}";
-        string startUrl = $"{LoginBaseUrl}?referer={Uri.EscapeDataString(callbackWithReturn)}";
+        PendingLogin pending = new(CloudLoginPkce.CreateState(), CloudLoginPkce.CreateVerifier(), DateTimeOffset.UtcNow);
 
-        // Store the return URL so OnRequestIdReceived can navigate back after login
+        await SecureStorage.Default.SetAsync(PendingLoginKey, JsonSerializer.Serialize(pending));
         try { Preferences.Default.Set(PostLoginRouteKey, relative); } catch { }
+
+        string startUrl = $"{_options.ApplicationUrl}/auth/native/login"
+            + $"?challenge={Uri.EscapeDataString(CloudLoginPkce.CreateChallenge(pending.Verifier))}"
+            + $"&state={Uri.EscapeDataString(pending.State)}"
+            + $"&redirect_uri={Uri.EscapeDataString(CallbackUrl)}";
 
         try
         {
-            WebAuthenticatorResult result = await WebAuthenticator.Default.AuthenticateAsync(
-                new Uri(startUrl),
-                new Uri(callbackWithReturn));
+            WebAuthenticatorResult result = await WebAuthenticator.Default.AuthenticateAsync(new Uri(startUrl), new Uri(CallbackUrl));
 
-            if (result?.Properties?.TryGetValue("requestId", out string? requestId) == true
-                && !string.IsNullOrWhiteSpace(requestId))
-            {
-                Debug.WriteLine($"[AccountService] WebAuthenticator returned requestId: {requestId}");
-                await CompleteLoginAsync(requestId);
+            bool completed = await CompleteLoginAsync(new MauiAuthCallback(
+                Property(result, "handoff"), Property(result, "state"), Property(result, "operation"), Property(result, "error")));
 
-                if (User != null)
-                {
-                    Debug.WriteLine($"[AccountService] User fetched after WebAuthenticator: {User.DisplayName}");
-                    string target = "/";
-                    try
-                    {
-                        if (!string.IsNullOrWhiteSpace(Preferences.Default.Get<string>(PostLoginRouteKey, null)))
-                        {
-                            target = NormalizeToBaseRelative(Preferences.Default.Get<string>(PostLoginRouteKey, null));
-                            Preferences.Default.Remove(PostLoginRouteKey);
-                        }
-                    }
-                    catch { }
-                    await ForceReloadTo(target);
-                }
-
-                return;
-            }
-
-            // WebAuthenticator returned no requestId — log what we got
-            Debug.WriteLine($"[AccountService] WebAuthenticator result had no requestId. Properties: {(result?.Properties == null ? "null" : string.Join(", ", result.Properties.Select(p => $"{p.Key}={p.Value}")))}");
-
+            if (completed)
+                await NavigateAfterLoginAsync();
         }
-        catch (TaskCanceledException ex)
+        catch (TaskCanceledException)
         {
             Debug.WriteLine("[AccountService] Login cancelled");
-            return;
+            SecureStorage.Default.Remove(PendingLoginKey);
         }
         catch (Exception ex)
         {
@@ -362,19 +330,21 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     {
         try
         {
-            // Use the same browser authentication session used for sign-in so the
-            // authority's cookie is cleared as well as the app's local session.
-            string logoutUrl = CloudLoginShared.BuildLogoutUrl(
-                _options.LoginUrl,
-                CallbackUrl,
-                isMobileApp: true);
+            // The same browser session the sign-in used, so the authority's own cookie is cleared as well as this app's session.
+            string state = CloudLoginPkce.CreateState();
+            string logoutUrl = $"{_options.ApplicationUrl}/auth/native/logout"
+                + $"?redirect_uri={Uri.EscapeDataString(CallbackUrl)}&state={Uri.EscapeDataString(state)}";
 
-            await WebAuthenticator.Default.AuthenticateAsync(
-                new Uri(logoutUrl),
-                new Uri(CallbackUrl));
+            WebAuthenticatorResult result = await WebAuthenticator.Default.AuthenticateAsync(new Uri(logoutUrl), new Uri(CallbackUrl));
 
-            Preferences.Default.Remove(PendingAuthorityLogoutKey);
-            return true;
+            bool ended = string.Equals(Property(result, "operation"), "logout", StringComparison.Ordinal)
+                && StateMatches(Property(result, "state"), state)
+                && string.IsNullOrEmpty(Property(result, "error"));
+
+            if (ended)
+                Preferences.Default.Remove(PendingAuthorityLogoutKey);
+
+            return ended;
         }
         catch (TaskCanceledException)
         {
@@ -388,86 +358,126 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         }
     }
 
-    public override async Task<string> ProfileUrl()
-    {
-        return await Task.FromResult($"{LoginBaseUrl}/Account?referer={Uri.EscapeDataString(CallbackUrl)}");
-    }
+    public override async Task<string> ProfileUrl() => await Task.FromResult($"{LoginBaseUrl}/Account");
 
-    private async void OnRequestIdReceived(string requestId)
+    private async void OnCallbackReceived(MauiAuthCallback callback)
     {
-        Debug.WriteLine($"[MauiCloudLoginService] OnRequestIdReceived: {requestId}");
+        Debug.WriteLine("[MauiCloudLoginService] A sign-in callback arrived.");
 
         try
         {
-            await CompleteLoginAsync(requestId);
-
-            if (User != null)
-            {
-                Debug.WriteLine($"[MauiCloudLoginService] User fetched after callback: {User.DisplayName}");
-
-                // Navigate away from the login page
-                string target = "/";
-                try
-                {
-                    if (!string.IsNullOrWhiteSpace(Preferences.Default.Get<string>(PostLoginRouteKey, null)))
-                    {
-                        target = NormalizeToBaseRelative(Preferences.Default.Get<string>(PostLoginRouteKey, null));
-                        Preferences.Default.Remove(PostLoginRouteKey);
-                    }
-                }
-                catch { }
-
-                await ForceReloadTo(target);
-            }
+            if (await CompleteLoginAsync(callback))
+                await NavigateAfterLoginAsync();
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MauiCloudLoginService] FetchUser after callback failed: {ex.Message}");
+            Debug.WriteLine($"[MauiCloudLoginService] Completing the sign-in failed: {ex.Message}");
         }
     }
 
-    private async Task CompleteLoginAsync(string requestId)
+    /// <summary>
+    /// Redeems a handoff, but only for the sign-in this app started: its <c>state</c> must match the one it kept, and that is checked
+    /// before anything is spent, so a stray or hostile callback can neither complete a login nor cancel the one in progress.
+    /// </summary>
+    private async Task<bool> CompleteLoginAsync(MauiAuthCallback callback)
     {
+        if (string.Equals(callback.Operation, "logout", StringComparison.Ordinal))
+            return false;
+
         await LoginCompletionLock.WaitAsync();
         try
         {
-            if (string.Equals(_completedRequestId, requestId, StringComparison.OrdinalIgnoreCase)
-                && User is not null)
-                return;
+            PendingLogin? pending = await ReadPendingLoginAsync();
 
-            await SecureStorage.Default.SetAsync(SecureRequestIdKey, requestId);
-            RequestId = requestId;
-
-            if (_requestExchanges.Count == 0)
+            if (pending is null || !StateMatches(callback.State, pending.State))
             {
-                await FetchUser();
-            }
-            else
-            {
-                CloudUser? exchangedUser = null;
-                foreach (IMauiCloudLoginRequestExchange exchange in _requestExchanges)
-                {
-                    exchangedUser = await exchange.ExchangeAsync(requestId);
-                    if (exchangedUser is not null)
-                        break;
-                }
-
-                if (exchangedUser is null)
-                    throw new InvalidOperationException(
-                        "The native application could not establish its authenticated API session.");
-
-                User = exchangedUser;
-                RaiseUserChanged(User);
+                Debug.WriteLine("[AccountService] A callback arrived that no sign-in of this app is waiting for.");
+                return false;
             }
 
-            if (User is not null)
-                _completedRequestId = requestId;
+            SecureStorage.Default.Remove(PendingLoginKey);
+
+            if (!string.IsNullOrEmpty(callback.Error) || string.IsNullOrWhiteSpace(callback.Handoff))
+            {
+                Debug.WriteLine($"[AccountService] The sign-in ended without a handoff ({callback.Error}).");
+                return false;
+            }
+
+            CloudUser? user = null;
+
+            foreach (IMauiCloudLoginNativeExchange exchange in _exchanges)
+            {
+                user = await exchange.ExchangeAsync(callback.Handoff, pending.Verifier);
+
+                if (user is not null)
+                    break;
+            }
+
+            if (user is null)
+                throw new InvalidOperationException("The native application could not establish its authenticated API session.");
+
+            User = user;
+            RaiseUserChanged(User);
+            return true;
         }
         finally
         {
             LoginCompletionLock.Release();
         }
     }
+
+    private async Task<PendingLogin?> ReadPendingLoginAsync()
+    {
+        try
+        {
+            string? stored = await SecureStorage.Default.GetAsync(PendingLoginKey);
+
+            if (string.IsNullOrWhiteSpace(stored))
+                return null;
+
+            PendingLogin? pending = JsonSerializer.Deserialize<PendingLogin>(stored);
+
+            if (pending is null || DateTimeOffset.UtcNow - pending.StartedOn > PendingLoginLifetime)
+            {
+                SecureStorage.Default.Remove(PendingLoginKey);
+                return null;
+            }
+
+            return pending;
+        }
+        catch (Exception ex) when (ex is JsonException or ArgumentException)
+        {
+            SecureStorage.Default.Remove(PendingLoginKey);
+            return null;
+        }
+    }
+
+    private async Task NavigateAfterLoginAsync()
+    {
+        if (User is null)
+            return;
+
+        string target = "/";
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(Preferences.Default.Get<string>(PostLoginRouteKey, null)))
+            {
+                target = NormalizeToBaseRelative(Preferences.Default.Get<string>(PostLoginRouteKey, null));
+                Preferences.Default.Remove(PostLoginRouteKey);
+            }
+        }
+        catch { }
+
+        await ForceReloadTo(target);
+    }
+
+    private static string? Property(WebAuthenticatorResult? result, string name) =>
+        result?.Properties is not null && result.Properties.TryGetValue(name, out string? value) ? value : null;
+
+    private static bool StateMatches(string? received, string expected) =>
+        !string.IsNullOrEmpty(received)
+        && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(received), Encoding.UTF8.GetBytes(expected));
 
     private async Task ForceReloadTo(string target)
     {
@@ -516,13 +526,11 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 
             if (_activeSubscriber == this)
             {
-                MobileAuthCallback.RequestIdReceived -= OnRequestIdReceived;
+                MobileAuthCallback.Received -= OnCallbackReceived;
                 _activeSubscriber = null;
             }
         }
         catch { }
         GC.SuppressFinalize(this);
     }
-
-
 }

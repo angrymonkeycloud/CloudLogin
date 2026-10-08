@@ -1,73 +1,123 @@
 @using AngryMonkey.CloudLogin.Interfaces
-@using AngryMonkey.CloudLogin.Models
+@using AngryMonkey.CloudLogin.V3
 @inject ICloudLogin cloudLogin
-@inject NavigationManager navigationManager
 
 @namespace AngryMonkey.CloudLogin
 
-<div class="admin-panel">
+<div class="admin-panel admin-console">
     <div class="admin-header">
         <div class="admin-header-title">
-            <span class="admin-badge">Global Admin</span>
-            <h2>Administration Panel</h2>
+            <span class="admin-badge">@(_me is { IsGlobalAdmin: true } ? "Global Admin" : "Administrator")</span>
+            <h2>CloudLogin Administration</h2>
         </div>
-        <p class="admin-subtitle">Manage all users and system settings.</p>
+        <p class="admin-subtitle">Users, the applications using CloudLogin, secret keys, sessions and the security of the whole authentication ecosystem.</p>
     </div>
 
-    <div class="admin-tabs">
-        <button class="admin-tab @(activeTab == "Users" ? "active" : "")" @onclick='() => activeTab = "Users"'>
-            Users
-            @if (_userCount > 0)
+    @if (_loading)
+    {
+        <p class="console-empty">Loading...</p>
+    }
+    else if (_failure is not null)
+    {
+        <p class="console-feedback console-feedback--error" role="alert">@_failure</p>
+    }
+    else if (_me is not null)
+    {
+        <div class="admin-tabs">
+            @foreach ((string key, string label, string permission) tab in Tabs)
             {
-                <span class="admin-count-badge">@_userCount</span>
+                @if (_me.Permissions.Contains(tab.permission))
+                {
+                    <button class="admin-tab @(_active == tab.key ? "active" : "")" @onclick="() => _active = tab.key">@tab.label</button>
+                }
             }
-        </button>
-    </div>
+        </div>
 
-    <div class="admin-content">
-        @if (activeTab == "Users")
-        {
-            @if (_selectedUser == null)
+        <div class="admin-content">
+            @switch (_active)
             {
-                <AdminComponent_UserList OnUserSelected="SelectUser" />
+                case "overview":
+                    <AdminComponent_Overview Access="_me" />
+                    break;
+                case "users":
+                    <AdminComponent_Users Access="_me" UserId="AdminUserId" />
+                    break;
+                case "applications":
+                    <AdminComponent_Applications Access="_me" />
+                    break;
+                case "secretkeys":
+                    <AdminComponent_SecretKeys Access="_me" />
+                    break;
+                case "sessions":
+                    <AdminComponent_Sessions Access="_me" />
+                    break;
+                case "security":
+                    <AdminComponent_Security Access="_me" />
+                    break;
+                case "providers":
+                    <AdminComponent_Providers Access="_me" />
+                    break;
+                case "audit":
+                    <AdminComponent_Audit Access="_me" />
+                    break;
+                case "administrators":
+                    <AdminComponent_Administrators Access="_me" />
+                    break;
             }
-            else
-            {
-                <AdminComponent_UserDetail User="_selectedUser" OnBack="ClearUser" OnUserUpdated="HandleUserUpdated" />
-            }
-        }
-    </div>
+        </div>
+    }
 </div>
 
 @code {
-    /// <summary>When set, pre-selects this user in the detail view instead of showing the list.</summary>
+    /// <summary>When set, opens this user's detail straight away instead of the overview.</summary>
     [Parameter] public Guid? AdminUserId { get; set; }
 
-    private string activeTab = "Users";
-    private CloudUserModel? _selectedUser;
-    private int _userCount;
+    private static readonly (string key, string label, string permission)[] Tabs =
+    [
+        ("overview", "Overview", "dashboard.read"),
+        ("users", "Users", "users.read"),
+        ("applications", "Applications", "applications.read"),
+        ("secretkeys", "Secret keys", "applications.read"),
+        ("sessions", "Sessions", "sessions.read"),
+        ("security", "Security", "keys.read"),
+        ("providers", "Providers", "providers.read"),
+        ("audit", "Audit", "audit.read"),
+        ("administrators", "Administrators", "administrators.read")
+    ];
+
+    private V3AdminMeResponse? _me;
+    private string? _failure;
+    private bool _loading = true;
+    private string _active = "overview";
 
     protected override async Task OnInitializedAsync()
     {
-        _userCount = await cloudLogin.GetUserCount();
+        try
+        {
+            if (cloudLogin is not CloudLoginClient client)
+            {
+                _failure = "The administration console runs in the browser client.";
+                return;
+            }
 
-        if (AdminUserId.HasValue)
-            _selectedUser = (await cloudLogin.GetUserById(AdminUserId.Value))?.ToModel();
-    }
+            _me = await client.Admin.GetMeAsync();
 
-    private void SelectUser(CloudUserModel user)
-    {
-        _selectedUser = user;
-    }
-
-    private void ClearUser()
-    {
-        _selectedUser = null;
-    }
-
-    private async Task HandleUserUpdated()
-    {
-        _selectedUser = null;
-        _userCount = await cloudLogin.GetUserCount();
+            if (AdminUserId.HasValue && _me.Permissions.Contains("users.read"))
+                _active = "users";
+            else
+                _active = Tabs.FirstOrDefault(tab => _me.Permissions.Contains(tab.permission)).key ?? "overview";
+        }
+        catch (CloudLoginAdminException exception)
+        {
+            _failure = exception.IsForbidden ? "This account is not a CloudLogin administrator." : exception.Message;
+        }
+        catch (HttpRequestException)
+        {
+            _failure = "The authority could not be reached.";
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 }

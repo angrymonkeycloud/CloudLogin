@@ -48,6 +48,9 @@ public sealed class SessionFamilyDocument : CloudLoginCoreDocument, IExpiringDoc
     public string? Audience { get; set; }
     public string? Scope { get; set; }
 
+    /// <summary>The client the family was issued to. Refresh is bound to it.</summary>
+    public string? ClientId { get; set; }
+
     /// <summary>The id of the newest (only exchangeable) token document in the family.</summary>
     public string CurrentTokenId { get; set; } = string.Empty;
 

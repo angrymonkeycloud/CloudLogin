@@ -83,10 +83,12 @@ public class TokenServiceTests
     private static CloudLoginTokenOptions DefaultOptions() => new()
     {
         Issuer = Authority,
-        AllowedAudiences = [PortalAudience, CdmAudience],
         AccessTokenLifetime = TimeSpan.FromMinutes(10),
         RefreshTokenLifetime = TimeSpan.FromDays(14),
-        SigningKeyPublishGrace = TimeSpan.FromHours(2)
+        SigningKeyPublishGrace = TimeSpan.FromHours(2),
+        // These tests cover rotation, reuse detection and revocation in the store, which do not depend on which client holds the token.
+        // Binding to a client is the default and is covered separately below.
+        AllowUnboundRefreshTokens = true
     };
 
     private static (CloudLoginTokenService Service, CloudLoginSigningKeyManager Keys, InMemoryTokenStore Store)
@@ -169,13 +171,14 @@ public class TokenServiceTests
             () => service.IssueAsync(CreateUser(isLocked: true), PortalAudience));
     }
 
-    [Fact]
-    public async Task UnregisteredAudienceIsRejected()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ATokenWithoutAnAudienceIsNeverIssued(string audience)
     {
         (CloudLoginTokenService service, _, _) = CreateService();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.IssueAsync(CreateUser(), "some-service-we-never-registered"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.IssueAsync(CreateUser(), audience));
     }
 
     // ── Audience isolation ──────────────────────────────────────────────────
@@ -384,53 +387,24 @@ public class TokenServiceTests
     // ── Service delegation ──────────────────────────────────────────────────
 
     [Fact]
-    public void PlaintextServiceClientSecret_IsHashedAndClearedDuringValidation()
+    public void ASecretKeyTooShortToResistGuessing_IsRefusedAtStartup()
     {
         ServiceCollection services = new();
         services.AddCloudLoginTokenIssuer(options =>
         {
             options.Issuer = Authority;
-            options.AllowedAudiences = [PortalAudience, CdmAudience];
-            options.ServiceClients["portal"] = new CloudLoginServiceClient
-            {
-                ClientSecret = "generated-by-aspire",
-                Audience = PortalAudience,
-                AllowedAudiences = [CdmAudience]
-            };
+            options.SecretKeys = ["too-short"];
         });
 
         using ServiceProvider provider = services.BuildServiceProvider();
 
-        CloudLoginServiceClient client = provider
-            .GetRequiredService<IOptions<CloudLoginTokenOptions>>()
-            .Value
-            .ServiceClients["portal"];
-
-        string expected = Convert.ToBase64String(
-            SHA256.HashData(Encoding.UTF8.GetBytes("generated-by-aspire")));
-
-        Assert.Equal("portal", client.ClientId);
-        Assert.Equal(expected, client.SecretHash);
-        Assert.Null(client.ClientSecret);
+        Assert.ThrowsAny<Exception>(() => provider.GetRequiredService<IOptions<CloudLoginTokenOptions>>().Value);
     }
 
-    private static CloudLoginTokenOptions OptionsWithServiceClient(
-        string clientId,
-        string secret,
-        params string[] audiences)
+    private static CloudLoginTokenOptions OptionsWithKey(string secret)
     {
         CloudLoginTokenOptions options = DefaultOptions();
-
-        options.ServiceClients[clientId] = new CloudLoginServiceClient
-        {
-            ClientId = clientId,
-            SecretHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(secret))),
-
-            // Tokens this client legitimately receives are minted for the portal.
-            Audience = PortalAudience,
-            AllowedAudiences = [.. audiences]
-        };
-
+        options.SecretKeys = [secret];
         return options;
     }
 
@@ -438,7 +412,7 @@ public class TokenServiceTests
     public async Task ExchangeKeepsTheUserAsSubjectAndRecordsTheActingService()
     {
         (CloudLoginTokenService service, _, _) = CreateService(
-            OptionsWithServiceClient("blusky-portal", "s3cret", CdmAudience));
+            OptionsWithKey("s3cret"));
 
         CloudUser user = CreateUser();
         CloudLoginTokenResponse issued = await service.IssueAsync(user, PortalAudience);
@@ -466,7 +440,7 @@ public class TokenServiceTests
     public async Task ExchangeWithAWrongSecretIsRejected()
     {
         (CloudLoginTokenService service, _, _) = CreateService(
-            OptionsWithServiceClient("blusky-portal", "s3cret", CdmAudience));
+            OptionsWithKey("s3cret"));
 
         CloudUser user = CreateUser();
         CloudLoginTokenResponse issued = await service.IssueAsync(user, PortalAudience);
@@ -480,19 +454,16 @@ public class TokenServiceTests
     }
 
     [Fact]
-    public async Task ExchangeIsRefusedForAnAudienceTheClientMayNotRequest()
+    public async Task ExchangeIsRefused_WhenTheAuthorityHoldsNoKeys()
     {
-        // The portal may call CDM on a user's behalf, but must not be able to mint
-        // itself a token for an audience it was never granted.
-        (CloudLoginTokenService service, _, _) = CreateService(
-            OptionsWithServiceClient("blusky-portal", "s3cret", CdmAudience));
+        (CloudLoginTokenService service, _, _) = CreateService();
 
         CloudUser user = CreateUser();
         CloudLoginTokenResponse issued = await service.IssueAsync(user, PortalAudience);
 
         Assert.Null(await service.ExchangeAsync(
             issued.AccessToken,
-            PortalAudience,
+            CdmAudience,
             "blusky-portal",
             "s3cret",
             (id, token) => Lookup(user, id, token)));
@@ -504,8 +475,7 @@ public class TokenServiceTests
         // The portal presents a token that was issued to a *different* audience.
         // Accepting it would let any service that got hold of another service's token
         // act on that user's behalf wherever its own grants reach.
-        CloudLoginTokenOptions options = OptionsWithServiceClient("blusky-portal", "s3cret", CdmAudience);
-        options.ServiceClients["blusky-portal"].Audience = PortalAudience;
+        CloudLoginTokenOptions options = OptionsWithKey("s3cret");
 
         (CloudLoginTokenService service, _, _) = CreateService(options);
 
@@ -524,7 +494,7 @@ public class TokenServiceTests
     public async Task ExchangeRejectsAForgedSubjectToken()
     {
         (CloudLoginTokenService service, _, _) = CreateService(
-            OptionsWithServiceClient("blusky-portal", "s3cret", CdmAudience));
+            OptionsWithKey("s3cret"));
 
         CloudUser user = CreateUser();
 

@@ -1,0 +1,123 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+<p class="console-muted">Not every administrator can do everything. Each role opens only the parts of the console it names, and the last full administrator can never be removed.</p>
+
+<dl class="console-facts console-facts--roles">
+    <div><dt>Full administrator</dt><dd>Everything, including who else is an administrator.</dd></div>
+    <div><dt>User administrator</dt><dd>Accounts, their sessions and devices.</dd></div>
+    <div><dt>Application administrator</dt><dd>Applications, their credentials, scopes and sessions.</dd></div>
+    <div><dt>Security administrator</dt><dd>Signing keys, sessions, credentials and providers.</dd></div>
+    <div><dt>Audit reader</dt><dd>Read-only: the dashboard and the audit trail.</dd></div>
+</dl>
+
+<div class="console-table-wrap">
+    <table class="console-table">
+        <thead><tr><th>Administrator</th>@foreach (string role in Roles) { <th>@RoleLabel(role)</th> }<th></th></tr></thead>
+        <tbody>
+            @foreach (V3AdministratorResponse admin in _administrators)
+            {
+                <tr>
+                    <td>@admin.DisplayName <span class="console-muted">@admin.PrimaryContact</span> @if (admin.IsGlobalAdmin) { <span class="console-pill console-pill--neutral">Global admin</span> }</td>
+                    @foreach (string role in Roles)
+                    {
+                        <td>
+                            <input type="checkbox" checked="@HasRole(admin, role)" disabled="@(!Can("administrators.manage") || Busy)" @onchange="args => SetRoleAsync(admin, role, (bool)args.Value!)" />
+                        </td>
+                    }
+                    <td></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Can("administrators.manage"))
+{
+    <h3 class="console-heading">Add an administrator</h3>
+    <form class="console-toolbar" @onsubmit="SearchAsync" @onsubmit:preventDefault>
+        <input class="console-input" type="search" placeholder="Find the person by name or email" @bind="_term" />
+        <button class="console-btn" type="submit" disabled="@Busy">Find</button>
+    </form>
+
+    @if (_candidates.Count > 0)
+    {
+        <div class="console-panel">
+            <ul class="console-list">
+                @foreach (V3AdminUserSummaryResponse candidate in _candidates)
+                {
+                    <li>
+                        <span>@candidate.DisplayName <span class="console-muted">@candidate.PrimaryContact</span></span>
+                        <button class="console-btn console-btn--small" disabled="@(Busy || candidate.State != "Active")" @onclick="() => AddAsync(candidate)">Make audit reader</button>
+                    </li>
+                }
+            </ul>
+        </div>
+        <p class="console-muted">New administrators start with read-only access. Widen it above, per role.</p>
+    }
+}
+
+@code {
+    private static readonly string[] Roles = ["FullAdministrator", "UserAdministrator", "ApplicationAdministrator", "SecurityAdministrator", "AuditReader"];
+
+    private List<V3AdministratorResponse> _administrators = [];
+    private List<V3AdminUserSummaryResponse> _candidates = [];
+    private string? _term;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private Task LoadAsync() => RunAsync(async () =>
+    {
+        if (Api is { } api)
+            _administrators = await api.GetAdministratorsAsync();
+    });
+
+    private static string RoleLabel(string role) => role switch
+    {
+        "FullAdministrator" => "Full",
+        "UserAdministrator" => "Users",
+        "ApplicationAdministrator" => "Apps",
+        "SecurityAdministrator" => "Security",
+        "AuditReader" => "Audit",
+        _ => role
+    };
+
+    private static bool HasRole(V3AdministratorResponse admin, string role) =>
+        admin.Roles.Contains(role) || (role == "FullAdministrator" && admin.IsGlobalAdmin);
+
+    private async Task SetRoleAsync(V3AdministratorResponse admin, string role, bool on)
+    {
+        List<string> roles = [.. admin.Roles];
+
+        if (on && !roles.Contains(role))
+            roles.Add(role);
+        else if (!on)
+            roles.Remove(role);
+
+        await RunAsync(async () =>
+        {
+            await Api!.SetRolesAsync(admin.UserId, roles);
+            _administrators = await Api.GetAdministratorsAsync();
+        }, "Roles updated.");
+
+        // A refused change leaves the box ticked the wrong way until the list is read again.
+        if (Error is not null)
+            _administrators = await Api!.GetAdministratorsAsync();
+    }
+
+    private Task SearchAsync() => RunAsync(async () =>
+        _candidates = [.. (await Api!.SearchUsersAsync(_term, 0, 10)).Where(user => !_administrators.Any(admin => admin.UserId == user.UserId))]);
+
+    private async Task AddAsync(V3AdminUserSummaryResponse candidate)
+    {
+        await RunAsync(async () =>
+        {
+            await Api!.SetRolesAsync(candidate.UserId, ["AuditReader"]);
+            _administrators = await Api.GetAdministratorsAsync();
+            _candidates = [.. _candidates.Where(user => user.UserId != candidate.UserId)];
+        }, "Administrator added.");
+    }
+}

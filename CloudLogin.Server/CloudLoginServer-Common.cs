@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AngryMonkey.CloudLogin.Server;
 
@@ -604,7 +605,21 @@ public partial class CloudLoginServer : ICloudLogin
 
         CloudUser? user = await ValidateEmailPassword(request.Email, request.Password);
         if (user == null)
+        {
+            // The address is left out on purpose: it is what the person typed, not a verified identity.
+            Core.Application.IAuditLogger? audit = _accessor.HttpContext?.RequestServices.GetService<Core.Application.IAuditLogger>();
+
+            if (audit is not null)
+                await audit.LogAsync(new Core.Application.AuditEntry
+                {
+                    EventType = Core.Application.AuditEventTypes.LoginFailed,
+                    Result = Core.Application.AuditResults.Failure,
+                    IpAddress = _accessor.HttpContext?.Connection.RemoteIpAddress?.ToString(),
+                    Data = new Dictionary<string, string> { ["Method"] = "Password" }
+                });
+
             return false;
+        }
 
         await SignInUserAsync(user, request.KeepMeSignedIn, "Password");
         return true;

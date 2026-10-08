@@ -56,6 +56,11 @@
       "minify": false
     },
     {
+      "input": "Components/Admin/AdminComponent.razor.less",
+      "output": "Components/Admin/AdminComponent.razor.css",
+      "minify": false
+    },
+    {
       "input": "Components/Admin/AdminComponent-UserDetail.razor.less",
       "output": "Components/Admin/AdminComponent-UserDetail.razor.css",
       "minify": false

@@ -91,11 +91,8 @@ public static class CloudLoginConfigurationKeys
         /// <summary>The absolute issuer URI used to mint and validate CloudLogin tokens.</summary>
         public const string Issuer = "CloudLoginTokens:Issuer";
 
-        /// <summary>The audiences for which the authority may mint tokens.</summary>
-        public const string AllowedAudiences = "CloudLoginTokens:AllowedAudiences";
-
-        /// <summary>The confidential service clients allowed to request downstream tokens.</summary>
-        public const string ServiceClients = "CloudLoginTokens:ServiceClients";
+        /// <summary>Secret keys the deployment declares. Any website with a backend may authenticate with any of them.</summary>
+        public const string SecretKeys = "CloudLoginTokens:SecretKeys";
     }
 
     /// <summary>Relying-party token configuration inferred from its CloudLogin reference.</summary>
@@ -110,8 +107,11 @@ public static class CloudLoginConfigurationKeys
         /// <summary>The relying application's confidential client identifier.</summary>
         public const string ClientId = "CloudLogin:ClientId";
 
-        /// <summary>The generated secret shared with the CloudLogin authority.</summary>
+        /// <summary>The secret key the application authenticates with. The AppHost generates one and shares it across its websites.</summary>
         public const string ClientSecret = "CloudLogin:ClientSecret";
+
+        /// <summary>The application's own public address, from which its sign-in callback is built. Never taken from a request header.</summary>
+        public const string PublicUrl = "CloudLogin:PublicUrl";
 
         /// <summary>
         /// The other CloudLogin-protected services this application calls, as

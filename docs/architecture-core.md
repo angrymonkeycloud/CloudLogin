@@ -16,30 +16,32 @@ Repository interfaces (Core/Abstractions)
 Azure adapters (Core/Azure: Cosmos repositories, Table stores)
 ```
 
-Controllers call application services and repository interfaces only. No controller returns a persistence document or touches a Cosmos container directly. Authentication tickets carry only minimal identifiers — user id, session id, and the security stamp — never profile data or credentials.
+Controllers call application services and repository interfaces only. No controller returns a persistence document or touches a Cosmos container directly. Authentication tickets carry only minimal identifiers (user id, session id, and the security stamp), never profile data or credentials.
 
 ## Storage responsibilities
 
 | Store | Holds | Never holds |
 | --- | --- | --- |
-| Azure Cosmos DB (7 containers) | Everything that expires or is queried: users, credentials, workspaces, access records, sessions, login/device requests, audit events | — |
+| Azure Cosmos DB (7 containers) | Everything that expires or is queried: users, credentials, workspaces, access records, sessions, login/device requests, audit events | |
 | Azure Table Storage | Permanent point-lookup records only: the `LoginIdentityKeys` index and the optional `LoginUserWorkspaceIndex` | Anything expiring |
 | Azure Blob Storage | Large, non-queryable, non-expiring content such as profile images | Authentication requests, sessions, tokens, credentials, TOTP secrets, or any expiring security record |
-| Azure Key Vault / Managed HSM | Production token signing keys, preferably non-exportable (see [Signing keys](#signing-keys)) | — |
+| Azure Key Vault / Managed HSM | Production token signing keys, preferably non-exportable (see [Signing keys](#signing-keys)) | |
 
 ### Azure Storage names
 
-A storage account is normally shared with the other components of the same product, so everything CloudLogin creates there is prefixed with `login` — an unprefixed `IdentityKeys` sitting beside another component's tables gives nobody a clue who owns it, or whether it is safe to touch. The Cosmos database is named `Login` for the same reason, so its containers can keep their short names.
+A storage account is normally shared with the other components of the same product, so everything CloudLogin creates there is prefixed with `login`: an unprefixed `IdentityKeys` sitting beside another component's tables gives nobody a clue who owns it, or whether it is safe to touch. The Cosmos database is named `Login` for the same reason, so its containers can keep their short names.
 
 | Resource | Name | Configurable |
 | --- | --- | --- |
-| Table | `LoginIdentityKeys` | no — fixed |
-| Table | `LoginUserWorkspaceIndex` | no — fixed |
-| Blob container | `login-users` | yes — `Storage:ContainerName` |
+| Table | `LoginIdentityKeys` | no, fixed |
+| Table | `LoginUserWorkspaceIndex` | no, fixed |
+| Blob container | `login-users` | yes, `Storage:ContainerName` |
 
 The blob container carries a hyphen and the tables do not, because Azure's naming rules differ: **table names permit alphanumeric characters only**, so `Login-IdentityKeys` would be rejected by the service, while **blob container names permit lowercase letters, digits and hyphens**. The readable hyphenated form is used wherever it is legal. `StorageNamingTests` enforces both the prefix and the per-resource legality rules, so an illegal name fails the build rather than surfacing at runtime as a failed sign-in.
 
-## The seven Cosmos containers
+## The Cosmos containers
+
+Seven core containers, plus two for the admin control plane (`Applications` and `SecretKeys`, described in [admin-portal.md](admin-portal.md)). The `Scopes` container of earlier versions is no longer used.
 
 | Container | Partition key | TTL | Holds |
 | --- | --- | --- | --- |
@@ -48,8 +50,10 @@ The blob container carries a hyphen and the tables do not, because Azure's namin
 | `Workspaces` | `/id` | none | Workspace profile, lifecycle, timestamps |
 | `WorkspaceAccess` | `/WorkspaceId` | `-1` | Memberships (permanent, no `ttl`) and invitations (positive `ttl`) |
 | `Sessions` | `/FamilyId` | `-1` | Refresh-token families and their token generations; hashes only |
-| `LoginRequests` | `/id` | `-1` | One-time login handoffs and RFC 8628 device requests; hashes only |
-| `AuditEvents` | `/partitionKey` | `-1` | Append-only security events, partitioned `{realm}|{subject}|{yyyyMM}` |
+| `LoginRequests` | `/id` | `-1` | One-time login handoffs, RFC 8628 device requests and sign-in transactions started by an authenticated application; hashes only |
+| `AuditEvents` | `/partitionKey` | `-1` | Append-only security events, partitioned `{realm}|{subject}|{yyyyMM}` (events about an application alone use `app:{clientId}` as the subject) |
+| `Applications` | `/id` | none | Applications as observed: kind, origins seen, announced back-channel logout URL, first and last seen, last secret key used, blocked or not. Created on first use, never configured |
+| `SecretKeys` | `/id` | none | Secret keys created in the admin, and records of deployment keys once used or revoked: label, SHA-256 hash and, for admin keys, a short prefix (never the secret), expiry, last use, revocation |
 
 Container names and partition key paths are fixed (`CloudLoginCoreContainers`); provisioning happens automatically on first use (`CosmosCoreDatabase`), or up front through `ProvisionAllAsync`.
 
@@ -59,7 +63,7 @@ Every container that can hold an expiring document is provisioned with `DefaultT
 
 - Every expiring document carries both a positive `ttl` and an absolute `ExpiresOn`.
 - Non-expiring documents omit `ttl` entirely (memberships, permanent credentials).
-- Cosmos counts TTL from the last modification, so every write recomputes `ttl` from `ExpiresOn` (`DocumentExpiry.Recompute`) — updating a document can never accidentally extend its absolute lifetime.
+- Cosmos counts TTL from the last modification, so every write recomputes `ttl` from `ExpiresOn` (`DocumentExpiry.Recompute`), so updating a document can never accidentally extend its absolute lifetime.
 - Cosmos deletes expired documents asynchronously, so every read of an expiring document also validates `ExpiresOn` in application code (`DocumentExpiry.IsExpired`).
 - There is deliberately no scheduled or background cleanup job; native TTL is the only deletion mechanism for expiring data.
 
@@ -67,13 +71,13 @@ Every container that can hold an expiring document is provisioned with `DefaultT
 
 Two rules, both enforced by `DateConventionTests` rather than by review:
 
-- **Stored instants are UTC.** `UtcDateTimeOffsetConverter` normalizes every `DateTimeOffset` on write, so the same moment written from UTC+3 and UTC-5 persists identically and range queries never depend on where the writer was. Only the display layer converts — the account and admin pages call `.ToLocalTime()`, which in Blazor WebAssembly is the viewer's own browser timezone.
-- **A stored date is named `…On`.** Never `…At`, and never with a `Utc` suffix: that a value is UTC is a storage fact, not part of its name. So `ExpiresOn`, `CreatedOn`, `RevokedOn`, `LastSeenOn`, `OccurredOn` — not `ExpiresAt` or `ExpiresAtUtc`. The one allowed exception is `DateOfBirth`, a calendar date with no timezone to convert.
+- **Stored instants are UTC.** `UtcDateTimeOffsetConverter` normalizes every `DateTimeOffset` on write, so the same moment written from UTC+3 and UTC-5 persists identically and range queries never depend on where the writer was. Only the display layer converts: the account and admin pages call `.ToLocalTime()`, which in Blazor WebAssembly is the viewer's own browser timezone.
+- **A stored date is named `…On`.** Never `…At`, and never with a `Utc` suffix: that a value is UTC is a storage fact, not part of its name. So `ExpiresOn`, `CreatedOn`, `RevokedOn`, `LastSeenOn`, `OccurredOn`, not `ExpiresAt` or `ExpiresAtUtc`. The one allowed exception is `DateOfBirth`, a calendar date with no timezone to convert.
 
 ### Consistency boundaries
 
 - One user's credentials share the `/UserId` partition; one workspace's access records share `/WorkspaceId`; one session family shares `/FamilyId`. Within each of those partitions, reads after writes are strongly consistent and transactional batches are available.
-- Refresh rotation is a single transactional batch inside the family partition (consume old token, create new token, advance the family head), each leg guarded by the ETag read beforehand — two concurrent exchanges of the same token can never both succeed.
+- Refresh rotation is a single transactional batch inside the family partition (consume old token, create new token, advance the family head), each leg guarded by the ETag read beforehand, so two concurrent exchanges of the same token can never both succeed.
 - Login/device request state transitions are ETag-conditional replaces on a single document: claim, approve, and consume each have exactly one winner.
 - The last-owner invariant is enforced by pre-checks plus a post-write verification inside the workspace partition; the verification closes the window where two concurrent owner demotions each saw the other owner.
 - The `LoginUserWorkspaceIndex` table is non-authoritative. It is maintained idempotently, failures never fail the operation, and readers confirm against `WorkspaceAccess`.
@@ -82,18 +86,18 @@ Two rules, both enforced by `DateConventionTests` rather than by review:
 
 `LoginIdentityKeys` resolves normalized email addresses, phone numbers, and external `(issuer, subject)` identities to a `UserId` and a `ContactId` with a single point lookup:
 
-- **PartitionKey** = `{identityType}-v{hashVersion}-{bucket}` — for example `Email-v1-3f`. The bucket is the first two hex characters of the identity hash, so one identity type spreads over 256 partitions, and a future hash or normalization change lands in its own partitions instead of colliding with today's rows.
+- **PartitionKey** = `{identityType}-v{hashVersion}-{bucket}`, for example `Email-v1-3f`. The bucket is the first two hex characters of the identity hash, so one identity type spreads over 256 partitions, and a future hash or normalization change lands in its own partitions instead of colliding with today's rows.
 - **RowKey** = the **HMAC-SHA256** of the canonical identity string (`email:{normalized}`, `phone:{normalized}`, `ext:{issuer}|{subject}`), keyed with `CloudLogin:IdentityHmacSecret`.
 - **Columns** = `UserId`, `ContactId`, `IdentityType`, `SchemaVersion`, `HashVersion`, `NormalizationVersion`, `CreatedOn`. The canonical value itself is **not stored**.
 - Inserts are **create-only** (`AddEntityAsync`): a collision surfaces as a conflict for the caller to handle; nothing ever silently overwrites another user's identity.
 - Deletes are ETag-conditional, so a claim re-made between a read and a delete survives instead of being removed on the strength of a stale decision.
-- The table also holds one-time bootstrap reservations — the first-administrator grant is an atomic create-only insert, so two racing first registrations can never both become the administrator.
+- The table also holds one-time bootstrap reservations: the first-administrator grant is an atomic create-only insert, so two racing first registrations can never both become the administrator.
 
 ### Why the row key is keyed, and why the plaintext is gone
 
-A bare SHA-256 of `email:ada@example.com` is computable by anyone who can read the table. That made the index a confirmation oracle: run a dictionary of addresses through SHA-256, and the rows tell you exactly which of them have accounts here — without a single request to the application. HMAC removes that, because the row keys mean nothing without the secret, and resolution still costs one point read since the same secret is applied on every write and every read.
+A bare SHA-256 of `email:ada@example.com` is computable by anyone who can read the table. That made the index a confirmation oracle: run a dictionary of addresses through SHA-256, and the rows tell you exactly which of them have accounts here, without a single request to the application. HMAC removes that, because the row keys mean nothing without the secret, and resolution still costs one point read since the same secret is applied on every write and every read.
 
-Storing `CanonicalValue` beside the hash would have defeated the change entirely, so it is not stored. Nothing needs it: every lookup arrives holding the value and re-derives the key, and what a caller actually wants back — which user, which contact — is in the columns.
+Storing `CanonicalValue` beside the hash would have defeated the change entirely, so it is not stored. Nothing needs it: every lookup arrives holding the value and re-derives the key, and what a caller actually wants back (which user, which contact) is in the columns.
 
 ### The key
 
@@ -102,7 +106,7 @@ read old rows during a deliberate rotation.
 
 | Form | Where it applies |
 | --- | --- |
-| `CloudLogin:IdentityHmacSecret` | The logical configuration key — appsettings, user secrets, any configuration provider. |
+| `CloudLogin:IdentityHmacSecret` | The logical configuration key: appsettings, user secrets, any configuration provider. |
 | `CloudLogin__IdentityHmacSecret` | The environment-variable spelling, and what the Aspire integration injects. Double underscores because Linux App Service and containers will not accept a colon in a variable name. |
 | `CloudLogin:IdentityHmacFallbackSecrets` / `CloudLogin__IdentityHmacFallbackSecrets` | One secret setting containing a JSON array of old keys, for example `["base64-old-1","base64-old-2"]`. |
 
@@ -119,7 +123,7 @@ Required where Azure Storage provides the identity index. Hosts using an explici
 
 #### Under Aspire
 
-`AddCloudLogin` wires the secret automatically — an Aspire parameter holding base64 of `RandomNumberGenerator.GetBytes(32)`, marked secret and persisted:
+`AddCloudLogin` wires the secret automatically: an Aspire parameter holding base64 of `RandomNumberGenerator.GetBytes(32)`, marked secret and persisted:
 
 ```csharp
 // Nothing to configure. The parameter is created, kept, and injected as
@@ -134,13 +138,13 @@ login.WithIdentityHmacFallbackSecrets(
     builder.AddParameter("login-identity-hmac-fallbacks", secret: true));
 ```
 
-Stability comes from Aspire's own parameter machinery rather than anything CloudLogin invents. Locally, the generated value is written to the AppHost's user secrets on first run and read back on every run afterwards. When published, the manifest carries a *description* of how to generate the secret — never the value — which the deployment resolves once per environment and then reuses across republishes, deployment slots and scaled instances, so every replica keys the index identically.
+Stability comes from Aspire's own parameter machinery rather than anything CloudLogin invents. Locally, the generated value is written to the AppHost's user secrets on first run and read back on every run afterwards. When published, the manifest carries a *description* of how to generate the secret (never the value), which the deployment resolves once per environment and then reuses across republishes, deployment slots and scaled instances, so every replica keys the index identically.
 
 Each CloudLogin resource gets its own parameter (`{resource}-identity-hmac`), because two authorities in one AppHost are two separate identity indexes. The value is random bytes, never anything derived from a resource or deployment id.
 
 #### Everywhere else
 
-A deployment that does not use the Aspire integration supplies the setting itself — generate it once and put it in whatever secret store the platform offers:
+A deployment that does not use the Aspire integration supplies the setting itself: generate it once and put it in whatever secret store the platform offers:
 
 ```bash
 openssl rand -base64 32
@@ -159,29 +163,29 @@ The realm used to be part of every partition key. With the identity type and has
 
 The suffix is `v1` followed by 16 hex characters of SHA-256 over the lower-cased realm id.
 
-**It is hashed rather than sanitized, and that is the whole point.** Azure table names permit alphanumeric characters only, so the obvious approach — strip everything else — is not injective: `tenant-a` and `tenant_a` both reduce to `tenanta`, and two realms would silently share one identity index and resolve each other's addresses. A realm of pure punctuation reduced to nothing at all and collided with the default realm's unsuffixed table. Hashing is total (every realm id maps somewhere, no character is unrepresentable) and injective for anything anyone will configure.
+**It is hashed rather than sanitized, and that is the whole point.** Azure table names permit alphanumeric characters only, so the obvious approach (strip everything else) is not injective: `tenant-a` and `tenant_a` both reduce to `tenanta`, and two realms would silently share one identity index and resolve each other's addresses. A realm of pure punctuation reduced to nothing at all and collided with the default realm's unsuffixed table. Hashing is total (every realm id maps somewhere, no character is unrepresentable) and injective for anything anyone will configure.
 
-Sixteen hex characters is a namespacing device, not a security boundary — a collision needs on the order of four billion realms in one storage account before it is likely. The `v1` prefix does two jobs: it lets this derivation change later without the new names colliding with rows written under the old one, and it guarantees a named realm can never produce an empty suffix, which is what makes the default realm's backward-compatible unsuffixed names safe to keep.
+Sixteen hex characters is a namespacing device, not a security boundary: a collision needs on the order of four billion realms in one storage account before it is likely. The `v1` prefix does two jobs: it lets this derivation change later without the new names colliding with rows written under the old one, and it guarantees a named realm can never produce an empty suffix, which is what makes the default realm's backward-compatible unsuffixed names safe to keep.
 
 Realm ids are compared case- and whitespace-insensitively, matching `IsDefaultRealm`, so `Tenant-A` and `tenant-a` are one realm rather than two.
 
-`Core.DatabaseId` left unset resolves from the realm, so one database per realm is what a deployment gets without arranging it. Naming it explicitly is allowed, but validation rejects a name inside the `Login…` namespace that the derivation owns — a hand-picked name in there is some other realm's database.
+`Core.DatabaseId` left unset resolves from the realm, so one database per realm is what a deployment gets without arranging it. Naming it explicitly is allowed, but validation rejects a name inside the `Login…` namespace that the derivation owns, since a hand-picked name in there is some other realm's database.
 
 External identities are always `(realm, issuer, subject)`, never email alone. Emails and phones are normalized in exactly one place (`IdentityNormalization`) so every path produces byte-identical canonical strings.
 
 ## Contacts and credentials
 
-Every email and phone contact on a user document carries an immutable `ContactId`, assigned once when the contact is first added and never reassigned — not when the address is re-cased, not when normalization changes, not when the person edits the display form.
+Every email and phone contact on a user document carries an immutable `ContactId`, assigned once when the contact is first added and never reassigned: not when the address is re-cased, not when normalization changes, not when the person edits the display form.
 
 Everything that points at a contact points at that id:
 
 - A password credential is `password|{contactId}` and carries `UserId` + `ContactId`.
-- An external identity carries `UserId` and an optional `LinkedContactId`, plus the provider's reported email and whether the provider verified it (display only — linking and resolution key on `(issuer, subject)`).
+- An external identity carries `UserId` and an optional `LinkedContactId`, plus the provider's reported email and whether the provider verified it (display only; linking and resolution key on `(issuer, subject)`).
 - An identity index row carries `UserId` + `ContactId`.
 
 Keying those on the address itself is what used to make a corrected email address orphan its own password: the key moved while the credential stayed where it was. The contact id does not move.
 
-An email or phone identity is only reserved once it has been **verified**. The reservation is permanent and exclusive — whoever claims `ada@example.com` owns it for every future sign-in — so claiming on an unverified value would let anyone who can type an address lock out its real owner. `ClaimIdentityAsync` refuses an unverified email or phone outright (`UnverifiedIdentityException`). External identities are exempt because the completed provider flow *is* their verification.
+An email or phone identity is only reserved once it has been **verified**. The reservation is permanent and exclusive (whoever claims `ada@example.com` owns it for every future sign-in), so claiming on an unverified value would let anyone who can type an address lock out its real owner. `ClaimIdentityAsync` refuses an unverified email or phone outright (`UnverifiedIdentityException`). External identities are exempt because the completed provider flow *is* their verification.
 
 ## Provider linking policy
 
@@ -196,20 +200,20 @@ An email or phone identity is only reserved once it has been **verified**. The r
 
 A **device is a refresh-token family**: an application signing a user in through CloudLogin creates one, and revoking it signs that device out and leaves the others alone. The account page's Security tab lists them, and `GET /api/v3/devices` returns the same data.
 
-Each entry carries what the user agent reported — a name ("Chrome on Windows"), a broad type (Desktop / Mobile / Tablet / Unknown), browser and operating system — plus the address seen at sign-in, the address at the most recent token exchange, when the session started, and when it was last active. `IsActive` is false once the session is revoked or past its absolute expiry, and an inactive entry keeps its `RevocationReason` so someone can see *why* a device stopped — `TokenReuseDetected` being the one worth noticing.
+Each entry carries what the user agent reported (a name such as "Chrome on Windows", a broad type of Desktop / Mobile / Tablet / Unknown, browser and operating system), plus the address seen at sign-in, the address at the most recent token exchange, when the session started, and when it was last active. `IsActive` is false once the session is revoked or past its absolute expiry, and an inactive entry keeps its `RevocationReason` so someone can see *why* a device stopped, `TokenReuseDetected` being the one worth noticing.
 
 Two deliberate limits:
 
 - **Descriptive, never authoritative.** A user agent is client-supplied text and trivially forged. It exists so a person can recognise their own devices; nothing here is ever an input to an authorization decision.
-- **A device is a token session, not a browser cookie.** Signing in to CloudLogin's own account page creates a cookie session, not a token family, so it does not appear in this list — those sign-ins are recorded in the sign-in history instead. Listing and revoking authority browser sessions would require validating cookies against a server-side session store, which CloudLogin deliberately does not do (its cookies are stateless and Data Protection-sealed). `RevokeDeviceAsync` therefore only ever reports success for something it can genuinely revoke.
+- **A device is a token session, not a browser cookie.** Signing in to CloudLogin's own account page creates a cookie session, not a token family, so it does not appear in this list; those sign-ins are recorded in the sign-in history instead. Listing and revoking authority browser sessions would require validating cookies against a server-side session store, which CloudLogin deliberately does not do (its cookies are stateless and Data Protection-sealed). `RevokeDeviceAsync` therefore only ever reports success for something it can genuinely revoke.
 
-`SessionService.RevokeDeviceAsync` checks ownership and answers false for an id belonging to another account — indistinguishable from one that never existed, so device ids cannot be probed.
+`SessionService.RevokeDeviceAsync` checks ownership and answers false for an id belonging to another account, indistinguishable from one that never existed, so device ids cannot be probed.
 
 ## Signing keys
 
 Production deployments sign tokens with an Azure Key Vault or Managed HSM key (`CloudLoginTokens:SigningKeys:KeyVaultKeyId`), created non-exportable: signatures are computed inside the vault (`CryptographyClient`), rotation is the vault's key-version rotation, and JWKS publishes the enabled versions' public coordinates.
 
-The Cosmos `SigningKeys` fallback remains available and is the default — private keys wrapped with Data Protection, retirement through TTL — so a deployment that configures nothing still runs. A deployment whose policy requires a vault key can make the choice mandatory by setting `CloudLoginTokens:SigningKeys:RequireExplicitStoreChoice` to `true`; startup then fails until either `KeyVaultKeyId` or `AllowCosmosFallback` is set.
+The Cosmos `SigningKeys` fallback remains available and is the default (private keys wrapped with Data Protection, retirement through TTL), so a deployment that configures nothing still runs. A deployment whose policy requires a vault key can make the choice mandatory by setting `CloudLoginTokens:SigningKeys:RequireExplicitStoreChoice` to `true`; startup then fails until either `KeyVaultKeyId` or `AllowCosmosFallback` is set.
 
 The fallback lives in its own `SigningKeys` container in the core database, while refresh-token families live in `Sessions`; no expiring security state remains outside the core model.
 
@@ -283,7 +287,7 @@ database, container, partition-key and TTL declaration.
 
 ### User
 
-Before — legacy `UserInfo` document (one container, embedded credentials and subjects):
+Before: legacy `UserInfo` document (one container, embedded credentials and subjects):
 
 ```json
 {
@@ -313,7 +317,7 @@ Before — legacy `UserInfo` document (one container, embedded credentials and s
 }
 ```
 
-After — `Users` container (partition key `/id`; no hash, no subject):
+After: `Users` container (partition key `/id`; no hash, no subject):
 
 ```json
 {
@@ -346,7 +350,7 @@ After — `Users` container (partition key `/id`; no hash, no subject):
 
 ### Credentials
 
-After — `Credentials` container (partition key `/UserId`), one document per credential. Password:
+After: `Credentials` container (partition key `/UserId`), one document per credential. Password:
 
 ```json
 {
@@ -412,7 +416,7 @@ Recovery artifact (temporary; always expiring):
 
 ### Workspace and access
 
-Before, workspaces had no CloudLogin-owned schema (host `ICloudLoginAccountStore`). After — `Workspaces` (partition key `/id`):
+Before, workspaces had no CloudLogin-owned schema (host `ICloudLoginAccountStore`). After: `Workspaces` (partition key `/id`):
 
 ```json
 {
@@ -425,7 +429,7 @@ Before, workspaces had no CloudLogin-owned schema (host `ICloudLoginAccountStore
 }
 ```
 
-`WorkspaceAccess` (partition key `/WorkspaceId`) — a membership is permanent and carries no `ttl`; multiple members may hold `Owner`:
+`WorkspaceAccess` (partition key `/WorkspaceId`): a membership is permanent and carries no `ttl`; multiple members may hold `Owner`:
 
 ```json
 {
@@ -462,7 +466,7 @@ An invitation always expires through TTL:
 
 ### Sessions
 
-Before — legacy `RefreshToken` documents in the shared container (flat chain, cross-partition):
+Before: legacy `RefreshToken` documents in the shared container (flat chain, cross-partition):
 
 ```json
 {
@@ -478,7 +482,7 @@ Before — legacy `RefreshToken` documents in the shared container (flat chain, 
 }
 ```
 
-After — `Sessions` container (partition key `/FamilyId`): a family head plus one document per token generation, rotated in one transactional batch. Family head:
+After: `Sessions` container (partition key `/FamilyId`): a family head plus one document per token generation, rotated in one transactional batch. Family head:
 
 ```json
 {
@@ -506,7 +510,7 @@ After — `Sessions` container (partition key `/FamilyId`): a family head plus o
 }
 ```
 
-The device fields describe the browser behind the session so the account page can list it. They come from a client-supplied user agent, so they are shown to the person and never used for an authorization decision — see [Signed-in devices](#signed-in-devices).
+The device fields describe the browser behind the session so the account page can list it. They come from a client-supplied user agent, so they are shown to the person and never used for an authorization decision. See [Signed-in devices](#signed-in-devices).
 
 Token generation (the id is the SHA-256 of the raw token, so presentation is a point read; the raw value is never stored):
 
@@ -526,7 +530,7 @@ Token generation (the id is the SHA-256 of the raw token, so presentation is a p
 
 ### Login and device requests
 
-Before — legacy `Request` document:
+Before: legacy `Request` document:
 
 ```json
 {
@@ -538,7 +542,7 @@ Before — legacy `Request` document:
 }
 ```
 
-After — `LoginRequests` container (partition key `/id`). The classic handoff:
+After: `LoginRequests` container (partition key `/id`). The classic handoff:
 
 ```json
 {
@@ -576,7 +580,7 @@ A device authorization request (see [docs/device-authorization.md](device-author
 
 ### Audit events
 
-New in the core — `AuditEvents` container (partition key `/partitionKey`), append-only, retention through TTL:
+New in the core: `AuditEvents` container (partition key `/partitionKey`), append-only, retention through TTL:
 
 ```json
 {
@@ -595,7 +599,7 @@ New in the core — `AuditEvents` container (partition key `/partitionKey`), app
 
 ### Identity keys (Table Storage)
 
-New in the core — `LoginIdentityKeys` table entity:
+New in the core: `LoginIdentityKeys` table entity:
 
 | Column | Value |
 | --- | --- |
@@ -613,5 +617,5 @@ There is no `CanonicalValue` column and no `Realm` column. The plaintext is gone
 
 ## Related pages
 
-- [docs/signin-profiles.md](signin-profiles.md) — named sign-in experiences
-- [docs/device-authorization.md](device-authorization.md) — QR / TV sign-in
+- [docs/signin-profiles.md](signin-profiles.md): named sign-in experiences
+- [docs/device-authorization.md](device-authorization.md): QR / TV sign-in

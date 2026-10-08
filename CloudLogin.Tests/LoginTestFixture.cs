@@ -25,6 +25,7 @@ internal sealed class LoginTestFixture
             LoginDuration = TimeSpan.FromDays(14),
             WebConfig = static _ => { },
             AllowedRedirectOrigins = [.. allowedOrigins ?? []],
+            AllowLegacyRedirectHandoff = true,
             AllowedMobileSchemes = [.. allowedMobileSchemes ?? []]
         };
 
@@ -242,6 +243,11 @@ internal sealed class InMemoryCloudLoginStore : ICloudLoginStore
     public int UpdateCount { get; private set; }
     public int CreateRequestCount { get; private set; }
 
+    /// <summary>Supplies the browser session behind the current request, the way the production store reads it from the signed-in user.</summary>
+    public Func<string?>? CurrentSessionId { get; set; }
+
+    private Dictionary<Guid, string?> Origins { get; } = [];
+
     public Task<string?> GetSecurityStamp(Guid userId) =>
         Task.FromResult(SecurityStamps.GetValueOrDefault(userId));
 
@@ -280,10 +286,14 @@ internal sealed class InMemoryCloudLoginStore : ICloudLoginStore
         return GetUserById(userId);
     }
 
+    public Task<CloudLoginRequestOrigin?> GetRequestOrigin(Guid requestId) =>
+        Task.FromResult(Origins.TryGetValue(requestId, out string? sessionId) && sessionId is not null ? new CloudLoginRequestOrigin(null, null, sessionId) : null);
+
     public Task<AngryMonkey.CloudLogin.Server.CloudRequest> CreateRequest(Guid userId, Guid? requestId = null)
     {
         Guid id = requestId ?? Guid.NewGuid();
         Requests[id] = userId;
+        Origins[id] = CurrentSessionId?.Invoke();
         CreateRequestCount++;
 
         AngryMonkey.CloudLogin.Server.CloudRequest request = new() { UserId = userId };

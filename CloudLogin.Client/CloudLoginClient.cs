@@ -16,6 +16,11 @@ public class CloudLoginClient : ICloudLogin
     public required HttpClient HttpServer { get; init; }
     public string LoginUrl => HttpServer.BaseAddress!.AbsoluteUri;
 
+    private CloudLoginAdminClient? _admin;
+
+    /// <summary>The control-plane API. Only meaningful for someone signed in to the authority as an administrator.</summary>
+    public CloudLoginAdminClient Admin => _admin ??= new CloudLoginAdminClient(HttpServer);
+
     public string UserRoute = "CloudLogin/User";
     public string AccountRoute = "CloudLogin/Account";
     public string SecurityRoute = "CloudLogin/Security";

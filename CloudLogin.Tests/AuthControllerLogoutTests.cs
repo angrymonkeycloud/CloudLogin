@@ -9,14 +9,13 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Reflection;
 
 namespace AngryMonkey.CloudLogin.Tests;
 
 public class AuthControllerLogoutTests
 {
     [Fact]
-    public async Task Logout_ClearsConsumerCookieThenRedirectsThroughAuthority()
+    public async Task Logout_ClearsConsumerCookie_AndFallsBackToTheLocalPageWhenNoAuthorityTransactionCanBeOpened()
     {
         RecordingAuthenticationService authentication = new();
         AuthController controller = CreateController(authentication);
@@ -25,16 +24,13 @@ public class AuthControllerLogoutTests
 
         Assert.Equal(1, authentication.SignOutCount);
         RedirectResult redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(
-            CloudLoginShared.BuildLogoutUrl(
-                "https://login.example",
-                "https://app.example/signed-out?from=menu"),
-            redirect.Url);
+        Assert.Equal("/signed-out?from=menu", redirect.Url);
     }
 
     [Theory]
     [InlineData("https://attacker.example/callback")]
     [InlineData("//attacker.example/callback")]
+    [InlineData("/\attacker.example")]
     public async Task Logout_NormalizesExternalConsumerReturnUrl(string returnUrl)
     {
         RecordingAuthenticationService authentication = new();
@@ -43,23 +39,8 @@ public class AuthControllerLogoutTests
         IActionResult result = await controller.Logout(returnUrl);
 
         RedirectResult redirect = Assert.IsType<RedirectResult>(result);
-        Assert.Equal(
-            CloudLoginShared.BuildLogoutUrl("https://login.example", "https://app.example/"),
-            redirect.Url);
-    }
-
-    [Fact]
-    public void ConsumerReturnState_IsEncryptedAndIntegrityProtected()
-    {
-        AuthController controller = CreateController(new RecordingAuthenticationService());
-
-        MethodInfo method = typeof(AuthController).GetMethod(
-            "EncodeReturnUrl",
-            BindingFlags.Instance | BindingFlags.NonPublic)!;
-        string state = Assert.IsType<string>(method.Invoke(controller, ["/private"]));
-
-        Assert.NotEqual(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("/private")), state);
-        Assert.DoesNotContain("private", state, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("/", redirect.Url);
+        Assert.Equal(1, authentication.SignOutCount);
     }
 
     private static AuthController CreateController(RecordingAuthenticationService authentication)

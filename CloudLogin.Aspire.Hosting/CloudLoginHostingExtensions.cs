@@ -135,7 +135,13 @@ public static class CloudLoginHostingExtensions
     /// References an already-deployed CloudLogin server by URL. Nothing is deployed for it - this
     /// is how an application points at an authority somebody else runs.
     /// </summary>
-    public static IResourceBuilder<ExternalServiceResource> AddCloudLogin(
+    /// <remarks>
+    /// Reference it with <c>project.WithReference(cloudLogin)</c>, exactly as for a CloudLogin in the
+    /// same AppHost. The application registers itself there (the Applications tab of that
+    /// CloudLogin's admin console) and its client id and credential are supplied here as AppHost
+    /// parameters; see <see cref="CloudLoginReferenceExtensions"/>.
+    /// </remarks>
+    public static ICloudLoginExternalBuilder AddCloudLogin(
         this IDistributedApplicationBuilder builder,
         string name,
         string url)
@@ -143,7 +149,7 @@ public static class CloudLoginHostingExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
-        return builder.AddExternalService(name, url);
+        return new CloudLoginExternalBuilder(builder.AddExternalService(name, url));
     }
 
     /// <summary>Points a project at an already-deployed CloudLogin server.</summary>
@@ -164,6 +170,7 @@ public static class CloudLoginHostingExtensions
     /// is whatever the server itself was configured with, which cannot name ports a local run
     /// assigns fresh on every start.
     /// </summary>
+    [Obsolete("Origins are not how CloudLogin trusts an application. A referenced application registers its return URL with the authority for each sign-in, authenticated by its own client credentials, so no origin list is needed. Use WithReference(cloudLogin).")]
     public static IResourceBuilder<ProjectResource> WithCloudLoginRedirectOrigins<T>(
         this IResourceBuilder<ProjectResource> builder,
         params IResourceBuilder<T>[] origins)
@@ -192,6 +199,7 @@ public static class CloudLoginHostingExtensions
     /// instead - and must, because an allow-list that does not contain the site a user started from
     /// refuses to send them back to it, turning a successful sign-in into a failed one.
     /// </remarks>
+    [Obsolete("Origins are not how CloudLogin trusts an application. A referenced application registers its return URL with the authority for each sign-in, authenticated by its own client credentials, so no origin list is needed. Use WithReference(cloudLogin).")]
     public static IResourceBuilder<ProjectResource> WithCloudLoginRedirectOrigins(
         this IResourceBuilder<ProjectResource> builder,
         params string[] origins)
@@ -268,5 +276,8 @@ public sealed class CloudLoginServerAnnotation : IResourceAnnotation
     /// after a caller is added, so its own key lands at <c>Count - 1</c>.
     /// </summary>
     internal int ServiceCallerCount => _serviceCallers.Count;
+
+    /// <summary>The generated secret key every website referencing this authority shares, once one has referenced it.</summary>
+    internal IResourceBuilder<ParameterResource>? SecretKey { get; set; }
 
 }

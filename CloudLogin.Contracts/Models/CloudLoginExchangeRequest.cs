@@ -17,7 +17,4 @@ public sealed record CloudLoginExchangeRequest
     /// <summary>Audience the returned token should be valid for.</summary>
     [JsonPropertyName("audience")]
     public required string Audience { get; init; }
-
-    [JsonPropertyName("scope")]
-    public string? Scope { get; init; }
 }

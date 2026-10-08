@@ -97,6 +97,13 @@ public class CloudLoginWebConfiguration
     /// those schemes.
     /// </summary>
     public List<string> AllowedMobileSchemes { get; set; } = [];
+
+    /// <summary>
+    /// Explicit compatibility mode for applications that have not moved to authorization transactions. Lets the static
+    /// origin and scheme allowlists above receive a one-time request id with no PKCE or state binding. Off by default:
+    /// every supported client uses a transaction opened with its own credentials.
+    /// </summary>
+    public bool AllowLegacyRedirectHandoff { get; set; }
     public string CookieName { get; set; } = "__Host-CloudLogin";
     public string? CookieDomain { get; set; }
     public CloudLoginSecurityOptions Security { get; set; } = new();

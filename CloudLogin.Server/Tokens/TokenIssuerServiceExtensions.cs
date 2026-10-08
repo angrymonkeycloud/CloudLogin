@@ -1,5 +1,8 @@
+using AngryMonkey.CloudLogin.Server.Core.Abstractions;
+using AngryMonkey.CloudLogin.Server.Core.Application;
 using AngryMonkey.CloudLogin.Server.Tokens;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -38,6 +41,8 @@ public static class CloudLoginTokenIssuerServiceExtensions
 
         services.TryAddSingletonTokenStore();
         services.AddSingleton<CloudLoginSigningKeyManager>();
+
+        services.AddCloudLoginClientDirectory();
         services.AddScoped<CloudLoginTokenService>();
         services.AddHostedService<CloudLoginSigningKeyBootstrap>();
 
@@ -45,22 +50,14 @@ public static class CloudLoginTokenIssuerServiceExtensions
     }
 
     /// <summary>
-    /// Configures the token issuer from a configuration section, so audiences and
-    /// service-client secrets come from configuration or a secret store rather than
-    /// being written into source.
+    /// Configures the token issuer from a configuration section, so secret keys come from
+    /// configuration or a secret store rather than being written into source.
     /// </summary>
     /// <example>
     /// <code>
     /// "CloudLoginTokens": {
     ///   "Issuer": "https://login.example.com",
-    ///   "AllowedAudiences": [ "portal", "cdm-api" ],
-    ///   "ServiceClients": {
-    ///     "portal": {
-    ///       "ClientId": "portal",
-    ///       "SecretHash": "&lt;base64 SHA-256 of the secret&gt;",
-    ///       "AllowedAudiences": [ "cdm-api" ]
-    ///     }
-    ///   }
+    ///   "SecretKeys": [ "&lt;at least 32 characters, from a secret store&gt;" ]
     /// }
     /// </code>
     /// </example>

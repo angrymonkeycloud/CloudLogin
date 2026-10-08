@@ -65,10 +65,92 @@ public sealed class CloudLoginAspireHostingTests
         Assert.Equal("false", loginEnvironment["CloudLogin:Security:RequireHttps"]);
         Assert.Equal("Development", loginEnvironment["DOTNET_ENVIRONMENT"]);
         Assert.Equal("Development", loginEnvironment["ASPNETCORE_ENVIRONMENT"]);
-        Assert.Equal("api", loginEnvironment["CloudLoginTokens:AllowedAudiences:0"]);
-        Assert.Contains("CloudLoginTokens:ServiceClients:api:ClientSecret", loginEnvironment);
-        Assert.Contains("CloudLogin:AllowedRedirectOrigins:0", loginEnvironment);
+        Assert.Same(consumerEnvironment["CloudLogin:ClientSecret"], loginEnvironment["CloudLoginTokens:SecretKeys:0"]);
+        // No origin is written: the authority trusts the application's identity, not its address.
+        Assert.DoesNotContain(loginEnvironment.Keys, key => key.StartsWith("CloudLogin:AllowedRedirectOrigins", StringComparison.Ordinal));
         Assert.Single(login.Resource.Annotations.OfType<CloudLoginConsumerAnnotation>());
+    }
+
+    [Fact]
+    public async Task EachReferencedApplicationGetsItsOwnIdentity_AndTheSharedKey()
+    {
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLoginProject();
+        IResourceBuilder<ExecutableResource> first = builder.AddExecutable("angry-monkey", "dotnet", ".").WithReference(login);
+        IResourceBuilder<ExecutableResource> second = builder.AddExecutable("melon-cut", "dotnet", ".").WithReference(login);
+
+        Dictionary<string, object> firstEnvironment = await ReadEnvironmentAsync(first.Resource);
+        Dictionary<string, object> secondEnvironment = await ReadEnvironmentAsync(second.Resource);
+        Dictionary<string, object> loginEnvironment = await ReadEnvironmentAsync(login.Resource);
+
+        Assert.Equal("angry-monkey", firstEnvironment["CloudLogin:ClientId"]);
+        Assert.Equal("melon-cut", secondEnvironment["CloudLogin:ClientId"]);
+
+        ParameterResource firstSecret = Assert.IsType<ParameterResource>(firstEnvironment["CloudLogin:ClientSecret"]);
+        ParameterResource secondSecret = Assert.IsType<ParameterResource>(secondEnvironment["CloudLogin:ClientSecret"]);
+        Assert.True(firstSecret.Secret && secondSecret.Secret);
+        Assert.Same(firstSecret, secondSecret);
+        Assert.Same(firstSecret, loginEnvironment["CloudLoginTokens:SecretKeys:0"]);
+        Assert.DoesNotContain(loginEnvironment.Keys, key => key.Contains("angry-monkey", StringComparison.Ordinal) || key.Contains("melon-cut", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ABackendWithNoEndpoints_CanReferenceCloudLogin()
+    {
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        IResourceBuilder<ProjectResource> login = builder.AddCloudLoginProject();
+        IResourceBuilder<ExecutableResource> worker = builder.AddExecutable("worker", "dotnet", ".").WithReference(login);
+
+        Dictionary<string, object> environment = await ReadEnvironmentAsync(worker.Resource);
+
+        Assert.Equal("worker", environment["CloudLogin:ClientId"]);
+        Assert.Contains("CloudLogin:ClientSecret", environment);
+    }
+
+    [Fact]
+    public async Task AnExistingCloudLogin_ResolvesToTheSameClientConfiguration()
+    {
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        ICloudLoginExternalBuilder login = builder.AddCloudLogin("login", "https://login.example.com");
+        IResourceBuilder<ExecutableResource> app = builder.AddExecutable("meloncut", "dotnet", ".").WithReference(login);
+
+        Dictionary<string, object> environment = await ReadEnvironmentAsync(app.Resource);
+
+        // The same keys the library reads for a CloudLogin in the AppHost.
+        foreach (string key in new[] { "LoginUrl", "CloudLogin:Authority", "CloudLogin:Audience", "CloudLogin:ClientId", "CloudLogin:ClientSecret" })
+            Assert.Contains(key, environment);
+
+        Assert.Equal("meloncut", environment["CloudLogin:ClientId"]);
+
+        // The key is one secret AppHost parameter the administrator supplies for every website, never a literal.
+        ParameterResource secret = Assert.IsType<ParameterResource>(environment["CloudLogin:ClientSecret"]);
+        Assert.True(secret.Secret);
+        Assert.Equal("login-secret-key", secret.Name);
+        Assert.DoesNotContain(environment.Keys, key => key.StartsWith("CloudLogin:AllowedRedirectOrigins", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AnExistingCloudLogin_AcceptsAnExplicitClientIdAndCredential()
+    {
+        IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(
+            new DistributedApplicationOptions { Args = [], DisableDashboard = true });
+
+        ICloudLoginExternalBuilder login = builder.AddCloudLogin("login", "https://login.example.com");
+        IResourceBuilder<ParameterResource> secret = builder.AddParameter("shared-login-credential", "from-the-vault", secret: true);
+        IResourceBuilder<ExecutableResource> app = builder.AddExecutable("meloncut", "dotnet", ".")
+            .WithReference(login, clientId: "melon-cut-prod", clientSecret: secret, audience: "melon-cut-api");
+
+        Dictionary<string, object> environment = await ReadEnvironmentAsync(app.Resource);
+
+        Assert.Equal("melon-cut-prod", environment["CloudLogin:ClientId"]);
+        Assert.Equal("melon-cut-api", environment["CloudLogin:Audience"]);
+        Assert.Same(secret.Resource, environment["CloudLogin:ClientSecret"]);
     }
 
     [Fact]
@@ -96,6 +178,8 @@ public sealed class CloudLoginAspireHostingTests
             [CloudLoginCoreContainers.Sessions] = CloudLoginCoreContainers.SessionsPartitionKey,
             [CloudLoginCoreContainers.LoginRequests] = CloudLoginCoreContainers.LoginRequestsPartitionKey,
             [CloudLoginCoreContainers.AuditEvents] = CloudLoginCoreContainers.AuditEventsPartitionKey,
+            [CloudLoginCoreContainers.Applications] = CloudLoginCoreContainers.ApplicationsPartitionKey,
+            [CloudLoginCoreContainers.SecretKeys] = CloudLoginCoreContainers.SecretKeysPartitionKey,
 
             // Declared even though only a deployment without Key Vault signing reads it. The server
             // cannot create a container itself - that is a control-plane call, and it runs on a
@@ -136,9 +220,10 @@ public sealed class CloudLoginAspireHostingTests
         AzureCosmosDBDatabaseResource database = Assert.Single(builder.Resources.OfType<AzureCosmosDBDatabaseResource>());
         Assert.Equal("LoginStaging", database.DatabaseName);
 
-        // The seven core containers plus the signing-key fallback, which is declared even when
-        // unused because the server has no control-plane rights to create it later.
-        Assert.Equal(8, builder.Resources.OfType<AzureCosmosDBContainerResource>().Count());
+        // The seven core containers, the two control-plane ones (Applications, Scopes) and the
+        // signing-key fallback, which is declared even when unused because the server has no
+        // control-plane rights to create it later.
+        Assert.Equal(10, builder.Resources.OfType<AzureCosmosDBContainerResource>().Count());
     }
 
     [Fact]
@@ -365,7 +450,7 @@ public sealed class CloudLoginAspireHostingTests
 
         Assert.Contains("CloudLogin:Authority", consumerEnvironment);
         Assert.Equal("api", consumerEnvironment["CloudLogin:Audience"]);
-        Assert.Equal("api", loginEnvironment["CloudLoginTokens:AllowedAudiences:0"]);
+        Assert.Contains("CloudLoginTokens:SecretKeys:0", loginEnvironment);
         Assert.DoesNotContain("TestMode:IsEnabled", loginEnvironment);
         Assert.DoesNotContain(
             consumerEnvironment.Keys,

@@ -96,4 +96,32 @@ public sealed class CosmosSessionRepository(CosmosCoreDatabase database) : ISess
         DocumentExpiry.Recompute(token);
         await container.UpsertItemAsync(token, new PartitionKey(token.FamilyId), cancellationToken: cancellationToken);
     }
+
+    public async Task<List<SessionFamilyDocument>> GetActiveFamiliesAsync(string? audience, Guid? userId, int take, CancellationToken cancellationToken = default)
+    {
+        Container container = await ContainerAsync(cancellationToken);
+        string filter = "c.Kind = 'Family' AND c.IsRevoked = false"
+            + (audience is null ? string.Empty : " AND c.Audience = @audience")
+            + (userId is null ? string.Empty : " AND c.UserId = @userId");
+
+        QueryDefinition query = new QueryDefinition($"SELECT TOP @take * FROM c WHERE {filter} ORDER BY c.CreatedOn DESC")
+            .WithParameter("@take", Math.Clamp(take, 1, 500));
+
+        if (audience is not null)
+            query = query.WithParameter("@audience", audience);
+
+        if (userId is not null)
+            query = query.WithParameter("@userId", userId.Value.ToString());
+
+        List<SessionFamilyDocument> families = await CosmosCoreOperations.QueryAsync<SessionFamilyDocument>(container, query, null, cancellationToken);
+        return [.. families.Where(family => !DocumentExpiry.IsExpired(family))];
+    }
+
+    public async Task<int> CountActiveFamiliesAsync(CancellationToken cancellationToken = default)
+    {
+        Container container = await ContainerAsync(cancellationToken);
+        QueryDefinition query = new("SELECT VALUE COUNT(1) FROM c WHERE c.Kind = 'Family' AND c.IsRevoked = false");
+        List<int> counts = await CosmosCoreOperations.QueryAsync<int>(container, query, null, cancellationToken);
+        return counts.Sum();
+    }
 }

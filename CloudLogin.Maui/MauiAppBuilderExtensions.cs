@@ -10,19 +10,22 @@ public static class MauiAppBuilderExtensions
     private static MauiCloudLoginOptions? _configuredOptions;
 
     /// <summary>
-    /// Registers CloudLogin services and automatically wires platform auth-callback
-    /// interception for Android and iOS. No platform code needed in the host app.
+    /// Registers CloudLogin sign-in for a native app and wires platform auth-callback interception for Android and iOS. No platform code
+    /// is needed in the host app.
     /// </summary>
-    /// <param name="loginUrl">
-    /// Base address of the CloudLogin server that issues this app's user identities. Pass the
-    /// same value the app's backend uses for <c>LoginUrl</c>, otherwise the app signs in against
-    /// a different user store and the ids it receives will not match the backend's role tables.
-    /// When null, <see cref="CloudLoginBaseService.LoginBaseUrl"/> keeps its default.
+    /// <param name="applicationUrl">
+    /// The app's own backend. It is the CloudLogin client: the system browser signs in through it and it hands the session back to this app,
+    /// so the app needs no credential and the authority needs no registration of the app. The backend lists the app's scheme in
+    /// <c>CloudLoginServerConfiguration.NativeCallbackSchemes</c>.
     /// </param>
-    public static MauiAppBuilder AddMauiCloudLogin(this MauiAppBuilder builder, string loginUrl, string callbackScheme)
+    /// <param name="callbackScheme">The custom URL scheme this app registers on the device, for example <c>blusky</c>.</param>
+    /// <remarks>
+    /// The app must also register an <see cref="IMauiCloudLoginNativeExchange"/>, which keeps the session cookie the exchange returns.
+    /// </remarks>
+    public static MauiAppBuilder AddMauiCloudLogin(this MauiAppBuilder builder, string applicationUrl, string callbackScheme)
         => builder.AddMauiCloudLogin(new MauiCloudLoginOptions
         {
-            LoginUrl = loginUrl,
+            ApplicationUrl = applicationUrl,
             CallbackScheme = callbackScheme
         });
 
@@ -33,7 +36,9 @@ public static class MauiAppBuilderExtensions
         options.Validate();
 
         _configuredOptions = options;
-        CloudLoginBaseService.LoginBaseUrl = options.LoginUrl;
+
+        if (options.LoginUrl is not null)
+            CloudLoginBaseService.LoginBaseUrl = options.LoginUrl;
 
         builder.Services.AddSingleton(options);
         builder.Services.AddScoped<ICloudLoginService, MauiCloudLoginService>();
@@ -95,10 +100,9 @@ public static class MauiAppBuilderExtensions
             return false;
 
         var query = HttpUtility.ParseQueryString(uri.Query);
-        string? requestId = query.Get("requestId");
 
-        if (!string.IsNullOrWhiteSpace(requestId))
-            MobileAuthCallback.Raise(requestId);
+        if (!string.IsNullOrWhiteSpace(query.Get("handoff")) || !string.IsNullOrWhiteSpace(query.Get("error")))
+            MobileAuthCallback.Raise(new MauiAuthCallback(query.Get("handoff"), query.Get("state"), query.Get("operation"), query.Get("error")));
 
         return true;
     }

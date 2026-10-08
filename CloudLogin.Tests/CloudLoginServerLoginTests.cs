@@ -302,6 +302,23 @@ public class CloudLoginServerLoginTests
     }
 
     [Fact]
+    public async Task TheMauiLegacyHandoff_IsRefusedByDefault_AndWorksOnlyWhenTheDeploymentEnablesIt()
+    {
+        LoginTestFixture fixture = new(allowedMobileSchemes: ["blusky"]);
+        CloudUser user = await fixture.AddPasswordUserAsync();
+        fixture.AuthenticateAs(user);
+        fixture.Configuration.AllowLegacyRedirectHandoff = false;
+
+        await Assert.ThrowsAnyAsync<Exception>(() => fixture.Server.CompleteLoginRedirect("blusky://auth/callback?state=abc", isMobileApp: true));
+        Assert.Equal(0, fixture.Store.CreateRequestCount);
+
+        fixture.Configuration.AllowLegacyRedirectHandoff = true;
+        string redirect = await fixture.Server.CompleteLoginRedirect("blusky://auth/callback?state=abc", isMobileApp: true);
+
+        Assert.True(Guid.TryParse(HttpUtility.ParseQueryString(new Uri(redirect).Query)["requestId"], out _));
+    }
+
+    [Fact]
     public async Task CompleteLoginRedirect_EmptyDestination_GoesToAccount()
     {
         LoginTestFixture fixture = new();
@@ -388,17 +405,16 @@ public class CloudLoginServerLoginTests
     }
 
     [Fact]
-    public async Task Logout_ValidatesRedirectAndSignsOut()
+    public async Task Logout_NeverBlocksSigningOut_AndOnlyHonoursAnAllowlistedDestination()
     {
         LoginTestFixture fixture = new(allowedOrigins: ["https://portal.example"]);
 
-        IActionResult blocked = await fixture.Server.Logout("https://attacker.example");
+        IActionResult unlisted = await fixture.Server.Logout("https://attacker.example");
         IActionResult allowed = await fixture.Server.Logout("https://portal.example/signed-out");
 
-        Assert.IsType<BadRequestObjectResult>(blocked);
-        RedirectResult redirect = Assert.IsType<RedirectResult>(allowed);
-        Assert.Equal("https://portal.example/signed-out", redirect.Url);
-        Assert.Equal(1, fixture.Authentication.SignOutCount);
+        Assert.Equal("/", Assert.IsType<RedirectResult>(unlisted).Url);
+        Assert.Equal("https://portal.example/signed-out", Assert.IsType<RedirectResult>(allowed).Url);
+        Assert.Equal(2, fixture.Authentication.SignOutCount);
     }
 
     [Fact]

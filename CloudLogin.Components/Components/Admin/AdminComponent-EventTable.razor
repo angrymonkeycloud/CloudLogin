@@ -1,0 +1,45 @@
+@using AngryMonkey.CloudLogin.V3
+@namespace AngryMonkey.CloudLogin
+
+@if (Events.Count == 0)
+{
+    <p class="console-empty">Nothing recorded yet.</p>
+}
+else
+{
+    <div class="console-table-wrap">
+        <table class="console-table">
+            <thead><tr><th>When</th><th>Event</th><th>Result</th><th>Actor</th><th>Subject</th><th>Application</th><th>Details</th></tr></thead>
+            <tbody>
+                @foreach (V3AdminAuditEventModel item in Events)
+                {
+                    <tr>
+                        <td title="@item.OccurredOn.ToLocalTime().ToString("u")">@item.OccurredOn.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@item.EventType</td>
+                        <td><span class="console-pill console-pill--@Pill(item.Result)">@(item.Result ?? "Success")</span></td>
+                        <td class="console-mono">@Short(item.ActorUserId)</td>
+                        <td class="console-mono">@Short(item.UserId)</td>
+                        <td>@item.ClientId</td>
+                        <td>@Details(item)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public List<V3AdminAuditEventModel> Events { get; set; } = [];
+
+    private static string Short(Guid? id) => id is { } value ? value.ToString("N")[..8] : string.Empty;
+
+    private static string Pill(string? result) => result switch
+    {
+        "Failure" => "bad",
+        "Denied" => "warn",
+        _ => "ok"
+    };
+
+    private static string Details(V3AdminAuditEventModel item) =>
+        string.Join(", ", item.Data.Select(pair => $"{pair.Key}: {pair.Value}"));
+}

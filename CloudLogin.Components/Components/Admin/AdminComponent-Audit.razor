@@ -1,0 +1,62 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+<form class="console-toolbar" @onsubmit="LoadAsync" @onsubmit:preventDefault>
+    <select class="console-input" @bind="_group">
+        <option value="">Every event</option>
+        <option value="Application.">Applications</option>
+        <option value="Credential.">Credentials</option>
+        <option value="Scope.">Scopes</option>
+        <option value="Client.">Application sign-ins</option>
+        <option value="Token.">Tokens issued</option>
+        <option value="Transaction.">Sign-in transactions</option>
+        <option value="Session.">Sessions</option>
+        <option value="User.">Users</option>
+        <option value="Login.">User sign-ins</option>
+        <option value="Admin.">Administrators</option>
+        <option value="Key.">Signing keys</option>
+    </select>
+    <input class="console-input console-mono" placeholder="Client id" @bind="_clientId" />
+    <select class="console-input" @bind="_result">
+        <option value="">Any result</option>
+        <option value="Success">Success</option>
+        <option value="Failure">Failure</option>
+        <option value="Denied">Denied</option>
+    </select>
+    <button class="console-btn console-btn--primary" type="submit" disabled="@Busy">Search</button>
+</form>
+
+<AdminComponent_EventTable Events="_events" />
+
+@if (_events.Count >= Take)
+{
+    <p class="console-muted">Showing the newest @Take events. Narrow the search to see further back.</p>
+}
+
+@code {
+    private const int Take = 200;
+
+    private List<V3AdminAuditEventModel> _events = [];
+    private string _group = string.Empty;
+    private string? _clientId;
+    private string _result = string.Empty;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private Task LoadAsync() => RunAsync(async () =>
+    {
+        if (Api is not { } api)
+            return;
+
+        V3AdminAuditPageResponse page = await api.GetAuditAsync(
+            prefix: string.IsNullOrEmpty(_group) ? null : _group,
+            clientId: string.IsNullOrWhiteSpace(_clientId) ? null : _clientId.Trim(),
+            result: string.IsNullOrEmpty(_result) ? null : _result,
+            take: Take);
+
+        _events = page.Events;
+    });
+}

@@ -1,0 +1,67 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+<p class="console-muted">The ways people can sign in. Providers are declared with their credentials in the deployment's configuration, so this shows what is configured and who uses it; the credentials themselves are never displayed.</p>
+
+<div class="console-table-wrap">
+    <table class="console-table console-table--clickable">
+        <thead><tr><th>Provider</th><th>Kind</th><th>Linked users</th></tr></thead>
+        <tbody>
+            @foreach (V3AdminProviderResponse provider in _providers)
+            {
+                <tr @onclick="() => SelectAsync(provider)">
+                    <td>@provider.Label <span class="console-muted console-mono">@provider.Code</span></td>
+                    <td>@(provider.IsExternal ? "External identity provider" : provider.VerifiesCredentials ? "Verified by CloudLogin" : "Other")</td>
+                    <td>@(provider.IsExternal ? provider.LinkedIdentities.ToString() : "Not applicable")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (_selected is not null)
+{
+    <h3 class="console-heading">Users linked to @_selected.Label</h3>
+    @if (_users.Count == 0)
+    {
+        <p class="console-empty">Nobody has linked this provider.</p>
+    }
+    else
+    {
+        <div class="console-table-wrap">
+            <table class="console-table">
+                <thead><tr><th>User</th><th>Provider email</th><th>Linked</th></tr></thead>
+                <tbody>
+                    @foreach (V3AdminProviderUserModel user in _users)
+                    {
+                        <tr><td>@(user.DisplayName ?? user.UserId.ToString("N")[..8])</td><td>@user.ProviderEmail</td><td>@When(user.LinkedOn)</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private List<V3AdminProviderResponse> _providers = [];
+    private List<V3AdminProviderUserModel> _users = [];
+    private V3AdminProviderResponse? _selected;
+
+    protected override Task OnInitializedAsync() => RunAsync(async () =>
+    {
+        if (Api is { } api)
+            _providers = await api.GetProvidersAsync();
+    });
+
+    private async Task SelectAsync(V3AdminProviderResponse provider)
+    {
+        if (!provider.IsExternal)
+            return;
+
+        _selected = provider;
+        await RunAsync(async () => _users = await Api!.GetProviderUsersAsync(provider.Code));
+    }
+}

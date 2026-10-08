@@ -14,7 +14,7 @@ builder.Services.AddCloudLoginTokenAuthentication(options =>
     options.Authority = "https://localhost:7100";
     options.Audience = "cloudlogin-demo-consumer";
     options.ClientId = "cloudlogin-demo-consumer";
-    options.ClientSecret = "local-demo-only-client-secret-32-chars";
+    options.ClientSecret = "local-demo-only-secret-key-at-least-32-characters";
 });
 
 WebApplication app = builder.Build();

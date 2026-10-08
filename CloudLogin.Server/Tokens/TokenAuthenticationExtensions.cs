@@ -60,6 +60,8 @@ public static class CloudLoginTokenAuthenticationExtensions
         // Delegated tokens are cached here, so a page that makes twenty downstream calls
         // performs one exchange rather than twenty.
         services.AddMemoryCache();
+        services.AddDistributedMemoryCache();
+        services.AddCloudLoginClientServices();
 
         services.AddScoped<ICloudLoginUserContext, CloudLoginUserContext>();
         services.AddScoped<ICloudLoginTokenProvider, CloudLoginTokenProvider>();

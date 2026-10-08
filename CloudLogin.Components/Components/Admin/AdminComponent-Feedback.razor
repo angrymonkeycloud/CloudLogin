@@ -1,0 +1,21 @@
+@namespace AngryMonkey.CloudLogin
+
+@if (Busy)
+{
+    <div class="console-feedback console-feedback--busy">Working...</div>
+}
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <div class="console-feedback console-feedback--error" role="alert">@Error</div>
+}
+else if (!string.IsNullOrEmpty(Notice))
+{
+    <div class="console-feedback console-feedback--ok" role="status">@Notice</div>
+}
+
+@code {
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string? Notice { get; set; }
+}

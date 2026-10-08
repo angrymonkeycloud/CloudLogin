@@ -45,3 +45,10 @@ public interface IAtomicCloudLoginTokenStore
         CloudLoginRefreshToken replacement,
         CancellationToken cancellationToken = default);
 }
+
+public interface ICloudLoginSessionOwnerLookup
+{
+    Task<IReadOnlyCollection<Guid>> GetSessionOwnersAsync(string sessionId, CancellationToken cancellationToken = default);
+
+    Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken cancellationToken = default);
+}

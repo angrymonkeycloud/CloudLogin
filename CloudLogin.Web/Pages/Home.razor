@@ -150,6 +150,25 @@ else
         // Handle external referer for both mobile and web
         if (Referer != "/")
         {
+            // A sign-in an application started with the authority carries an opaque reference, not a
+            // URL. The server resolves it to the destination that application registered and binds
+            // the request id to it, which this page cannot do by appending to a string.
+            if (Referer.StartsWith("cltx:", StringComparison.Ordinal))
+            {
+                try
+                {
+                    nav.NavigateTo(await cloudLogin.CompleteLoginRedirect(Referer, IsMobileApp), true);
+                }
+                catch (Exception)
+                {
+                    // Expired or already used: the page offers to start again.
+                    IsWorking = false;
+                    StateHasChanged();
+                }
+
+                return;
+            }
+
             Guid? requestID = null;
             try
             {

@@ -43,4 +43,10 @@ public interface IUserRepository
     Task<List<UserDocument>> GetByNormalizedContactAsync(string normalizedValue, CancellationToken cancellationToken = default);
 
     Task<int> CountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>A page of users, newest first, optionally narrowed by a name, username or contact fragment.</summary>
+    Task<List<UserDocument>> SearchAsync(string? term, int skip, int take, CancellationToken cancellationToken = default);
+
+    /// <summary>Global administrators and anyone holding an administrative role.</summary>
+    Task<List<UserDocument>> GetAdministratorsAsync(CancellationToken cancellationToken = default);
 }

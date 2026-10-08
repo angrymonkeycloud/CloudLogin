@@ -1,0 +1,71 @@
+@using AngryMonkey.CloudLogin.V3
+@namespace AngryMonkey.CloudLogin
+
+@if (Sessions.Count == 0)
+{
+    <p class="console-empty">No sessions.</p>
+}
+else
+{
+    <div class="console-table-wrap">
+        <table class="console-table">
+            <thead>
+                <tr>
+                    @if (ShowUser) { <th>User</th> }
+                    <th>Application</th><th>Device</th><th>Signed in</th><th>Last seen</th><th>From</th><th>Status</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (V3AdminSessionResponse session in Sessions)
+                {
+                    <tr>
+                        @if (ShowUser) { <td>@(session.UserName ?? session.UserId.ToString("N")[..8])</td> }
+                        <td>@(session.ApplicationName ?? session.Audience)</td>
+                        <td>@(session.DeviceName ?? $"{session.Browser} {session.OperatingSystem}".Trim())</td>
+                        <td>@When(session.CreatedOn)</td>
+                        <td>@Ago(session.LastSeenOn)</td>
+                        <td class="console-mono">@(session.LastSeenIp ?? session.CreatedByIp)</td>
+                        <td>
+                            @if (session.IsRevoked)
+                            {
+                                <span class="console-pill console-pill--bad" title="@session.RevocationReason">Revoked</span>
+                            }
+                            else
+                            {
+                                <span class="console-pill console-pill--ok">Active</span>
+                            }
+                        </td>
+                        <td>
+                            @if (CanRevoke && !session.IsRevoked)
+                            {
+                                <button class="console-btn console-btn--danger console-btn--small" @onclick="() => OnRevoke.InvokeAsync(session.FamilyId)">Revoke</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public List<V3AdminSessionResponse> Sessions { get; set; } = [];
+    [Parameter] public bool CanRevoke { get; set; }
+    [Parameter] public bool ShowUser { get; set; }
+    [Parameter] public EventCallback<string> OnRevoke { get; set; }
+
+    private static string When(DateTimeOffset value) => value.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+
+    private static string Ago(DateTimeOffset? value)
+    {
+        if (value is not { } on)
+            return "Never";
+
+        TimeSpan span = DateTimeOffset.UtcNow - on;
+
+        return span.TotalMinutes < 1 ? "Just now"
+            : span.TotalHours < 1 ? $"{(int)span.TotalMinutes} min ago"
+            : span.TotalDays < 1 ? $"{(int)span.TotalHours} h ago"
+            : $"{(int)span.TotalDays} d ago";
+    }
+}

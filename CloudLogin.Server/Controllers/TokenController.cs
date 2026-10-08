@@ -1,21 +1,19 @@
 using AngryMonkey.CloudLogin.Interfaces;
+using AngryMonkey.CloudLogin.Server.Core.Abstractions;
+using AngryMonkey.CloudLogin.Server.Core.Application;
+using AngryMonkey.CloudLogin.Server.Core.Domain;
 using AngryMonkey.CloudLogin.Server.Tokens;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AngryMonkey.CloudLogin.Server.Controllers;
 
-/// <summary>
-/// The authority's token endpoints.
-/// <para>
-/// Every route here either proves who the caller is before minting anything, or
-/// publishes purely public key material. There is deliberately no endpoint that
-/// turns a bare user id into a token &mdash; that would reintroduce exactly the
-/// impersonation this design exists to prevent.
-/// </para>
-/// </summary>
+public sealed record CloudLoginSessionStatusRequest(string? SessionId);
+
 [ApiController]
 [Route("CloudLogin/Token")]
 public sealed class TokenController(
@@ -23,25 +21,17 @@ public sealed class TokenController(
     CloudLoginSigningKeyManager keyManager,
     ICloudLogin server,
     IOptions<CloudLoginTokenOptions> options,
-    ILogger<TokenController> logger) : ControllerBase
+    ILogger<TokenController> logger,
+    IClientDirectory clients,
+    IClientRequestAuthenticator authenticator) : ControllerBase
 {
     private readonly CloudLoginTokenService _tokens = tokenService;
-    private readonly CloudLoginSigningKeyManager _keys = keyManager;
     private readonly ICloudLogin _server = server;
-    private readonly CloudLoginTokenOptions _options = options.Value;
     private readonly ILogger<TokenController> _logger = logger;
 
-    /// <summary>
-    /// Issues tokens for the browser session that owns the CloudLogin cookie.
-    /// Used by the authority's own first-party surfaces; the cookie is the proof,
-    /// so nothing about the user is taken from the request.
-    /// </summary>
     [HttpPost("Session")]
     [Authorize]
-    public async Task<IActionResult> FromSession(
-        [FromQuery] string audience,
-        [FromQuery] string? scope = null,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> FromSession([FromQuery] string audience, CancellationToken cancellationToken = default)
     {
         CloudUser? user = await _server.CurrentUser();
 
@@ -53,9 +43,6 @@ public sealed class TokenController(
             CloudLoginTokenResponse response = await _tokens.IssueAsync(
                 user,
                 audience,
-                scope,
-                // The cookie's own session, so these tokens count as the same device as the
-                // browser holding it rather than as a new one.
                 sessionId: User.FindFirst(CloudLoginClaims.SessionId)?.Value,
                 clientIp: ClientIp(),
                 userAgent: UserAgent(),
@@ -69,52 +56,95 @@ public sealed class TokenController(
         }
     }
 
-    /// <summary>
-    /// Exchanges a single-use login request id for tokens.
-    /// <para>
-    /// This is how a relying party completes sign-in. It replaces the older
-    /// "fetch the user, then trust its id forever" handoff: the relying party now
-    /// receives a credential it can present downstream, rather than a bare
-    /// identifier it would have to assert.
-    /// </para>
-    /// <para>
-    /// Requires service-client credentials, because a login request id travels
-    /// through a browser redirect and is therefore not a secret on its own.
-    /// </para>
-    /// </summary>
+    [HttpPost("Code")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Code([FromBody] CloudLoginCodeRequest request, CancellationToken cancellationToken = default)
+    {
+        Response.Headers.CacheControl = "no-store";
+
+        ClientRequestAuthentication authentication = await authenticator.AuthenticateAsync(Request, request.ClientId, cancellationToken);
+
+        if (authentication.Client is not { } client)
+            return Unauthorized(new { error = "invalid_client" });
+
+        // A public client's tokens are bound to its own origin, whatever it asks for; a backend may name the audience it needs.
+        string audience = string.IsNullOrWhiteSpace(request.Audience) ? client.Audience : request.Audience;
+
+        if (client.IsPublic && !string.Equals(audience, client.Audience, StringComparison.Ordinal))
+            return BadRequest(new { error = "invalid_target", error_description = "A client without a secret key receives tokens for its own origin only." });
+
+        if (!Guid.TryParse(request.Code, out Guid requestId) || requestId == Guid.Empty)
+            return BadRequest(new { error = "invalid_grant" });
+
+        ILoginRequestRepository? requests = HttpContext.RequestServices.GetService<ILoginRequestRepository>();
+
+        if (requests is null)
+            return Problem(statusCode: StatusCodes.Status501NotImplemented, title: "Authorization codes need the CloudLogin core storage.");
+
+        LoginRequestDocument? stored = await requests.GetAsync(requestId.ToString(), cancellationToken);
+
+        if (stored is null || stored.Kind != LoginRequestKinds.Login || DocumentExpiry.IsExpired(stored) || !string.Equals(stored.ClientId, client.ClientId, StringComparison.Ordinal))
+            return BadRequest(new { error = "invalid_grant" });
+
+        bool redirectMatches = string.Equals(stored.RedirectUri, request.RedirectUri, StringComparison.Ordinal);
+        bool pkceMatches = !string.IsNullOrEmpty(stored.CodeChallenge) && Pkce.Verify(stored.CodeChallenge, request.CodeVerifier);
+
+        if (!redirectMatches || !pkceMatches)
+        {
+            await _server.GetUserByRequestId(requestId);
+            _logger.LogWarning("Authorization code for client {ClientId} was redeemed with a wrong redirect or verifier and has been burned.", client.ClientId);
+            return BadRequest(new { error = "invalid_grant" });
+        }
+
+        CloudLoginRequestOrigin? origin = _server is CloudLoginServer cloudLoginServer ? await cloudLoginServer.GetLoginRequestOrigin(requestId) : null;
+        CloudUser? user = await _server.GetUserByRequestId(requestId);
+
+        if (user is null || user.Id == Guid.Empty || user.IsLocked)
+            return BadRequest(new { error = "invalid_grant" });
+
+        try
+        {
+            CloudLoginTokenResponse response = await _tokens.IssueAsync(
+                user,
+                audience,
+                sessionId: origin?.SessionId,
+                includeRefreshToken: client.ReceivesRefreshTokens,
+                clientIp: origin?.IpAddress ?? ClientIp(),
+                userAgent: origin?.UserAgent ?? UserAgent(),
+                clientId: client.ClientId,
+                cancellationToken: cancellationToken);
+
+            return Ok(response);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(new { error = "invalid_request", error_description = exception.Message });
+        }
+    }
+
     [HttpPost("FromRequest")]
     [AllowAnonymous]
-    public async Task<IActionResult> FromRequest(
-        [FromQuery] Guid requestId,
-        [FromQuery] string audience,
-        [FromQuery] string? scope = null,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> FromRequest([FromQuery] Guid requestId, [FromQuery] string audience, CancellationToken cancellationToken = default)
     {
-        if (!TryReadClientCredentials(out string clientId, out string clientSecret))
-            return Unauthorized(new { error = "invalid_client" });
+        CloudLoginWebConfiguration? configuration = HttpContext.RequestServices.GetService<CloudLoginWebConfiguration>();
 
-        if (!_options.ServiceClients.TryGetValue(clientId, out CloudLoginServiceClient? client) ||
-            client.IsDisabled ||
-            !client.AllowedAudiences.Contains(audience))
-            return Unauthorized(new { error = "invalid_client" });
+        if (configuration?.AllowLegacyRedirectHandoff != true)
+            return BadRequest(new { error = "unsupported_grant_type", error_description = "Redeem a sign-in with the authorization code endpoint, with the PKCE verifier." });
 
-        if (!VerifyClientSecret(client, clientSecret))
+        ClientRequestAuthentication authentication = await authenticator.AuthenticateAsync(Request, null, cancellationToken);
+
+        if (authentication.Client is not { IsPublic: false } client)
             return Unauthorized(new { error = "invalid_client" });
 
         if (requestId == Guid.Empty)
             return BadRequest(new { error = "invalid_request" });
 
-        // Read before consuming: this call arrives from the relying party's server, so its own
-        // address and HTTP-client user agent describe that server, not the person who signed in.
-        // The login request remembers the browser that created it; prefer that, and fall back to
-        // this request only when the store keeps no such record.
-        // Server-side only: the origin record is storage detail, so it is not on the shared
-        // ICloudLogin contract. A host with a different implementation simply falls back below.
-        CloudLoginRequestOrigin? origin = _server is CloudLoginServer cloudLoginServer
-            ? await cloudLoginServer.GetLoginRequestOrigin(requestId)
-            : null;
+        ILoginRequestRepository? loginRequests = HttpContext.RequestServices.GetService<ILoginRequestRepository>();
 
-        // Consumes the request id: it is single use and short lived by design.
+        if (loginRequests is not null && await loginRequests.GetAsync(requestId.ToString(), cancellationToken) is { ClientId: { Length: > 0 } })
+            return BadRequest(new { error = "invalid_grant", error_description = "This request is bound to a transaction and must be redeemed with its code verifier." });
+
+        CloudLoginRequestOrigin? origin = _server is CloudLoginServer cloudLoginServer ? await cloudLoginServer.GetLoginRequestOrigin(requestId) : null;
         CloudUser? user = await _server.GetUserByRequestId(requestId);
 
         if (user is null || user.Id == Guid.Empty || user.IsLocked)
@@ -125,19 +155,11 @@ public sealed class TokenController(
             CloudLoginTokenResponse response = await _tokens.IssueAsync(
                 user,
                 audience,
-                scope,
-                // The browser's sign-in session, when the request remembers it: the tokens then
-                // belong to that device on the account page instead of adding another row for
-                // every application the person signs in to.
                 sessionId: origin?.SessionId,
                 clientIp: origin?.IpAddress ?? ClientIp(),
                 userAgent: origin?.UserAgent ?? UserAgent(),
+                clientId: client.ClientId,
                 cancellationToken: cancellationToken);
-
-            _logger.LogInformation(
-                "Issued tokens to client {ClientId} for audience {Audience}.",
-                clientId,
-                audience);
 
             return Ok(response);
         }
@@ -147,78 +169,53 @@ public sealed class TokenController(
         }
     }
 
-    /// <summary>
-    /// Rotates a refresh token. Replaying a consumed token revokes its whole family,
-    /// so a stolen refresh token is usable at most once before it burns the session.
-    /// </summary>
     [HttpPost("Refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh(
-        [FromBody] CloudLoginRefreshRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Refresh([FromBody] CloudLoginRefreshRequest request, CancellationToken cancellationToken = default)
     {
+        Response.Headers.CacheControl = "no-store";
+
+        ClientRequestAuthentication authentication = await authenticator.AuthenticateAsync(Request, request.ClientId, cancellationToken);
+
         CloudLoginTokenResponse? response = await _tokens.RefreshAsync(
             request.RefreshToken,
             async (userId, token) => await _server.GetUserById(userId),
             ClientIp(),
             UserAgent(),
-            cancellationToken);
+            cancellationToken,
+            authentication.Client);
 
-        return response is null
-            ? Unauthorized(new { error = "invalid_grant" })
-            : Ok(response);
+        return response is null ? Unauthorized(new { error = "invalid_grant" }) : Ok(response);
     }
 
-    /// <summary>
-    /// Delegated token exchange. A backend service presents its own credentials plus
-    /// the end user's access token, and receives a token that still names the user as
-    /// subject but records the service in the <c>act</c> claim.
-    /// </summary>
     [HttpPost("Exchange")]
     [AllowAnonymous]
-    public async Task<IActionResult> Exchange(
-        [FromBody] CloudLoginExchangeRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Exchange([FromBody] CloudLoginExchangeRequest request, CancellationToken cancellationToken = default)
     {
-        if (!TryReadClientCredentials(out string clientId, out string clientSecret))
+        ClientRequestAuthentication authentication = await authenticator.AuthenticateAsync(Request, null, cancellationToken);
+
+        if (authentication.Client is not { } client)
             return Unauthorized(new { error = "invalid_client" });
 
         CloudLoginTokenResponse? response = await _tokens.ExchangeAsync(
             request.SubjectToken,
             request.Audience,
-            clientId,
-            clientSecret,
+            client,
             async (userId, token) => await _server.GetUserById(userId),
-            request.Scope,
             cancellationToken);
 
-        return response is null
-            ? Unauthorized(new { error = "invalid_grant" })
-            : Ok(response);
+        return response is null ? Unauthorized(new { error = "invalid_grant" }) : Ok(response);
     }
 
-    /// <summary>
-    /// Revokes a refresh token and everything rotated from it.
-    /// <para>
-    /// Anonymous, because the refresh token itself is the proof: presenting it shows
-    /// you hold it. Unknown tokens still report success, so this cannot be used to
-    /// probe which tokens exist.
-    /// </para>
-    /// <para>
-    /// Revoking by session id is different &mdash; a session id is not a secret, it
-    /// travels in the <c>sid</c> claim of every token minted for that sign-in. So it
-    /// requires an access token for that same session, otherwise anyone who observed
-    /// a session id could sign that user out at will.
-    /// </para>
-    /// </summary>
     [HttpPost("Revoke")]
     [AllowAnonymous]
-    public async Task<IActionResult> Revoke(
-        [FromBody] CloudLoginRevokeRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Revoke([FromBody] CloudLoginRevokeRequest request, CancellationToken cancellationToken = default)
     {
         if (!string.IsNullOrWhiteSpace(request.RefreshToken))
-            await _tokens.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
+        {
+            ClientRequestAuthentication authentication = await authenticator.AuthenticateAsync(Request, null, cancellationToken);
+            await _tokens.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken, authentication.Client);
+        }
 
         if (!string.IsNullOrWhiteSpace(request.SessionId))
         {
@@ -231,89 +228,49 @@ public sealed class TokenController(
         return NoContent();
     }
 
-    /// <summary>
-    /// Confirms the caller presented a valid access token belonging to the session it
-    /// is asking to revoke, or is signed in as the user who owns it.
-    /// </summary>
+    [HttpPost("SessionStatus")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SessionStatus([FromBody] CloudLoginSessionStatusRequest request, CancellationToken cancellationToken = default)
+    {
+        Response.Headers.CacheControl = "no-store";
+
+        ClientRequestAuthentication authentication = await authenticator.AuthenticateAsync(Request, null, cancellationToken);
+
+        if (authentication.Client is not { IsPublic: false })
+            return Unauthorized(new { error = "invalid_client" });
+
+        return Ok(new { active = !string.IsNullOrWhiteSpace(request.SessionId) && await _tokens.IsSessionActiveAsync(request.SessionId, cancellationToken) });
+    }
+
     private async Task<bool> CallerOwnsSessionAsync(string sessionId, CancellationToken cancellationToken)
     {
         string authorization = Request.Headers.Authorization.ToString();
 
         if (authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            System.Security.Claims.ClaimsPrincipal? principal = await _tokens.ValidateAccessTokenAsync(
-                authorization["Bearer ".Length..].Trim(),
-                audience: null,
-                cancellationToken);
+            System.Security.Claims.ClaimsPrincipal? principal = await _tokens.ValidateAccessTokenAsync(authorization["Bearer ".Length..].Trim(), audience: null, cancellationToken);
 
-            if (string.Equals(
-                    principal?.FindFirst(CloudLoginClaims.SessionId)?.Value,
-                    sessionId,
-                    StringComparison.Ordinal))
-                return true;
-        }
-
-        // A user signed in to the authority may end their own sessions from the
-        // account page, where there is a cookie rather than a bearer token.
-        return User.Identity?.IsAuthenticated == true;
-    }
-
-    private bool VerifyClientSecret(CloudLoginServiceClient client, string secret)
-    {
-        byte[] expected = Convert.FromBase64String(client.SecretHash);
-        byte[] actual = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(secret));
-
-        return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(expected, actual);
-    }
-
-    private bool TryReadClientCredentials(out string clientId, out string clientSecret)
-    {
-        clientId = string.Empty;
-        clientSecret = string.Empty;
-
-        string? header = Request.Headers.Authorization.ToString();
-
-        if (string.IsNullOrWhiteSpace(header) ||
-            !header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        try
-        {
-            string decoded = System.Text.Encoding.UTF8.GetString(
-                Convert.FromBase64String(header["Basic ".Length..].Trim()));
-
-            int separator = decoded.IndexOf(':');
-
-            if (separator <= 0)
+            if (principal is null || !string.Equals(principal.FindFirst(CloudLoginClaims.SessionId)?.Value, sessionId, StringComparison.Ordinal))
                 return false;
 
-            clientId = decoded[..separator];
-            clientSecret = decoded[(separator + 1)..];
+            return Guid.TryParse(principal.FindFirst(CloudLoginClaims.Subject)?.Value, out Guid subject) && await _tokens.OwnsSessionAsync(sessionId, subject, cancellationToken);
+        }
 
-            return clientSecret.Length > 0;
-        }
-        catch
-        {
+        if (User.Identity?.IsAuthenticated != true)
             return false;
-        }
+
+        CloudUser? user = await _server.CurrentUser();
+
+        return user is { Id: var id, IsLocked: false } && id != Guid.Empty && await _tokens.OwnsSessionAsync(sessionId, id, cancellationToken);
     }
 
     private string? ClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString();
 
-    private string? UserAgent() => Request.Headers.UserAgent.ToString() is { Length: > 0 } agent
-        ? agent
-        : null;
+    private string? UserAgent() => Request.Headers.UserAgent.ToString() is { Length: > 0 } agent ? agent : null;
 }
 
-/// <summary>
-/// Public discovery surface. Resource servers read these two documents to learn how
-/// to verify tokens, which is what lets them validate without holding any secret.
-/// </summary>
 [ApiController]
-public sealed class CloudLoginDiscoveryController(
-    CloudLoginSigningKeyManager keyManager,
-    IOptions<CloudLoginTokenOptions> options) : ControllerBase
+public sealed class CloudLoginDiscoveryController(CloudLoginSigningKeyManager keyManager, IOptions<CloudLoginTokenOptions> options) : ControllerBase
 {
     private readonly CloudLoginSigningKeyManager _keys = keyManager;
     private readonly CloudLoginTokenOptions _options = options.Value;
@@ -324,21 +281,29 @@ public sealed class CloudLoginDiscoveryController(
     {
         string issuer = _options.Issuer.TrimEnd('/');
 
-        // Cached briefly: it changes only on configuration change, and resource
-        // servers poll it on startup and on unknown-kid.
         Response.Headers.CacheControl = "public, max-age=300";
 
         return Ok(new
         {
             issuer,
             jwks_uri = $"{issuer}/.well-known/jwks.json",
-            token_endpoint = $"{issuer}/CloudLogin/Token/Refresh",
-            introspection_endpoint = $"{issuer}/CloudLogin/Token/Exchange",
+            authorization_endpoint = $"{issuer}/CloudLogin/Authorize",
+            token_endpoint = $"{issuer}/CloudLogin/Token/Code",
+            refresh_endpoint = $"{issuer}/CloudLogin/Token/Refresh",
             revocation_endpoint = $"{issuer}/CloudLogin/Token/Revoke",
+            token_exchange_endpoint = $"{issuer}/CloudLogin/Token/Exchange",
+            authorization_transaction_endpoint = $"{issuer}/CloudLogin/Authorize/Begin",
+            logout_transaction_endpoint = $"{issuer}/CloudLogin/Authorize/Logout",
+            session_status_endpoint = $"{issuer}/CloudLogin/Token/SessionStatus",
             id_token_signing_alg_values_supported = new[] { "ES256" },
-            response_types_supported = new[] { "token" },
+            response_types_supported = new[] { "code" },
+            response_modes_supported = new[] { "query" },
             subject_types_supported = new[] { "public" },
-            grant_types_supported = new[] { "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange" }
+            grant_types_supported = new[] { "authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:token-exchange" },
+            code_challenge_methods_supported = new[] { "S256" },
+            token_endpoint_auth_methods_supported = new[] { "client_secret_basic", "none" },
+            backchannel_logout_supported = true,
+            backchannel_logout_session_supported = true
         });
     }
 

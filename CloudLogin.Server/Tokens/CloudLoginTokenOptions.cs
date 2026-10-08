@@ -17,14 +17,6 @@ public sealed class CloudLoginTokenOptions
     public string Issuer { get; set; } = string.Empty;
 
     /// <summary>
-    /// Audiences the authority will mint tokens for. A resource server is identified
-    /// by its audience string, and a token minted for one audience must not be
-    /// accepted by another &mdash; that is what stops a compromised low-value service
-    /// from replaying a user's token against a high-value one.
-    /// </summary>
-    public HashSet<string> AllowedAudiences { get; set; } = new(StringComparer.Ordinal);
-
-    /// <summary>
     /// Access-token lifetime. Short by design: an access token cannot be revoked
     /// once minted, so its lifetime <em>is</em> the revocation window.
     /// </summary>
@@ -54,15 +46,37 @@ public sealed class CloudLoginTokenOptions
     public TimeSpan ClockSkew { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// Registered service clients allowed to perform delegated token exchange.
-    /// Keyed by client id; the value is the set of audiences that client may
-    /// request a delegated token for.
+    /// Secret keys declared by the deployment (an AppHost generates one and gives it to every website it references). Any website with a
+    /// backend may authenticate with any valid key, alongside the keys created in the admin. Each can be revoked in the admin.
     /// </summary>
-    public Dictionary<string, CloudLoginServiceClient> ServiceClients { get; set; } =
-        new(StringComparer.Ordinal);
+    public List<string> SecretKeys { get; set; } = [];
+
+    /// <summary>
+    /// How long the last key and application state read successfully from the registry (revoked keys, blocked applications) keeps being
+    /// enforced when the registry cannot be read. Past it, or with nothing ever read, a website is refused rather than trusted: an
+    /// administrator's revocation is never lifted by an outage.
+    /// </summary>
+    public TimeSpan RegistryStaleTolerance { get; set; } = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Explicit compatibility switch: lets deployment keys authenticate while the registry is unreadable and nothing recent is known.
+    /// Off by default because it lets an outage bypass a revoked key or a blocked application.
+    /// </summary>
+    public bool AllowDeploymentKeysWithoutRegistry { get; set; }
+
+    /// <summary>
+    /// Explicit compatibility switch for refresh tokens that name no client: lets them be issued (by <c>Token/Session</c>) and
+    /// refreshed without a key. Off by default: every refresh token is bound to an application that must authenticate.
+    /// </summary>
+    public bool AllowUnboundRefreshTokens { get; set; }
 
     /// <summary>Where the authority's signing keys live: Key Vault, or the Cosmos fallback.</summary>
     public CloudLoginSigningKeyStoreOptions SigningKeys { get; set; } = new();
+
+    /// <summary>The SHA-256 hashes of <see cref="SecretKeys"/>, which is all the authority compares against.</summary>
+    internal IReadOnlyList<string> SecretKeyHashes => [.. SecretKeys.Where(key => !string.IsNullOrWhiteSpace(key)).Select(HashSecret).Distinct()];
+
+    public static string HashSecret(string secret) => Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(secret.Trim())));
 
     internal void Validate()
     {
@@ -87,13 +101,8 @@ public sealed class CloudLoginTokenOptions
             throw new InvalidOperationException(
                 "SigningKeyPublishGrace must exceed AccessTokenLifetime, otherwise key rotation invalidates tokens that are still valid.");
 
-        foreach ((string key, CloudLoginServiceClient client) in ServiceClients)
-        {
-            if (string.IsNullOrWhiteSpace(client.ClientId))
-                client.ClientId = key;
-
-            client.NormalizeSecret();
-        }
+        if (SecretKeys.Any(key => !string.IsNullOrWhiteSpace(key) && key.Trim().Length < 32))
+            throw new InvalidOperationException("A CloudLogin secret key must be at least 32 characters.");
     }
 }
 
@@ -151,58 +160,3 @@ public sealed class CloudLoginSigningKeyStoreOptions
     }
 }
 
-/// <summary>
-/// A backend service permitted to call the authority on a user's behalf.
-/// The secret authenticates the <em>service</em>; the subject token it presents
-/// authenticates the <em>user</em>. Both are required, so neither a stolen secret
-/// nor a stolen user token is sufficient on its own.
-/// </summary>
-public sealed class CloudLoginServiceClient
-{
-    public string ClientId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// SHA-256 hash of the client secret, base64 encoded. Validated runtime options use this value
-    /// and do not retain the bound plaintext value.
-    /// </summary>
-    public string SecretHash { get; set; } = string.Empty;
-
-    /// <summary>
-    /// A secret supplied by a protected configuration provider. Options validation converts it to
-    /// <see cref="SecretHash"/> and clears this bound property, allowing an Aspire AppHost to give
-    /// the same generated value to both sides without storing it in source or a manifest.
-    /// </summary>
-    public string? ClientSecret { get; set; }
-
-    /// <summary>Audiences this client may request delegated tokens for.</summary>
-    public HashSet<string> AllowedAudiences { get; set; } = new(StringComparer.Ordinal);
-
-    /// <summary>
-    /// The audience of tokens this client legitimately receives &mdash; normally its
-    /// own audience.
-    /// <para>
-    /// Token exchange validates the presented subject token against this value, so a
-    /// service can only delegate tokens that were actually issued <em>to it</em>. Without
-    /// it, a service that got hold of a token minted for a different service could
-    /// exchange that token and act on the user's behalf somewhere it was never given
-    /// access.
-    /// </para>
-    /// </summary>
-    public string? Audience { get; set; }
-
-    public string? DisplayName { get; set; }
-
-    public bool IsDisabled { get; set; }
-
-    internal void NormalizeSecret()
-    {
-        if (!string.IsNullOrWhiteSpace(ClientSecret))
-        {
-            SecretHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(ClientSecret)));
-            ClientSecret = null;
-        }
-
-        if (string.IsNullOrWhiteSpace(SecretHash))
-            throw new InvalidOperationException($"CloudLogin service client '{ClientId}' requires a secret or secret hash.");
-    }
-}

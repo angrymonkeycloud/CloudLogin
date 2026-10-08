@@ -75,7 +75,8 @@ public sealed record SessionIssueResult
 public sealed class SessionService(
     ISessionRepository repository,
     CloudLoginCoreConfiguration configuration,
-    IAuditLogger audit)
+    IAuditLogger audit,
+    ILogoutNotifier? notifier = null)
 {
     private readonly ISessionRepository _repository = repository;
     private readonly CloudLoginCoreConfiguration _configuration = configuration;
@@ -241,6 +242,12 @@ public sealed class SessionService(
         SessionFamilyDocument? family = await _repository.GetFamilyAsync(familyId, cancellationToken);
         if (family is null || family.IsRevoked)
             return;
+
+        if (!string.IsNullOrWhiteSpace(family.SessionId) && (string.IsNullOrEmpty(family.Audience) || string.Equals(family.Audience, BrowserAudience, StringComparison.OrdinalIgnoreCase)))
+        {
+            await RevokeSessionAsync(family.SessionId, reason, cancellationToken);
+            return;
+        }
 
         await RevokeFamilyCoreAsync(family, reason, DateTimeOffset.UtcNow, cancellationToken);
     }
@@ -457,6 +464,9 @@ public sealed class SessionService(
 
         foreach (SessionFamilyDocument family in families.Where(candidate => !candidate.IsRevoked))
             await RevokeFamilyCoreAsync(family, reason, DateTimeOffset.UtcNow, cancellationToken);
+
+        if (notifier is not null)
+            await notifier.NotifyUserAsync(userId, cancellationToken);
     }
 
     private async Task RevokeFamilyCoreAsync(SessionFamilyDocument family, SessionRevocationReasons reason, DateTimeOffset now, CancellationToken cancellationToken)
@@ -472,7 +482,6 @@ public sealed class SessionService(
         }
         catch (CoreConcurrencyException)
         {
-            // Someone else advanced or revoked the family concurrently; re-read and retry once.
             SessionFamilyDocument? current = await _repository.GetFamilyAsync(family.FamilyId, cancellationToken);
             if (current is null || current.IsRevoked)
                 return;
@@ -482,6 +491,24 @@ public sealed class SessionService(
             current.RevokedOn = now;
             DocumentExpiry.Recompute(current, now);
             await _repository.ReplaceFamilyAsync(current, cancellationToken);
+            family = current;
+        }
+
+        await NotifyAsync(family, cancellationToken);
+    }
+
+    private async Task NotifyAsync(SessionFamilyDocument family, CancellationToken cancellationToken)
+    {
+        if (notifier is null)
+            return;
+
+        try
+        {
+            await notifier.NotifyFamilyAsync(family, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await _audit.LogAsync(AuditEventTypes.LogoutDeliveryFailed, Guid.TryParse(family.UserId, out Guid userId) ? userId : null, data: new Dictionary<string, string> { ["Failure"] = exception.GetType().Name }, cancellationToken: cancellationToken);
         }
     }
 

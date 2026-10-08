@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using AngryMonkey.CloudLogin.Server.Core.Application;
+using AngryMonkey.CloudLogin.Server.Core.Domain;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -20,13 +22,24 @@ public sealed class CloudLoginTokenService(
     CloudLoginSigningKeyManager keyManager,
     ICloudLoginTokenStore store,
     IOptions<CloudLoginTokenOptions> options,
-    ILogger<CloudLoginTokenService> logger)
+    ILogger<CloudLoginTokenService> logger,
+    IClientDirectory? clients = null,
+    IAuditLogger? audit = null)
 {
     private readonly CloudLoginSigningKeyManager _keyManager = keyManager;
     private readonly ICloudLoginTokenStore _store = store;
     private readonly CloudLoginTokenOptions _options = options.Value;
     private readonly ILogger<CloudLoginTokenService> _logger = logger;
     private readonly JsonWebTokenHandler _handler = new();
+
+    // Without a registry the directory still answers for configuration clients, so the token
+    // endpoints have one code path whether or not applications are managed through the admin.
+    private readonly IClientDirectory _clients = clients ?? new ClientDirectory(options);
+
+    /// <summary>The lifetimes of the tokens the authority issues.</summary>
+    private readonly record struct TokenPolicy(TimeSpan AccessLifetime, TimeSpan RefreshLifetime);
+
+    private TokenPolicy DefaultPolicy => new(_options.AccessTokenLifetime, _options.RefreshTokenLifetime);
 
     /// <summary>
     /// Issues a fresh access/refresh pair for an interactively authenticated user.
@@ -36,11 +49,11 @@ public sealed class CloudLoginTokenService(
     public async Task<CloudLoginTokenResponse> IssueAsync(
         CloudUser user,
         string audience,
-        string? scope = null,
         string? sessionId = null,
         bool includeRefreshToken = true,
         string? clientIp = null,
         string? userAgent = null,
+        string? clientId = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);
@@ -51,32 +64,45 @@ public sealed class CloudLoginTokenService(
         if (user.IsLocked)
             throw new InvalidOperationException("Cannot issue a token for a locked user.");
 
-        EnsureAudienceAllowed(audience);
+        EnsureAudience(audience);
+
+        // A blocked application gets nothing, whether it is the audience or the one asking.
+        if (!await _clients.IsAllowedAsync(audience, cancellationToken) || (clientId is not null && clientId != audience && !await _clients.IsAllowedAsync(clientId, cancellationToken)))
+            throw new InvalidOperationException($"The application '{clientId ?? audience}' is blocked or cannot be checked right now.");
+
+        TokenPolicy policy = DefaultPolicy;
 
         sessionId ??= NewOpaqueToken(16);
 
         string accessToken = await CreateAccessTokenAsync(
             user,
             audience,
-            scope,
+            scope: null,
             sessionId,
             actor: null,
+            policy,
             cancellationToken);
 
         string? refreshToken = null;
 
-        if (includeRefreshToken)
+        // A refresh token must name the client that will present it. With none (a cookie-session issuance), no refresh token is
+        // issued unless the explicit compatibility switch says so, so no refresh path exists without client authentication.
+        if (includeRefreshToken && (!string.IsNullOrEmpty(clientId) || _options.AllowUnboundRefreshTokens))
             refreshToken = await CreateRefreshTokenAsync(
                 user.Id,
                 familyId: NewOpaqueToken(16),
                 sessionId,
                 audience,
-                scope,
+                scope: null,
                 clientIp,
                 userAgent,
-                cancellationToken);
+                policy,
+                cancellationToken,
+                clientId);
 
-        return BuildResponse(accessToken, refreshToken, scope, user);
+        await AuditIssuedAsync(user.Id, clientId ?? audience, audience, cancellationToken);
+
+        return BuildResponse(accessToken, refreshToken, scope: null, user, policy);
     }
 
     /// <summary>
@@ -93,7 +119,8 @@ public sealed class CloudLoginTokenService(
         Func<Guid, CancellationToken, Task<CloudUser?>> userLookup,
         string? clientIp = null,
         string? userAgent = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        ClientIdentity? client = null)
     {
         if (string.IsNullOrWhiteSpace(refreshToken))
             return null;
@@ -120,18 +147,36 @@ public sealed class CloudLoginTokenService(
         if (!stored.IsActive(now))
             return null;
 
+        if (string.IsNullOrEmpty(stored.ClientId) && !_options.AllowUnboundRefreshTokens)
+        {
+            _logger.LogWarning("A refresh token that names no client was refused. It predates client binding; the person signs in again.");
+            return null;
+        }
+
+        if (!string.IsNullOrEmpty(stored.ClientId) && !string.Equals(stored.ClientId, client?.ClientId, StringComparison.Ordinal))
+        {
+            _logger.LogWarning("A refresh token issued to client {ClientId} was presented by {Presenter}.", stored.ClientId, client?.ClientId ?? "an unauthenticated caller");
+            return null;
+        }
+
         CloudUser? user = await userLookup(stored.UserId, cancellationToken);
 
         if (user is null || user.IsLocked || user.Id == Guid.Empty)
             return null;
 
-        string audience = stored.Audience ?? _options.AllowedAudiences.First();
+        string audience = stored.Audience ?? stored.ClientId ?? string.Empty;
+
+        // A blocked application cannot refresh. Its family is kept, so unblocking it resumes service.
+        if (string.IsNullOrEmpty(audience) || !await _clients.IsAllowedAsync(stored.ClientId ?? audience, cancellationToken))
+            return null;
+
+        TokenPolicy policy = DefaultPolicy;
         string rotated;
 
         if (_store is IAtomicCloudLoginTokenStore atomicStore)
         {
             (rotated, CloudLoginRefreshToken replacement) = CreateRefreshTokenRecord(
-                user.Id, stored.FamilyId, stored.SessionId, audience, stored.Scope, clientIp, userAgent);
+                user.Id, stored.FamilyId, stored.SessionId, audience, stored.Scope, clientIp, userAgent, policy, stored.ClientId);
 
             CloudLoginRefreshRotationResult result = await atomicStore.RotateRefreshTokenAsync(
                 stored, replacement, cancellationToken);
@@ -151,7 +196,7 @@ public sealed class CloudLoginTokenService(
             await _store.SaveRefreshTokenAsync(stored, cancellationToken);
             rotated = await CreateRefreshTokenAsync(
                 user.Id, stored.FamilyId, stored.SessionId, audience, stored.Scope,
-                clientIp, userAgent, cancellationToken);
+                clientIp, userAgent, policy, cancellationToken, stored.ClientId);
         }
 
         string accessToken = await CreateAccessTokenAsync(
@@ -160,10 +205,13 @@ public sealed class CloudLoginTokenService(
             stored.Scope,
             stored.SessionId,
             actor: null,
+            policy,
             cancellationToken);
 
-        return BuildResponse(accessToken, rotated, stored.Scope, user);
+        return BuildResponse(accessToken, rotated, stored.Scope, user, policy);
     }
+
+
 
     /// <summary>
     /// Issues a delegated token for a backend service acting on a user's behalf.
@@ -177,25 +225,40 @@ public sealed class CloudLoginTokenService(
         string clientId,
         string clientSecret,
         Func<Guid, CancellationToken, Task<CloudUser?>> userLookup,
-        string? scope = null,
         CancellationToken cancellationToken = default)
     {
-        if (!TryAuthenticateServiceClient(clientId, clientSecret, out CloudLoginServiceClient? client))
+        ClientAuthenticationResult authentication = await _clients.AuthenticateAsync(
+            clientId, clientSecret, cancellationToken);
+
+        if (authentication.Client is not { } authenticated)
         {
-            _logger.LogWarning("Token exchange rejected: unknown or disabled client {ClientId}.", clientId);
+            _logger.LogWarning("Token exchange rejected for client {ClientId}: {Reason}.", clientId, authentication.Failure);
             return null;
         }
 
-        if (!client.AllowedAudiences.Contains(requestedAudience))
+        return await ExchangeAsync(subjectToken, requestedAudience, authenticated, userLookup, cancellationToken);
+    }
+
+    public async Task<CloudLoginTokenResponse?> ExchangeAsync(
+        string subjectToken,
+        string requestedAudience,
+        ClientIdentity client,
+        Func<Guid, CancellationToken, Task<CloudUser?>> userLookup,
+        CancellationToken cancellationToken = default)
+    {
+        string clientId = client.ClientId;
+
+        // Exchanging is for backends: a key holder may act for the user towards another service. A public client never can.
+        if (client.IsPublic)
+            return null;
+
+        EnsureAudience(requestedAudience);
+
+        if (!await _clients.IsAllowedAsync(requestedAudience, cancellationToken))
         {
-            _logger.LogWarning(
-                "Token exchange rejected: client {ClientId} may not request audience {Audience}.",
-                clientId,
-                requestedAudience);
+            _logger.LogWarning("Token exchange rejected: audience {Audience} is blocked or cannot be checked right now.", requestedAudience);
             return null;
         }
-
-        EnsureAudienceAllowed(requestedAudience);
 
         // The subject token must be one that was issued *to this client*. Skipping this
         // would let a service delegate a token minted for some other service, reaching
@@ -219,16 +282,20 @@ public sealed class CloudLoginTokenService(
             return null;
 
         string sessionId = principal.FindFirst(CloudLoginClaims.SessionId)?.Value ?? NewOpaqueToken(16);
+        TokenPolicy policy = DefaultPolicy;
 
         string accessToken = await CreateAccessTokenAsync(
             user,
             requestedAudience,
-            scope,
+            scope: null,
             sessionId,
             actor: client.ClientId,
+            policy,
             cancellationToken);
 
-        return BuildResponse(accessToken, refreshToken: null, scope, user);
+        await AuditIssuedAsync(user.Id, client.ClientId, requestedAudience, cancellationToken);
+
+        return BuildResponse(accessToken, refreshToken: null, scope: null, user, policy);
     }
 
     /// <summary>
@@ -276,15 +343,25 @@ public sealed class CloudLoginTokenService(
     public Task RevokeUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
         _store.RevokeUserAsync(userId, cancellationToken);
 
+    public async Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken cancellationToken = default) =>
+        _store is ICloudLoginSessionOwnerLookup lookup && await lookup.IsSessionActiveAsync(sessionId, cancellationToken);
+
+    public async Task<bool> OwnsSessionAsync(string sessionId, Guid userId, CancellationToken cancellationToken = default) =>
+        _store is ICloudLoginSessionOwnerLookup lookup && (await lookup.GetSessionOwnersAsync(sessionId, cancellationToken)).Contains(userId);
+
     public async Task<bool> RevokeRefreshTokenAsync(
         string refreshToken,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        ClientIdentity? client = null)
     {
         CloudLoginRefreshToken? stored = await _store.FindRefreshTokenAsync(
             HashToken(refreshToken),
             cancellationToken);
 
         if (stored is null)
+            return false;
+
+        if (!string.IsNullOrEmpty(stored.ClientId) && !string.Equals(stored.ClientId, client?.ClientId, StringComparison.Ordinal))
             return false;
 
         await _store.RevokeFamilyAsync(stored.FamilyId, cancellationToken);
@@ -297,6 +374,7 @@ public sealed class CloudLoginTokenService(
         string? scope,
         string sessionId,
         string? actor,
+        TokenPolicy policy,
         CancellationToken cancellationToken)
     {
         DateTime now = DateTime.UtcNow;
@@ -328,7 +406,7 @@ public sealed class CloudLoginTokenService(
             Audience = audience,
             IssuedAt = now,
             NotBefore = now,
-            Expires = now.Add(_options.AccessTokenLifetime),
+            Expires = now.Add(policy.AccessLifetime),
             SigningCredentials = credentials,
             Claims = claims,
             TokenType = CloudLoginTokenTypes.AccessToken
@@ -345,12 +423,14 @@ public sealed class CloudLoginTokenService(
         string? scope,
         string? clientIp,
         string? userAgent,
-        CancellationToken cancellationToken)
+        TokenPolicy policy,
+        CancellationToken cancellationToken,
+        string? clientId = null)
     {
         // 32 bytes of CSPRNG output. The token carries no structure by design:
         // it is a lookup handle, so there is nothing in it to forge or tamper with.
         (string raw, CloudLoginRefreshToken record) = CreateRefreshTokenRecord(
-            userId, familyId, sessionId, audience, scope, clientIp, userAgent);
+            userId, familyId, sessionId, audience, scope, clientIp, userAgent, policy, clientId);
         await _store.SaveRefreshTokenAsync(record, cancellationToken);
         return raw;
     }
@@ -362,7 +442,9 @@ public sealed class CloudLoginTokenService(
         string audience,
         string? scope,
         string? clientIp,
-        string? userAgent)
+        string? userAgent,
+        TokenPolicy policy,
+        string? clientId = null)
     {
         string raw = NewOpaqueToken(32);
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -374,11 +456,12 @@ public sealed class CloudLoginTokenService(
             SessionId = sessionId,
             Audience = audience,
             Scope = scope,
+            ClientId = clientId,
             CreatedOn = now,
-            ExpiresOn = now.Add(_options.RefreshTokenLifetime),
+            ExpiresOn = now.Add(policy.RefreshLifetime),
             CreatedByIp = clientIp,
             UserAgent = Truncate(userAgent, 256),
-            ttl = (int)_options.RefreshTokenLifetime.TotalSeconds + (int)TimeSpan.FromDays(1).TotalSeconds
+            ttl = (int)policy.RefreshLifetime.TotalSeconds + (int)TimeSpan.FromDays(1).TotalSeconds
         };
 
         record.SetId(Guid.NewGuid());
@@ -389,50 +472,37 @@ public sealed class CloudLoginTokenService(
         string accessToken,
         string? refreshToken,
         string? scope,
-        CloudUser user) =>
+        CloudUser user,
+        TokenPolicy policy) =>
         new()
         {
             AccessToken = accessToken,
-            ExpiresIn = (int)_options.AccessTokenLifetime.TotalSeconds,
-            ExpiresOn = DateTimeOffset.UtcNow.Add(_options.AccessTokenLifetime),
+            ExpiresIn = (int)policy.AccessLifetime.TotalSeconds,
+            ExpiresOn = DateTimeOffset.UtcNow.Add(policy.AccessLifetime),
+            IssuedAtUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             RefreshToken = refreshToken,
             Scope = scope,
             User = CloudLoginTransportSecurity.ForTransport(user)
         };
 
-    private void EnsureAudienceAllowed(string audience)
+    private static void EnsureAudience(string audience)
     {
-        if (string.IsNullOrWhiteSpace(audience))
+        if (string.IsNullOrWhiteSpace(audience) || audience.Length > 256)
             throw new InvalidOperationException("An audience is required; an unscoped token is valid everywhere.");
-
-        if (_options.AllowedAudiences.Count > 0 && !_options.AllowedAudiences.Contains(audience))
-            throw new InvalidOperationException($"Audience '{audience}' is not registered with this authority.");
     }
 
-    private bool TryAuthenticateServiceClient(
-        string clientId,
-        string clientSecret,
-        out CloudLoginServiceClient client)
+    private async Task AuditIssuedAsync(Guid userId, string? clientId, string audience, CancellationToken cancellationToken)
     {
-        client = default!;
+        if (audit is null)
+            return;
 
-        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-            return false;
-
-        if (!_options.ServiceClients.TryGetValue(clientId, out CloudLoginServiceClient? candidate) ||
-            candidate.IsDisabled)
-            return false;
-
-        // Fixed-time comparison: a variable-time check on a secret leaks it one byte
-        // at a time to an attacker who can measure response latency.
-        byte[] expected = Convert.FromBase64String(candidate.SecretHash);
-        byte[] actual = SHA256.HashData(Encoding.UTF8.GetBytes(clientSecret));
-
-        if (!CryptographicOperations.FixedTimeEquals(expected, actual))
-            return false;
-
-        client = candidate;
-        return true;
+        await audit.LogAsync(new AuditEntry
+        {
+            EventType = AuditEventTypes.TokenIssued,
+            UserId = userId,
+            ClientId = clientId,
+            Data = new Dictionary<string, string> { ["Audience"] = audience }
+        }, cancellationToken);
     }
 
     private static string NewOpaqueToken(int bytes) =>

@@ -61,7 +61,8 @@ public sealed class CloudLoginTokenProvider(
     IHttpClientFactory httpClientFactory,
     IOptions<CloudLoginTokenClientOptions> options,
     IMemoryCache cache,
-    ILogger<CloudLoginTokenProvider> logger) : ICloudLoginTokenProvider
+    ILogger<CloudLoginTokenProvider> logger,
+    ICloudLoginClientCredentials credentials) : ICloudLoginTokenProvider
 {
     internal const string AccessTokenName = "cloudlogin.access_token";
     internal const string RefreshTokenName = "cloudlogin.refresh_token";
@@ -179,8 +180,7 @@ public sealed class CloudLoginTokenProvider(
         bool forceRefresh,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_options.ClientId) ||
-            string.IsNullOrWhiteSpace(_options.ClientSecret))
+        if (!credentials.IsConfigured)
         {
             logger.LogWarning(
                 "A call bound for audience {Audience} needs a delegated token, but this application has no CloudLogin service-client credentials configured. The call will carry no identity.",
@@ -231,10 +231,7 @@ public sealed class CloudLoginTokenProvider(
             // The service credential proves which service is asking; the subject token
             // proves on whose behalf. The authority requires both, so neither a stolen
             // secret nor a stolen user token is enough on its own.
-            request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Basic",
-                Convert.ToBase64String(
-                    Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientSecret}")));
+            await credentials.ApplyAsync(request, cancellationToken);
 
             using HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
 
@@ -271,10 +268,15 @@ public sealed class CloudLoginTokenProvider(
         {
             HttpClient client = httpClientFactory.CreateClient(CloudLoginTokenClientOptions.HttpClientName);
 
-            using HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"{_options.Authority.TrimEnd('/')}/CloudLogin/Token/Refresh",
-                new CloudLoginRefreshRequest { RefreshToken = refreshToken },
-                cancellationToken);
+            using HttpRequestMessage request = new(HttpMethod.Post, $"{_options.Authority.TrimEnd('/')}/CloudLogin/Token/Refresh")
+            {
+                Content = JsonContent.Create(new CloudLoginRefreshRequest { RefreshToken = refreshToken, ClientId = _options.ClientId })
+            };
+
+            if (credentials.IsConfigured)
+                await credentials.ApplyAsync(request, cancellationToken);
+
+            using HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
                 return null;
@@ -361,7 +363,7 @@ public sealed class CloudLoginDownstreamService
 /// <summary>Relying-party configuration for talking to the authority.</summary>
 public sealed class CloudLoginTokenClientOptions
 {
-    internal const string HttpClientName = "CloudLogin.Token";
+    public const string HttpClientName = "CloudLogin.Token";
 
     /// <summary>The authority's public HTTPS origin.</summary>
     public string Authority { get; set; } = string.Empty;
@@ -392,6 +394,19 @@ public sealed class CloudLoginTokenClientOptions
     /// authenticates this service to the authority and must never ship in source.
     /// </summary>
     public string? ClientSecret { get; set; }
+
+    /// <summary>
+    /// This application's own public address, from trusted configuration or the AppHost. Sign-in callbacks and
+    /// post-logout destinations are built from it, never from the request's Host header. A loopback request host is
+    /// accepted for local development when this is unset.
+    /// </summary>
+    public string? PublicUrl { get; set; }
+
+    /// <summary>The longest a local session is trusted without asking the authority whether the sign-in is still active.</summary>
+    public TimeSpan SessionRevalidationInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>How long a sign-in may take between leaving this application and returning to it.</summary>
+    public TimeSpan LoginTransactionLifetime { get; set; } = TimeSpan.FromMinutes(10);
 
     /// <summary>
     /// Services this application calls on the user's behalf.

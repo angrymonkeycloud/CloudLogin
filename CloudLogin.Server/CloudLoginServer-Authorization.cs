@@ -1,3 +1,5 @@
+using AngryMonkey.CloudLogin.Server.Core.Domain;
+using AngryMonkey.CloudLogin.Server.Core.Application;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -63,7 +65,7 @@ public partial class CloudLoginServer
 
     public async Task<string> CompleteLoginRedirect(string? referer = null, bool isMobileApp = false)
     {
-        if (!IsAllowedRedirect(referer))
+        if (!await IsAllowedSignInRedirectAsync(referer))
             throw new ArgumentException("The requested return URL is not allowed.", nameof(referer));
 
         if (_accessor.HttpContext?.User.Identity?.IsAuthenticated != true)
@@ -88,7 +90,7 @@ public partial class CloudLoginServer
         string? referer = null,
         bool isMobileApp = false)
     {
-        if (!IsAllowedRedirect(referer))
+        if (!await IsAllowedSignInRedirectAsync(referer))
             return new BadRequestObjectResult("The requested return URL is not allowed.");
 
         if (!await TestLogin(userId, keepMeSignedIn))
@@ -102,6 +104,11 @@ public partial class CloudLoginServer
         string? referer,
         bool isMobileApp)
     {
+        AuthorizationTransaction? transaction = await ConsumeSignInTransactionAsync(referer);
+
+        if (transaction is not null)
+            return await CompleteTransactionAsync(userId, transaction);
+
         string target = string.IsNullOrWhiteSpace(referer) || referer == "/" ? "/Account" : referer;
         bool isExternal = !IsRelativePath(target) &&
                           Uri.TryCreate(target, UriKind.Absolute, out _) &&
@@ -121,7 +128,7 @@ public partial class CloudLoginServer
 
     public async Task<IActionResult> Login(string identity, bool keepMeSignedIn, bool sameSite, string primaryEmail = "", string? input = null, string? referer = null, bool isMobileApp = false)
     {
-        if (!IsAllowedRedirect(referer))
+        if (!await IsAllowedSignInRedirectAsync(referer))
             return new BadRequestObjectResult("The requested return URL is not allowed.");
 
         // The OAuth provider redirect URI - this is fixed and configured in the OAuth provider
@@ -181,9 +188,20 @@ public partial class CloudLoginServer
 
             if (currentUser is not null && currentUser.Id != Guid.Empty && !currentUser.IsLocked)
             {
+                try
+                {
+                    AuthorizationTransaction? transaction = await ConsumeSignInTransactionAsync(referer);
+
+                    if (transaction is not null)
+                        return new RedirectResult(await CompleteTransactionAsync(currentUser.Id, transaction));
+                }
+                catch (UnauthorizedAccessException exception)
+                {
+                    return new BadRequestObjectResult(exception.Message);
+                }
+
                 Guid requestId = await CreateLoginRequest(currentUser.Id);
-                referer = AppendQuery(referer, "requestId", requestId.ToString());
-                return new RedirectResult(referer);
+                return new RedirectResult(AppendQuery(referer, "requestId", requestId.ToString()));
             }
 
             await _accessor.HttpContext.SignOutAsync();
@@ -293,7 +311,7 @@ public partial class CloudLoginServer
         if (!Uri.IsWellFormedUriString(referer, UriKind.Absolute))
             referer = HttpUtility.UrlDecode(referer);
 
-        if (!IsAllowedRedirect(referer))
+        if (!await IsAllowedSignInRedirectAsync(referer))
             return new BadRequestObjectResult("The requested return URL is not allowed.");
 
         AuthenticationProperties properties = new()
@@ -356,9 +374,19 @@ public partial class CloudLoginServer
             return new ForbidResult();
         }
 
-        // Create request Id for the external website
+        AuthorizationTransaction? transaction;
+
+        try
+        {
+            transaction = await ConsumeSignInTransactionAsync(referer);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return new BadRequestObjectResult(exception.Message);
+        }
+
         Guid requestId = Guid.NewGuid();
-        if (_configuration.Cosmos != null && user.Id != Guid.Empty)
+        if (transaction is null && _configuration.Cosmos != null && user.Id != Guid.Empty)
             requestId = await CreateLoginRequest(user.Id);
 
         ClaimsPrincipal claimsPrincipal = await CloudLoginAuthenticationClaims.CreateAsync(
@@ -371,6 +399,8 @@ public partial class CloudLoginServer
 
         await _request.HttpContext.SignInAsync(claimsPrincipal, properties);
 
+        if (transaction is not null)
+            return new RedirectResult(await CompleteTransactionAsync(user.Id, transaction));
 
         // If no valid external referer, redirect to account page directly without request Id
         // Consider "/" or base URL as "no external referer"
@@ -426,16 +456,49 @@ public partial class CloudLoginServer
 
     public async Task<IActionResult> Logout(string? referer, bool isMobileApp = false)
     {
-        if (!IsAllowedRedirect(referer))
-            return new BadRequestObjectResult("The requested return URL is not allowed.");
+        bool authorized = IsSameOriginNavigation();
+        string? destination = null;
+
+        // A reference authorizes a logout only by being spent: a live logout transaction opened by an authenticated application.
+        // A fabricated, expired, replayed or wrong-kind reference authorizes nothing, so a cross-site request cannot end the session with one.
+        if (AuthorizationTransactionService.TryParseReference(referer, out string transactionId))
+        {
+            AuthorizationTransaction? transaction = Transactions is null ? null : await Transactions.ConsumeAsync(transactionId, LoginRequestKinds.Logout);
+
+            if (transaction is not null)
+            {
+                authorized = true;
+                destination = string.IsNullOrEmpty(transaction.State) ? transaction.ReturnUrl : CloudLoginShared.AppendQueryParameter(transaction.ReturnUrl, "state", transaction.State);
+            }
+        }
+        else if (authorized && IsAllowedRedirect(referer))
+            destination = referer;
+
+        if (!authorized)
+            return new RedirectResult("/");
 
         await RevokeOwnSessionAsync();
         await _request.HttpContext.SignOutAsync();
 
-        string logoutUrl = !string.IsNullOrEmpty(referer) ? referer : "/";
+        string logoutUrl = string.IsNullOrEmpty(destination) ? "/" : destination;
+
         if (isMobileApp)
             logoutUrl = CloudLoginShared.AppendQueryParameter(logoutUrl, "isMobileApp", "true");
 
         return new RedirectResult(logoutUrl);
+    }
+
+    private bool IsSameOriginNavigation()
+    {
+        string? fetchSite = _request.Headers["Sec-Fetch-Site"].FirstOrDefault();
+
+        if (!string.IsNullOrEmpty(fetchSite))
+            return string.Equals(fetchSite, "same-origin", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(fetchSite, "none", StringComparison.OrdinalIgnoreCase);
+
+        // A browser that sends no fetch metadata: fall back to the page that linked here when it says so.
+        string? page = _request.Headers.Referer.FirstOrDefault();
+
+        return string.IsNullOrEmpty(page) || !Uri.TryCreate(page, UriKind.Absolute, out Uri? from) || CloudLoginShared.IsSameOrigin(from.GetLeftPart(UriPartial.Authority), $"{_request.Scheme}://{_request.Host}");
     }
 }

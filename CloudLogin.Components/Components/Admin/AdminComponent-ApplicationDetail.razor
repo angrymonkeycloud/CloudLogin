@@ -1,0 +1,164 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<button class="console-link" @onclick="OnBack">&larr; All applications</button>
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+<div class="console-panel">
+    <div class="console-panel-head">
+        <div>
+            <h3 class="console-heading console-heading--flush console-mono">@Application.ClientId</h3>
+            <span class="console-muted">@KindLabel(Application.Kind)</span>
+        </div>
+        <span class="console-pill console-pill--@(Application.IsBlocked ? "bad" : Application.IsDormant ? "warn" : "ok")">@(Application.IsBlocked ? "Blocked" : Application.IsDormant ? "Dormant" : "Active")</span>
+    </div>
+
+    @if (Application.IsBlocked)
+    {
+        <p class="console-feedback console-feedback--error">Blocked @When(Application.BlockedOn)@(string.IsNullOrEmpty(Application.BlockReason) ? "" : $": {Application.BlockReason}"). It cannot sign anyone in or get tokens.</p>
+    }
+
+    <dl class="console-facts">
+        <div><dt>First seen</dt><dd>@When(Application.FirstSeenOn)</dd></div>
+        <div><dt>Last seen</dt><dd>@Ago(Application.LastSeenOn)</dd></div>
+        <div><dt>Active sessions</dt><dd>@Application.ActiveSessions</dd></div>
+        @if (!string.IsNullOrEmpty(Application.LastKeyId))
+        {
+            <div><dt>Secret key</dt><dd class="console-mono">@Application.LastKeyId</dd></div>
+        }
+        @if (!string.IsNullOrEmpty(Application.BackChannelLogoutUri))
+        {
+            <div><dt>Told of sign-outs at</dt><dd class="console-mono">@Application.BackChannelLogoutUri</dd></div>
+        }
+    </dl>
+
+    @if (Application.Origins.Count > 0)
+    {
+        <h4 class="console-heading">Seen at</h4>
+        <ul class="console-list">
+            @foreach (string origin in Application.Origins)
+            {
+                <li class="console-mono">@origin</li>
+            }
+        </ul>
+    }
+
+    @if (Can("applications.manage"))
+    {
+        <div class="console-actions">
+            @if (Application.IsBlocked)
+            {
+                <button class="console-btn console-btn--primary" disabled="@Busy" @onclick="UnblockAsync">Unblock</button>
+            }
+            else if (_confirmBlock)
+            {
+                <input class="console-input" placeholder="Reason (optional)" @bind="_reason" maxlength="200" />
+                <button class="console-btn console-btn--danger" disabled="@Busy" @onclick="BlockAsync">Confirm: block and end its sessions</button>
+                <button class="console-btn" @onclick="() => _confirmBlock = false">Cancel</button>
+            }
+            else
+            {
+                <button class="console-btn console-btn--danger" @onclick="() => _confirmBlock = true">Block access</button>
+            }
+
+            @if (Can("sessions.revoke") && !Application.IsBlocked)
+            {
+                <button class="console-btn" disabled="@Busy" @onclick="RevokeAllSessionsAsync">End all of its sessions</button>
+            }
+
+            @if (!Application.IsBlocked)
+            {
+                <button class="console-btn" disabled="@Busy" @onclick="ForgetAsync">Forget</button>
+            }
+        </div>
+    }
+</div>
+
+@if (Can("sessions.read"))
+{
+    <h3 class="console-heading">Active sessions</h3>
+    <AdminComponent_SessionTable Sessions="_sessions" ShowUser="true" CanRevoke='@(Can("sessions.revoke"))' OnRevoke="RevokeSessionAsync" />
+}
+
+@code {
+    [Parameter, EditorRequired] public V3AdminApplicationResponse Application { get; set; } = default!;
+    [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public EventCallback<V3AdminApplicationResponse> OnChanged { get; set; }
+
+    private List<V3AdminSessionResponse> _sessions = [];
+    private bool _confirmBlock;
+    private string? _reason;
+
+    public static string KindLabel(string kind) => kind switch
+    {
+        "Website" => "Website without a backend",
+        "NativeApp" => "Native app",
+        _ => "Website with a backend"
+    };
+
+    protected override Task OnInitializedAsync() => RunAsync(async () =>
+    {
+        if (Api is { } api && Can("sessions.read"))
+            _sessions = await api.GetApplicationSessionsAsync(Application.ClientId);
+    });
+
+    private async Task ReloadAsync()
+    {
+        V3AdminApplicationResponse updated = await Api!.GetApplicationAsync(Application.ClientId);
+
+        if (Can("sessions.read"))
+            _sessions = await Api.GetApplicationSessionsAsync(Application.ClientId);
+
+        await OnChanged.InvokeAsync(updated);
+    }
+
+    private async Task BlockAsync()
+    {
+        int ended = 0;
+        await RunAsync(async () =>
+        {
+            ended = (await Api!.BlockApplicationAsync(Application.ClientId, _reason)).Revoked;
+            _confirmBlock = false;
+            _reason = null;
+            await ReloadAsync();
+        });
+
+        if (Error is null)
+            Notice = $"Blocked. {ended} session(s) ended.";
+    }
+
+    private Task UnblockAsync() => RunAsync(async () =>
+    {
+        await Api!.UnblockApplicationAsync(Application.ClientId);
+        await ReloadAsync();
+    }, "Unblocked. It can sign people in again.");
+
+    private async Task RevokeAllSessionsAsync()
+    {
+        int ended = 0;
+        await RunAsync(async () =>
+        {
+            ended = (await Api!.RevokeApplicationSessionsAsync(Application.ClientId)).Revoked;
+            await ReloadAsync();
+        });
+
+        if (Error is null)
+            Notice = $"{ended} session(s) ended.";
+    }
+
+    private async Task ForgetAsync()
+    {
+        await RunAsync(() => Api!.ForgetApplicationAsync(Application.ClientId));
+
+        if (Error is null)
+            await OnBack.InvokeAsync();
+    }
+
+    private Task RevokeSessionAsync(string familyId) => RunAsync(async () =>
+    {
+        await Api!.RevokeSessionAsync(familyId);
+        _sessions = await Api.GetApplicationSessionsAsync(Application.ClientId);
+    }, "Session revoked.");
+}

@@ -99,6 +99,20 @@ internal sealed class InMemoryUserRepository : IUserRepository
             .Select(TestClone.Clone).ToList());
 
     public Task<int> CountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Documents.Count);
+
+    public Task<List<UserDocument>> SearchAsync(string? term, int skip, int take, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Documents.Values
+            .Where(user => string.IsNullOrWhiteSpace(term)
+                || (CloudLoginDisplayName.Compose(user.FirstName, user.LastName) ?? string.Empty).Contains(term, StringComparison.OrdinalIgnoreCase)
+                || user.Contacts.Any(contact => contact.Value.Contains(term, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(user => user.CreatedOn)
+            .Skip(skip).Take(take)
+            .Select(TestClone.Clone).ToList());
+
+    public Task<List<UserDocument>> GetAdministratorsAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(Documents.Values
+            .Where(user => user.IsGlobalAdmin || user.AdminRoles.Count > 0)
+            .Select(TestClone.Clone).ToList());
 }
 
 internal sealed class InMemoryCredentialRepository : ICredentialRepository
@@ -170,6 +184,20 @@ internal sealed class InMemoryCredentialRepository : ICredentialRepository
 
         return Task.CompletedTask;
     }
+
+    public Task<List<CredentialDocument>> GetExternalIdentitiesAsync(string? providerCode, int take, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Documents.Values
+            .Where(credential => credential.Kind == CredentialKinds.ExternalIdentity
+                && (providerCode is null || string.Equals(credential.ProviderCode, providerCode, StringComparison.OrdinalIgnoreCase)))
+            .Take(take)
+            .Select(TestClone.Clone).ToList());
+
+    public Task<List<ProviderIdentityCount>> CountExternalIdentitiesByProviderAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(Documents.Values
+            .Where(credential => credential.Kind == CredentialKinds.ExternalIdentity && credential.ProviderCode is not null)
+            .GroupBy(credential => credential.ProviderCode!, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new ProviderIdentityCount(group.Key, group.Count()))
+            .ToList());
 }
 
 internal sealed class InMemoryWorkspaceRepository : IWorkspaceRepository
@@ -288,6 +316,19 @@ internal sealed class InMemorySessionRepository : ISessionRepository
 {
     public ConcurrentDictionary<(string FamilyId, string Id), object> Documents { get; } = new();
     private readonly object _batchLock = new();
+
+    private IEnumerable<SessionFamilyDocument> ActiveFamilies(string? audience, Guid? userId) =>
+        Documents.Values.OfType<SessionFamilyDocument>().Where(family =>
+            !family.IsRevoked
+            && !DocumentExpiry.IsExpired(family)
+            && (audience is null || string.Equals(family.Audience, audience, StringComparison.Ordinal))
+            && (userId is null || family.UserId == userId.ToString()));
+
+    public Task<List<SessionFamilyDocument>> GetActiveFamiliesAsync(string? audience, Guid? userId, int take, CancellationToken cancellationToken = default) =>
+        Task.FromResult(ActiveFamilies(audience, userId).OrderByDescending(family => family.CreatedOn).Take(take).Select(TestClone.Clone).ToList());
+
+    public Task<int> CountActiveFamiliesAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(ActiveFamilies(null, null).Count());
 
     public Task<SessionFamilyDocument?> GetFamilyAsync(string familyId, CancellationToken cancellationToken = default)
     {
@@ -487,6 +528,30 @@ internal sealed class InMemoryAuditEventRepository : IAuditEventRepository
                 .Where(auditEvent => auditEvent.PartitionKey == partitionKey)
                 .OrderByDescending(auditEvent => auditEvent.OccurredOn)
                 .Take(maxCount).ToList());
+    }
+
+    private IEnumerable<AuditEventDocument> Matching(AuditEventQuery query) =>
+        Events.Where(auditEvent =>
+            (query.EventTypes.Count == 0 || query.EventTypes.Contains(auditEvent.EventType))
+            && (query.EventTypePrefix is null || auditEvent.EventType.StartsWith(query.EventTypePrefix, StringComparison.Ordinal))
+            && (query.ClientId is null || auditEvent.ClientId == query.ClientId)
+            && (query.UserId is null || auditEvent.UserId == query.UserId)
+            && (query.ActorUserId is null || auditEvent.ActorUserId == query.ActorUserId)
+            && (query.Result is null || auditEvent.Result == query.Result)
+            && (query.From is null || auditEvent.OccurredOn >= query.From)
+            && (query.To is null || auditEvent.OccurredOn <= query.To));
+
+    public Task<List<AuditEventDocument>> QueryAsync(AuditEventQuery query, CancellationToken cancellationToken = default)
+    {
+        lock (Events)
+            return Task.FromResult(Matching(query).OrderByDescending(auditEvent => auditEvent.OccurredOn)
+                .Take(Math.Clamp(query.Take, 1, AuditEventQuery.MaxTake)).ToList());
+    }
+
+    public Task<int> CountAsync(AuditEventQuery query, CancellationToken cancellationToken = default)
+    {
+        lock (Events)
+            return Task.FromResult(Matching(query).Count());
     }
 }
 

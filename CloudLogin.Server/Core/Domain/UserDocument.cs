@@ -37,6 +37,9 @@ public sealed class UserDocument : CloudLoginCoreDocument
     public bool IsTest { get; set; }
     public bool IsGlobalAdmin { get; set; }
 
+    /// <summary>Administrative roles beyond (or instead of) global administrator. See <see cref="Domain.AdminRoles"/>.</summary>
+    public List<AdminRoles> AdminRoles { get; set; } = [];
+
     public DateTimeOffset CreatedOn { get; set; }
     public DateTimeOffset UpdatedOn { get; set; }
     public DateTimeOffset LastSignedInOn { get; set; }

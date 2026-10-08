@@ -11,7 +11,7 @@ Start with the [CloudLogin developer workshop](demo/README.md) to try features, 
 
 Authentication, account, profile, and coordinated-session packages for .NET 10, Blazor, and .NET MAUI.
 
-CloudLogin is secure by default: HTTPS-only cookies, exact redirect allowlists, encrypted authentication tickets and return state, rate-limited authentication endpoints, protected profile mutations, modern password hashing, and coordinated authority logout are enabled by the standard registration methods.
+CloudLogin is secure by default: HTTPS-only cookies, authenticated single-use sign-in transactions with PKCE and no origin allowlists for applications, encrypted authentication tickets and return state, rate-limited authentication endpoints, protected profile mutations, modern password hashing, and coordinated authority logout are enabled by the standard registration methods.
 
 ## Table of contents
 
@@ -86,7 +86,7 @@ Integration patterns:
 2. **Embedded authority in existing ASP.NET Core host**
    - Add CloudLogin services/components directly to an existing site.
 3. **Mobile + authority**
-   - MAUI app uses `AddMauiCloudLogin(...)` and authority callback scheme allowlist.
+   - MAUI app uses `AddMauiCloudLogin(...)` and authority callback scheme allowlist. MAUI apps sign in through their own backend with Authorization Code + PKCE and a one-time handoff over the custom scheme; see [`docs/sign-in-and-logout.md`](docs/sign-in-and-logout.md), "Native applications".
 
 ## Standalone login website
 
@@ -149,7 +149,7 @@ returns as `409 Conflict` with the reason in the ProblemDetails `detail`. The ac
 reads the user's current standing from `GetMyWorkspaceQuota()` and shows it as two
 meters, so the limit is visible before it's hit rather than only when a create is refused.
 
-"Workspace" is deliberately generic — it's the internal name for the concept everywhere
+"Workspace" is deliberately generic: it's the internal name for the concept everywhere
 in code, API routes, JSON, and webhook events, so it stays stable across every product
 that embeds CloudLogin. What end users actually *see* is configurable per deployment via
 `SingularLabel`/`PluralLabel`:
@@ -159,12 +159,12 @@ options.Workspace = new WorkspaceConfiguration
 {
     SingularLabel = "Organization",
     PluralLabel = "Organizations"
-    // Or "Business"/"Businesses", "Team"/"Teams" — whatever the concept is
+    // Or "Business"/"Businesses", "Team"/"Teams", whatever the concept is
     // called in your product. Defaults to "Workspace"/"Workspaces".
 };
 ```
 
-The account UI reads these labels everywhere it names the concept — field labels,
+The account UI reads these labels everywhere it names the concept: field labels,
 buttons, dialog titles, and messages like `WorkspaceLimitReachedException`'s. Routes,
 JSON property names, and webhook event names (`Workspace.Created`, `Workspace.Updated`, …)
 are unaffected; only the label a user reads changes.
@@ -199,8 +199,11 @@ builder.Services.AddCloudLoginServer("https://login.example.com");
 builder.AddCloudLoginTokenAuthentication();
 ```
 
-Configuration supplies the same authority, audience, client id, and secret that the
-authority registered for this application:
+Configuration supplies the authority, the name the application gives itself (client id and
+audience), and a secret key. Nothing is registered at the authority: any active key works for
+any name, and the application appears in the admin console the first time it signs someone in.
+The key is either declared by the deployment (`CloudLoginTokens:SecretKeys:N` on the authority)
+or created in the admin console's Secret keys tab:
 
 ```json
 {
@@ -208,13 +211,15 @@ authority registered for this application:
     "Authority": "https://login.example.com",
     "Audience": "portal",
     "ClientId": "portal",
-    "ClientSecret": "<secret from protected configuration>"
+    "ClientSecret": "<secret key from protected configuration>"
   }
 }
 ```
 
 When Aspire wires a CloudLogin reference, these values are injected automatically. Never
-send the client secret to browser or WebAssembly code.
+send the secret key to browser or WebAssembly code. A website without a backend or a native app
+uses no key: it signs in through `GET /CloudLogin/Authorize` with PKCE, is identified by its own
+origin, and its tokens are valid only there. See [`docs/sign-in-and-logout.md`](docs/sign-in-and-logout.md).
 
 Use the standard ASP.NET Core pipeline:
 
@@ -273,10 +278,19 @@ var login = builder.AddCloudLogin<Projects.My_Login>("login");
 // ...or an already-deployed authority, reached by URL:
 var login = builder.AddCloudLogin("login", "https://login.example.com");
 
-// Connect any project: sets LoginUrl, waits for the authority in run mode, and (for the two
-// forms above) configures the redirect allow-list to match.
-var web = builder.AddProject<Projects.Web>("web").WithCloudLogin(login);
+// Connect any project: sets LoginUrl and the client configuration, waits for an authority in
+// the AppHost in run mode, and gives a website with a backend its secret key.
+var web = builder.AddProject<Projects.Web>("web").WithReference(login);
+
+// A website without a backend, or a native app: no secret, identified by its own origin.
+var spa = builder.AddProject<Projects.Spa>("spa").WithReference(login, o => o.IsPublic = true);
 ```
+
+`WithReference` writes nothing per application to the authority. The AppHost generates one
+secret key, gives it to every website with a backend that references the authority, and declares
+it to the authority once as `CloudLoginTokens:SecretKeys:0`. For an authority reached by URL, an
+administrator creates a key in that authority's admin console and supplies it as the
+`{authority}-secret-key` parameter. See [`docs/admin-portal.md`](docs/admin-portal.md).
 
 `AddCloudLoginProject` writes a complete CloudLogin website project under the AppHost's `obj`
 folder on every start and adds it as an ordinary project resource: `dotnet run` builds it, the
@@ -443,14 +457,15 @@ CloudLogin's Cosmos DB, Table Storage, and Blob Storage documents are documented
 
 CloudLogin has one API and one seven-container storage model:
 
-- **Seven purpose-specific Cosmos containers** — Users, Credentials, Workspaces, WorkspaceAccess, Sessions, LoginRequests, and AuditEvents in the realm's `Login` database.
+- **Seven purpose-specific Cosmos containers**: Users, Credentials, Workspaces, WorkspaceAccess, Sessions, LoginRequests, and AuditEvents in the realm's `Login` database.
 - **A keyed Table Storage identity index** resolves emails, phones, and `(issuer, subject)` provider identities with create-only inserts.
 - **Explicit API DTOs** are exposed under `/api/v3`; storage documents and credentials never cross the transport boundary.
-- **Native TTL everywhere something expires** — sessions, login and device requests, invitations, recovery artifacts, audit retention — with absolute expiry validated in application code and no background cleanup jobs.
+- **Native TTL everywhere something expires** (sessions, login and device requests, invitations, recovery artifacts, audit retention), with absolute expiry validated in application code and no background cleanup jobs.
 - **Refresh-token families** rotate in one Cosmos transactional batch with reuse detection that revokes the whole family; only token hashes are stored.
 - **Sign-in profiles** (`?profile=tv`) restrict entry and authorization methods per client, bound tamper-proof into the flow. See [`docs/signin-profiles.md`](docs/signin-profiles.md).
 - **QR/TV sign-in** implements RFC 8628 device authorization with hashed codes, single-winner approval and consumption, and poll throttling. See [`docs/device-authorization.md`](docs/device-authorization.md).
 - **Workspaces with multiple owners**, policy-based owner/admin/member permissions, ETag-guarded membership changes, and hard last-owner protection.
+- **An admin control plane** for users, the applications seen signing people in (block, unblock, end their sessions, forget), secret keys, sessions, signing keys, providers and the audit trail, with role-limited administrators and dynamic, transaction-bound sign-in destinations in place of origin allowlists. Applications are observed, never registered. See [`docs/admin-portal.md`](docs/admin-portal.md) and [`docs/sign-in-and-logout.md`](docs/sign-in-and-logout.md); it adds two containers, `Applications` and `SecretKeys`.
 - **Production signing keys in Azure Key Vault / Managed HSM** (non-exportable, vault-side signing), with the encrypted Cosmos fallback available only by explicit opt-in on core deployments.
 
 ## Endpoints developers commonly use
@@ -468,17 +483,21 @@ Authority/API endpoints (selected):
 - `GET /CloudLogin/Login/{identity}` - begin provider flow.
 - `GET /CloudLogin/Result` - OAuth/OIDC callback target.
 - `GET /CloudLogin/Login/Complete` - build completion redirect.
-- `GET /CloudLogin/Logout` - authority logout endpoint.
+- `GET /CloudLogin/Logout` - authority logout endpoint. Redirects only to a destination named by an authenticated logout transaction; a bare cross-site request ends nothing.
 - `GET /api/Providers` - list available providers for UI.
 - `GET /CloudLogin/User/GetUserByInput` - public account discovery (rate-limited, transport-safe).
 - `POST /CloudLogin/User/Update` - authenticated profile update with server-side field protections.
 - `POST /CloudLogin/User/UploadProfilePicture` - authenticated profile image upload.
-- `POST /CloudLogin/Token/FromRequest` - confidential-client, single-use login-request exchange.
+- `POST /CloudLogin/Token/Code`, `Refresh`, `Exchange`, `Revoke`, `SessionStatus` - redeem a PKCE-bound code, rotate and re-check a refresh token, exchange for a downstream audience, end a session (owner only), and ask whether a session is still active. A website with a backend authenticates with HTTP Basic `name:secretKey`; a website without a backend or a native app passes its origin (or scheme) as `client_id`.
+- `POST /CloudLogin/Token/FromRequest` - legacy single-use request-id exchange, refused unless `AllowLegacyRedirectHandoff` is enabled.
+- `POST /CloudLogin/Authorize/Begin`, `GET /CloudLogin/Authorize`, `POST /CloudLogin/Authorize/Logout` - an application states where one sign-in or logout returns to and gets an opaque `cltx:` reference; see [`docs/sign-in-and-logout.md`](docs/sign-in-and-logout.md).
+- `POST /auth/backchannel-logout` (on each application) - receives signed `logout+jwt` notifications so one sign-out ends the session everywhere.
+- `GET|POST|PATCH|PUT|DELETE /api/v3/admin/*` - the admin control plane, gated per permission by administrator role.
 
 ## Developer implementation checklist
 
 1. Select deployment mode: standalone authority, consumer integration, or embedded.
-2. Configure HTTPS and redirect/mobile callback allowlists (`AllowWebsite`, `AllowMobileApp`).
+2. Configure HTTPS, and for each application `CloudLogin:PublicUrl`, its secret key (websites with a backend), and a shared `IDistributedCache` when it runs several instances. Static origin allowlists are only for the legacy hand-off.
 3. Register providers explicitly; only configured providers are available.
 4. Configure shared Data Protection key ring for multi-instance deployments.
 5. Store secrets in a managed secret store (Key Vault, etc.), not in source.
@@ -596,7 +615,7 @@ CloudLogin remains authoritative for identity, users, workspaces, memberships, a
 
 The service API exposes Workspace, User, and Workspace-member reads for trusted server applications. Service keys belong on the server and must never be sent to WebAssembly or browser code.
 
-The account page is real, path-based routing rather than a client-side tab switch: `/Account/Profile`, `/Account/Security`, and `/Account/Workspace/{workspaceId}` are each a distinct, refreshable, bookmarkable URL. A workspace isn't a tab in the personal account — it's a separate workspace with its own information and members, reached through the account switcher in the rail; moving into or out of one is a full navigation, the same as switching accounts. Older integrations that built links with `?Section=` and `?EntityId=` (including `Section=Workspaces`) continue to work — CloudLogin translates them to the equivalent path on first load — but new integrations should link to the path directly. A host that mounts the account page somewhere other than `/Account` passes that path once via `AccountPageComponent.BasePath`.
+The account page is real, path-based routing rather than a client-side tab switch: `/Account/Profile`, `/Account/Security`, and `/Account/Workspace/{workspaceId}` are each a distinct, refreshable, bookmarkable URL. A workspace isn't a tab in the personal account. It's a separate workspace with its own information and members, reached through the account switcher in the rail; moving into or out of one is a full navigation, the same as switching accounts. Older integrations that built links with `?Section=` and `?EntityId=` (including `Section=Workspaces`) continue to work (CloudLogin translates them to the equivalent path on first load), but new integrations should link to the path directly. A host that mounts the account page somewhere other than `/Account` passes that path once via `AccountPageComponent.BasePath`.
 
 ### Generic webhook registrations
 

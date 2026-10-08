@@ -105,6 +105,12 @@ public static class CloudLoginDataExtensions
             (CloudLoginCoreContainers.LoginRequests, CloudLoginCoreContainers.LoginRequestsPartitionKey),
             (CloudLoginCoreContainers.AuditEvents, CloudLoginCoreContainers.AuditEventsPartitionKey),
 
+            // The control plane's registries. Declared here for the same reason as the fallback
+            // below: a managed identity cannot create a container, so one missing from the bicep
+            // is a 403 at the first admin request.
+            (CloudLoginCoreContainers.Applications, CloudLoginCoreContainers.ApplicationsPartitionKey),
+            (CloudLoginCoreContainers.SecretKeys, CloudLoginCoreContainers.SecretKeysPartitionKey),
+
             // The signing-key fallback is only *used* by a deployment that keeps its token signing
             // keys in Cosmos rather than Key Vault, but it is declared unconditionally, because the
             // server cannot create it for itself: creating a container is a Cosmos control-plane

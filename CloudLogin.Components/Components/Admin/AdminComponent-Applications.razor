@@ -1,0 +1,78 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+@if (_selected is null)
+{
+    <AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+    <p class="console-muted">Applications appear here the first time they sign someone in; nothing needs creating. Websites with a backend sign in with any of the secret keys; websites without one and native apps are identified by their own address.</p>
+
+    <div class="console-toolbar">
+        <input class="console-input" type="search" placeholder="Filter applications" @bind="_filter" @bind:event="oninput" />
+    </div>
+
+    <div class="console-table-wrap">
+        <table class="console-table console-table--clickable">
+            <thead><tr><th>Application</th><th>Seen at</th><th>Sessions</th><th>Last seen</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (V3AdminApplicationResponse app in Filtered())
+                {
+                    <tr @onclick="() => _selected = app">
+                        <td>
+                            <span class="console-mono">@app.ClientId</span>
+                            <span class="console-muted">@AdminComponent_ApplicationDetail.KindLabel(app.Kind)</span>
+                        </td>
+                        <td class="console-mono">@(app.Origins.FirstOrDefault() ?? "")@(app.Origins.Count > 1 ? $" +{app.Origins.Count - 1}" : "")</td>
+                        <td>@app.ActiveSessions</td>
+                        <td>@Ago(app.LastSeenOn)</td>
+                        <td><span class="console-pill console-pill--@(app.IsBlocked ? "bad" : app.IsDormant ? "warn" : "ok")">@(app.IsBlocked ? "Blocked" : app.IsDormant ? "Dormant" : "Active")</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (_apps.Count == 0 && !Busy)
+    {
+        <p class="console-empty">No application has signed anyone in yet.</p>
+    }
+}
+else
+{
+    <AdminComponent_ApplicationDetail Access="Access" Application="_selected" OnBack="BackAsync" OnChanged="ReplaceSelected" />
+}
+
+@code {
+    private List<V3AdminApplicationResponse> _apps = [];
+    private V3AdminApplicationResponse? _selected;
+    private string _filter = string.Empty;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private Task LoadAsync() => RunAsync(async () =>
+    {
+        if (Api is { } api)
+            _apps = await api.GetApplicationsAsync();
+    });
+
+    private IEnumerable<V3AdminApplicationResponse> Filtered() =>
+        string.IsNullOrWhiteSpace(_filter)
+            ? _apps
+            : _apps.Where(app => app.ClientId.Contains(_filter, StringComparison.OrdinalIgnoreCase) || app.Origins.Any(origin => origin.Contains(_filter, StringComparison.OrdinalIgnoreCase)));
+
+    private void ReplaceSelected(V3AdminApplicationResponse app)
+    {
+        _selected = app;
+        int index = _apps.FindIndex(existing => existing.ClientId == app.ClientId);
+
+        if (index >= 0)
+            _apps[index] = app;
+    }
+
+    private async Task BackAsync()
+    {
+        _selected = null;
+        await LoadAsync();
+    }
+}

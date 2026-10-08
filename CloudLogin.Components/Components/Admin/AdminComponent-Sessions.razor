@@ -1,0 +1,53 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+<div class="console-toolbar">
+    <select class="console-input" @bind="_audience" @bind:after="LoadAsync">
+        <option value="">All applications</option>
+        <option value="cloudlogin">CloudLogin itself (browser sessions)</option>
+        @foreach (V3AdminApplicationResponse app in _apps)
+        {
+            <option value="@app.ClientId">@app.ClientId</option>
+        }
+    </select>
+    <button class="console-btn" disabled="@Busy" @onclick="LoadAsync">Refresh</button>
+</div>
+
+<AdminComponent_SessionTable Sessions="_sessions" ShowUser="true" CanRevoke='@(Can("sessions.revoke"))' OnRevoke="RevokeAsync" />
+
+@if (_sessions.Count >= 100)
+{
+    <p class="console-muted">Showing the 100 most recent sessions. Narrow it by application.</p>
+}
+
+@code {
+    private List<V3AdminSessionResponse> _sessions = [];
+    private List<V3AdminApplicationResponse> _apps = [];
+    private string _audience = string.Empty;
+
+    protected override Task OnInitializedAsync() => RunAsync(async () =>
+    {
+        if (Api is not { } api)
+            return;
+
+        if (Can("applications.read"))
+            _apps = await api.GetApplicationsAsync();
+
+        _sessions = await api.GetSessionsAsync(null, null, 100);
+    });
+
+    private Task LoadAsync() => RunAsync(async () =>
+        _sessions = await Api!.GetSessionsAsync(string.IsNullOrEmpty(_audience) ? null : _audience, null, 100));
+
+    private async Task RevokeAsync(string familyId)
+    {
+        await RunAsync(async () =>
+        {
+            await Api!.RevokeSessionAsync(familyId);
+            _sessions = await Api.GetSessionsAsync(string.IsNullOrEmpty(_audience) ? null : _audience, null, 100);
+        }, "Session revoked.");
+    }
+}

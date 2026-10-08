@@ -35,6 +35,8 @@ public sealed class CosmosCoreDatabase(CosmosClient client, CloudLoginCoreConfig
         (CloudLoginCoreContainers.Sessions, CloudLoginCoreContainers.SessionsPartitionKey),
         (CloudLoginCoreContainers.LoginRequests, CloudLoginCoreContainers.LoginRequestsPartitionKey),
         (CloudLoginCoreContainers.AuditEvents, CloudLoginCoreContainers.AuditEventsPartitionKey),
+        (CloudLoginCoreContainers.Applications, CloudLoginCoreContainers.ApplicationsPartitionKey),
+        (CloudLoginCoreContainers.SecretKeys, CloudLoginCoreContainers.SecretKeysPartitionKey),
 
         // The optional signing-key fallback. Not one of the seven core containers and not part
         // of ProvisionAllAsync: it is created only when a deployment explicitly keeps its

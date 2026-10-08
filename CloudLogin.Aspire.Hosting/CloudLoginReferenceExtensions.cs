@@ -27,7 +27,8 @@ public static class CloudLoginReferenceExtensions
     /// </remarks>
     public static TBuilder WithReference<TBuilder>(
         this TBuilder builder,
-        IResourceBuilder<ProjectResource> cloudLogin)
+        IResourceBuilder<ProjectResource> cloudLogin,
+        Action<CloudLoginClientOptions>? configure = null)
         where TBuilder : IResourceBuilder<IResourceWithEnvironment>
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -47,7 +48,60 @@ public static class CloudLoginReferenceExtensions
             global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(consumer, cloudLogin);
             WaitForAuthority(consumer, cloudLogin);
         }
-        ConfigureConsumer(consumer, cloudLogin, null, CloudLoginConfigurationKeys.LoginUrl);
+
+        ConfigureConsumer(consumer, cloudLogin, null, CloudLoginConfigurationKeys.LoginUrl, ClientOptions(configure));
+        return builder;
+    }
+
+    /// <summary>
+    /// References a CloudLogin that is not part of this AppHost. The application ends up with the same
+    /// runtime configuration as when the authority is in the AppHost, so it signs in through exactly
+    /// the same client library code.
+    /// </summary>
+    /// <param name="builder">The relying application resource.</param>
+    /// <param name="cloudLogin">The existing authority, from <c>AddCloudLogin(name, url)</c>.</param>
+    /// <param name="clientId">The name the application gives itself at the authority. Defaults to the resource name.</param>
+    /// <param name="clientSecret">
+    /// A secret key created in that authority's admin console (Secret keys). Defaults to one secret parameter named
+    /// <c>{authority}-secret-key</c>, shared by every application referencing that authority, which Aspire asks for at run time and
+    /// resolves from its secret store when deployed. It is never written to source.
+    /// </param>
+    /// <param name="audience">The audience of its tokens. Defaults to the client id.</param>
+    /// <remarks>
+    /// Nothing is registered at the authority: an application appears in its admin console the first time it signs someone in, and
+    /// can be blocked there.
+    /// </remarks>
+    public static TBuilder WithReference<TBuilder>(
+        this TBuilder builder,
+        ICloudLoginExternalBuilder cloudLogin,
+        string? clientId = null,
+        IResourceBuilder<ParameterResource>? clientSecret = null,
+        string? audience = null,
+        Action<CloudLoginClientOptions>? configure = null)
+        where TBuilder : IResourceBuilder<IResourceWithEnvironment>
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(cloudLogin);
+
+        IResourceBuilder<IResourceWithEnvironment> consumer =
+            builder.ApplicationBuilder.CreateResourceBuilder(builder.Resource);
+
+        CloudLoginClientOptions options = ClientOptions(configure);
+        string id = string.IsNullOrWhiteSpace(clientId) ? builder.Resource.Name : clientId;
+
+        consumer
+            .WithEnvironment(CloudLoginConfigurationKeys.LoginUrl, cloudLogin)
+            .WithEnvironment(CloudLoginConfigurationKeys.Client.Authority, cloudLogin)
+            .WithEnvironment(CloudLoginConfigurationKeys.Client.Audience, string.IsNullOrWhiteSpace(audience) ? id : audience)
+            .WithEnvironment(CloudLoginConfigurationKeys.Client.ClientId, id);
+
+        PublishOwnAddress(consumer, options);
+
+        // Every website referencing the same external authority uses the same key unless one is passed: one secret parameter, asked
+        // for once locally and resolved from the secret store when deployed.
+        if (!options.IsPublic)
+            consumer.WithEnvironment(CloudLoginConfigurationKeys.Client.ClientSecret, clientSecret ?? SharedParameter(builder.ApplicationBuilder, $"{Sanitize(cloudLogin.Resource.Name)}-secret-key", generate: false));
+
         return builder;
     }
 
@@ -81,7 +135,8 @@ public static class CloudLoginReferenceExtensions
             global::Aspire.Hosting.ResourceBuilderExtensions.WithReference(consumer, cloudLogin);
             WaitForAuthority(consumer, cloudLogin);
         }
-        ConfigureConsumer(consumer, cloudLogin, endpointName, configurationKey);
+
+        ConfigureConsumer(consumer, cloudLogin, endpointName, configurationKey, new CloudLoginClientOptions());
         return builder;
     }
 
@@ -186,6 +241,13 @@ public static class CloudLoginReferenceExtensions
             consumer.ApplicationBuilder.CreateResourceBuilder(waitable).WaitFor(cloudLogin);
     }
 
+    private static CloudLoginClientOptions ClientOptions(Action<CloudLoginClientOptions>? configure)
+    {
+        CloudLoginClientOptions options = new();
+        configure?.Invoke(options);
+        return options;
+    }
+
     internal static IResourceBuilder<ProjectResource> ApplyCloudLoginDefaults(this IResourceBuilder<ProjectResource> cloudLogin)
     {
         IDistributedApplicationBuilder builder = cloudLogin.ApplicationBuilder;
@@ -227,7 +289,8 @@ public static class CloudLoginReferenceExtensions
         IResourceBuilder<IResourceWithEnvironment> builder,
         IResourceBuilder<ProjectResource> cloudLogin,
         string? endpointName,
-        string configurationKey)
+        string configurationKey,
+        CloudLoginClientOptions options)
     {
         string audience = builder.Resource.Name;
         CloudLoginServerAnnotation annotation =
@@ -236,89 +299,55 @@ public static class CloudLoginReferenceExtensions
         if (!annotation.AddConsumer(audience))
             return;
 
-        // Checked here rather than by a generic constraint, so that the public methods can return
-        // the caller's own builder type unchanged and stay chainable. A consumer with no endpoint
-        // has no origin CloudLogin could return a signed-in user to, so there is nothing to wire.
-        if (builder.Resource is not IResourceWithEndpoints)
-        {
-            throw new DistributedApplicationException(
-                $"'{audience}' has no endpoints, so CloudLogin has no origin to return a signed-in user to. " +
-                "Give it one (WithHttpEndpoint / WithHttpsEndpoint) before referencing the authority.");
-        }
-
         EndpointReference authority = CloudLoginHostingExtensions.GetPreferredEndpoint(cloudLogin, endpointName);
-        EndpointReference origin = GetPreferredEndpoint(
-            builder.ApplicationBuilder.CreateResourceBuilder((IResourceWithEndpoints)builder.Resource));
-        string parameterName = Sanitize($"{cloudLogin.Resource.Name}-{audience}-client-secret");
-
-        // Not persisted, for the same reason as the service key above: this secret is written to
-        // both ends from this one parameter - the consumer reads it as its client secret, the
-        // authority as that client's expected one - so the pair can only ever agree, and no stored
-        // row was hashed or encrypted under it. A local run generating a fresh one costs nothing;
-        // keeping a long-lived copy on disk costs whatever it would take to read that file.
-        IResourceBuilder<ParameterResource> clientSecret = builder.ApplicationBuilder.AddParameter(
-            parameterName,
-            new GenerateParameterDefault
-            {
-                MinLength = 48,
-                Lower = true,
-                Upper = true,
-                Numeric = true,
-                Special = false,
-                MinLower = 8,
-                MinUpper = 8,
-                MinNumeric = 8
-            },
-            secret: true,
-            persist: false);
 
         builder
             .WithEnvironment(configurationKey, authority)
             .WithEnvironment(CloudLoginConfigurationKeys.Client.Authority, authority)
             .WithEnvironment(CloudLoginConfigurationKeys.Client.Audience, audience)
-            .WithEnvironment(CloudLoginConfigurationKeys.Client.ClientId, audience)
-            .WithEnvironment(CloudLoginConfigurationKeys.Client.ClientSecret, clientSecret);
-
-        int consumerIndex = cloudLogin.Resource.Annotations
-            .OfType<CloudLoginConsumerAnnotation>()
-            .Count();
+            .WithEnvironment(CloudLoginConfigurationKeys.Client.ClientId, audience);
 
         cloudLogin.Resource.Annotations.Add(new CloudLoginConsumerAnnotation(builder.Resource));
 
-        cloudLogin
-            .WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.AllowedAudiences}:{consumerIndex}", audience)
-            .WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:ClientId", audience)
-            .WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:Audience", audience)
-            .WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:ClientSecret", clientSecret)
-            .WithEnvironment($"{CloudLoginConfigurationKeys.AllowedRedirectOrigins}:{consumerIndex}", origin);
+        PublishOwnAddress(builder, options);
 
-        HashSet<string> allowedAudiences =
-        [
-            audience,
-            .. builder.Resource.Annotations
-                .OfType<ResourceRelationshipAnnotation>()
-                .Select(relationship => relationship.Resource.Name)
-                .Where(name => !string.Equals(name, cloudLogin.Resource.Name, StringComparison.Ordinal))
-        ];
-
-        int allowedIndex = 0;
-        foreach (string allowedAudience in allowedAudiences.Order(StringComparer.Ordinal))
-        {
-            cloudLogin.WithEnvironment(
-                $"{CloudLoginConfigurationKeys.Tokens.ServiceClients}:{audience}:AllowedAudiences:{allowedIndex++}",
-                allowedAudience);
-        }
+        // Nothing about the application is written to the authority. A website with a backend gets the AppHost's one secret key, which the
+        // authority accepts from any of them; the application appears in the authority's admin the first time it signs someone in.
+        if (!options.IsPublic)
+            builder.WithEnvironment(CloudLoginConfigurationKeys.Client.ClientSecret, SecretKey(cloudLogin, annotation));
 
         PublishDownstreamServices(builder, cloudLogin);
+    }
+
+    /// <summary>The authority's one generated secret key, declared to it once and shared by every website the AppHost references.</summary>
+    private static IResourceBuilder<ParameterResource> SecretKey(IResourceBuilder<ProjectResource> cloudLogin, CloudLoginServerAnnotation annotation)
+    {
+        if (annotation.SecretKey is { } existing)
+            return existing;
+
+        IResourceBuilder<ParameterResource> key = SharedParameter(cloudLogin.ApplicationBuilder, $"{Sanitize(cloudLogin.Resource.Name)}-secret-key", generate: true);
+        cloudLogin.WithEnvironment($"{CloudLoginConfigurationKeys.Tokens.SecretKeys}:0", key);
+        annotation.SecretKey = key;
+        return key;
+    }
+
+    /// <summary>One secret parameter per name, however many applications ask for it.</summary>
+    private static IResourceBuilder<ParameterResource> SharedParameter(IDistributedApplicationBuilder application, string name, bool generate)
+    {
+        if (application.Resources.OfType<ParameterResource>().FirstOrDefault(parameter => parameter.Name == name) is { } existing)
+            return application.CreateResourceBuilder(existing);
+
+        return generate
+            ? application.AddParameter(name, new GenerateParameterDefault { MinLength = 48, Lower = true, Upper = true, Numeric = true, Special = false, MinLower = 8, MinUpper = 8, MinNumeric = 8 }, secret: true, persist: false)
+            : application.AddParameter(name, secret: true);
     }
 
     /// <summary>
     /// Tells this application which audience belongs to each service it references, so
     /// its outbound calls carry a token that service will actually accept.
     /// <para>
-    /// The authority is already told which audiences this client may request; without the
-    /// matching view on the client side, the application knows it is allowed to delegate
-    /// but not what to delegate to, and sends its own token to a service that validates a
+    /// A website with a key may ask for a token for any backend; without this list it does not
+    /// know which audience a service expects, and sends its own token to a service that validates a
     /// different audience. That is rejected, the request arrives anonymous, and the
     /// receiving service answers 403 &mdash; a denial that looks nothing like a
     /// misconfigured audience.
@@ -365,6 +394,33 @@ public static class CloudLoginReferenceExtensions
                 index++;
             }
         });
+    }
+
+    /// <summary>
+    /// The application's own address, decided when the model is evaluated rather than when the reference is declared, so an
+    /// endpoint added after <c>WithReference</c> still counts. An application with no endpoint has no address to publish.
+    /// </summary>
+    private static void PublishOwnAddress(IResourceBuilder<IResourceWithEnvironment> builder, CloudLoginClientOptions options)
+    {
+        if (builder.Resource is not IResourceWithEndpoints endpoints)
+            return;
+
+        builder.WithEnvironment(context =>
+        {
+            if (OwnAddress(builder.ApplicationBuilder, endpoints, options) is { } origin)
+                context.EnvironmentVariables[CloudLoginConfigurationKeys.Client.PublicUrl] = origin;
+        });
+    }
+
+    private static EndpointReference? OwnAddress(IDistributedApplicationBuilder application, IResourceWithEndpoints resource, CloudLoginClientOptions options)
+    {
+        if (resource.Annotations.OfType<EndpointAnnotation>().Any())
+            return GetPreferredEndpoint(application.CreateResourceBuilder(resource));
+
+        if (options.IsPublic)
+            throw new DistributedApplicationException($"'{resource.Name}' is a public client, so it signs in through the browser and needs an endpoint to return to.");
+
+        return null;
     }
 
     private static EndpointReference GetPreferredEndpoint<T>(IResourceBuilder<T> resource)

@@ -66,6 +66,22 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<ISessionRepository, CosmosSessionRepository>();
         services.TryAddSingleton<ILoginRequestRepository, CosmosLoginRequestRepository>();
         services.TryAddSingleton<IAuditEventRepository, CosmosAuditEventRepository>();
+        services.TryAddSingleton<IApplicationRepository, CosmosApplicationRepository>();
+        services.TryAddSingleton<ISecretKeyRepository, CosmosSecretKeyRepository>();
+
+        // ── Control plane (the admin portal's services) ──────────────────────
+        services.TryAddSingleton(configuration);
+        services.TryAddSingleton<IAdminAuthorizer, AdminAuthorizer>();
+        services.TryAddSingleton<AdministratorService>();
+        services.TryAddSingleton<ApplicationService>();
+        services.TryAddSingleton<SecretKeyService>();
+        services.TryAddSingleton<AdminSessionService>();
+        services.TryAddSingleton<AdminUserService>();
+        services.TryAddSingleton<AdminDashboardService>();
+        services.TryAddSingleton<AuthorizationTransactionService>();
+        services.AddCloudLoginBackChannelLogout();
+        services.TryAddSingleton<SigningKeyAdminService>();
+        services.TryAddSingleton<ProviderAdminService>();
 
         // ── Application services ─────────────────────────────────────────────
         services.TryAddSingleton<IAuditLogger>(provider => new AuditLogger(

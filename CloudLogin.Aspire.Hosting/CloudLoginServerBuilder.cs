@@ -51,3 +51,32 @@ internal sealed class CloudLoginServerBuilder(IResourceBuilder<ProjectResource> 
         where TAnnotation : IResourceAnnotation =>
         inner.WithAnnotation(annotation, behavior);
 }
+
+/// <summary>
+/// The builder <c>AddCloudLogin(name, url)</c> returns for an authority somebody else runs: an
+/// ordinary Aspire external-service builder, distinguished only by its type.
+/// </summary>
+/// <remarks>
+/// The type exists for the same reason <see cref="ICloudLoginServerBuilder"/> does: it lets
+/// <c>WithReference(cloudLogin)</c> mean "a secure identity relationship" for this kind of resource
+/// without colliding with Aspire's own <c>WithReference</c> for external services.
+/// </remarks>
+public interface ICloudLoginExternalBuilder : IResourceBuilder<ExternalServiceResource>;
+
+internal sealed class CloudLoginExternalBuilder(IResourceBuilder<ExternalServiceResource> inner) : ICloudLoginExternalBuilder
+{
+    public IDistributedApplicationBuilder ApplicationBuilder => inner.ApplicationBuilder;
+
+    public ExternalServiceResource Resource => inner.Resource;
+
+    public IResourceBuilder<ExternalServiceResource> WithAnnotation<TAnnotation>(
+        ResourceAnnotationMutationBehavior behavior = ResourceAnnotationMutationBehavior.Append)
+        where TAnnotation : IResourceAnnotation, new() =>
+        inner.WithAnnotation<TAnnotation>(behavior);
+
+    public IResourceBuilder<ExternalServiceResource> WithAnnotation<TAnnotation>(
+        TAnnotation annotation,
+        ResourceAnnotationMutationBehavior behavior = ResourceAnnotationMutationBehavior.Append)
+        where TAnnotation : IResourceAnnotation =>
+        inner.WithAnnotation(annotation, behavior);
+}

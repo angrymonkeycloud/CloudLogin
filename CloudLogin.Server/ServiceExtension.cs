@@ -1,6 +1,9 @@
 ﻿using AngryMonkey.CloudLogin;
 using AngryMonkey.CloudLogin.Server;
 using AngryMonkey.CloudBlazor.Web;
+using AngryMonkey.CloudLogin.Server.Tokens;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
@@ -30,6 +33,8 @@ public static partial class MvcServiceCollectionExtensions
         services.AddSingleton(config);
         services.AddHttpClient();
         services.AddDataProtection();
+        services.AddDistributedMemoryCache();
+        services.AddCloudLoginClientServices();
 
         services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
@@ -49,6 +54,7 @@ public static partial class MvcServiceCollectionExtensions
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.Cookie.Path = "/";
                 options.Cookie.IsEssential = true;
+                options.Events.OnValidatePrincipal = CloudLoginSessionValidation.ValidateAsync;
             });
 
         // Add authorization services
@@ -73,4 +79,26 @@ public static partial class MvcServiceCollectionExtensions
         return services.AddCloudLoginServer(configuration);
     }
 
+}
+
+public static class CloudLoginClientServiceExtensions
+{
+    public static IServiceCollection AddCloudLoginClientServices(this IServiceCollection services)
+    {
+        services.AddHttpClient(CloudLoginTokenClientOptions.HttpClientName);
+
+        services.AddOptions<CloudLoginTokenClientOptions>().Configure<IConfiguration>((options, configuration) =>
+        {
+            if (string.IsNullOrWhiteSpace(options.Authority))
+                configuration.GetSection("CloudLogin").Bind(options);
+        });
+
+        services.TryAddSingleton<ICloudLoginClientCredentials, CloudLoginClientCredentials>();
+        services.TryAddSingleton<ICloudLoginSessionRevocations>(provider => new DistributedCacheSessionRevocations(
+            provider.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>(),
+            provider.GetService<CloudLoginServerConfiguration>()));
+        services.TryAddSingleton<CloudLoginLogoutTokenValidator>();
+
+        return services;
+    }
 }

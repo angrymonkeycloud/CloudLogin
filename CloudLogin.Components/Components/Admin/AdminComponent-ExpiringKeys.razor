@@ -1,0 +1,23 @@
+@using AngryMonkey.CloudLogin.V3
+@namespace AngryMonkey.CloudLogin
+
+<div class="console-table-wrap">
+    <table class="console-table">
+        <thead><tr><th>Secret key</th><th>Last used by</th><th>Expires</th></tr></thead>
+        <tbody>
+            @foreach (V3AdminSecretKeyModel key in Keys)
+            {
+                bool expired = key.ExpiresOn <= DateTimeOffset.UtcNow;
+                <tr>
+                    <td>@key.Label <span class="console-muted console-mono">@(key.Prefix ?? key.Id)</span></td>
+                    <td>@(key.LastUsedBy ?? "Not used yet")</td>
+                    <td><span class="console-pill console-pill--@(expired ? "bad" : "warn")">@(expired ? "Expired" : "Expires")</span> @key.ExpiresOn?.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public List<V3AdminSecretKeyModel> Keys { get; set; } = [];
+}

@@ -32,6 +32,10 @@ public sealed record CloudLoginTokenResponse
     [JsonPropertyName("refresh_token")]
     public string? RefreshToken { get; init; }
 
+    /// <summary>When the authority issued this token, in Unix milliseconds on the authority's clock. A relying party orders its own sessions against revocations with it, so no clock but the authority's is compared.</summary>
+    [JsonPropertyName("issued_at_ms")]
+    public long? IssuedAtUnixMs { get; init; }
+
     [JsonPropertyName("scope")]
     public string? Scope { get; init; }
 

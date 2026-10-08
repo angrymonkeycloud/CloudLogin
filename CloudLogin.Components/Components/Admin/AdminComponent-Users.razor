@@ -1,0 +1,228 @@
+@using AngryMonkey.CloudLogin.V3
+@inherits AdminPanelBase
+@namespace AngryMonkey.CloudLogin
+
+<AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
+
+@if (_detail is null)
+{
+    <form class="console-toolbar" @onsubmit="SearchAsync" @onsubmit:preventDefault>
+        <input class="console-input" type="search" placeholder="Search by name, email or phone" @bind="_term" />
+        <button class="console-btn console-btn--primary" type="submit" disabled="@Busy">Search</button>
+    </form>
+
+    @if (_users.Count == 0 && !Busy)
+    {
+        <p class="console-empty">No accounts found.</p>
+    }
+    else
+    {
+        <div class="console-table-wrap">
+            <table class="console-table console-table--clickable">
+                <thead><tr><th>Name</th><th>Contact</th><th>Status</th><th>Roles</th><th>Last sign-in</th></tr></thead>
+                <tbody>
+                    @foreach (V3AdminUserSummaryResponse user in _users)
+                    {
+                        <tr @onclick="() => OpenAsync(user.UserId)">
+                            <td>@user.DisplayName</td>
+                            <td>@user.PrimaryContact</td>
+                            <td><span class="console-pill console-pill--@StatusClass(user.State)">@user.State</span></td>
+                            <td>@(user.IsGlobalAdmin ? "Global admin" : string.Join(", ", user.Roles))</td>
+                            <td>@Ago(user.LastSignedInOn)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_users.Count >= PageSize || _skip > 0)
+        {
+            <div class="console-toolbar">
+                <button class="console-btn" disabled="@(_skip == 0 || Busy)" @onclick="PreviousAsync">Previous</button>
+                <button class="console-btn" disabled="@(_users.Count < PageSize || Busy)" @onclick="NextAsync">Next</button>
+            </div>
+        }
+    }
+}
+else
+{
+    V3AdminUserSummaryResponse summary = _detail.Summary;
+
+    <button class="console-link" @onclick="Close">&larr; All users</button>
+
+    <div class="console-panel">
+        <div class="console-panel-head">
+            <div>
+                <h3 class="console-heading console-heading--flush">@summary.DisplayName</h3>
+                <span class="console-muted">@summary.PrimaryContact</span>
+            </div>
+            <span class="console-pill console-pill--@StatusClass(summary.State)">@summary.State</span>
+        </div>
+
+        <dl class="console-facts">
+            <div><dt>Username</dt><dd>@(_detail.Username ?? "None")</dd></div>
+            <div><dt>Country</dt><dd>@(_detail.Country ?? "Unknown")</dd></div>
+            <div><dt>Joined</dt><dd>@When(summary.CreatedOn)</dd></div>
+            <div><dt>Last sign-in</dt><dd>@When(summary.LastSignedInOn)</dd></div>
+            <div><dt>Administrator</dt><dd>@(summary.IsGlobalAdmin ? "Global admin" : summary.Roles.Count == 0 ? "No" : string.Join(", ", summary.Roles))</dd></div>
+        </dl>
+
+        <div class="console-actions">
+            @if (Can("users.manage"))
+            {
+                <button class="console-btn @(summary.State == "Active" ? "console-btn--danger" : "console-btn--primary")" disabled="@Busy" @onclick='() => SetDisabledAsync(summary.State == "Active")'>
+                    @(summary.State == "Active" ? "Disable account" : "Enable account")
+                </button>
+            }
+            @if (Can("sessions.revoke"))
+            {
+                <button class="console-btn" disabled="@Busy" @onclick="RevokeSessionsAsync">Revoke all sessions</button>
+                <button class="console-btn console-btn--danger" disabled="@Busy" @onclick="SignOutEverywhereAsync">Sign out everywhere</button>
+            }
+        </div>
+    </div>
+
+    <h3 class="console-heading">How they sign in</h3>
+    <div class="console-panel">
+        <ul class="console-list">
+            <li><span>Local credential</span><span class="console-pill console-pill--@(_detail.HasLocalCredential ? "ok" : "neutral")">@(_detail.HasLocalCredential ? "Set" : "None")</span></li>
+            <li><span>Authenticator app</span><span class="console-pill console-pill--@(_detail.HasAuthenticatorApp ? "ok" : "neutral")">@(_detail.HasAuthenticatorApp ? "Enabled" : "None")</span></li>
+            @foreach (V3AdminPasskeyModel passkey in _detail.Passkeys)
+            {
+                <li>
+                    <span>Passkey: @(passkey.Name ?? "Unnamed") <span class="console-muted">registered @When(passkey.RegisteredOn), last used @Ago(passkey.LastUsedOn)</span></span>
+                    @if (Can("users.manage"))
+                    {
+                        <button class="console-btn console-btn--danger console-btn--small" disabled="@Busy" @onclick="() => RevokePasskeyAsync(passkey.CredentialId)">Revoke device</button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+
+    <h3 class="console-heading">Linked providers</h3>
+    @if (_detail.LinkedIdentities.Count == 0)
+    {
+        <p class="console-empty">No external provider is linked.</p>
+    }
+    else
+    {
+        <div class="console-panel">
+            <ul class="console-list">
+                @foreach (V3AdminLinkedIdentityModel identity in _detail.LinkedIdentities)
+                {
+                    <li><span>@identity.ProviderCode <span class="console-muted">@identity.ProviderEmail</span></span><span class="console-muted">linked @When(identity.LinkedOn)</span></li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Can("sessions.read"))
+    {
+        <h3 class="console-heading">Sessions</h3>
+        <AdminComponent_SessionTable Sessions="_sessions" CanRevoke='@(Can("sessions.revoke"))' OnRevoke="RevokeOneAsync" />
+    }
+}
+
+@code {
+    private const int PageSize = 25;
+
+    /// <summary>When set, opens this account's detail instead of the search.</summary>
+    [Parameter] public Guid? UserId { get; set; }
+
+    private string? _term;
+    private int _skip;
+    private List<V3AdminUserSummaryResponse> _users = [];
+    private V3AdminUserDetailResponse? _detail;
+    private List<V3AdminSessionResponse> _sessions = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+
+        if (UserId is { } id)
+            await OpenAsync(id);
+    }
+
+    private Task SearchAsync()
+    {
+        _skip = 0;
+        return LoadAsync();
+    }
+
+    private Task NextAsync()
+    {
+        _skip += PageSize;
+        return LoadAsync();
+    }
+
+    private Task PreviousAsync()
+    {
+        _skip = Math.Max(0, _skip - PageSize);
+        return LoadAsync();
+    }
+
+    private Task LoadAsync() => RunAsync(async () =>
+    {
+        if (Api is { } api)
+            _users = await api.SearchUsersAsync(_term, _skip, PageSize);
+    });
+
+    private Task OpenAsync(Guid userId) => RunAsync(async () =>
+    {
+        _detail = await Api!.GetUserAsync(userId);
+        _sessions = Can("sessions.read") ? await Api.GetUserSessionsAsync(userId) : [];
+    });
+
+    private void Close()
+    {
+        _detail = null;
+        Error = Notice = null;
+    }
+
+    private Task RefreshAsync() => OpenAsync(_detail!.Summary.UserId);
+
+    private async Task SetDisabledAsync(bool disabled)
+    {
+        Guid id = _detail!.Summary.UserId;
+        await RunAsync(async () => await Api!.SetUserDisabledAsync(id, disabled), disabled ? "Account disabled and signed out." : "Account enabled.");
+
+        if (Error is null)
+            await RefreshAsync();
+    }
+
+    private async Task RevokeSessionsAsync()
+    {
+        Guid id = _detail!.Summary.UserId;
+        await RunAsync(async () => await Api!.RevokeUserSessionsAsync(id), "All sessions revoked.");
+
+        if (Error is null)
+            await RefreshAsync();
+    }
+
+    private async Task SignOutEverywhereAsync()
+    {
+        Guid id = _detail!.Summary.UserId;
+        await RunAsync(async () => await Api!.SignOutUserEverywhereAsync(id), "Signed out everywhere. They sign in again on every device.");
+
+        if (Error is null)
+            await RefreshAsync();
+    }
+
+    private async Task RevokePasskeyAsync(string credentialId)
+    {
+        Guid id = _detail!.Summary.UserId;
+        await RunAsync(async () => await Api!.RevokeUserPasskeyAsync(id, credentialId), "Device revoked and the account signed out.");
+
+        if (Error is null)
+            await RefreshAsync();
+    }
+
+    private async Task RevokeOneAsync(string familyId)
+    {
+        await RunAsync(async () => await Api!.RevokeSessionAsync(familyId), "Session revoked.");
+
+        if (Error is null)
+            await RefreshAsync();
+    }
+}

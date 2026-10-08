@@ -138,8 +138,11 @@ public sealed class CloudLoginSigningKeyManager
     /// Generates a new signing key and retires the outgoing one. Retired keys keep
     /// verifying for <see cref="CloudLoginTokenOptions.SigningKeyPublishGrace"/> so
     /// tokens already in flight are unaffected.
+    /// With <paramref name="force"/> a key is minted even while a usable one exists, and the
+    /// outgoing signer stops signing at once but stays published for the grace window. That is the
+    /// administrator's rotation; without it a key is minted only when nothing can sign.
     /// </summary>
-    public async Task<CloudLoginSigningKey> RotateAsync(CancellationToken cancellationToken = default)
+    public async Task<CloudLoginSigningKey> RotateAsync(CancellationToken cancellationToken = default, bool force = false)
     {
         if (_keyVault is not null)
             throw new NotSupportedException(
@@ -158,7 +161,7 @@ public sealed class CloudLoginSigningKeyManager
             // producing a key that signs.
             IReadOnlyList<CloudLoginSigningKey> existing = await LoadAsync(cancellationToken);
 
-            if (TrySelectSigner(existing, now, out CloudLoginSigningKey? active, out ECDsa? usable))
+            if (!force && TrySelectSigner(existing, now, out CloudLoginSigningKey? active, out ECDsa? usable))
             {
                 usable.Dispose();
                 return active;
@@ -187,6 +190,16 @@ public sealed class CloudLoginSigningKeyManager
             CryptographicOperations.ZeroMemory(pkcs8);
 
             await _store.SaveSigningKeyAsync(key, cancellationToken);
+
+            if (force)
+            {
+                foreach (CloudLoginSigningKey outgoing in existing.Where(candidate => candidate.CanSign(now)))
+                {
+                    outgoing.SigningExpiresOn = now;
+                    await _store.SaveSigningKeyAsync(outgoing, cancellationToken);
+                }
+            }
+
             InvalidateCache();
 
             _logger.LogInformation(
@@ -201,6 +214,12 @@ public sealed class CloudLoginSigningKeyManager
             _gate.Release();
         }
     }
+
+    /// <summary>Keys held in the store, newest first. Empty when signing lives in Key Vault. Callers must expose public metadata only.</summary>
+    public async Task<IReadOnlyList<CloudLoginSigningKey>> ListKeysAsync(CancellationToken cancellationToken = default) =>
+        _keyVault is not null ? [] : [.. (await LoadAsync(cancellationToken)).OrderByDescending(key => key.CreatedOn)];
+
+    public bool UsesKeyVault => _keyVault is not null;
 
     private async Task<IReadOnlyList<CloudLoginSigningKey>> GetKeysAsync(CancellationToken cancellationToken)
     {

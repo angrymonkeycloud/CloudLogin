@@ -1,4 +1,6 @@
+using System.Net.Http.Json;
 using System.Security.Cryptography;
+using AngryMonkey.CloudLogin.Server.Tokens;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging;
 using System.Text;
@@ -118,6 +120,96 @@ public partial class AuthController
         string? logoutUrl = await BeginLogoutAsync($"{publicUrl}/auth/native/logged-out", carried, cancellationToken);
 
         return logoutUrl is null ? NativeLoggedOut(native, "logout_failed") : Redirect(logoutUrl);
+    }
+
+    /// <summary>
+    /// Ends the application's session from the application itself, with no browser. The request carries the session cookie the application
+    /// keeps in its own HTTP stack, which a web page cannot send, and the authority ends the session for its owner: this application, the
+    /// sign-in in the system browser, and every other application sharing it through back-channel logout. Answers 204 when the session has
+    /// ended, 401 when there was no session here to end, and 503 when the authority could not be reached, in which case nothing changed and
+    /// the application retries.
+    /// </summary>
+    [HttpPost("native/logout")]
+    public async Task<IActionResult> EndNativeSession(CancellationToken cancellationToken = default)
+    {
+        Response.Headers.CacheControl = "no-store";
+
+        if (!IsFirstPartyRequest())
+        {
+            _logger.LogWarning("Rejected a native session end started from another site.");
+            return Problem("Sign-out is only accepted from the application itself.", statusCode: StatusCodes.Status403Forbidden);
+        }
+
+        AuthenticateResult session = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        if (!session.Succeeded)
+            return Unauthorized();
+
+        string? sessionId = session.Principal?.FindFirst(CloudLoginSessionClaims.SessionId)?.Value;
+
+        if (!string.IsNullOrEmpty(sessionId) && tokenProvider is not null && _tokenOptions is not null &&
+            await RevokeAtAuthorityAsync(sessionId, cancellationToken) is null)
+        {
+            Response.Headers.RetryAfter = "5";
+            return Problem("The authority could not be reached to end the session. Nothing was changed; try again.", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        if (revocations is not null && !string.IsNullOrEmpty(sessionId))
+            await revocations.RevokeSessionAsync(sessionId, cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <returns><see langword="true"/> when the authority ended the session, <see langword="false"/> when it was already over there, and
+    /// <see langword="null"/> when the authority could not be reached.</returns>
+    private async Task<bool?> RevokeAtAuthorityAsync(string sessionId, CancellationToken cancellationToken)
+    {
+        string? accessToken;
+
+        try
+        {
+            accessToken = await tokenProvider!.GetAccessTokenAsync(cancellationToken);
+        }
+        catch (CloudLoginAuthorityUnavailableException)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return false;
+
+        try
+        {
+            using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(10));
+
+            HttpClient client = _httpClientFactory.CreateClient(CloudLoginTokenClientOptions.HttpClientName);
+
+            using HttpRequestMessage request = new(HttpMethod.Post, $"{_tokenOptions!.Authority.TrimEnd('/')}/CloudLogin/Token/Revoke")
+            {
+                Content = JsonContent.Create(new CloudLoginRevokeRequest { SessionId = sessionId })
+            };
+
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+            using HttpResponseMessage response = await client.SendAsync(request, timeout.Token);
+
+            if (response.IsSuccessStatusCode)
+                return true;
+
+            if ((int)response.StatusCode >= 500 || response.StatusCode is System.Net.HttpStatusCode.RequestTimeout or System.Net.HttpStatusCode.TooManyRequests)
+                return null;
+
+            _logger.LogWarning("The authority refused to end native session {SessionId} ({Status}); it is treated as already over.", sessionId, response.StatusCode);
+            return false;
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(exception, "The authority could not be reached to end a native session.");
+            return null;
+        }
     }
 
     /// <summary>Where the authority sends the browser after a native logout; hands control back to the application.</summary>

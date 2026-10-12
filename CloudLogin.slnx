@@ -47,6 +47,9 @@
   <Project Path="CloudLogin.Components/CloudLogin.Components.csproj">
     <BuildType Solution="Release_Server|Any CPU" Project="Release" />
   </Project>
+  <Project Path="CloudLogin.Cli/CloudLogin.Cli.csproj">
+    <BuildType Solution="Release_Server|Any CPU" Project="Release" />
+  </Project>
   <Project Path="CloudLogin.Contracts/CloudLogin.Contracts.csproj">
     <BuildType Solution="Release_Server|Any CPU" Project="Release" />
   </Project>

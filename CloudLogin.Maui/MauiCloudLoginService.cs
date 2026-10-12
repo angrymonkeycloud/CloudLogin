@@ -1,4 +1,5 @@
 using AngryMonkey.CloudLogin;
+using AngryMonkey.CloudLogin.Native;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -64,7 +65,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     private string UserDataKey => _options.StorageKey("user-data");
     private string PostLoginRouteKey => _options.StorageKey("post-login-route");
     private string LastLoginTimestampKey => _options.StorageKey("last-login-timestamp");
-    private string PendingAuthorityLogoutKey => _options.StorageKey("pending-authority-logout");
+    private string LegacyPendingAuthorityLogoutKey => _options.StorageKey("pending-authority-logout");
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -140,6 +141,14 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
 
         // Restore user session - doesn't need navigation
         await RestoreUserSessionAsync();
+
+        try { Preferences.Default.Remove(LegacyPendingAuthorityLogoutKey); } catch { }
+
+        _ = Task.Run(async () =>
+        {
+            using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+            await FinishPendingSessionEndsAsync(timeout.Token);
+        });
     }
 
     private async Task RestoreUserSessionAsync()
@@ -268,18 +277,16 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
             throw new InvalidOperationException(
                 $"Register an {nameof(IMauiCloudLoginNativeExchange)} so the app can keep the session the sign-in returns.");
 
-        // A cancelled/offline logout may have cleared the local app while leaving
-        // the authority cookie intact. Finish that logout before allowing another
-        // sign-in, otherwise the old account could be returned automatically.
-        if (Preferences.Default.Get(PendingAuthorityLogoutKey, false) &&
-            !await TryLogoutAuthorityAsync())
-            return;
-
         if (_nav == null)
         {
             Debug.WriteLine("[AccountService] BeginLogin failed: NavigationService not initialized");
             return;
         }
+
+        // A session that could not be ended at an offline logout is ended before the next sign-in, so the browser does not hand the
+        // previous person back. It never stands in the way of signing in.
+        using (CancellationTokenSource pendingEnd = new(TimeSpan.FromSeconds(5)))
+            await FinishPendingSessionEndsAsync(pendingEnd.Token);
 
         string relative = NormalizeToBaseRelative(returnUrl ?? _nav.CurrentUri);
         PendingLogin pending = new(CloudLoginPkce.CreateState(), CloudLoginPkce.CreateVerifier(), DateTimeOffset.UtcNow);
@@ -287,10 +294,7 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         await SecureStorage.Default.SetAsync(PendingLoginKey, JsonSerializer.Serialize(pending));
         try { Preferences.Default.Set(PostLoginRouteKey, relative); } catch { }
 
-        string startUrl = $"{_options.ApplicationUrl}/auth/native/login"
-            + $"?challenge={Uri.EscapeDataString(CloudLoginPkce.CreateChallenge(pending.Verifier))}"
-            + $"&state={Uri.EscapeDataString(pending.State)}"
-            + $"&redirect_uri={Uri.EscapeDataString(CallbackUrl)}";
+        string startUrl = CloudLoginNativeProtocol.LoginUrl(_options.ApplicationUrl, pending.Verifier, pending.State, CallbackUrl);
 
         try
         {
@@ -313,49 +317,81 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Signs out with no browser: the backend ends the session for its owner everywhere (this app, the browser sign-in and every application
+    /// sharing it), then the app forgets it. Offline, the app still signs out at once and the backend finishes ending it when it is reachable.
+    /// </summary>
     public override async Task Logout()
     {
-        Preferences.Default.Set(PendingAuthorityLogoutKey, true);
+        await EndSessionEverywhereAsync();
+        await SignOutLocallyAsync();
 
-        await TryLogoutAuthorityAsync();
+        if (_nav != null)
+            await ReturnToSignInAsync();
+    }
 
+    /// <summary>
+    /// The backend already ended the session: it expired, or was ended from another device or by an administrator. Forgets it on this device
+    /// without asking the backend for anything, and returns to the start, where the person signs in again.
+    /// </summary>
+    public async Task SessionEndedAsync()
+    {
+        foreach (IMauiCloudLoginNativeExchange exchange in _exchanges)
+            await exchange.ForgetSessionAsync();
+
+        await SignOutLocallyAsync();
+
+        if (_nav != null)
+            await ReturnToSignInAsync();
+    }
+
+    /// <summary>Finishes ending sessions that could not be ended at logout because the backend was out of reach.</summary>
+    public async Task FinishPendingSessionEndsAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (IMauiCloudLoginNativeExchange exchange in _exchanges)
+        {
+            try
+            {
+                CloudLoginNativeSessionEndResults result = await exchange.FinishPendingSessionEndAsync(cancellationToken);
+                Debug.WriteLine($"[AccountService] Pending session end: {result}");
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                Debug.WriteLine($"[AccountService] Pending session end failed: {ex.Message}");
+            }
+        }
+    }
+
+    private static readonly TimeSpan SessionEndTimeout = TimeSpan.FromSeconds(10);
+
+    private async Task EndSessionEverywhereAsync()
+    {
+        using CancellationTokenSource timeout = new(SessionEndTimeout);
+
+        foreach (IMauiCloudLoginNativeExchange exchange in _exchanges)
+        {
+            try
+            {
+                CloudLoginNativeSessionEndResults result = await exchange.EndSessionAsync(timeout.Token);
+                Debug.WriteLine($"[AccountService] Session end: {result}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[AccountService] Session end failed: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task SignOutLocallyAsync()
+    {
+        bool wasSignedIn = User is not null;
+
+        SecureStorage.Default.Remove(PendingLoginKey);
         await ClearStoredSessionAsync();
         await base.Logout();
 
-        if (_nav != null)
-            await ForceReloadTo("/");
-    }
-
-    private async Task<bool> TryLogoutAuthorityAsync()
-    {
-        try
-        {
-            // The same browser session the sign-in used, so the authority's own cookie is cleared as well as this app's session.
-            string state = CloudLoginPkce.CreateState();
-            string logoutUrl = $"{_options.ApplicationUrl}/auth/native/logout"
-                + $"?redirect_uri={Uri.EscapeDataString(CallbackUrl)}&state={Uri.EscapeDataString(state)}";
-
-            WebAuthenticatorResult result = await WebAuthenticator.Default.AuthenticateAsync(new Uri(logoutUrl), new Uri(CallbackUrl));
-
-            bool ended = string.Equals(Property(result, "operation"), "logout", StringComparison.Ordinal)
-                && StateMatches(Property(result, "state"), state)
-                && string.IsNullOrEmpty(Property(result, "error"));
-
-            if (ended)
-                Preferences.Default.Remove(PendingAuthorityLogoutKey);
-
-            return ended;
-        }
-        catch (TaskCanceledException)
-        {
-            Debug.WriteLine("[AccountService] Authority logout was cancelled");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[AccountService] Authority logout failed: {ex.Message}");
-            return false;
-        }
+        if (wasSignedIn)
+            RaiseUserChanged(null);
     }
 
     public override async Task<string> ProfileUrl() => await Task.FromResult($"{LoginBaseUrl}/Account");
@@ -475,9 +511,29 @@ public class MauiCloudLoginService : CloudLoginBaseService, IDisposable
     private static string? Property(WebAuthenticatorResult? result, string name) =>
         result?.Properties is not null && result.Properties.TryGetValue(name, out string? value) ? value : null;
 
-    private static bool StateMatches(string? received, string expected) =>
-        !string.IsNullOrEmpty(received)
-        && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(received), Encoding.UTF8.GetBytes(expected));
+    private static bool StateMatches(string? received, string expected) => CloudLoginNativeProtocol.StateMatches(received, expected);
+
+    /// <summary>
+    /// Takes the app to its sign-in page after the session is gone. A plain navigation: a forced reload of the page the person is already
+    /// on is dropped by the Blazor web view, which left the app on an empty screen.
+    /// </summary>
+    private async Task ReturnToSignInAsync()
+    {
+        if (_nav == null)
+        {
+            Debug.WriteLine("[AccountService] Cannot return to sign-in: NavigationService not initialized");
+            return;
+        }
+
+        try
+        {
+            await _nav.NavigateToAsync($"{LocalLoginPagePath}?returnUrl=%2F");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AccountService] Returning to sign-in failed: {ex.Message}");
+        }
+    }
 
     private async Task ForceReloadTo(string target)
     {

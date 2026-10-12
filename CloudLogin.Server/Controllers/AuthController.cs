@@ -295,7 +295,17 @@ public partial class AuthController(
         }
 
         string requested = string.IsNullOrWhiteSpace(audience) ? _tokenOptions.Audience : audience;
-        string? accessToken = await tokenProvider.GetAccessTokenAsync(requested, forceRefresh: false, cancellationToken);
+        string? accessToken;
+
+        try
+        {
+            accessToken = await tokenProvider.GetAccessTokenAsync(requested, forceRefresh: false, cancellationToken);
+        }
+        catch (Tokens.CloudLoginAuthorityUnavailableException)
+        {
+            Response.Headers.RetryAfter = "5";
+            return Problem("The session could not be renewed right now. It is still valid; try again shortly.", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
 
         if (string.IsNullOrWhiteSpace(accessToken))
             return Problem($"No token could be issued for audience '{requested}'.", statusCode: StatusCodes.Status403Forbidden);

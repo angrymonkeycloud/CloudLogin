@@ -62,8 +62,11 @@ public sealed class CloudLoginTokenProvider(
     IOptions<CloudLoginTokenClientOptions> options,
     IMemoryCache cache,
     ILogger<CloudLoginTokenProvider> logger,
-    ICloudLoginClientCredentials credentials) : ICloudLoginTokenProvider
+    ICloudLoginClientCredentials credentials,
+    CloudLoginRefreshCoordinator refreshCoordinator) : ICloudLoginTokenProvider
 {
+    private const int MaxRefreshHops = 3;
+
     internal const string AccessTokenName = "cloudlogin.access_token";
     internal const string RefreshTokenName = "cloudlogin.refresh_token";
 
@@ -133,27 +136,41 @@ public sealed class CloudLoginTokenProvider(
         if (string.IsNullOrWhiteSpace(refreshToken))
             return accessToken;
 
-        CloudLoginTokenResponse? refreshed = await RefreshAsync(refreshToken, cancellationToken);
+        CloudLoginRefreshedTokens? refreshed = null;
+        string presented = refreshToken;
 
-        if (refreshed is null)
+        for (int hop = 0; hop < MaxRefreshHops; hop++)
         {
-            // The refresh chain is gone: either it expired, or reuse detection burned
-            // it. Either way this session cannot continue, so drop the cookie rather
-            // than letting the user linger in a half-authenticated state.
-            logger.LogInformation("CloudLogin refresh failed; signing the session out.");
-            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return null;
+            CloudLoginRefreshOutcome outcome = await refreshCoordinator.RefreshAsync(presented, RefreshAsync, cancellationToken);
+
+            if (outcome.Status == CloudLoginRefreshStatuses.Unavailable)
+            {
+                if (!string.IsNullOrWhiteSpace(accessToken) && DateTimeOffset.TryParse(expiresOnRaw, out DateTimeOffset stillValidUntil) && DateTimeOffset.UtcNow < stillValidUntil)
+                    return accessToken;
+
+                throw new CloudLoginAuthorityUnavailableException("The session could not be renewed because the authority did not answer. The session is kept; try again.");
+            }
+
+            if (outcome.Tokens is null)
+            {
+                logger.LogInformation("CloudLogin refused the refresh; signing the session out.");
+                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return null;
+            }
+
+            refreshed = outcome.Tokens;
+
+            if (!outcome.FromEarlierRefresh || DateTimeOffset.UtcNow < refreshed.ExpiresOn || string.Equals(refreshed.RefreshToken, presented, StringComparison.Ordinal))
+                break;
+
+            presented = refreshed.RefreshToken;
         }
 
         result.Properties.StoreTokens(
         [
-            new AuthenticationToken { Name = AccessTokenName, Value = refreshed.AccessToken },
-            new AuthenticationToken { Name = RefreshTokenName, Value = refreshed.RefreshToken ?? refreshToken },
-            new AuthenticationToken
-            {
-                Name = ExpiresOnName,
-                Value = DateTimeOffset.UtcNow.AddSeconds(refreshed.ExpiresIn).ToString("o")
-            }
+            new AuthenticationToken { Name = AccessTokenName, Value = refreshed!.AccessToken },
+            new AuthenticationToken { Name = RefreshTokenName, Value = refreshed.RefreshToken },
+            new AuthenticationToken { Name = ExpiresOnName, Value = refreshed.ExpiresOn.ToString("o") }
         ]);
 
         // Re-issue the cookie so the rotated refresh token is what the browser carries
@@ -260,7 +277,7 @@ public sealed class CloudLoginTokenProvider(
     private static string DelegationCacheKey(string subjectToken, string audience) =>
         $"cloudlogin.delegated:{Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(subjectToken)))}:{audience}";
 
-    private async Task<CloudLoginTokenResponse?> RefreshAsync(
+    private async Task<CloudLoginRefreshOutcome> RefreshAsync(
         string refreshToken,
         CancellationToken cancellationToken)
     {
@@ -278,17 +295,31 @@ public sealed class CloudLoginTokenProvider(
 
             using HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
 
-            if (!response.IsSuccessStatusCode)
-                return null;
+            if (IsTransient(response.StatusCode))
+            {
+                logger.LogWarning("CloudLogin token refresh answered {Status}; the session is kept and the refresh is retried on the next request.", response.StatusCode);
+                return CloudLoginRefreshOutcome.Unavailable;
+            }
 
-            return await response.Content.ReadFromJsonAsync<CloudLoginTokenResponse>(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return CloudLoginRefreshOutcome.Rejected;
+
+            CloudLoginTokenResponse? body = await response.Content.ReadFromJsonAsync<CloudLoginTokenResponse>(cancellationToken);
+
+            if (body is null || string.IsNullOrWhiteSpace(body.AccessToken))
+                return CloudLoginRefreshOutcome.Unavailable;
+
+            return CloudLoginRefreshOutcome.Refreshed(new CloudLoginRefreshedTokens(body.AccessToken, body.RefreshToken ?? refreshToken, DateTimeOffset.UtcNow.AddSeconds(body.ExpiresIn)));
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
         {
-            logger.LogWarning(exception, "CloudLogin token refresh call failed.");
-            return null;
+            logger.LogWarning(exception, "CloudLogin token refresh could not reach the authority; the session is kept.");
+            return CloudLoginRefreshOutcome.Unavailable;
         }
     }
+
+    private static bool IsTransient(System.Net.HttpStatusCode status) =>
+        status is System.Net.HttpStatusCode.RequestTimeout or System.Net.HttpStatusCode.TooManyRequests || (int)status >= 500;
 }
 
 /// <summary>

@@ -273,7 +273,8 @@ internal sealed class AuthEcosystem : IAsyncDisposable
         string? secret = null,
         Action<Dictionary<string, string?>>? configureConsumer = null,
         string? publicUrl = null,
-        Action<CloudLoginServerConfiguration>? configureServer = null)
+        Action<CloudLoginServerConfiguration>? configureServer = null,
+        Action<IServiceCollection, IConfiguration>? configureServices = null)
     {
         string origin = $"https://{name}.test";
         secret ??= $"secret-for-{name}-{Guid.NewGuid():N}";
@@ -286,7 +287,7 @@ internal sealed class AuthEcosystem : IAsyncDisposable
         ConsumerHost consumer = new(name, origin, instances, secret);
 
         for (int index = 0; index < instances; index++)
-            consumer.Instances.Add(await StartConsumerInstanceAsync(consumer, secret, publicUrl ?? origin, configureConsumer, configureServer));
+            consumer.Instances.Add(await StartConsumerInstanceAsync(consumer, secret, publicUrl ?? origin, configureConsumer, configureServer, configureServices));
 
         consumer.Balancer = new InstanceBalancer(consumer.Instances.Select(app => app.GetTestServer().CreateHandler()).ToList());
         Network.Routes[consumer.Host] = consumer.Balancer;
@@ -295,7 +296,7 @@ internal sealed class AuthEcosystem : IAsyncDisposable
         return consumer;
     }
 
-    private async Task<WebApplication> StartConsumerInstanceAsync(ConsumerHost consumer, string secret, string publicUrl, Action<Dictionary<string, string?>>? configureConsumer, Action<CloudLoginServerConfiguration>? configureServer)
+    private async Task<WebApplication> StartConsumerInstanceAsync(ConsumerHost consumer, string secret, string publicUrl, Action<Dictionary<string, string?>>? configureConsumer, Action<CloudLoginServerConfiguration>? configureServer, Action<IServiceCollection, IConfiguration>? configureServices)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Development" });
         builder.WebHost.UseTestServer();
@@ -321,6 +322,8 @@ internal sealed class AuthEcosystem : IAsyncDisposable
             configuration.RequireHttps = false;
             configureServer?.Invoke(configuration);
         });
+
+        configureServices?.Invoke(builder.Services, builder.Configuration);
 
         builder.Services.AddSingleton<IDistributedCache>(consumer.Cache);
         builder.Services.AddSingleton<IDataProtectionProvider>(SharedProtection(consumer.Name));

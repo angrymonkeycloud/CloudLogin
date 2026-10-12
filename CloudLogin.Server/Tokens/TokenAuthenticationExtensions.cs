@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -63,6 +64,8 @@ public static class CloudLoginTokenAuthenticationExtensions
         services.AddDistributedMemoryCache();
         services.AddCloudLoginClientServices();
 
+        services.AddDataProtection();
+        services.TryAddSingleton<CloudLoginRefreshCoordinator>();
         services.AddScoped<ICloudLoginUserContext, CloudLoginUserContext>();
         services.AddScoped<ICloudLoginTokenProvider, CloudLoginTokenProvider>();
 

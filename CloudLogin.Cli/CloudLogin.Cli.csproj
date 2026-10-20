@@ -27,11 +27,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
+		<ProjectReference Include="..\CloudLogin.Cli.Core\CloudLogin.Cli.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

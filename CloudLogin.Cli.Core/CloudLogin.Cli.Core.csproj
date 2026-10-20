@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AssemblyName>AngryMonkey.CloudLogin.Cli.Core</AssemblyName>
+		<RootNamespace>AngryMonkey.CloudLogin.Cli</RootNamespace>
+		<Product>Cloud Login CLI Core</Product>
+		<Authors>Angry Monkey</Authors>
+		<Company>Angry Monkey</Company>
+		<Version>2.3.0</Version>
+		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
+		<FileVersion>$(PackageVersion)</FileVersion>
+		<PackageIcon>amc-logo.png</PackageIcon>
+		<Description>Signs in to a CloudLogin application from a terminal exactly as its native app does, and keeps the session encrypted for the current user. The building blocks of the cloudlogin CLI, for other command-line tools.</Description>
+		<PackageTags>cloudlogin;authentication;cli;angrymonkey</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\CloudLogin.Contracts\amc-logo.png" Pack="True" PackagePath="\" Link="amc-logo.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\CloudLogin.Contracts\CloudLogin.Contracts.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="CloudLogin.Tests" />
+		<InternalsVisibleTo Include="AngryMonkey.CloudLogin.Cli" />
+	</ItemGroup>
+
+</Project>

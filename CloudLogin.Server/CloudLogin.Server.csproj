@@ -35,7 +35,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.12" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.12" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.63.2" />
 		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
         <PackageReference Include="Microsoft.IdentityModel.Validators" Version="8.23.0" />

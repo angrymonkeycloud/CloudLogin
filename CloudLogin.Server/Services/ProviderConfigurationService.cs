@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -211,6 +212,13 @@ public class ProviderConfigurationService
     private static Task HandleRemoteFailure(RemoteFailureContext context)
     {
         context.HandleResponse();
+
+        // The person only sees the picker again, so the reason has to be recorded or a failing provider looks like a loop with no cause.
+        // The failure's message names what went wrong (correlation, token exchange, denied) and never carries a client secret.
+        context.HttpContext.RequestServices.GetService<ILoggerFactory>()?
+            .CreateLogger("AngryMonkey.CloudLogin.ProviderSignIn")
+            .LogWarning(context.Failure, "Sign-in with {Scheme} failed at {Path}: {Reason}",
+                context.Scheme?.Name, context.Request.Path, context.Failure?.Message);
 
         NameValueCollection query = HttpUtility.ParseQueryString(string.Empty);
 

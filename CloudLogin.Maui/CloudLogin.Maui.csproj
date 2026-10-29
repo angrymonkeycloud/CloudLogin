@@ -13,7 +13,7 @@
 		<Company>Angry Monkey</Company>
 		<AssemblyVersion>$(PackageVersion)</AssemblyVersion>
 		<FileVersion>$(PackageVersion)</FileVersion>
-		<Version>2.3.1</Version>
+		<Version>2.3.2</Version>
 		<PackageIcon>amc-logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>Native .NET MAUI authentication for CloudLogin: system-browser sign-in, callback interception, and secure local session storage against an existing CloudLogin authority.</Description>
@@ -25,8 +25,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="AngryMonkey.CloudBlazor.App.Maui" Version="1.1.2" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.110" />
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.110" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.120" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.120" />
 	</ItemGroup>
 
 	<ItemGroup>

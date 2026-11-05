@@ -6,6 +6,13 @@ public class CloudLoginServerConfiguration
     public string CookieName { get; set; } = "__Host-CloudLogin.Consumer";
     public string? CookieDomain { get; set; }
     public TimeSpan SessionDuration { get; set; } = TimeSpan.FromHours(8);
+
+    /// <summary>
+    /// How long this application's session lasts when the person chose to stay signed in: a cookie that survives closing the
+    /// browser, renewed while they keep using it. The authority's session still bounds it (<c>SessionFamilyLifetime</c>, 30 days
+    /// by default), and signing out anywhere still ends it.
+    /// </summary>
+    public TimeSpan KeepSignedInDuration { get; set; } = TimeSpan.FromDays(30);
     public bool RequireHttps { get; set; } = true;
 
     /// <summary>

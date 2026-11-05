@@ -1,5 +1,6 @@
 using AngryMonkey.CloudLogin.Server.Core.Application;
 using AngryMonkey.CloudLogin.Server.Core.Domain;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AngryMonkey.CloudLogin.Server;
@@ -29,12 +30,19 @@ public partial class CloudLoginServer
         return transaction ?? throw new UnauthorizedAccessException("This sign-in request has expired or was already used. Start again from the application.");
     }
 
-    private async Task<string> CompleteTransactionAsync(Guid userId, AuthorizationTransaction transaction)
+    /// <summary>
+    /// Whether this browser's session at the authority was opened to last: what the person chose on the login page, however
+    /// they went on to sign in, and what every application they then reach without signing in again follows.
+    /// </summary>
+    private bool CurrentSessionIsKept() =>
+        _accessor.HttpContext?.Features.Get<IAuthenticateResultFeature>()?.AuthenticateResult?.Properties?.IsPersistent == true;
+
+    private async Task<string> CompleteTransactionAsync(Guid userId, AuthorizationTransaction transaction, bool keepSignedIn)
     {
         AuthorizationTransactionService transactions = Transactions ?? throw new InvalidOperationException("Authorization transactions are not available.");
 
         Guid code = await CreateLoginRequest(userId);
-        await transactions.BindLoginRequestAsync(code, transaction);
+        await transactions.BindLoginRequestAsync(code, transaction, keepSignedIn);
 
         string destination = CloudLoginShared.AppendQueryParameter(transaction.ReturnUrl, "code", code.ToString());
         return string.IsNullOrEmpty(transaction.State) ? destination : CloudLoginShared.AppendQueryParameter(destination, "state", transaction.State);

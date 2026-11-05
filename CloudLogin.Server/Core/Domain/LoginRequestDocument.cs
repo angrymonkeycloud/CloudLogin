@@ -79,6 +79,12 @@ public sealed class LoginRequestDocument : CloudLoginCoreDocument, IExpiringDocu
     /// </summary>
     public string? OriginSessionId { get; set; }
 
+    /// <summary>
+    /// Whether the person chose to stay signed in. The choice is made on the authority's page, so this is how it reaches the
+    /// relying party that redeems the request, which sets a session of its own.
+    /// </summary>
+    public bool KeepSignedIn { get; set; }
+
     // ── Device authorization (Kind = Device) ──────────────────────────────────
 
     /// <summary>SHA-256 of the high-entropy device code. Also the document id.</summary>

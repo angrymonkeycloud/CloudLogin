@@ -39,6 +39,13 @@ public sealed record CloudLoginTokenResponse
     [JsonPropertyName("scope")]
     public string? Scope { get; init; }
 
+    /// <summary>
+    /// Whether the person chose to stay signed in when they signed in at the authority. A relying party gives its own session
+    /// the same life: a cookie that outlives the browser when true, one that ends with it when false.
+    /// </summary>
+    [JsonPropertyName("keep_signed_in")]
+    public bool KeepSignedIn { get; init; }
+
     /// <summary>Convenience view of the subject, so callers avoid re-parsing the JWT.</summary>
     [JsonPropertyName("user")]
     public CloudUser? User { get; init; }

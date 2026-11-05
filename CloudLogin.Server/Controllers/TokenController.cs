@@ -114,7 +114,7 @@ public sealed class TokenController(
                 clientId: client.ClientId,
                 cancellationToken: cancellationToken);
 
-            return Ok(response);
+            return Ok(response with { KeepSignedIn = stored.KeepSignedIn });
         }
         catch (InvalidOperationException exception)
         {

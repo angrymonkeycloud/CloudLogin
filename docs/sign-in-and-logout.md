@@ -191,6 +191,16 @@ store on every request. That store is `IDistributedCache`, so **every instance o
 cache** (Redis, SQL or similar) for a notification delivered to one instance to end the session on all of them.
 The default in-memory cache is correct for a single instance only.
 
+**Keep me signed in.** The login page asks before the person enters an address or picks a provider, including Google,
+Microsoft and any other external provider, and asks again on the step that lists an address's providers. The choice makes the
+authority's own cookie last `LoginDuration` (default 30 days) and is recorded on the authorization code, so the application
+learns it when it redeems the code (`keep_signed_in` on the token response). The application's cookie then outlives the
+browser for `CloudLoginServerConfiguration.KeepSignedInDuration` (default 30 days, renewed while the person keeps using it);
+without the choice it ends when the browser closes. A person already signed in at the authority carries their earlier choice to
+each application they reach. The session is still bounded by the authority: `SessionFamilyLifetime` (default 30 days,
+never extended) ends it, as does a refresh token left unused for `RefreshTokenLifetime` (default 14 days) when the application
+next needs a token, and signing out ends it everywhere. Revocations are kept for as long as such a cookie can live.
+
 If a notification is lost (the application was down, the process holding the queue died), a backstop can catch
 it: at most once per `CloudLogin:SessionRevalidationInterval` (default five minutes) per session, the application
 asks `POST /CloudLogin/Token/SessionStatus` whether the session is still active. That interval is the normal

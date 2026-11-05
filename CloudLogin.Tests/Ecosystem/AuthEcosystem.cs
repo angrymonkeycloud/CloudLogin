@@ -236,6 +236,22 @@ internal sealed class AuthEcosystem : IAsyncDisposable
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // What an external provider's handler does on its way back: signs the browser in with what the challenge carried, and
+        // sends it on to the result page. Everything after this is the real flow.
+        app.MapGet("/test/provider-returned", async (HttpContext context, string referer, bool keepMeSignedIn) =>
+        {
+            AuthenticationProperties properties = new();
+            properties.Items["referer"] = referer;
+
+            if (keepMeSignedIn)
+                properties.Items["keepMeSignedIn"] = keepMeSignedIn.ToString();
+
+            ClaimsPrincipal provider = new(new ClaimsIdentity([new Claim(ClaimTypes.Email, AuthorityEmail)], "Google"));
+            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, provider, properties);
+
+            return Results.Redirect("/CloudLogin/Result");
+        });
         await app.StartAsync();
 
         Authority = new AuthorityHost

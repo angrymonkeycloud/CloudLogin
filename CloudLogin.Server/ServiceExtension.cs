@@ -22,6 +22,9 @@ public static partial class MvcServiceCollectionExtensions
         if (config.SessionDuration <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(config.SessionDuration));
 
+        if (config.KeepSignedInDuration <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(config.KeepSignedInDuration));
+
         if (!string.IsNullOrWhiteSpace(config.LoginUrl) &&
             (!Uri.TryCreate(config.LoginUrl, UriKind.Absolute, out Uri? loginUri) ||
              (loginUri.Scheme != Uri.UriSchemeHttps && loginUri.Scheme != Uri.UriSchemeHttp)))

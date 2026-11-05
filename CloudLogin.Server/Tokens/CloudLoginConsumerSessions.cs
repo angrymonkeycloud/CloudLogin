@@ -40,7 +40,10 @@ public interface ICloudLoginSessionRevocations
 
 public sealed class DistributedCacheSessionRevocations(IDistributedCache cache, CloudLoginServerConfiguration? configuration = null) : ICloudLoginSessionRevocations
 {
-    private TimeSpan Retention => (configuration?.SessionDuration ?? TimeSpan.FromHours(8)) + TimeSpan.FromHours(1);
+    // Kept for as long as any cookie it ends can live: a revocation that expired first would bring a signed-out session back.
+    private TimeSpan Retention => Max(configuration?.SessionDuration ?? TimeSpan.FromHours(8), configuration?.KeepSignedInDuration ?? TimeSpan.FromDays(30)) + TimeSpan.FromHours(1);
+
+    private static TimeSpan Max(TimeSpan first, TimeSpan second) => first > second ? first : second;
 
     public Task RevokeSessionAsync(string sessionId, CancellationToken cancellationToken = default) =>
         cache.SetStringAsync(Key("sid", sessionId), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(), Options(Retention), cancellationToken);

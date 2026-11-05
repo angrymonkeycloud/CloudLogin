@@ -75,7 +75,7 @@ public partial class CloudLoginServer
         if (currentUser is null || currentUser.Id == Guid.Empty || currentUser.IsLocked)
             throw new UnauthorizedAccessException("A signed-in user is required to complete login.");
 
-        return await BuildCompletedLoginRedirect(currentUser.Id, referer, isMobileApp);
+        return await BuildCompletedLoginRedirect(currentUser.Id, referer, isMobileApp, CurrentSessionIsKept());
     }
 
     /// <summary>
@@ -96,18 +96,19 @@ public partial class CloudLoginServer
         if (!await TestLogin(userId, keepMeSignedIn))
             return new UnauthorizedResult();
 
-        return new RedirectResult(await BuildCompletedLoginRedirect(userId, referer, isMobileApp));
+        return new RedirectResult(await BuildCompletedLoginRedirect(userId, referer, isMobileApp, keepMeSignedIn));
     }
 
     private async Task<string> BuildCompletedLoginRedirect(
         Guid userId,
         string? referer,
-        bool isMobileApp)
+        bool isMobileApp,
+        bool keepSignedIn)
     {
         AuthorizationTransaction? transaction = await ConsumeSignInTransactionAsync(referer);
 
         if (transaction is not null)
-            return await CompleteTransactionAsync(userId, transaction);
+            return await CompleteTransactionAsync(userId, transaction, keepSignedIn);
 
         string target = string.IsNullOrWhiteSpace(referer) || referer == "/" ? "/Account" : referer;
         bool isExternal = !IsRelativePath(target) &&
@@ -193,7 +194,7 @@ public partial class CloudLoginServer
                     AuthorizationTransaction? transaction = await ConsumeSignInTransactionAsync(referer);
 
                     if (transaction is not null)
-                        return new RedirectResult(await CompleteTransactionAsync(currentUser.Id, transaction));
+                        return new RedirectResult(await CompleteTransactionAsync(currentUser.Id, transaction, keepMeSignedIn || CurrentSessionIsKept()));
                 }
                 catch (UnauthorizedAccessException exception)
                 {
@@ -400,7 +401,7 @@ public partial class CloudLoginServer
         await _request.HttpContext.SignInAsync(claimsPrincipal, properties);
 
         if (transaction is not null)
-            return new RedirectResult(await CompleteTransactionAsync(user.Id, transaction));
+            return new RedirectResult(await CompleteTransactionAsync(user.Id, transaction, finalKeepMeSignedIn));
 
         // If no valid external referer, redirect to account page directly without request Id
         // Consider "/" or base URL as "no external referer"

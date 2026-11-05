@@ -147,7 +147,12 @@ public partial class AuthController(
             return Failure(transaction, "user_not_found");
         }
 
-        (ClaimsPrincipal principal, AuthenticationProperties properties) = BuildSession(tokens, user, persistent: transaction.Native is not null);
+        // A native application keeps its session for its own duration; a browser's lasts past the browser only if the person asked.
+        TimeSpan? keepFor = transaction.Native is not null ? _sessionDuration
+            : tokens.KeepSignedIn ? serverConfiguration.KeepSignedInDuration
+            : null;
+
+        (ClaimsPrincipal principal, AuthenticationProperties properties) = BuildSession(tokens, user, keepFor);
 
         // A sign-in a native application started ends at the application, not in this browser: its session is handed over, never set here.
         if (transaction.Native is not null)
@@ -162,7 +167,8 @@ public partial class AuthController(
         transaction.Native is not null ? NativeFailure(transaction.Native, error) : Redirect($"/?error={error}");
 
     /// <summary>The application's session for a signed-in person: the claims its cookie carries, and the tokens kept inside that cookie.</summary>
-    private (ClaimsPrincipal Principal, AuthenticationProperties Properties) BuildSession(CloudLoginTokenResponse tokens, CloudUser user, bool persistent)
+    /// <param name="keepFor">How long the cookie outlives the browser; null for one that ends when the browser closes.</param>
+    private (ClaimsPrincipal Principal, AuthenticationProperties Properties) BuildSession(CloudLoginTokenResponse tokens, CloudUser user, TimeSpan? keepFor)
     {
         string? sessionId = ReadSessionId(tokens.AccessToken);
         DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -191,9 +197,8 @@ public partial class AuthController(
 
         ClaimsPrincipal principal = new(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 
-        // A native application keeps its cookie for as long as the session lasts; a browser's lasts as long as the browser.
-        AuthenticationProperties properties = persistent
-            ? new() { IsPersistent = true, ExpiresUtc = now.Add(_sessionDuration) }
+        AuthenticationProperties properties = keepFor is { } duration
+            ? new() { IsPersistent = true, ExpiresUtc = now.Add(duration) }
             : new() { IsPersistent = false, ExpiresUtc = null };
 
         properties.StoreTokens(

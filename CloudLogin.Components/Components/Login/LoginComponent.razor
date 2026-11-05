@@ -36,19 +36,17 @@
 
         @if (Auth.CurrentStep == ProcessStep.None)
         {
-            @if (InputRequired)
-            {
-                <div class="login-form _center ">
-                    <div class="amc-cloudlogin-keppsignedin">
-                        <input type="checkbox" id="keepme" @bind-value="KeepMeSignedIn">
-                        <label for="keepme">Keep me signed in</label>
-                    </div>
+            @* Asked first, whichever way the person then signs in: an address or a provider. *@
+            <div class="login-form _center ">
+                @KeepSignedInOption
+                @if (InputRequired)
+                {
                     <div class="amc-cloudlogin-input">
                         <input autocomplete="off" @onkeydown="OnInputKeyPressed" type="text" id="email" class=" @(!string.IsNullOrEmpty(InputValue) ? "active" : "")" @bind-value="InputValue" @bind-value:event="oninput" spellcheck="false" />
                         <label for="email">@InputLabel</label>
                     </div>
-                </div>
-            }
+                }
+            </div>
 
             @if (string.IsNullOrEmpty(InputValue))
             {
@@ -67,6 +65,7 @@
         else if (Auth.CurrentStep == ProcessStep.Providers)
         {
             <div class="login-form">
+                @KeepSignedInOption
                 <div class="amc-cloudlogin-providers">
                     @foreach (CloudLoginProviderDefinitionModel provider in Auth.Input!.Providers)
                     {
@@ -388,6 +387,8 @@
         {
             <div class="login-form">
 
+                @KeepSignedInOption
+
                 @if (InputRequired)
                 {
                     <AngryMonkey.CloudLogin.Components.Login.MainInput AllowEmailInput="true" AllowPhoneInput="@PhoneNumberEnabled" AllowUsernameInput="false" Value="@InputValue" ValueChanged="OnInputChanged" />
@@ -441,3 +442,10 @@
     </div>
 
 </div>
+
+@code {
+    private RenderFragment KeepSignedInOption => @<div class="amc-cloudlogin-keppsignedin">
+        <input type="checkbox" id="keepme" @bind="KeepMeSignedIn">
+        <label for="keepme">Keep me signed in</label>
+    </div>;
+}

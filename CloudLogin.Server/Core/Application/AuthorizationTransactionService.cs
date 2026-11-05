@@ -152,7 +152,7 @@ public sealed class AuthorizationTransactionService(ILoginRequestRepository requ
         return new AuthorizationTransaction(document.Id, document.ClientId!, document.ReturnUrl!, document.ClientState, document.ExpiresOn!.Value, document.CodeChallenge, kind);
     }
 
-    public async Task BindLoginRequestAsync(Guid requestId, AuthorizationTransaction transaction, CancellationToken cancellationToken = default)
+    public async Task BindLoginRequestAsync(Guid requestId, AuthorizationTransaction transaction, bool keepSignedIn = false, CancellationToken cancellationToken = default)
     {
         for (int attempt = 0; attempt < 3; attempt++)
         {
@@ -166,6 +166,7 @@ public sealed class AuthorizationTransactionService(ILoginRequestRepository requ
             document.CodeChallenge = transaction.CodeChallenge;
             document.TransactionId = transaction.TransactionId;
             document.ClientState = transaction.State;
+            document.KeepSignedIn = keepSignedIn;
 
             if (await requests.TryReplaceAsync(document, cancellationToken))
                 return;

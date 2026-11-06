@@ -107,7 +107,7 @@ public class AdminConsoleRenderingTests
         string html = await RenderAsync<AdminComponent>(OverviewRoutes(me));
 
         foreach (string tab in new[] { "Overview", "Users", "Applications", "Secret keys", "Sessions", "Security", "Providers", "Audit", "Administrators" })
-            Assert.Contains($">{tab}</button>", html);
+            Assert.Contains($">{tab}</span></button>", html);
 
         Assert.Contains("Global Admin", html);
         Assert.Contains(">42<", html);
@@ -123,12 +123,65 @@ public class AdminConsoleRenderingTests
 
         string html = await RenderAsync<AdminComponent>(OverviewRoutes(me));
 
-        Assert.Contains(">Overview</button>", html);
-        Assert.Contains(">Audit</button>", html);
-        Assert.DoesNotContain(">Applications</button>", html);
-        Assert.DoesNotContain(">Users</button>", html);
-        Assert.DoesNotContain(">Administrators</button>", html);
+        Assert.Contains(">Overview</span></button>", html);
+        Assert.Contains(">Audit</span></button>", html);
+        Assert.DoesNotContain(">Applications</span></button>", html);
+        Assert.DoesNotContain(">Users</span></button>", html);
+        Assert.DoesNotContain(">Administrators</span></button>", html);
+        Assert.DoesNotContain("aria-label=\"People\"", html);
         Assert.DoesNotContain("Secret keys that need attention", html);
+    }
+
+    private static V3AdministratorResponse Administrator(string name, Guid? id = null, bool global = false, params string[] roles) => new()
+    {
+        UserId = id ?? Guid.NewGuid(),
+        DisplayName = name,
+        PrimaryContact = $"{name.ToLowerInvariant()}@example.test",
+        IsGlobalAdmin = global,
+        Roles = [.. roles]
+    };
+
+    private static Task<string> RenderAdministratorsAsync(V3AdminMeResponse me, params V3AdministratorResponse[] administrators) =>
+        RenderAsync<AdminComponent_Administrators>(
+            new() { ["/api/v3/admin/administrators"] = (HttpStatusCode.OK, administrators.ToList()) },
+            new() { ["Access"] = me });
+
+    [Fact]
+    public async Task TheAdministratorsPanel_OffersAddChangeAndRemove_ToAFullAdministrator()
+    {
+        V3AdminMeResponse me = Me(true, AllPermissions);
+
+        string html = await RenderAdministratorsAsync(me, Administrator("Ada", me.UserId, global: true), Administrator("Grace", roles: "SecurityAdministrator"));
+
+        Assert.Contains(">Add administrator</button>", html);
+        Assert.Contains(">Change access</button>", html);
+        Assert.Contains(">Remove</button>", html);
+        Assert.Contains(">You</span>", html);
+        Assert.Contains("Security administrator", html);
+        Assert.DoesNotContain("type=\"checkbox\"", html);
+    }
+
+    [Fact]
+    public async Task TheLastFullAdministrator_IsNotOfferedRemoval()
+    {
+        V3AdminMeResponse me = Me(true, AllPermissions);
+
+        string html = await RenderAdministratorsAsync(me, Administrator("Ada", me.UserId, global: true), Administrator("Grace", roles: "AuditReader"));
+
+        Assert.Contains("Last full administrator", html);
+        Assert.Single(html.Split(">Remove</button>").Skip(1));
+    }
+
+    [Fact]
+    public async Task AReadOnlyAdministrator_SeesWhoHoldsWhat_ButCannotChangeIt()
+    {
+        string html = await RenderAdministratorsAsync(Me(false, "administrators.read"), Administrator("Ada", global: true), Administrator("Grace", roles: "AuditReader"));
+
+        Assert.Contains("Grace", html);
+        Assert.Contains("Audit reader", html);
+        Assert.DoesNotContain(">Add administrator</button>", html);
+        Assert.DoesNotContain(">Change access</button>", html);
+        Assert.DoesNotContain(">Remove</button>", html);
     }
 
     [Fact]

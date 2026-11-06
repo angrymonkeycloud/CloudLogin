@@ -1,3 +1,244 @@
+.admin-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+.admin-subtitle {
+  flex: 1 1 280px;
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+.admin-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  margin-bottom: 20px;
+  padding: 12px 14px 14px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+}
+.admin-tabs-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.admin-tabs-group-label {
+  padding-left: 10px;
+  color: #6c757d;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.admin-tabs-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #495057;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.admin-tab:hover {
+  background: #f8f9fa;
+  color: #111827;
+}
+.admin-tab:focus-visible {
+  outline: 2px solid var(--cloudlogin-brand, var(--amc-color-primary, #525252));
+  outline-offset: 1px;
+}
+.admin-tab.active {
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  border-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
+  font-weight: 600;
+}
+.admin-tab-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+.admin-tab-icon ::deep svg {
+  width: 100%;
+  height: 100%;
+}
+.admin-console ::deep .console-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+.admin-console ::deep .console-section-head p {
+  margin: 4px 0 0;
+}
+.admin-console ::deep .admin-access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-console ::deep .admin-access-item,
+.admin-console ::deep .admin-access-add {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+}
+.admin-console ::deep .admin-access-add {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+}
+.admin-console ::deep .admin-access-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.admin-console ::deep .admin-access-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f1f3f5;
+  color: #495057;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.admin-console ::deep .admin-access-identity {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.admin-console ::deep .admin-access-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: #111827;
+  font-weight: 600;
+}
+.admin-console ::deep .admin-access-roles-held {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+.admin-console ::deep .admin-access-pill {
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  color: var(--cloudlogin-brand-strong, var(--amc-color-primary-hover, #464646));
+}
+.admin-console ::deep .admin-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.admin-console ::deep .admin-access-confirm,
+.admin-console ::deep .admin-access-editor {
+  padding: 14px 16px;
+  border-top: 1px solid #e9ecef;
+}
+.admin-console ::deep .admin-access-confirm p,
+.admin-console ::deep .admin-access-editor p {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+.admin-console ::deep .admin-access-add .admin-access-editor {
+  margin-top: 10px;
+  padding: 12px 0 0;
+}
+.admin-console ::deep .admin-access-editor fieldset {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(min(100%, 240px)), 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0;
+  border: none;
+}
+.admin-console ::deep .admin-access-editor legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.admin-console ::deep .admin-access-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.admin-console ::deep .admin-access-option:hover:not(._locked) {
+  border-color: #ced4da;
+}
+.admin-console ::deep .admin-access-option input {
+  flex: none;
+  appearance: auto;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
+}
+.admin-console ::deep .admin-access-option._on {
+  background: var(--cloudlogin-brand-soft, var(--amc-color-primary-soft, #f8f8f8));
+  border-color: var(--cloudlogin-brand, var(--amc-color-primary, #525252));
+}
+.admin-console ::deep .admin-access-option._locked {
+  cursor: default;
+  opacity: 0.75;
+}
+.admin-console ::deep .admin-access-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.88rem;
+}
+.admin-console ::deep .admin-access-legend {
+  margin-top: 18px;
+  font-size: 0.88rem;
+}
+.admin-console ::deep .admin-access-legend summary {
+  color: #495057;
+  font-weight: 600;
+  cursor: pointer;
+}
 .admin-console ::deep .console-heading {
   margin: 28px 0 10px;
   font-size: 1.05rem;

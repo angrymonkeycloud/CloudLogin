@@ -21,7 +21,7 @@ was granted. Not every administrator is unrestricted:
 | User administrator | Search and view accounts, disable and enable them, revoke devices, end sessions. |
 | Application administrator | Applications (block, unblock, forget) and secret keys (create and revoke). |
 | Security administrator | Signing keys, sessions, secret key revocation, providers and the audit trail. |
-| Audit reader | Read only: the dashboard and the audit trail. |
+| Audit reader | Read only, across the whole console, including the audit trail. |
 
 The permission names (`applications.manage`, `secretkeys.manage`, `secretkeys.revoke`, `keys.manage` and so on)
 live in `AdminPermissions`; `AdminRolePolicy` maps roles to them. Listing secret keys needs `applications.read`.
@@ -29,8 +29,23 @@ Ending an application's sessions without blocking it needs `sessions.revoke`. Ea
 inside it, is offered only when the caller holds the permission, and the server enforces the same permission
 regardless.
 
-Guards that keep the realm from locking itself out: the last full administrator cannot be demoted or disabled,
-and an administrator cannot disable their own account.
+Guards that keep the realm from locking itself out: the last full administrator able to act cannot be demoted,
+removed or disabled, and an administrator cannot disable their own account.
+
+## Adding, changing and removing administrators
+
+The Administrators tab, or `PUT api/v3/admin/administrators/{userId}/roles` with the full list of roles the account
+should hold. It needs `administrators.manage`, which only a full administrator has.
+
+- **Add**: find the person, choose what they can do, and save. Only an active account can be given access. A new
+  administrator holds what was chosen and nothing more, and the Admin tab appears on their account page.
+- **Change access**: tick what they should hold and save; nothing changes until then. Full administrator covers the
+  others, so it is stored alone.
+- **Remove**: an empty list. The account stays and can still sign in. This also works on a locked or disabled account.
+
+A global administrator (`IsGlobalAdmin`, held by the first account of a realm) is treated the same way. Taking away
+full administrator also clears the flag, and it is not granted again. The change reaches the admin API on the next
+request; an application reading the `cl_admin` token claim sees it when its access token is next refreshed.
 
 ## What the console covers
 
@@ -51,7 +66,7 @@ and an administrator cannot disable their own account.
 - **Providers**: the configured sign-in methods, kept separate from client applications, with the users linked
   to each external provider.
 - **Audit**: filterable by event group, application and result.
-- **Administrators**: who holds which role.
+- **Administrators**: who holds which role; add, change and remove them. See below.
 
 ## Applications
 
@@ -178,7 +193,7 @@ starts serving: client authentication fails closed while they cannot be read (se
 read" in [sign-in-and-logout.md](sign-in-and-logout.md)). The `Scopes` container of earlier versions is no
 longer used and can be deleted.
 
-Existing global administrators are full administrators automatically. Grant other roles from the
+Existing global administrators are full administrators automatically. Grant other access from the
 Administrators tab. Upgrading an existing installation, including what each application must set, is covered in
 [sign-in-and-logout.md](sign-in-and-logout.md).
 

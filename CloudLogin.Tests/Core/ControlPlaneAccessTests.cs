@@ -172,6 +172,107 @@ public class ControlPlaneAccessTests
         await Assert.ThrowsAsync<AdminException>(() => _administrators.SetRolesAsync(actor, disabled, [AdminRoles.AuditReader]));
     }
 
+    [Fact]
+    public async Task RemovingAnAdministrator_LeavesTheAccount_WithoutAnyAccess()
+    {
+        Guid actor = await AddUserAsync([AdminRoles.FullAdministrator]);
+        Guid target = await AddUserAsync([AdminRoles.SecurityAdministrator], name: "Grace");
+
+        await _administrators.SetRolesAsync(actor, target, []);
+
+        Assert.False((await _authorizer.GetAccessAsync(target)).IsAdministrator);
+        Assert.NotNull(await _users.GetAsync(target));
+        Assert.DoesNotContain(await _administrators.ListAsync(), administrator => administrator.UserId == target);
+    }
+
+    [Fact]
+    public async Task AGlobalAdministrator_CanBeRemoved_WhileAnotherFullAdministratorRemains()
+    {
+        Guid actor = await AddUserAsync([AdminRoles.FullAdministrator]);
+        Guid target = await AddUserAsync(global: true, name: "Grace");
+
+        await _administrators.SetRolesAsync(actor, target, []);
+
+        Assert.False((await _users.GetAsync(target))!.IsGlobalAdmin);
+        Assert.False((await _authorizer.GetAccessAsync(target)).IsAdministrator);
+
+        AuditEventDocument item = Assert.Single(_auditEvents.Events, entry => entry.EventType == AuditEventTypes.AdminRolesChanged);
+        Assert.Equal("removed", item.Data!["GlobalAdmin"]);
+    }
+
+    [Fact]
+    public async Task AGlobalAdministrator_CanBeNarrowedToALesserRole()
+    {
+        Guid actor = await AddUserAsync([AdminRoles.FullAdministrator]);
+        Guid target = await AddUserAsync(global: true, name: "Grace");
+
+        await _administrators.SetRolesAsync(actor, target, [AdminRoles.AuditReader]);
+
+        AdminAccess access = await _authorizer.GetAccessAsync(target);
+        Assert.False(access.IsGlobalAdmin);
+        Assert.False(access.Has(AdminPermissions.AdministratorsManage));
+        Assert.True(access.Has(AdminPermissions.AuditRead));
+    }
+
+    [Fact]
+    public async Task AGlobalAdministrator_KeepsTheFlag_WhenFullAccessIsKept()
+    {
+        Guid actor = await AddUserAsync([AdminRoles.FullAdministrator]);
+        Guid target = await AddUserAsync(global: true, name: "Grace");
+
+        await _administrators.SetRolesAsync(actor, target, [AdminRoles.FullAdministrator]);
+
+        Assert.True((await _users.GetAsync(target))!.IsGlobalAdmin);
+    }
+
+    [Fact]
+    public async Task TheLastGlobalAdministrator_CannotBeRemoved_EvenByThemselves()
+    {
+        Guid only = await AddUserAsync(global: true);
+
+        AdminException exception = await Assert.ThrowsAsync<AdminException>(() => _administrators.SetRolesAsync(only, only, []));
+
+        Assert.Equal(AdminErrorKinds.Conflict, exception.Kind);
+        Assert.True((await _users.GetAsync(only))!.IsGlobalAdmin);
+    }
+
+    [Fact]
+    public async Task ALockedFullAdministrator_CanBeRemoved_BecauseTheyAreNotTheOneKeepingTheRealmOpen()
+    {
+        Guid actor = await AddUserAsync([AdminRoles.FullAdministrator]);
+        Guid locked = await AddUserAsync([AdminRoles.FullAdministrator], locked: true, name: "Grace");
+
+        await _administrators.SetRolesAsync(actor, locked, []);
+
+        Assert.Empty((await _users.GetAsync(locked))!.AdminRoles);
+    }
+
+    [Fact]
+    public async Task ADisabledAdministrator_CanLoseAccess_ButNotBeGivenMore()
+    {
+        Guid actor = await AddUserAsync([AdminRoles.FullAdministrator]);
+        Guid disabled = await AddUserAsync([AdminRoles.AuditReader], state: UserStates.Disabled, name: "Grace");
+
+        await Assert.ThrowsAsync<AdminException>(() => _administrators.SetRolesAsync(actor, disabled, [AdminRoles.SecurityAdministrator]));
+
+        await _administrators.SetRolesAsync(actor, disabled, []);
+
+        Assert.Empty((await _users.GetAsync(disabled))!.AdminRoles);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task HoldingARole_IsWhatTheAccountPageReads_ToOfferTheConsole(bool holdsRole, bool expected)
+    {
+        Guid target = await AddUserAsync(holdsRole ? [AdminRoles.AuditReader] : null, name: "Grace");
+
+        CloudUser user = CoreUserService.ComposeProfileOnly((await _users.GetAsync(target))!);
+
+        Assert.Equal(expected, user.HoldsAdminRole);
+        Assert.False(user.IsGlobalAdmin);
+    }
+
     // ── Users ───────────────────────────────────────────────────────────────
 
     [Fact]

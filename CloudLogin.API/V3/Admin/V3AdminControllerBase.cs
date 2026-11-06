@@ -213,6 +213,7 @@ internal static class V3AdminMapper
         PrimaryContact = administrator.PrimaryContact,
         IsGlobalAdmin = administrator.IsGlobalAdmin,
         IsLocked = administrator.IsLocked,
+        State = administrator.State.ToString(),
         Roles = [.. administrator.Roles.Select(role => role.ToString())]
     };
 }

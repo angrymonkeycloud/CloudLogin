@@ -6,11 +6,11 @@
 
 <div class="admin-panel admin-console">
     <div class="admin-header">
-        <div class="admin-header-title">
-            <span class="admin-badge">@(_me is { IsGlobalAdmin: true } ? "Global Admin" : "Administrator")</span>
-            <h2>CloudLogin Administration</h2>
-        </div>
         <p class="admin-subtitle">Users, the applications using CloudLogin, secret keys, sessions and the security of the whole authentication ecosystem.</p>
+        @if (_me is not null)
+        {
+            <span class="admin-badge">@(_me.IsGlobalAdmin ? "Global Admin" : "Administrator")</span>
+        }
     </div>
 
     @if (_loading)
@@ -23,15 +23,20 @@
     }
     else if (_me is not null)
     {
-        <div class="admin-tabs">
-            @foreach ((string key, string label, string permission) tab in Tabs)
+        <nav class="admin-tabs" aria-label="Administration sections">
+            @foreach (IGrouping<string, AdminTab> group in Tabs.Where(tab => _me.Permissions.Contains(tab.Permission)).GroupBy(tab => tab.Group))
             {
-                @if (_me.Permissions.Contains(tab.permission))
-                {
-                    <button class="admin-tab @(_active == tab.key ? "active" : "")" @onclick="() => _active = tab.key">@tab.label</button>
-                }
+                <div class="admin-tabs-group" role="group" aria-label="@group.Key">
+                    <div class="admin-tabs-group-label" aria-hidden="true">@group.Key</div>
+                    <div class="admin-tabs-group-items">
+                        @foreach (AdminTab tab in group)
+                        {
+                            <button type="button" class="admin-tab @(_active == tab.Key ? "active" : "")" aria-current="@(_active == tab.Key ? "page" : null)" @onclick="() => _active = tab.Key"><span class="admin-tab-icon" aria-hidden="true">@TabIcon(tab.Key)</span><span class="admin-tab-label">@tab.Label</span></button>
+                        }
+                    </div>
+                </div>
             }
-        </div>
+        </nav>
 
         <div class="admin-content">
             @switch (_active)
@@ -61,7 +66,7 @@
                     <AdminComponent_Audit Access="_me" />
                     break;
                 case "administrators":
-                    <AdminComponent_Administrators Access="_me" />
+                    <AdminComponent_Administrators Access="_me" OnOwnAccessChanged="LoadAccessAsync" />
                     break;
             }
         </div>
@@ -72,17 +77,19 @@
     /// <summary>When set, opens this user's detail straight away instead of the overview.</summary>
     [Parameter] public Guid? AdminUserId { get; set; }
 
-    private static readonly (string key, string label, string permission)[] Tabs =
+    private sealed record AdminTab(string Key, string Label, string Permission, string Group);
+
+    private static readonly AdminTab[] Tabs =
     [
-        ("overview", "Overview", "dashboard.read"),
-        ("users", "Users", "users.read"),
-        ("applications", "Applications", "applications.read"),
-        ("secretkeys", "Secret keys", "applications.read"),
-        ("sessions", "Sessions", "sessions.read"),
-        ("security", "Security", "keys.read"),
-        ("providers", "Providers", "providers.read"),
-        ("audit", "Audit", "audit.read"),
-        ("administrators", "Administrators", "administrators.read")
+        new("overview", "Overview", "dashboard.read", "Dashboard"),
+        new("users", "Users", "users.read", "People"),
+        new("administrators", "Administrators", "administrators.read", "People"),
+        new("applications", "Applications", "applications.read", "Applications"),
+        new("secretkeys", "Secret keys", "applications.read", "Applications"),
+        new("sessions", "Sessions", "sessions.read", "Applications"),
+        new("security", "Security", "keys.read", "Security"),
+        new("providers", "Providers", "providers.read", "Security"),
+        new("audit", "Audit", "audit.read", "Security")
     ];
 
     private V3AdminMeResponse? _me;
@@ -90,7 +97,29 @@
     private bool _loading = true;
     private string _active = "overview";
 
+    private static RenderFragment TabIcon(string key) => key switch
+    {
+        "overview" => @<HomeIcon />,
+        "users" => @<UsersIcon />,
+        "administrators" => @<ShieldCheckIcon />,
+        "applications" => @<GridIcon />,
+        "secretkeys" => @<KeyIcon />,
+        "sessions" => @<LaptopIcon />,
+        "security" => @<ShieldIcon />,
+        "providers" => @<LinkIcon />,
+        "audit" => @<ClipboardIcon />,
+        _ => @<HomeIcon />
+    };
+
     protected override async Task OnInitializedAsync()
+    {
+        await LoadAccessAsync();
+
+        if (_me is not null && AdminUserId.HasValue && _me.Permissions.Contains("users.read"))
+            _active = "users";
+    }
+
+    private async Task LoadAccessAsync()
     {
         try
         {
@@ -102,13 +131,12 @@
 
             _me = await client.Admin.GetMeAsync();
 
-            if (AdminUserId.HasValue && _me.Permissions.Contains("users.read"))
-                _active = "users";
-            else
-                _active = Tabs.FirstOrDefault(tab => _me.Permissions.Contains(tab.permission)).key ?? "overview";
+            if (Tabs.FirstOrDefault(tab => tab.Key == _active) is not { } current || !_me.Permissions.Contains(current.Permission))
+                _active = Tabs.FirstOrDefault(tab => _me.Permissions.Contains(tab.Permission))?.Key ?? "overview";
         }
         catch (CloudLoginAdminException exception)
         {
+            _me = null;
             _failure = exception.IsForbidden ? "This account is not a CloudLogin administrator." : exception.Message;
         }
         catch (HttpRequestException)

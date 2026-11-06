@@ -5,7 +5,290 @@
 
 @import (reference) "../../Src/variable.less";
 
+.admin-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: @gap-sm @gap;
+    margin-bottom: 16px;
+}
+
+.admin-subtitle {
+    flex: 1 1 280px;
+    margin: 0;
+    color: @muted;
+    font-size: .9rem;
+}
+
+.admin-badge {
+    padding: 3px 10px;
+    border-radius: @radius-pill;
+    background: @login-brand-soft;
+    color: @login-brand-strong;
+    font-size: .75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+// ── Section navigation ──
+// Grouped so nine sections stay readable, and wrapped rather than scrolled so none of them is ever out of sight.
+.admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 24px;
+    margin-bottom: 20px;
+    padding: 12px 14px 14px;
+    background: @white;
+    border: 1px solid @border;
+    border-radius: @radius;
+}
+
+.admin-tabs-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.admin-tabs-group-label {
+    padding-left: 10px;
+    color: @muted;
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.admin-tabs-group-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.admin-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    font: inherit;
+    font-size: .875rem;
+    font-weight: 500;
+    color: @text-soft;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: @radius-sm;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+
+    &:hover {
+        background: @surface;
+        color: @heading;
+    }
+
+    &:focus-visible {
+        outline: 2px solid @login-brand;
+        outline-offset: 1px;
+    }
+
+    &.active {
+        background: @login-brand-soft;
+        border-color: @login-brand;
+        color: @login-brand-strong;
+        font-weight: 600;
+    }
+}
+
+.admin-tab-icon {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+
+    ::deep svg {
+        width: 100%;
+        height: 100%;
+    }
+}
+
 .admin-console {
+    ::deep .console-section-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: @gap-sm @gap;
+        margin-bottom: 14px;
+
+        p {
+            margin: 4px 0 0;
+        }
+    }
+
+    // ── Administrators ──
+    ::deep .admin-access-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    ::deep .admin-access-item,
+    ::deep .admin-access-add {
+        background: @white;
+        border: 1px solid @border;
+        border-radius: @radius;
+    }
+
+    ::deep .admin-access-add {
+        margin: 0 0 14px;
+        padding: 14px 16px;
+    }
+
+    ::deep .admin-access-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+
+    ::deep .admin-access-avatar {
+        display: flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: @surface-alt;
+        color: @text-soft;
+        font-size: .8rem;
+        font-weight: 700;
+    }
+
+    ::deep .admin-access-identity {
+        flex: 1 1 200px;
+        min-width: 0;
+    }
+
+    ::deep .admin-access-name {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        color: @heading;
+        font-weight: 600;
+    }
+
+    ::deep .admin-access-roles-held {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 8px;
+    }
+
+    ::deep .admin-access-pill {
+        background: @login-brand-soft;
+        color: @login-brand-strong;
+    }
+
+    ::deep .admin-access-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: @gap-sm;
+    }
+
+    ::deep .admin-access-confirm,
+    ::deep .admin-access-editor {
+        padding: 14px 16px;
+        border-top: 1px solid @border;
+
+        p {
+            margin: 0 0 4px;
+            font-size: .9rem;
+        }
+    }
+
+    ::deep .admin-access-add .admin-access-editor {
+        margin-top: 10px;
+        padding: 12px 0 0;
+    }
+
+    ::deep .admin-access-editor {
+        fieldset {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+            gap: 8px;
+            margin: 0 0 10px;
+            padding: 0;
+            border: none;
+        }
+
+        legend {
+            margin-bottom: 8px;
+            padding: 0;
+            color: @heading;
+            font-size: .9rem;
+            font-weight: 600;
+        }
+    }
+
+    ::deep .admin-access-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid @border;
+        border-radius: @radius-sm;
+        cursor: pointer;
+        transition: background-color .12s ease, border-color .12s ease;
+
+        &:hover:not(._locked) {
+            border-color: @border-strong;
+        }
+
+        input {
+            flex: none;
+            appearance: auto;
+            width: 16px;
+            height: 16px;
+            margin: 2px 0 0;
+            accent-color: @login-brand;
+        }
+
+        &._on {
+            background: @login-brand-soft;
+            border-color: @login-brand;
+        }
+
+        &._locked {
+            cursor: default;
+            opacity: .75;
+        }
+    }
+
+    ::deep .admin-access-option-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: .88rem;
+    }
+
+    ::deep .admin-access-legend {
+        margin-top: 18px;
+        font-size: .88rem;
+
+        summary {
+            color: @text-soft;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    }
+
     ::deep .console-heading {
         margin: 28px 0 10px;
         font-size: 1.05rem;

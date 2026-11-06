@@ -32,6 +32,12 @@ public record CloudUser
     /// Indicates this user has Global Admin privileges, granted automatically to the first registered user.
     /// </summary>
     public bool IsGlobalAdmin { get; set; } = false;
+
+    /// <summary>
+    /// Whether the account holds an administrative role, which opens the administration console without being a
+    /// global administrator. It only decides what the account page offers: the admin API checks the stored roles itself.
+    /// </summary>
+    public bool HoldsAdminRole { get; set; } = false;
     public string? Username { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;

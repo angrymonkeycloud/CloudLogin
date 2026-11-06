@@ -12,7 +12,7 @@ public class V2ContractSnapshotTests
 {
     private static readonly string[] ExpectedCloudUserProperties =
     [
-        "Id", "FirstName", "LastName", "DisplayName", "IsLocked", "IsTest", "IsGlobalAdmin",
+        "Id", "FirstName", "LastName", "DisplayName", "IsLocked", "IsTest", "IsGlobalAdmin", "HoldsAdminRole",
         "Username", "DateOfBirth", "CreatedOn", "LastSignedIn", "Inputs",
         "ProfilePicture", "IsCustomProfilePicture", "ProviderProfilePicture", "Country", "Locale"
     ];

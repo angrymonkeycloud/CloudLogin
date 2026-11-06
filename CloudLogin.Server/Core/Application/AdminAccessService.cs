@@ -56,7 +56,8 @@ public sealed record AdministratorView(
     string? PrimaryContact,
     bool IsGlobalAdmin,
     IReadOnlyList<AdminRoles> Roles,
-    bool IsLocked);
+    bool IsLocked,
+    UserStates State);
 
 /// <summary>Lists administrators and changes the roles they hold.</summary>
 public sealed class AdministratorService(IUserRepository users, IAdminAuthorizer authorizer, IAuditLogger audit)
@@ -75,8 +76,9 @@ public sealed class AdministratorService(IUserRepository users, IAdminAuthorizer
     }
 
     /// <summary>
-    /// Replaces the roles of a user. The user must be an existing account; the last full
-    /// administrator can never be removed, so the realm cannot lock itself out.
+    /// Replaces the access of a user; an empty list removes it. Only an active account can be granted
+    /// access, but anyone can lose it. Dropping full access also clears <c>IsGlobalAdmin</c>, and the last
+    /// full administrator able to act can never lose it, so the realm cannot lock itself out.
     /// </summary>
     public async Task<AdministratorView> SetRolesAsync(
         Guid actorUserId, Guid targetUserId, IReadOnlyCollection<AdminRoles> roles, CancellationToken cancellationToken = default)
@@ -86,21 +88,22 @@ public sealed class AdministratorService(IUserRepository users, IAdminAuthorizer
         UserDocument target = await users.GetAsync(targetUserId, cancellationToken)
             ?? throw AdminException.NotFound("That account does not exist.");
 
-        if (target.State != UserStates.Active)
-            throw AdminException.Invalid("Only an active account can hold an administrator role.");
+        if (target.State == UserStates.Deleted)
+            throw AdminException.NotFound("That account does not exist.");
 
         List<AdminRoles> requested = [.. roles.Distinct()];
         List<AdminRoles> before = [.. target.AdminRoles];
+        bool keepsFullAccess = requested.Contains(AdminRoles.FullAdministrator);
+        bool wasGlobalAdmin = target.IsGlobalAdmin;
 
-        if (target.IsGlobalAdmin && !requested.Contains(AdminRoles.FullAdministrator))
-            requested.Add(AdminRoles.FullAdministrator);
+        if (requested.Count > 0 && target.State != UserStates.Active)
+            throw AdminException.Invalid("Only an active account can hold an administrator role.");
 
-        bool losesFullAccess = HoldsFullAccess(target) && !requested.Contains(AdminRoles.FullAdministrator) && !target.IsGlobalAdmin;
-
-        if (losesFullAccess && await CountFullAdministratorsAsync(cancellationToken) <= 1)
+        if (CanActAsFullAdministrator(target) && !keepsFullAccess && await CountFullAdministratorsAsync(cancellationToken) <= 1)
             throw AdminException.Conflict("This is the last full administrator. Make someone else a full administrator first.");
 
         target.AdminRoles = requested;
+        target.IsGlobalAdmin = wasGlobalAdmin && keepsFullAccess;
         target.UpdatedOn = DateTimeOffset.UtcNow;
 
         try
@@ -120,7 +123,8 @@ public sealed class AdministratorService(IUserRepository users, IAdminAuthorizer
             Data = new Dictionary<string, string>
             {
                 ["Before"] = string.Join(',', before),
-                ["After"] = string.Join(',', requested)
+                ["After"] = string.Join(',', requested),
+                ["GlobalAdmin"] = target.IsGlobalAdmin ? "true" : wasGlobalAdmin ? "removed" : "false"
             }
         }, cancellationToken);
 
@@ -129,8 +133,10 @@ public sealed class AdministratorService(IUserRepository users, IAdminAuthorizer
 
     private static bool HoldsFullAccess(UserDocument user) => user.IsGlobalAdmin || user.AdminRoles.Contains(AdminRoles.FullAdministrator);
 
+    private static bool CanActAsFullAdministrator(UserDocument user) => HoldsFullAccess(user) && !user.IsLocked && user.State == UserStates.Active;
+
     private async Task<int> CountFullAdministratorsAsync(CancellationToken cancellationToken) =>
-        (await users.GetAdministratorsAsync(cancellationToken)).Count(user => HoldsFullAccess(user) && !user.IsLocked && user.State == UserStates.Active);
+        (await users.GetAdministratorsAsync(cancellationToken)).Count(CanActAsFullAdministrator);
 
     private static AdministratorView ToView(UserDocument user) => new(
         Guid.TryParse(user.Id, out Guid id) ? id : Guid.Empty,
@@ -138,5 +144,6 @@ public sealed class AdministratorService(IUserRepository users, IAdminAuthorizer
         user.Contacts.OrderByDescending(contact => contact.IsPrimary).Select(contact => contact.Value).FirstOrDefault(),
         user.IsGlobalAdmin,
         [.. user.AdminRoles],
-        user.IsLocked);
+        user.IsLocked,
+        user.State);
 }

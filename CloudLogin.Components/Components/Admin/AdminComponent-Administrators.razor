@@ -4,120 +4,354 @@
 
 <AdminComponent_Feedback Busy="Busy" Error="@Error" Notice="@Notice" />
 
-<p class="console-muted">Not every administrator can do everything. Each role opens only the parts of the console it names, and the last full administrator can never be removed.</p>
-
-<dl class="console-facts console-facts--roles">
-    <div><dt>Full administrator</dt><dd>Everything, including who else is an administrator.</dd></div>
-    <div><dt>User administrator</dt><dd>Accounts, their sessions and devices.</dd></div>
-    <div><dt>Application administrator</dt><dd>Applications, their credentials, scopes and sessions.</dd></div>
-    <div><dt>Security administrator</dt><dd>Signing keys, sessions, credentials and providers.</dd></div>
-    <div><dt>Audit reader</dt><dd>Read-only: the dashboard and the audit trail.</dd></div>
-</dl>
-
-<div class="console-table-wrap">
-    <table class="console-table">
-        <thead><tr><th>Administrator</th>@foreach (string role in Roles) { <th>@RoleLabel(role)</th> }<th></th></tr></thead>
-        <tbody>
-            @foreach (V3AdministratorResponse admin in _administrators)
-            {
-                <tr>
-                    <td>@admin.DisplayName <span class="console-muted">@admin.PrimaryContact</span> @if (admin.IsGlobalAdmin) { <span class="console-pill console-pill--neutral">Global admin</span> }</td>
-                    @foreach (string role in Roles)
-                    {
-                        <td>
-                            <input type="checkbox" checked="@HasRole(admin, role)" disabled="@(!Can("administrators.manage") || Busy)" @onchange="args => SetRoleAsync(admin, role, (bool)args.Value!)" />
-                        </td>
-                    }
-                    <td></td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<div class="console-section-head">
+    <div>
+        <h3 class="console-heading console-heading--flush">Administrators</h3>
+        <p class="console-muted">Each person holds only the access given to them here. Changes apply on their next request.</p>
+    </div>
+    @if (CanManage && !_adding)
+    {
+        <button class="console-btn console-btn--primary" type="button" disabled="@Busy" @onclick="StartAdding">Add administrator</button>
+    }
 </div>
 
-@if (Can("administrators.manage"))
+@if (_adding)
 {
-    <h3 class="console-heading">Add an administrator</h3>
-    <form class="console-toolbar" @onsubmit="SearchAsync" @onsubmit:preventDefault>
-        <input class="console-input" type="search" placeholder="Find the person by name or email" @bind="_term" />
-        <button class="console-btn" type="submit" disabled="@Busy">Find</button>
-    </form>
-
-    @if (_candidates.Count > 0)
-    {
-        <div class="console-panel">
-            <ul class="console-list">
-                @foreach (V3AdminUserSummaryResponse candidate in _candidates)
-                {
-                    <li>
-                        <span>@candidate.DisplayName <span class="console-muted">@candidate.PrimaryContact</span></span>
-                        <button class="console-btn console-btn--small" disabled="@(Busy || candidate.State != "Active")" @onclick="() => AddAsync(candidate)">Make audit reader</button>
-                    </li>
-                }
-            </ul>
+    <div class="console-panel admin-access-add">
+        <div class="console-panel-head">
+            <strong>Add an administrator</strong>
+            <button class="console-link" type="button" @onclick="CancelAdding">Cancel</button>
         </div>
-        <p class="console-muted">New administrators start with read-only access. Widen it above, per role.</p>
-    }
+
+        @if (_newAdministrator is null)
+        {
+            <form class="console-toolbar" @onsubmit="SearchAsync" @onsubmit:preventDefault>
+                <input class="console-input" type="search" placeholder="Find the person by name or email" aria-label="Find the person by name or email" @bind="_term" @bind:event="oninput" />
+                <button class="console-btn" type="submit" disabled="@(Busy || string.IsNullOrWhiteSpace(_term))">Find</button>
+            </form>
+
+            @if (_candidates.Count > 0)
+            {
+                <ul class="console-list">
+                    @foreach (V3AdminUserSummaryResponse candidate in _candidates)
+                    {
+                        <li>
+                            <span>@candidate.DisplayName <span class="console-muted">@candidate.PrimaryContact</span></span>
+                            @if (candidate.State == "Active")
+                            {
+                                <button class="console-btn console-btn--small" type="button" @onclick="() => ChooseCandidate(candidate)">Choose</button>
+                            }
+                            else
+                            {
+                                <span class="console-pill console-pill--warn">@candidate.State</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            else if (_searched && !Busy)
+            {
+                <p class="console-empty">Nobody else matches. People who are already administrators are listed below.</p>
+            }
+        }
+        else
+        {
+            @AccessEditor(_newAdministrator.UserId, _newAdministrator.DisplayName, "Add administrator", false)
+        }
+    </div>
 }
 
+@if (_administrators.Count == 0 && !Busy)
+{
+    <p class="console-empty">There are no administrators to show.</p>
+}
+else
+{
+    <ul class="admin-access-list">
+        @foreach (V3AdministratorResponse admin in _administrators)
+        {
+            bool isYou = admin.UserId == Access?.UserId;
+            bool isLastFull = IsLastFullAdministrator(admin);
+
+            <li class="admin-access-item" @key="admin.UserId">
+                <div class="admin-access-row">
+                    <div class="admin-access-avatar" aria-hidden="true">@Initials(admin.DisplayName)</div>
+                    <div class="admin-access-identity">
+                        <div class="admin-access-name">
+                            @admin.DisplayName
+                            @if (isYou)
+                            {
+                                <span class="console-pill console-pill--neutral">You</span>
+                            }
+                            @if (admin.IsLocked)
+                            {
+                                <span class="console-pill console-pill--bad">Locked</span>
+                            }
+                            else if (admin.State != "Active")
+                            {
+                                <span class="console-pill console-pill--warn">@admin.State</span>
+                            }
+                        </div>
+                        <div class="console-muted">@admin.PrimaryContact</div>
+                        <div class="admin-access-roles-held">
+                            @foreach (AdminRoleOption role in Held(admin))
+                            {
+                                <span class="console-pill admin-access-pill">@role.Label</span>
+                            }
+                            @if (admin.IsGlobalAdmin)
+                            {
+                                <span class="console-pill console-pill--neutral">Global admin</span>
+                            }
+                        </div>
+                    </div>
+
+                    @if (CanManage)
+                    {
+                        <div class="admin-access-actions">
+                            <button class="console-btn console-btn--small" type="button" disabled="@(Busy || admin.State != "Active")" @onclick="() => StartEditing(admin)">Change access</button>
+                            @if (isLastFull)
+                            {
+                                <span class="console-muted">Last full administrator</span>
+                            }
+                            else
+                            {
+                                <button class="console-btn console-btn--danger console-btn--small" type="button" disabled="@Busy" @onclick="() => StartRemoving(admin)">Remove</button>
+                            }
+                        </div>
+                    }
+                </div>
+
+                @if (_editingUserId == admin.UserId)
+                {
+                    @AccessEditor(admin.UserId, admin.DisplayName, "Save access", isLastFull)
+                }
+                else if (_removingUserId == admin.UserId)
+                {
+                    <div class="admin-access-confirm" role="alertdialog" aria-label="Confirm removing administrator access">
+                        <p>
+                            @if (isYou)
+                            {
+                                <text>Remove your own administrator access? You will lose this console as soon as you confirm, and someone else would have to give it back.</text>
+                            }
+                            else
+                            {
+                                <text>Remove administrator access from @admin.DisplayName? Their account stays, and they can still sign in.</text>
+                            }
+                        </p>
+                        <div class="console-actions">
+                            <button class="console-btn console-btn--danger" type="button" disabled="@Busy" @onclick="() => RemoveAsync(admin)">Remove access</button>
+                            <button class="console-btn" type="button" @onclick="CancelEditing">Keep access</button>
+                        </div>
+                    </div>
+                }
+            </li>
+        }
+    </ul>
+}
+
+<details class="admin-access-legend">
+    <summary>What each kind of access allows</summary>
+    <dl class="console-facts">
+        @foreach (AdminRoleOption role in RoleOptions)
+        {
+            <div><dt>@role.Label</dt><dd>@role.Description</dd></div>
+        }
+    </dl>
+</details>
+
 @code {
-    private static readonly string[] Roles = ["FullAdministrator", "UserAdministrator", "ApplicationAdministrator", "SecurityAdministrator", "AuditReader"];
+    private const string FullAdministrator = "FullAdministrator";
+
+    private sealed record AdminRoleOption(string Key, string Label, string Description);
+
+    private static readonly AdminRoleOption[] RoleOptions =
+    [
+        new(FullAdministrator, "Full administrator", "Everything, including who else is an administrator."),
+        new("UserAdministrator", "User administrator", "Find and view accounts, disable and enable them, revoke their devices and end their sessions."),
+        new("ApplicationAdministrator", "Application administrator", "Block, unblock and forget applications, and create and revoke secret keys."),
+        new("SecurityAdministrator", "Security administrator", "Signing keys, providers, sessions, revoking secret keys, and the audit trail."),
+        new("AuditReader", "Audit reader", "Read-only access to the whole console, including the audit trail.")
+    ];
+
+    /// <summary>Tells the console that the signed-in administrator's own access changed, so it can read it again.</summary>
+    [Parameter] public EventCallback OnOwnAccessChanged { get; set; }
 
     private List<V3AdministratorResponse> _administrators = [];
     private List<V3AdminUserSummaryResponse> _candidates = [];
     private string? _term;
+    private bool _searched;
+    private bool _adding;
+    private V3AdminUserSummaryResponse? _newAdministrator;
+    private Guid? _editingUserId;
+    private Guid? _removingUserId;
+    private HashSet<string> _draftRoles = [];
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    private bool CanManage => Can("administrators.manage");
+    private bool DraftIsFull => _draftRoles.Contains(FullAdministrator);
 
-    private Task LoadAsync() => RunAsync(async () =>
+    protected override Task OnInitializedAsync() => RunAsync(ReloadAsync);
+
+    private async Task ReloadAsync()
     {
         if (Api is { } api)
             _administrators = await api.GetAdministratorsAsync();
-    });
+    }
 
-    private static string RoleLabel(string role) => role switch
+    private static string Initials(string name) =>
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+
+    private static bool IsFull(V3AdministratorResponse admin) => admin.IsGlobalAdmin || admin.Roles.Contains(FullAdministrator);
+
+    private static bool CanAct(V3AdministratorResponse admin) => !admin.IsLocked && admin.State == "Active";
+
+    private bool IsLastFullAdministrator(V3AdministratorResponse admin) =>
+        IsFull(admin) && CanAct(admin) && _administrators.Count(other => IsFull(other) && CanAct(other)) == 1;
+
+    /// <summary>What to show as held: full access covers the rest, so it is shown alone.</summary>
+    private static IEnumerable<AdminRoleOption> Held(V3AdministratorResponse admin) => IsFull(admin)
+        ? RoleOptions.Where(role => role.Key == FullAdministrator)
+        : RoleOptions.Where(role => admin.Roles.Contains(role.Key));
+
+    private RenderFragment AccessEditor(Guid userId, string name, string saveLabel, bool isLastFullAdministrator) =>
+        @<form class="admin-access-editor" @onsubmit="() => SaveAsync(userId, name)" @onsubmit:preventDefault>
+            <fieldset>
+                <legend>Access for @name</legend>
+                @foreach (AdminRoleOption role in RoleOptions)
+                {
+                    bool isFullOption = role.Key == FullAdministrator;
+                    bool impliedByFull = !isFullOption && DraftIsFull;
+                    bool locked = impliedByFull || (isFullOption && isLastFullAdministrator);
+                    bool isOn = impliedByFull || _draftRoles.Contains(role.Key);
+
+                    <label class="admin-access-option @(isOn ? "_on" : "") @(locked ? "_locked" : "")">
+                        <input type="checkbox" checked="@isOn" disabled="@locked" @onchange="args => ToggleRole(role.Key, (bool)args.Value!)" />
+                        <span class="admin-access-option-text">
+                            <strong>@role.Label</strong>
+                            <span class="console-muted">@role.Description</span>
+                        </span>
+                    </label>
+                }
+            </fieldset>
+
+            @if (isLastFullAdministrator)
+            {
+                <p class="console-muted">This is the last full administrator. Make someone else a full administrator before changing this.</p>
+            }
+            else if (_draftRoles.Count == 0)
+            {
+                <p class="console-muted">@(_adding ? "Choose what they can do." : "Choose at least one. To take all access away, use Remove instead.")</p>
+            }
+            else if (userId == Access?.UserId && !DraftIsFull && Access.Permissions.Contains("administrators.manage"))
+            {
+                <div class="console-feedback console-feedback--warn">You are changing your own access. Without full administrator you will no longer be able to manage administrators.</div>
+            }
+
+            <div class="console-actions">
+                <button class="console-btn console-btn--primary" type="submit" disabled="@(Busy || _draftRoles.Count == 0 || isLastFullAdministrator)">@saveLabel</button>
+                <button class="console-btn" type="button" @onclick="CancelForm">Cancel</button>
+            </div>
+        </form>;
+
+    private void CancelForm()
     {
-        "FullAdministrator" => "Full",
-        "UserAdministrator" => "Users",
-        "ApplicationAdministrator" => "Apps",
-        "SecurityAdministrator" => "Security",
-        "AuditReader" => "Audit",
-        _ => role
-    };
+        CancelAdding();
+        CancelEditing();
+    }
 
-    private static bool HasRole(V3AdministratorResponse admin, string role) =>
-        admin.Roles.Contains(role) || (role == "FullAdministrator" && admin.IsGlobalAdmin);
-
-    private async Task SetRoleAsync(V3AdministratorResponse admin, string role, bool on)
+    private void ToggleRole(string role, bool on)
     {
-        List<string> roles = [.. admin.Roles];
+        if (on)
+            _draftRoles.Add(role);
+        else
+            _draftRoles.Remove(role);
+    }
 
-        if (on && !roles.Contains(role))
-            roles.Add(role);
-        else if (!on)
-            roles.Remove(role);
+    private void StartAdding()
+    {
+        CancelEditing();
+        _adding = true;
+        Notice = null;
+    }
 
-        await RunAsync(async () =>
-        {
-            await Api!.SetRolesAsync(admin.UserId, roles);
-            _administrators = await Api.GetAdministratorsAsync();
-        }, "Roles updated.");
+    private void CancelAdding()
+    {
+        _adding = false;
+        _searched = false;
+        _term = null;
+        _candidates = [];
+        _newAdministrator = null;
+        _draftRoles = [];
+    }
 
-        // A refused change leaves the box ticked the wrong way until the list is read again.
-        if (Error is not null)
-            _administrators = await Api!.GetAdministratorsAsync();
+    private void ChooseCandidate(V3AdminUserSummaryResponse candidate)
+    {
+        _newAdministrator = candidate;
+        _draftRoles = [];
+    }
+
+    private void StartEditing(V3AdministratorResponse admin)
+    {
+        CancelAdding();
+        _removingUserId = null;
+        _editingUserId = admin.UserId;
+        _draftRoles = [.. admin.Roles];
+
+        if (admin.IsGlobalAdmin)
+            _draftRoles.Add(FullAdministrator);
+
+        Notice = null;
+    }
+
+    private void StartRemoving(V3AdministratorResponse admin)
+    {
+        CancelAdding();
+        _editingUserId = null;
+        _removingUserId = admin.UserId;
+        Notice = null;
+    }
+
+    private void CancelEditing()
+    {
+        _editingUserId = null;
+        _removingUserId = null;
+        _draftRoles = [];
     }
 
     private Task SearchAsync() => RunAsync(async () =>
-        _candidates = [.. (await Api!.SearchUsersAsync(_term, 0, 10)).Where(user => !_administrators.Any(admin => admin.UserId == user.UserId))]);
+    {
+        _candidates = [.. (await Api!.SearchUsersAsync(_term, 0, 10)).Where(user => !_administrators.Any(admin => admin.UserId == user.UserId))];
+        _searched = true;
+    });
 
-    private async Task AddAsync(V3AdminUserSummaryResponse candidate)
+    private async Task SaveAsync(Guid userId, string name)
+    {
+        if (_draftRoles.Count == 0)
+            return;
+
+        bool isNew = _newAdministrator?.UserId == userId;
+        List<string> roles = DraftIsFull ? [FullAdministrator] : [.. RoleOptions.Where(role => _draftRoles.Contains(role.Key)).Select(role => role.Key)];
+
+        await ChangeAccessAsync(userId, roles, isNew ? $"{name} is now an administrator." : $"Access updated for {name}.");
+    }
+
+    private Task RemoveAsync(V3AdministratorResponse admin) =>
+        ChangeAccessAsync(admin.UserId, [], $"Administrator access removed from {admin.DisplayName}.");
+
+    private async Task ChangeAccessAsync(Guid userId, List<string> roles, string done)
     {
         await RunAsync(async () =>
         {
-            await Api!.SetRolesAsync(candidate.UserId, ["AuditReader"]);
-            _administrators = await Api.GetAdministratorsAsync();
-            _candidates = [.. _candidates.Where(user => user.UserId != candidate.UserId)];
-        }, "Administrator added.");
+            await Api!.SetRolesAsync(userId, roles);
+            await ReloadAsync();
+        }, done);
+
+        if (Error is not null)
+            return;
+
+        CancelAdding();
+        CancelEditing();
+
+        if (userId == Access?.UserId)
+            await OnOwnAccessChanged.InvokeAsync();
     }
 }

@@ -53,6 +53,7 @@ public sealed class CoreUserService(
             IsLocked = user.IsLocked || user.State == UserStates.Disabled,
             IsTest = user.IsTest,
             IsGlobalAdmin = user.IsGlobalAdmin,
+            HoldsAdminRole = user.AdminRoles.Count > 0,
             CreatedOn = user.CreatedOn,
             LastSignedIn = user.LastSignedInOn,
             ProfilePicture = user.ProfilePicture,

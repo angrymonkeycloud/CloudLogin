@@ -272,6 +272,10 @@ public sealed record V3AdministratorResponse
     public string? PrimaryContact { get; init; }
     public bool IsGlobalAdmin { get; init; }
     public bool IsLocked { get; init; }
+
+    /// <summary>Active, Disabled, PendingDeletion or Deleted. Only an active, unlocked administrator holds any power.</summary>
+    public string State { get; init; } = "Active";
+
     public List<string> Roles { get; init; } = [];
 }
 

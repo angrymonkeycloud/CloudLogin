@@ -238,7 +238,7 @@
     }
 
     @* ── Administration ──────────────────────────────────── *@
-    @if (CurrentUser.IsGlobalAdmin)
+    @if (CurrentUser.CanOpenAdministration)
     {
         <section class="card section-card">
             <header class="section-card-header">

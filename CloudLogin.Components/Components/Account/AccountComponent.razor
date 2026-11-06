@@ -85,7 +85,7 @@
                                     <span class="tab-label">@tab.DisplayName</span>
                                 </button>
                             }
-                            @if (CurrentUser.IsGlobalAdmin && activeWorkspaceId is null)
+                            @if (CurrentUser.CanOpenAdministration && activeWorkspaceId is null)
                             {
                                 <button class="tab-button tab-button--admin @(activeTab == "Admin" ? "active" : "")" @onclick='() => SwitchTab("Admin")' title="Admin">
                                     <span class="tab-icon" aria-hidden="true"><ShieldCheckIcon /></span>
@@ -198,7 +198,7 @@
                         {
                             <AccountComponent_Security @key="RouteKey" CurrentUser="CurrentUser" DevicesOnly="@(activeTab == "Devices")" DevicesUrl="@BuildTabUrl("Devices")" />
                         }
-                        else if (activeTab == "Admin" && CurrentUser.IsGlobalAdmin)
+                        else if (activeTab == "Admin" && CurrentUser.CanOpenAdministration)
                         {
                             <AdminComponent @key="RouteKey" AdminUserId="@AdminUserId" />
                         }
@@ -518,7 +518,7 @@ else
         if (tab != "Overview" || workspaceId is not null)
             return null;
 
-        if (AdminUserId.HasValue && CurrentUser is { IsGlobalAdmin: true })
+        if (AdminUserId.HasValue && CurrentUser is { CanOpenAdministration: true })
             return BuildTabUrl("Admin");
 
         if (string.IsNullOrWhiteSpace(InitialSection))

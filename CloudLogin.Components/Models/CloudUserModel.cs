@@ -12,6 +12,8 @@ public class CloudUserModel
     public bool IsLocked { get; set; } = false;
     public bool IsTest { get; set; } = false;
     public bool IsGlobalAdmin { get; set; } = false;
+    public bool HoldsAdminRole { get; set; } = false;
+    public bool CanOpenAdministration => IsGlobalAdmin || HoldsAdminRole;
     public string? Username { get; set; }
     public DateOnly? DateOfBirth { get; set; }
     public DateTimeOffset CreatedOn { get; set; } = DateTimeOffset.MinValue;
@@ -40,6 +42,7 @@ public static class CloudUserModelExtensions
         IsLocked = source.IsLocked,
         IsTest = source.IsTest,
         IsGlobalAdmin = source.IsGlobalAdmin,
+        HoldsAdminRole = source.HoldsAdminRole,
         Username = source.Username,
         DateOfBirth = source.DateOfBirth,
         CreatedOn = source.CreatedOn,
@@ -63,6 +66,7 @@ public static class CloudUserModelExtensions
         IsLocked = model.IsLocked,
         IsTest = model.IsTest,
         IsGlobalAdmin = model.IsGlobalAdmin,
+        HoldsAdminRole = model.HoldsAdminRole,
         Username = model.Username,
         DateOfBirth = model.DateOfBirth,
         CreatedOn = model.CreatedOn,

@@ -9,7 +9,7 @@ Start with the [CloudLogin developer workshop](demo/README.md) to try features, 
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/License-MIT-2F855A?style=flat-square)](LICENSE)
 
-Authentication, account, profile, and coordinated-session packages for .NET 10, Blazor, and .NET MAUI.
+Authentication, account, profile, and coordinated-session packages for .NET 11, Blazor, and .NET MAUI.
 
 CloudLogin is secure by default: HTTPS-only cookies, authenticated single-use sign-in transactions with PKCE and no origin allowlists for applications, encrypted authentication tickets and return state, rate-limited authentication endpoints, protected profile mutations, modern password hashing, and coordinated authority logout are enabled by the standard registration methods.
 

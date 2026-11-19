@@ -8,7 +8,7 @@ The Embedded demo is the primary place to try features, copy code, and read inte
 | Standalone authority | `dotnet run --project demo/CloudLogin.Demo` | https://localhost:7100/demo |
 | Consumer | `dotnet run --project demo/CloudLogin.Demo.Consumer` | https://localhost:7200 |
 
-Start the authority before the consumer. Use .NET 10 and the sibling source checkouts referenced by the projects: CloudComponents alongside CloudLogin, and CoconutSharp/CoconutSharpAspire beside the angrymonkeycloud directory. Trust the local ASP.NET development certificate for interactive authentication.
+Start the authority before the consumer. Use .NET 11 and the sibling source checkouts referenced by the projects: CloudComponents alongside CloudLogin, and CoconutSharp/CoconutSharpAspire beside the angrymonkeycloud directory. Trust the local ASP.NET development certificate for interactive authentication.
 
 Every workshop example has **View**, **Code**, and **Instructions**. The left navigation searches features and reference guides. The right panel changes supported example options. Code can be copied with one button; tabs support arrow, Home, and End keys.
 

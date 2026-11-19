@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net11.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>AngryMonkey.CloudLogin.Web</AssemblyName>
@@ -27,23 +27,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngryMonkey.CloudBlazor.Web" Version="1.1.3" />
+		<PackageReference Include="AngryMonkey.CloudBlazor.Web" Version="1.1.4" />
 		<PackageReference Include="Azure.Identity" Version="1.21.0" />
 		<PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.10.0" />
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.12.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.15" />
-		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.63.3" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.15" NoWarn="NU1605" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="10.0.15" />
-		<PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
-		<PackageReference Include="Microsoft.Graph" Version="6.9.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="11.0.0" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.64.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Facebook" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="11.0.0" NoWarn="NU1605" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="11.0.0" />
+		<PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.2" />
+		<PackageReference Include="Microsoft.Graph" Version="6.10.0" />
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.5.2" />
-		<PackageReference Include="Microsoft.Kiota.Abstractions" Version="2.1.2" />
-		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.15" />
+		<PackageReference Include="Microsoft.Kiota.Abstractions" Version="2.2.0" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="11.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

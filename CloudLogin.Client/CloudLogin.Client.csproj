@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net11.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>AngryMonkey.CloudLogin.Client</AssemblyName>
@@ -20,11 +20,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.15" />
-		<PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.15" />
-		<PackageReference Include="Microsoft.JSInterop" Version="10.0.15" />
-		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.15" />
+		<PackageReference Include="AngryMonkey.CloudGeography" Version="2.8.2" />
+		<PackageReference Include="Microsoft.AspNetCore.Components" Version="11.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="11.0.0" />
+		<PackageReference Include="Microsoft.JSInterop" Version="11.0.0" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="11.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

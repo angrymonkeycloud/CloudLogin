@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net11.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>AngryMonkey.CloudLogin.Cli.Core</AssemblyName>
@@ -22,7 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
